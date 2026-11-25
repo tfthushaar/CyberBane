@@ -3,30 +3,12 @@
 // An in-game day is split into three sectors of eight hours. Every sector holds one window per
 // kind of encounter, and those windows are staggered inside it, so a Rival and an apex squad
 // that share a sector arrive hours apart rather than on top of each other.
-//
-//   SECTOR 1  00:00-08:00      SECTOR 2  08:00-16:00      SECTOR 3  16:00-24:00
-//     [ ~2h40 ][ ~2h40 ][ ~2h40 ]  per sector, one sub-window per kind, order rolled daily
-//
-// How many slots each kind gets comes from its own per-day setting: three Rivals is one slot in
-// every sector, two crews is a slot in two of the three. Which sectors they land in is rolled
-// fresh each in-game day, and the exact moment inside a sub-window is random, so the city does
-// not run to a timetable the player can learn.
-//
-// Why this replaced a gap between encounters: a fixed rest period only says how long since the
-// last one, so the shape of a day depended entirely on how long the player stayed in it. A day
-// now has a plan before it starts, which is what makes "three Rivals, two crews and two apex
-// squads" a description of a day rather than a cap that may or may not be reached.
-//
-// **Skipped time is forfeited, deliberately.** Sleeping, fast travel and time skips move the
-// clock past whole sectors. A slot whose sector has closed is marked spent without firing, so
-// waking up never hands the player a backlog of everything that was owed while they were gone.
-// That falls straight out of the rule that a slot is retried only while its own sector runs.
 
 // Eight in-game hours, three to a day.
 public func CBSectorHours() -> Float = 8.0
 public func CBSectorCount() -> Int32 = 3
 
-// Where the clock is in the current day, as hours 0.0 .. 24.0.
+// Where the clock is in the current day, as hours 0.0.. 24.0.
 public func CBGameHourOfDay(game: GameInstance) -> Float {
   let ts = GameInstance.GetTimeSystem(game);
   if !IsDefined(ts) {
@@ -48,11 +30,6 @@ public func CBRollSchedule(sys: ref<CyberbaneSystem>, game: GameInstance, day: I
   ArrayPush(lanes, CBLaneApex());
 
   // One rotation offset per kind, for the whole day.
-  //
-  // This was rolled inside the sector loop, which meant each sector decided independently
-  // whether it was getting the remainder. Two crews a day could come out as one, two or three
-  // depending on how the dice fell, so the number the player set was not the number they got.
-  // Rolled once, the remainder lands in exactly as many sectors as there is remainder.
   let offsets: array<Int32>;
   let o = 0;
   while o < ArraySize(lanes) {
@@ -94,10 +71,6 @@ public func CBRollSchedule(sys: ref<CyberbaneSystem>, game: GameInstance, day: I
 }
 
 // How many slots this kind gets in sector `s`.
-//
-// The day's allowance is spread as evenly as it will go: three Rivals is one per sector, two
-// crews is one in each of two sectors chosen by the day's own roll, and a setting raised past
-// three simply stacks more into each sector.
 func CBSlotsForSector(cap: Int32, offset: Int32, s: Int32) -> Int32 {
   if cap <= 0 {
     return 0;
@@ -124,13 +97,6 @@ func CBShuffledLanes(lanes: array<Int32>) -> array<Int32> {
 }
 
 // Do not start a session with a long silence.
-//
-// A timetable is rolled at the start of an in-game day and whenever a save is loaded, and the
-// windows it lays down are spread across the whole day. Load in at the wrong moment and the
-// next one is most of an hour of real play away, which from the player's side is a mod that
-// does nothing. This drags the soonest upcoming slot back to within a few minutes of now, so
-// there is always something coming shortly after you sit down. It moves one slot; the rest of
-// the day keeps its shape.
 func CBPullFirstSlotForward(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let now = CBGameHourOfDay(game);
   let best = -1;
@@ -153,10 +119,6 @@ func CBPullFirstSlotForward(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
 }
 
 // Is this lane due right now?
-//
-// True while an unspent slot's moment has arrived and its sector is still running. Once the
-// sector closes the slot is marked spent whether or not it ever fired, which is what stops a
-// skipped afternoon turning into a queue of arrivals the moment the player reappears.
 public func CBSlotDue(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> Bool {
   let now = CBGameHourOfDay(game);
   let i = 0;
@@ -198,13 +160,10 @@ public func CBSpendSlot(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int
 
 // Roll a new timetable when the day turns. Safe to call every tick.
 public func CBScheduleTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-  // No timetable since 2.6.5: every gang and Rival comes on its grudge's own clock (Spawn/Grudge.reds).
   if true {
     return;
   }
-  // Nothing is planned until the clock and the world are both up. A timetable built against a
-  // clock that is not running yet is a timetable for the wrong day at the wrong hour, and
-  // every lane then sits waiting for windows that already passed or have not come.
+  // Nothing is planned until the clock and the world are both up.
   if !CBClockReady(game) || !CBWorldStable(game) {
     return;
   }

@@ -1,15 +1,9 @@
-// Cyberbane - Rivals worth their names: signature chrome (2.7.2)
+// Cyberbane - Rivals worth their names: signature chrome
 //
-// "Rivals are named but do not stand out from elites and apex crews; give them cyberware from the game." How a body
-// fights is its character record, so a Rival who climbs high enough (SignatureRank, which a rank or an escape brings)
-// comes back on one of their gang's own signature records: mantis blades for Maelstrom and the Mox, gorilla arms for the
-// Tyger Claws, the Wraiths, Militech and Barghest, a heavy machine gun, a netrunner's deck for the Voodoo Boys. The same
-// swap Rivals already get when their record would draw the police (Rivals/RivalSystem.reds), done the moment they next
-// set out, so the street can say so first. Each record is checked when it is used: it exists (Barghest's needs Phantom
-// Liberty), it is a person, nobody in the story owns it, and its body is the same sex as the one V has seen them in.
-//
-// What is not done, and why: Berserk, Sandevistan or Kerenzikov on an NPC (crash rule 5); blades put onto a body whose
-// record never had them (rule 6); Royce's suit or Sasquatch, whose records belong to their quests.
+// How a body fights is its character record, so a Rival who climbs high enough (SignatureRank, which a rank or an
+// escape brings) comes back on one of their gang's own signature records: mantis blades for Maelstrom and the Mox,
+// gorilla arms for the Tyger Claws, the Wraiths, Militech and Barghest, a heavy machine gun, a netrunner's deck for the
+// Voodoo Boys.
 
 public func CBRivalSignatureOn() -> Bool {
   let rt = CyberbaneRuntime.Get();

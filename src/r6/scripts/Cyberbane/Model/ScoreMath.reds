@@ -4,8 +4,6 @@
 // derived with no game calls, so this layer is deterministic and fully testable
 // on its own. The stateful ScoreEngine feeds live values (chrome, look, heat,
 // street cred, faction/district state) into these functions.
-//
-// All constants come from CBConfig so balance passes touch one file.
 
 // ---- Renown (spec §8.1) --------------------------------------------------
 
@@ -44,11 +42,6 @@ public func CBHeatDreadComponent(heatPoints: Float) -> Float {
 
 // Fade one of the saturating parts (body count, jobs) by `fade` points of its 0..100 value,
 // never below `floorComp`, and hand back the points that give the faded value.
-//
-// Fading the points themselves, which is what decay did, barely moves a part that has saturated:
-// at a few thousand points the body count reads 99 and halving the points still reads 95, so
-// Dread went up and never came down. Fading the value V actually sees and working the points
-// back out of it gives a steady, readable decline whatever the points are.
 public func CBFadeDreadPoints(points: Float, scale: Float, fade: Float, floorComp: Float) -> Float {
   if points <= 0.0 || scale <= 0.0 || fade <= 0.0 {
     return points;
@@ -74,12 +67,6 @@ public func CBComputeDread(k: Float, c: Float, l: Float, x: Float, h: Float) -> 
 
 // Civilian-perceived dread (spec §8.2). mercyRatio = nonLethal / (nonLethal+lethal).
 // What ordinary people on the street read off you, as opposed to the reputation you have.
-//
-// Disguise damps it. Dread and renown are totals built up over a playthrough, so putting a mask
-// on cannot lower them and was never going to - but it can change how much of that lands on the
-// person standing in front of them, because they cannot connect you to any of it. That is the
-// same reasoning the recognition chance already uses, and it is what makes a mask do something
-// the player can see the moment they put it on rather than only on the next kill.
 public func CBComputeDreadCiv(dread: Float, primaryArchetype: Int32, mercyRatio: Float,
                               disguise: Float) -> Float {
   let civ = dread * CBCivMult(primaryArchetype) * (1.0 - 0.3 * mercyRatio)
@@ -153,7 +140,7 @@ public func CBAppearanceThreat(look: Float, cVisible: Float) -> Float {
   return 0.5 * look + 0.3 * cVisible;
 }
 
-// base = recognised ? (factionMember ? F_f : D_civ) : 0
+// base = recognised ? (factionMember ? F_f: D_civ): 0
 public func CBPerceivedThreat(
     recognised: Bool,
     isFactionMember: Bool,
@@ -172,20 +159,6 @@ public func CBPerceivedThreat(
 
 // E = T/100 - courage
 // How frightening V is to a crowd, as one number.
-//
-// This existed twice, inline, and the two copies had drifted. `Reactions/Crowd.reds` - the one
-// that actually decides whether anybody runs - added V's aura and scaled the lot by the civilian
-// intensity slider. `UI/Hud.reds` - the one that tells the player what is happening - did
-// neither. So the Hub could say "people are uneasy" while people were running, and ignored the
-// player's own intensity setting entirely: the screen was describing a formula the mod does not
-// use.
-//
-// The named function next to it (CBEffectiveFear) was never the same thing - that is the
-// per-NPC test, threat against one person's courage. This is the aggregate, and now there is
-// exactly one of it.
-//
-// Aura is added rather than maxed because it is what V is doing right now, where the rest is
-// what V is known for, and a frightening reputation with a drawn weapon compounds.
 public func CBCrowdFear(score: ref<CBScoreEngine>, intensity: Float) -> Float {
   if !IsDefined(score) {
     return 0.0;
@@ -227,32 +200,19 @@ public func CBTierMult(tier: Int32) -> Float {
   return 1.20;   // 5+ / 5++
 }
 
-// C = clamp(55*min(usage,1) + implantSum(cap 35) + (overallocated ? 10 : 0), 0, 100).
+// C = clamp(55*min(usage,1) + implantSum(cap 35) + (overallocated ? 10: 0), 0, 100).
 public func CBComputeChrome(usage: Float, implantSum: Float, overallocated: Bool) -> Float {
   let c = 55.0 * MinF(usage, 1.0) + ClampF(implantSum, 0.0, 35.0) + (overallocated ? 10.0 : 0.0);
   return ClampF(c, 0.0, 100.0);
 }
 
-// C_visible = clamp(visibleImplantScore * CBChromeVisibleScale() + faceChromeScore, 0, 100). The
-// caller passes Σ(visibleScore × tierMult) as visibleImplantScore.
-//
-// The visible areas sum to at most 24 (arms 12, eyes 4, skin 4, legs 4), so the old 2.5 scale
-// put the ceiling at exactly 60: someone with every slot filled still read as 60 out of 100
-// and could never look more frightening than that. See CBChromeVisibleScale for the scale now.
+// C_visible = clamp(visibleImplantScore * CBChromeVisibleScale + faceChromeScore, 0, 100). The caller passes
+// Σ(visibleScore × tierMult) as visibleImplantScore.
 public func CBComputeChromeVisible(visibleImplantScore: Float, faceChromeScore: Float) -> Float {
   return ClampF(visibleImplantScore * CBChromeVisibleScale() + faceChromeScore, 0.0, 100.0);
 }
 
 // 3.4, chosen so the scale never saturates.
-//
-// At 4.0 the arithmetic ran off the end: the visible areas sum to 24 (arms 12, eyes 4, skin 4,
-// legs 4) and the quality multiplier reaches 1.20, so a fully chromed V produced 115 against a
-// ceiling of 100. Everything past 100 was thrown away, which meant covering your arms could cut
-// the real figure by a third and the number on screen would not move at all - the feature
-// working perfectly and looking broken, which is exactly what was reported.
-//
-// At 3.4 the worst case is 97.9, so the ceiling is never reached and every change is visible:
-// fully chromed reads 98, the same build under a coat reads 61.
 public func CBChromeVisibleScale() -> Float = 3.4
 
 // L = clamp(min(Σ clothingScore, 60) + min(Σ customizationScore, 40), 0, 100).

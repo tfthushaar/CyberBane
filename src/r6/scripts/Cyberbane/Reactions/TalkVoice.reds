@@ -1,35 +1,7 @@
-// Cyberbane - Voices in a conversation (2.7.8)
+// Cyberbane - Voices in a conversation
 //
-// "We can't make the voice for our dialogues, but can we at least fire a similar dialogue voice from the game when we are
-// having a conversation with anyone? Where there's a perfect voice and subtitle combo, use the game's; for the ones that
-// are Cyberbane's alone, a similar voice under our subtitles; if none fits an option, let it be."
-//
-// What the game has to say. Every person in the world carries a voiceset: a scene of the game's of short lines in their
-// own voice and words, each under a name the game calls by (greeting, bump, fear_beg, ...) with two or three recordings
-// (greeting, greeting_var_1, greeting_var_2). Read from the game's own files for every voiceset it has, 551 of them, and
-// joined to their subtitles by script: all of them greet, flinch at a bump, beg, panic and take a call; 98, the gangs'
-// and the guards', also warn V off (rep_ask_to_leave, rep_ask_to_holster, rep_final_warning) and say so when V backs down
-// (rep_complies); 110 answer the game's own talk (return_answer). The words differ from voice to voice; what each name
-// is for does not, and it is by that the answers below are matched (CBTalkVoiceFor).
-//
-// Two ways an answer is voiced:
-//   - Theirs: a line of the game's is the whole answer, as well as or better than Cyberbane's words would be (somebody
-//     begging V to stop, a ganger telling V to back off). Their words go in the answer's subtitle, and Cyberbane's own are
-//     kept to stand in if their voiceset has nothing under that name, or the game will not say it now.
-//   - Under: the answer carries what only Cyberbane knows (a name, a place, a price), so its words stay, and a line of
-//     theirs in the same spirit is heard under them. The game would print that line's own words over their head as well;
-//     they are kept off it while the answer is up, so the screen says one thing.
-// One recording of the name for each answer, the same one every time that answer is given and a different one from the
-// last, so a conversation does not repeat itself.
-//
-// V speaks too, from V's own voiceset (below, CBTalkVoiceForV). V's lines in the story are played by the story's scenes
-// and nothing a script does reaches them; the voiceset is the game's other source of V's voice, and its lines are called
-// by name like anybody's. Another mod ships the story's lines as sound files for an audio plugin; this needs neither.
-//
-// A crowd person's lines are switched off while V talks to them (CBTalkHush, so their idle chatter and greetings do not
-// talk over the conversation): they are let through for the one line and switched off again a moment later. Everybody
-// else's own voice calls are held back for the conversation (StreetTalk.reds, the PlayVoiceOver wrap); these go through
-// on Cyberbane's own context. Under "Voices for the moments", with the rest of Cyberbane's voices.
+// The person V talks to answers with a line from their own voiceset. V says the picked option from V's voiceset or,
+// with AudioXL installed, from V's recorded story lines; options without a matching recording stay text only.
 
 public func CBTalkVoiceUnder() -> Int32 = 1
 public func CBTalkVoiceTheirs() -> Int32 = 2
@@ -84,8 +56,8 @@ public class CBTalkVoiceReHush extends DelayCallback {
   }
 }
 
-// Says it in their voice: `entry` the name of one of their voiceset's lines, `mode` Theirs or Under, `ours` the answer's own
-// words. True when it was asked of the game; with Theirs, the answer's subtitle then waits for their words (CBTalkVoiceTick).
+// Says it in their voice: `entry` the name of one of their voiceset's lines, `mode` Theirs or Under, `ours` the
+// answer's own words.
 public func CBTalkVoiceSay(sys: ref<CyberbaneSystem>, game: GameInstance, npc: ref<ScriptedPuppet>, entry: CName, mode: Int32,
                            ours: String, speaker: String) -> Bool {
   let v = CBTalkVoiceState();
@@ -156,15 +128,15 @@ public func CBTalkVoiceTick(game: GameInstance) -> String {
   return "";
 }
 
-// The subtitles' side (the wraps below): is this line one of the answer's, from the person V is talking to, while it is up?
-// Their words are kept for the answer when they are the answer; the line itself is never drawn over their head.
+// The subtitles' side (the wraps below): is this line one of the answer's, from the person V is talking to, while it is
+// up?
 public func CBTalkVoiceTakes(line: scnDialogLineData) -> Bool {
   let v = CBTalkVoiceState();
   if !IsDefined(v) || !IsDefined(line.speaker) {
     return false;
   }
-  // V's line: Cyberbane's own subtitle already says it, word for word or in Cyberbane's words; the game's copy stays off.
-  // Never a line of the story's: nothing is kept off once a scene or the story has V, and the window is the line's length.
+  // V's line: Cyberbane's own subtitle already says it, word for word or in Cyberbane's words; the game's copy stays
+  // off.
   if line.speaker.IsPlayer() {
     let pgame = line.speaker.GetGame();
     return !CBTalkVoiceOwnLine(line.id) && CBSoundNow(pgame) <= v.vUntil && !CBPlayerInScene(pgame) && !CBStoryHoldNow(pgame);
@@ -187,19 +159,12 @@ public func CBTalkVoiceTakes(line: scnDialogLineData) -> Bool {
 
 // ---- V --------------------------------------------------------------------------------------------------------
 //
-// "Every dialogue Cyberbane has: if it has a similar voiced counterpart, use that; if not, the old subtitles alone." V's
-// options are V's own recorded words wherever V has recorded something in their spirit, and V says them, from one of two
-// places:
-//   - V's voiceset (vset_delamain, 171 lines in both of V's voices): the lines the game gives V outside the story's scenes
-//     ("Get lost." to somebody in the way, "Hangin' in there?" to a hurt ally, a battle cry), each under its own name, so
-//     the words are known before it plays. The game plays them itself (PlayVoiceOver), nothing else needed.
-//   - V's lines from the story: 13,675 recordings, played by the story's scenes and by nothing a script can reach. The 28
-//     that say what an option says, in its mood, ship with Cyberbane as sound files for AudioXL (red4ext/plugins/AudioXL/
-//     sounds/Cyberbane, both of V's voices), which makes each one a sound the game's own audio system plays by name. Only
-//     with AudioXL installed: without it those options are said in silence, as every option was before 2.7.8.
-// The option's words are the recording's (English.reds), so V's subtitle is what V says. An option nothing of V's says
-// keeps Cyberbane's words and is said in silence: anything with a name or a price in it, or a meaning only Cyberbane has.
-// Matched by the words the option shows against the words of the key it was made from, so a translation matches as well.
+// V says the option V picked when V has a recording of those words:
+//   - V's voiceset (vset_delamain): played with PlayVoiceOver, no extra mod needed.
+//   - V's story lines: shipped as OGGs under red4ext/plugins/AudioXL/sounds/Cyberbane and played through AudioXL when
+//     it's installed.
+// Options are matched by their words against the key they were built from, so translations match too. Anything else
+// stays silent.
 
 public class CBTalkVoiceV {
   public let entry: CName;   // a line of V's voiceset
@@ -231,7 +196,7 @@ func CBTalkVoiceIs(words: String, key: CName) -> Bool {
   return Equals(words, CBTalkWords(said));
 }
 
-// What V says for this option, null when V says nothing. Lengths from the game's own voice-over length map (voiceset) or
+// What V says for this option, null when V says nothing. Lengths from the game's voice-over length map (voiceset) or
 // the recordings themselves (the story's), the longer of the two voices.
 public func CBTalkVoiceForV(line: ref<CBTalkLine>) -> ref<CBTalkVoiceV> {
   if !IsDefined(line) {
@@ -310,9 +275,8 @@ func CBVSpeaksMale(game: GameInstance, player: ref<PlayerPuppet>) -> Bool {
   return Equals(player.GetResolvedGenderName(), n"Male");
 }
 
-// V says it, as the line goes up (Reactions/StreetTalk.reds, Say). Only V in V's own world: not Johnny, not a braindance.
-// Returns how long V's line runs, 0 when V says nothing: the answer waits for V to finish, so the two never talk over each
-// other.
+// V says it, as the line goes up (Reactions/StreetTalk.reds, Say). Only V in V's own world: not Johnny, not a
+// braindance.
 public func CBTalkVoiceSayV(sys: ref<CyberbaneSystem>, game: GameInstance, line: ref<CBTalkLine>) -> Float {
   let said = CBTalkVoiceForV(line);
   let player = GetPlayer(game);
@@ -339,9 +303,8 @@ public func CBTalkVoiceSayV(sys: ref<CyberbaneSystem>, game: GameInstance, line:
 
 // ---- AudioXL --------------------------------------------------------------------------------------------------
 //
-// Looked for once a launch through Codeware reflection, so nothing here names anything of AudioXL's and Cyberbane compiles
-// and runs the same without it. Its native class answers whether a sound by a name is loaded (Has); the game's own audio
-// system plays it (AudioSystem.Play), as AudioXL's own API does.
+// Looked for once a launch through Codeware reflection, so nothing here names anything of AudioXL's and Cyberbane
+// compiles and runs the same without it.
 
 public class CBAudioXLProbe {
   public let state: Int32;   // 0 not looked yet, 1 AudioXL answers, 2 not installed, or not an AudioXL this knows

@@ -1,21 +1,6 @@
 // Cyberbane - Gangs that hate each other (spec §11.5)
 //
-// Standing could only ever fall. Kills took it down, decay drifted it back toward where a gang
-// started, and the only thing that ever raised it was tribute, which is a gang paying to stay out
-// of V's way rather than liking V. So no gang could come to think well of V however V played,
-// and the Friendly and Allied postures existed only on paper.
-//
-// Night City's gangs are at war with each other, and the enemy of my enemy is the oldest deal on
-// the street. Each gang's profile names the crews it is at war with (Data/Factions.reds), and
-// every time V hurts one of them, the gangs that hate it hear about it and warm to V by a share of
-// what the victim lost. It goes through the same witness scaling as the loss itself: work nobody
-// saw is worth a quarter, because the bodies turn up but nobody can say who did it.
-//
-// What it gets V, once a gang is Friendly or better:
-//   - better prices from vendors on their turf (Signals/VendorSignals.reds);
-//   - a warning when one of their enemies sends people after V (CBAllyTipOff);
-//   - and they never send anyone, since only a hostile gang does.
-// A gang that crosses into Friendly or Allied says so, and it goes in the street's file.
+// Hurting a gang raises V's standing with the gangs that hate it, so Friendly and Allied can be earned in play.
 
 // The gangs this one is at war with.
 public func CBGangRivalsOf(content: ref<CyberbaneContent>, faction: CName) -> array<CName> {
@@ -52,11 +37,10 @@ public func CBGangsAreRivals(content: ref<CyberbaneContent>, a: CName, b: CName)
   return false;
 }
 
-// V just cost `victim` this much standing (negative, already scaled by who saw it). Their
-// enemies warm to V by a share of it, up to a ceiling: being somebody's enemy's enemy makes you
-// welcome, it does not make you family. A gang already above the ceiling is left where it is.
+// V just cost `victim` this much standing (negative, already scaled by who saw it). Their enemies warm to V by a share
+// of it, up to a ceiling: being somebody's enemy's enemy makes you welcome, it does not make you family.
 public func CBCreditRivalGangs(sys: ref<CyberbaneSystem>, game: GameInstance, victim: CName, loss: Float) -> Void {
-  // Not with reputation frozen (2.4.2): kills stopped short of here, words in the street did not.
+  // Not with reputation frozen: kills stopped short of here, words in the street did not.
   if !IsDefined(sys) || loss >= 0.0 || CBReputationFrozen() {
     return;
   }
@@ -110,13 +94,8 @@ func CBTopEnemyOf(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, fac
 }
 
 // V put one of theirs down and left them breathing, or let a Rival of theirs walk.
-//
-// This is the other way to be thought well of, and it is deliberately the weaker one: it is
-// capped at MercyCeiling, which is above Neutral and below Allied, so restraint alone makes a
-// gang tolerate V and nothing more. A gang already past the cap is left alone rather than
-// pulled back down to it, because a gang that likes V for other reasons does not mind mercy.
 public func CBCreditMercy(sys: ref<CyberbaneSystem>, faction: CName, amount: Float) -> Void {
-  // Not with reputation frozen (2.4.2): talk, surrenders and the street's events credit mercy here directly.
+  // Not with reputation frozen: talk, surrenders and the street's events credit mercy here directly.
   if !IsDefined(sys) || Equals(faction, n"") || amount <= 0.0 || CBReputationFrozen() {
     return;
   }
@@ -128,9 +107,8 @@ public func CBCreditMercy(sys: ref<CyberbaneSystem>, faction: CName, amount: Flo
   fs.standing = ClampF(fs.standing + amount * sys.WornPerk().mercyMult * CBCodeMercy(faction), -100.0, CBConfig.MercyCeiling());
 }
 
-// A corporation's contract done (2.7.7, Spawn/LivingStreet.reds): the one steady way to win a corporation over, whose people
-// are rarely on the street to be helped, spared or fought beside. Not held to the day's small talk (TalkWarmthPerDay), and
-// on to Allied and past it, as a job done for them should be.
+// A corporation's contract done (Spawn/LivingStreet.reds): the one steady way to win a corporation over, whose people
+// are rarely on the street to be helped, spared or fought beside.
 public func CBCreditContract(sys: ref<CyberbaneSystem>, faction: CName, amount: Float) -> Void {
   if !IsDefined(sys) || Equals(faction, n"") || amount <= 0.0 || CBReputationFrozen() {
     return;
@@ -194,9 +172,7 @@ public func CBAllyTipOff(sys: ref<CyberbaneSystem>, game: GameInstance, attacker
   return false;
 }
 
-// Vendors on a gang's turf know where V stands with that gang. Returns a signed buy-price
-// modifier for the district V is in: a discount where the turf belongs to a gang that likes V, a
-// surcharge where it belongs to one that wants V dead.
+// Vendors on a gang's turf know where V stands with that gang.
 public func CBTurfPriceModifier(sys: ref<CyberbaneSystem>) -> Float {
   if !IsDefined(sys) {
     return 0.0;
@@ -232,13 +208,7 @@ public func CBTurfPriceModifier(sys: ref<CyberbaneSystem>) -> Float {
   return best < 0.0 ? best : worst;
 }
 
-// Keeping the peace on a gang's streets (1.9.3).
-//
-// Asked for by players: a way to be thought well of that is not somebody's body. Each in-game hour
-// V spends in a district, every gang with streets there that has had no trouble from V for a day
-// warms a little, as far as mercy alone can carry (MercyCeiling), which is past Friendly and well
-// short of Allied. A gang that already wants V dead is not won over by V standing around. Read off
-// what is already saved (lastIncidentAt), so nothing new is stored.
+// Keeping the peace on a gang's streets.
 public func CBKeepThePeaceTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) || CBReputationFrozen() || sys.IsInSafeZone() {
     return;

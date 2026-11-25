@@ -1,9 +1,8 @@
-// Cyberbane - extension API level 2 (2.7.5)
+// Cyberbane - extension API level 2
 //
-// What building the nomad expansion on level 1 asked for: two groups set against each other (or kept from each other's
-// throats), a vehicle with nobody in it, loot laid in the world, places near V, Rivals to read, a History line of an
-// add-on's own, and a pin that moves. Each goes through the gates Cyberbane's own go through, the same as level 1. The
-// statics are on CyberbaneAPI; an add-on guards each call with `@if(ModuleExists("Cyberbane.Api2"))` (API/Api2Module.reds).
+// For add-ons: two groups set against each other (or kept apart), a vehicle with nobody in it, loot laid in the world,
+// places near V, Rivals to read, a History line of an add-on's own, and a pin that moves. Each goes through the same
+// gates as level 1. The statics are on CyberbaneAPI; guard each call with `@if(ModuleExists("Cyberbane.Api2"))`.
 
 // ---- Two sides set to an attitude towards each other (SetGroupsHostile and the rest) --------------------------------
 //
@@ -156,7 +155,7 @@ public func CBApiPairsTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
 }
 
 // A side is being released: every pair it is in is taken back to how the two people's attitude groups stand (the game's
-// own relation, AttitudeSystem.GetAttitudeRelation), before its people lose their tags on the way out.
+// relation, AttitudeSystem.GetAttitudeRelation), before its people lose their tags on the way out.
 public func CBApiPairsRelease(game: GameInstance, kind: Int32, handle: Int32) -> Void {
   let sys = CyberbaneSystem.Get(game);
   let pairs = CBApiPairs.Get(game);
@@ -187,7 +186,7 @@ public func CBApiPairsRelease(game: GameInstance, kind: Int32, handle: Int32) ->
   }
 }
 
-// ---- People on V's side (R6) ------------------------------------------------------------------------------------------
+// ---- People on V's side ------------------------------------------------------------------------------------------
 //
 // An add-on's group asked for on V's side, standing: they are paired against whoever is after V with V's own crew
 // (CBCrewHostilityTick). Friendly to V alone, a group watched V's enemies shoot V: in the game's attitude table the
@@ -329,8 +328,8 @@ public func CBApiRequestVehicle(game: GameInstance, record: TweakDBID, at: Vecto
   return handle;
 }
 
-// A wreck is laid down a tick after it is in the world, never inside its attach: the game's own quest event for a
-// vehicle's visual damage (VehicleQuestVisualDestructionEvent, which VehicleComponent turns into the destruction grid).
+// A wreck is laid down a tick after it is in the world, never inside its attach: the game's quest event for a vehicle's
+// visual damage (VehicleQuestVisualDestructionEvent, which VehicleComponent turns into the destruction grid).
 public func CBApiVehiclesTick(game: GameInstance) -> Void {
   let reg = CBApiVehicles.Get(game);
   let des = GameInstance.GetDynamicEntitySystem();
@@ -373,7 +372,7 @@ public func CBApiReleaseVehicle(game: GameInstance, handle: Int32) -> Void {
 
 // ---- Loot laid in the world (DropLoot) ---------------------------------------------------------------------------------
 //
-// The stronghold stash's path (CBLootBagAt): the game's own drop bag, V its owner, the tier's loot scaled to V's level.
+// The stronghold stash's path (CBLootBagAt): the game's drop bag, V its owner, the tier's loot scaled to V's level.
 // Near V only: a bag laid where the world is not streamed in may never be there.
 public func CBApiDropLoot(game: GameInstance, pos: Vector4, tier: Int32) -> Bool {
   let sys = CyberbaneSystem.Get(game);

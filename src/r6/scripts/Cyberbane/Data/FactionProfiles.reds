@@ -1,13 +1,8 @@
-// Cyberbane - what each faction is, as data (2.7.4)
+// Cyberbane - what each faction is, as data
 //
 // Every faction's code (Data/GangCodes.reds reads it), its cars (Spawn/Arrival.reds) and whether it fields people at
 // all, on its profile instead of in chains of faction names in the code that uses them. Adding a faction is one block
-// here, and an add-on's faction answers through the same path. Generated from the chains it replaced and checked against
-// them value by value, so every faction answers exactly as before; the only new answers are the painted cars for the
-// Aldecaldos, the Wraiths and the corporations, and the Wraiths keeping to the Badlands and the city's edge.
-//
-// Car records are the game's own, each checked against its TweakDB; the v_* ones are those the game's own gang spawns
-// use (sts_gang_retaliation dynamic spawn data), so they seat a crew.
+// here, and an add-on's faction answers through the same path.
 
 public func CBSeedFactionProfiles(c: ref<CyberbaneContent>) -> Void {
   let f: ref<CBFactionProfile>;

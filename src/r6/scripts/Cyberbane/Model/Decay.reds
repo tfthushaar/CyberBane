@@ -18,26 +18,15 @@ public func CBApplyDecay(sys: ref<CyberbaneSystem>, elapsedDays: Float) -> Void 
   }
   let f = elapsedDays * decayMult;
 
-  // Laying Low (spec 11.5), which was specified from the beginning and never wired: three in-game
-  // days without putting anybody down and the parts of V's reputation that fade do so twice as
-  // fast, until the next one. It applies to what 11.5 names - the body count, police history and
-  // faction renown - and to the jobs, which joined the fading set in 1.6.4 on exactly the same
-  // "while V lies low" reasoning and would read oddly as the one thing a quiet spell did not
-  // touch. Deliberately *not* applied to three things, so the next reader knows each was a choice
-  // rather than an oversight: the archetype mix and standing drifting back to its baseline, which
-  // are V's own shape and the gangs' settled opinion rather than the city's memory of what V did;
-  // and district renown, because 11.5 names faction renown and local fame fading at double rate
-  // would quietly undo the district-by-district spread the mod is built on.
+  // Laying low (spec 11.5): three in-game days without a kill and the fading parts of V's reputation (body count,
+  // police history, faction renown, jobs) fade twice as fast.
   let quiet = f;
   if CBIsLayingLow(sys, CBGameSeconds(sys.GetGameInstance())) {
     quiet = f * CBConfig.LayingLowMult();
   }
 
-  // The body count and the jobs fade while V lies low, a few points of each a day, down to what
-  // V's whole record still earns. Until 1.6.4 the body count lost half a percent of its points a
-  // day and the jobs nothing at all, so between them more than half of Dread only ever went up
-  // (see CBFadeDreadPoints for why fading the points could not have fixed it). Heat points -2%/day;
-  // archetypes x0.995/day.
+  // The body count and the jobs fade while V lies low, a few points a day, down to what V's whole record still earns.
+  // Heat points -2%/day; archetypes x0.995/day.
   let kNow = sys.GetKillDreadPoints();
   let kNext = CBFadeDreadPoints(kNow, CBConfig.KillDreadCurveScale(),
                                 CBConfig.KillDreadFadePerDay() * quiet, CBKillDreadFloor(sys));
@@ -87,16 +76,6 @@ public func CBApplyDecay(sys: ref<CyberbaneSystem>, elapsedDays: Float) -> Void 
 // ---- Laying Low (spec 11.5) ------------------------------------------------------------------
 
 // The last time V put anybody down anywhere, lethally or not, in game seconds. 0 if V never has.
-//
-// Read off state that is already saved rather than recorded again: `lastIncidentAt` is written on
-// every kill, on both the faction and the district (Model/Reputation.reds, CBApplyKill), and the
-// write sits outside the lethal branch, so a non-lethal takedown counts exactly as 11.5 says it
-// should. Both are walked because a kill with no gang behind it still stamps its district, and one
-// in no district still stamps its gang - so neither on its own sees everything V does.
-//
-// Doing it this way is the point: a new `persistent let` on anything the save holds would wipe
-// every player's Cyberbane state (see the warning at the top of STATUS.md), and laying low is not
-// worth that. Nothing new is stored at all.
 public func CBLastIncidentAt(sys: ref<CyberbaneSystem>) -> Float {
   if !IsDefined(sys) {
     return 0.0;

@@ -1,16 +1,7 @@
-// Cyberbane - Paying the street ([8], and the witness's end of [2], 2.3.1)
-//
-// Two things V can do with eddies or a hard look, in street talk, on top of what talk already sells:
+// Cyberbane - Paying the street ([8], and the witness's end of [2])
 //
 //   Hush a witness. Somebody on their way to tell a gang (Reactions/Witnesses.reds) can be paid to forget
 //   it, or leaned on. Lean wrong and they run straight there.
-//
-//   Pay somebody to keep watch. An ordinary person on the street, for a few in-game hours, in this district:
-//   while V is here, anybody coming for V (a crew, an apex squad, a Rival) is seen sooner, so the warning
-//   comes earlier (CBWarningTicks), and the watcher texts V when they spot them.
-//
-// Both go through talk's own lines and money (CBTalkTakeMoney), and the watch is kept in the street book so a
-// save keeps it.
 
 // Above 30, so talk's said-mask cannot mark them (CBBitValue gives no bit past 30). None of these needs it: the
 // hush lines show only while that person is on their way to a gang, and the watch line only while no watch is on.
@@ -152,7 +143,7 @@ public func CBWatcherTipOff(sys: ref<CyberbaneSystem>, game: GameInstance, who: 
   let book = CBStreetBook.Get(game);
   let name = StrLen(book.WatchName()) > 0 ? book.WatchName() : CBT(n"Cyberbane-Whispers-Lookout");
   let coming = StrLen(who) > 0 ? who : CBT(n"Cyberbane-StreetPay-Trouble");
-  // A moment, not a while (2.6.8): they are on V now.
+  // A moment, not a while: they are on V now.
   CBPhoneSendUrgent(game, name, CBPick4(
     CBTf(n"Cyberbane-StreetPay-JustTurnedOntoTheBlockLooking", [coming]),
     CBTf(n"Cyberbane-StreetPay-HeadsUpHeadedYourWay", [coming]),

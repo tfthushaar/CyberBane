@@ -1,11 +1,10 @@
-// Cyberbane - The Rival book (2.4.4)
+// Cyberbane - The Rival book
 //
-// What the Rivals' lives keep that a Rival's own record has no room for, kept per Rival id in a save book of its own
-// (a new class changes nothing already saved, and starts empty on a save that has never had it): a bond with another
-// Rival [58], how a Rival's story ended and when [56] [61], a trophy taken [60], a return from the dead [56], a
-// humiliation [55], the chrome the street has already heard about [U9], the place that matters to them [62], and one
-// feud V set going between two Rivals [57]. Parallel lists, cut to the shortest on the first read after a load,
-// bounds-checked on every read; cleared with the Rival (CBRivalBookForget) and on Start over.
+// What the Rivals' lives keep that a Rival's own record has no room for, kept per Rival id in a save book of its own (a
+// new class changes nothing already saved, and starts empty on a save that has never had it): a bond with another Rival
+// [58], how a Rival's story ended and when [56] [61], a trophy taken [60], a return from the dead [56], a humiliation
+// [55], the chrome the street has already heard about [U9], the place that matters to them [62], and one feud V set
+// going between two Rivals [57].
 
 public func CBBondNone() -> Int32 = 0
 public func CBBondMentor() -> Int32 = 1
@@ -54,13 +53,13 @@ public class CBRivalBook extends ScriptableSystem {
   public let fdEscorts: array<EntityID>;
   public let tauntTick: Int32;
   public let fdHinted: Bool;        // the hint about talking to them has been shown this session
-  // A lookout at a Rival's place who has seen V (Rivals/Whereabouts.reds, [U10], 2.5.0): how long V has been in view,
-  // and the one who ran to warn them, since when.
+  // A lookout at a Rival's place who has seen V (Rivals/Whereabouts.reds, [U10]): how long V has been in view, and the
+  // one who ran to warn them, since when.
   public let lairSeen: Int32;
   public let lairWarnBody: EntityID;
   public let lairWarnTick: Int32;
-  // The lead's witness (2.6.5, Spawn/StreetStories.reds): whose lead, the body, whether they ran to warn and how it ended,
-  // and whether they showed V the way in nobody watches. Session only, like the alarm.
+  // The lead's witness (Spawn/StreetStories.reds): whose lead, the body, whether they ran to warn and how it ended, and
+  // whether they showed V the way in nobody watches. Session only, like the alarm.
   public let witnessFor: Int32;
   public let witnessId: EntityID;
   public let witnessPlaced: Bool;
@@ -282,7 +281,7 @@ public class CBRivalBook extends ScriptableSystem {
   }
 
   // Everybody forgotten but `keep` (Rivals/RivalSystem.reds, CBPurgeRivals): one of V's crew who was a Rival keeps
-  // their row, and any bond they had to somebody forgotten is let go as Forget does it (2.5.0).
+  // their row, and any bond they had to somebody forgotten is let go as Forget does it.
   public func ClearExcept(keep: array<Int32>) -> Void {
     if ArraySize(keep) == 0 {
       ArrayClear(this.m_id);

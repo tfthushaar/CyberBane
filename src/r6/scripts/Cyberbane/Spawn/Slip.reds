@@ -1,25 +1,7 @@
-// Cyberbane - Slipping a gang's countdown (2.7.1)
+// Cyberbane - Slipping a gang's countdown
 //
-// "Is there a way to hide from the ambush? I know gangs sometimes send a scout first, but half of it, the ambush just spawns
-// nearby after the countdown reaches 0. Will covering V's face make V unrecognisable? I disabled They Will Remember."
-//
-// It was so. Lie low [41] (Spawn/Hunted.reds) let a changed look or a new district make a trail go cold, but only once
-// somebody was out searching. Before that, while the warning's countdown ran with nobody in the world, the hunt moved its
-// word on where V is to V every tick (CBHuntTick: "All of it starts now: from word on where V is today, when they get
-// here"), so whatever V did they arrived round V. A mask already slowed a grudge (GrudgeMaskMult) and a gang's colours
-// already dulled its hunters (DisguiseSenseMult); none of it touched a crew already on its way.
-//
-// Now the countdown can be slipped. From the moment a gang's crew or apex squad is sent, what V does counts against it:
-//   a changed look (the same measure lie low uses, TrailLookChange), a mask put on, another district, a ride (the metro, a
-//   cab: the story's restricted hold), and home ground (Spawn/HomeGround.reds), which counts twice.
-// The word on V stops following V at the first of them. When the countdown runs out:
-//   nothing changed      they come as before;
-//   one change           they come in looking where V was, not where V is, a little slower to pick V out (SlipSenseMult),
-//                        and the trail's ordinary going cold can then lose them;
-//   two or more          a roll that they lose V before setting off (SlipLoseTwo, SlipLoseMore): the appointment is
-//                        dropped, the street says so, and the gang's grudge clock starts again from now.
-// A gang at Vendetta, one with a tracker on V ([49]) and one whose streets V is on know where V is, the rule scouts already
-// follow (CBTrySendScout): none of this counts for them. Under the Lie low switch. Session only: nothing is saved.
+// A changed look or a move to another district can throw off a crew that's still on its way, not only one that's
+// already searching.
 
 public func CBSlipLook() -> Int32 = 1
 public func CBSlipMask() -> Int32 = 2

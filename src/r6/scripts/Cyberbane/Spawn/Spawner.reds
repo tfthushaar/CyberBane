@@ -1,34 +1,15 @@
 // Cyberbane - Dynamic spawning (spec §9.9, §10; spike S-08)
 //
-// A thin wrapper over DynamicEntitySystem to drop tagged, non-persistent NPCs into the
-// world near V. Spawn points are computed behind V and out of the forward view, and each
-// one is put on the floor that is actually under it (see CBGroundAt). Everything is tagged
-// n"Cyberbane" so the session-start sweep (DeleteTagged) and the kill switch can always
-// clear it, and nothing is written to the save (persistState / persistSpawn /
-// alwaysSpawned all false).
+// A thin wrapper over DynamicEntitySystem to drop tagged, non-persistent NPCs into the world near V. Spawn points are
+// computed behind V and out of the forward view, and each one is put on the floor that is actually under it (see
+// CBGroundAt).
 
 // Find the floor under a candidate spawn point.
-//
-// The spawn offset is flat (X/Y behind V), so the ground under it is frequently not at V's
-// own height: a motel walkway, a stairwell, a raised lot, the lip of an overpass. Taking V's
-// Z verbatim is what left Rivals and hit squads standing in mid-air until something knocked
-// them loose. Trace straight down from just above the guess and take the first solid floor.
-//
-// Crash safety: this is only reached from CBSpawnGroup, which already stands behind
-// CBWorldStable, and it dereferences no entity handles - the query system is checked before
-// use, and TraceResult is a value the engine fills in. A miss returns false and the caller
-// moves the point rather than placing an NPC blind.
 func CBGroundAt(game: GameInstance, x: Float, y: Float, zHint: Float, out ground: Float) -> Bool {
   return CBGroundRay(game, x, y, zHint + CBConfig.GroundProbeUp(), zHint - CBConfig.GroundProbeDown(), ground);
 }
 
 // The floor under a point that is already known to be standing room - a navmesh point.
-//
-// CBGroundAt starts its ray three metres above the guess, which is right for a flat offset
-// behind V whose height is only V's own, and wrong for a navmesh point, whose height is the
-// answer already. From three metres up the first thing the ray meets can be an awning, a
-// ledge, a stair flight or a hoarding above the point, and the old settle step then moved the
-// spawn up onto that. This starts just above the point, so it only ever finds what is under it.
 func CBFloorUnder(game: GameInstance, p: Vector4, out ground: Float) -> Bool {
   return CBGroundRay(game, p.X, p.Y, p.Z + CBConfig.NavFloorProbeUp(), p.Z - CBConfig.GroundProbeDown(), ground);
 }
@@ -58,15 +39,6 @@ func CBGroundRay(game: GameInstance, x: Float, y: Float, fromZ: Float, toZ: Floa
 }
 
 // Can a person actually walk from here to V?
-//
-// The question the navmesh alone does not answer. `FindPursuitPointsRange` hands back points
-// an agent fits on, and fitting is not the same as being connected to where the player is
-// standing: the navmesh runs through the inside of locked buildings and across geometry the
-// player has no route to. Points there pass every test this file had, so Rivals turned up
-// inside terrain and behind locked doors, which is exactly what was reported.
-//
-// `CBNavAnchor` has asked this question since it was written, with the same call. The
-// pursuit-point path added later never did, which is how the gap opened.
 func CBPointReachable(game: GameInstance, from: Vector4, to: Vector4) -> Bool {
   let nav = GameInstance.GetNavigationSystem(game);
   if !IsDefined(nav) {
@@ -76,32 +48,19 @@ func CBPointReachable(game: GameInstance, from: Vector4, to: Vector4) -> Bool {
   if !IsDefined(path) {
     return false;
   }
-  // A route has to be a real one, as well as existing. The navmesh joins almost everything to
-  // everything eventually: a car park under the street is connected to the street by a ramp three
-  // blocks away, so somebody ten metres beneath V "could walk to V" and would spend the whole
-  // fight trying. Every placement, every search point and the cut-off test below all ask here, so
-  // this is the one place that decides it.
+  // A route has to be a real one, as well as existing.
   let walk = path.CalculateLength();
   return walk > 0.0
       && walk <= Vector4.Distance(from, to) * CBConfig.PathDetourMax() + CBConfig.PathDetourSlack();
 }
 
-// Does somebody put here stand with the spot they belong to (2.6.5)? On its level, within `rise` metres, and joined to it by a
-// real walk (CBPointReachable). Snapping to the nearest navmesh and asking only that V cannot see the point picks exactly the
-// places nobody should be: "all but one of them spawned out of bounds under a raised section of road" at a sit-down, inside a
-// pocket under the deck that has navmesh and that nobody can see into. Every placement round a spot asks this.
+// Does somebody put here stand with the spot they belong to? On its level, within `rise` metres, and joined to it by a
+// real walk (CBPointReachable).
 public func CBStandsWith(game: GameInstance, at: Vector4, anchor: Vector4, rise: Float) -> Bool {
   return AbsF(at.Z - anchor.Z) <= rise && CBPointReachable(game, at, anchor);
 }
 
 // Is there a ceiling over this point?
-//
-// The game has no way to ask whether a point is indoors: IsEntityInInteriorArea needs an entity,
-// and the navmesh runs straight through locked doors, so a path says nothing about it. A roof is the
-// honest test that is left, and it is what indoors and underground have in common. Several rays a
-// few metres apart, because a lamp arm, a sign or an awning covers one of them and a ceiling covers
-// them all. Static and terrain, so a tunnel counts. No spatial queries is no opinion, as everywhere
-// in this file.
 public func CBPointCovered(game: GameInstance, at: Vector4) -> Bool {
   let sqs = GameInstance.GetSpatialQueriesSystem(game);
   if !IsDefined(sqs) {
@@ -142,11 +101,6 @@ func CBArrivalOpenAir(game: GameInstance, ppos: Vector4) -> Bool {
 }
 
 // May somebody be put here? Every body of every group, on every placement route, comes through this.
-//
-// Only the first body used to be asked. The rest had only to be within eighteen metres of it, in a
-// straight line and in any direction, so a group formed up on the street could have members on the
-// far side of a wall, or on the level below, with nothing to connect them to anybody. Each is now
-// tied to the one before: to V for the first, to the first for the rest, which is a short path.
 func CBPointArrivable(game: GameInstance, at: Vector4, used: array<Vector4>, ppos: Vector4,
                       openAir: Bool) -> Bool {
   if openAir && CBPointCovered(game, at) {
@@ -159,32 +113,6 @@ func CBPointArrivable(game: GameInstance, at: Vector4, used: array<Vector4>, ppo
 }
 
 // Has somebody already been put here?
-//
-// Belt and braces against the same failure the car seats produced: several entities created at
-// one point do not share it, they interpenetrate and the engine stacks them vertically. Three
-// sources here can hand back the same place and none of them is wrong to - the fallback list
-// from FindPursuitPointsRange when the strict pass finds nothing, a nav snap in an interior
-// where every requested offset resolves to the same island, and the bearing sweep when only
-// one bearing has floor under it. Checking at the point of use covers all three at once.
-// Is this point somewhere the player would watch somebody appear?
-//
-// "They just pop out of nowhere, like the old police spawns" is the most repeated complaint
-// about this mod, and `spawnInView = false` on the entity spec is not the answer to it: that
-// flag is advisory and the engine honours it by delaying, not by refusing, so a point directly
-// in front of V still ends up occupied a moment later.
-//
-// Two tests, cheap first. The bearing: anything inside the forward cone is in view unless it
-// is far enough away to be a dot on the street. Then line of sight: a point behind a wall is
-// fine however close it is, which is what makes tight streets workable at all - most of what
-// is within thirty metres of V in Night City is behind something.
-//
-// The facing threshold is CBNavAnchor's, deliberately. That function has had this test since
-// 1.1.5, with the note explaining why it is a cosine rather than an angle; what it never had
-// was company. CBPursuitPoints became the primary placement path and never tested facing at
-// all, and FindPursuitPointsRange hands back points all round the player, so the common case
-// was a body created wherever the navmesh happened to offer one - including directly in front.
-// That is the "they pop out of nowhere like the old police spawns" report, and the fix is to
-// ask the same question everywhere a point is accepted rather than only at the anchor.
 func CBPointOutOfSight(game: GameInstance, ppos: Vector4, fwd: Vector4, at: Vector4) -> Bool {
   let toPoint = new Vector4(at.X - ppos.X, at.Y - ppos.Y, 0.0, 0.0);
   let dist = Vector4.Length(toPoint);
@@ -193,10 +121,7 @@ func CBPointOutOfSight(game: GameInstance, ppos: Vector4, fwd: Vector4, at: Vect
   }
   let flatLen = SqrtF(fwd.X * fwd.X + fwd.Y * fwd.Y);
   if flatLen <= 0.01 {
-    // No usable facing, so this test has no opinion. Allowing rather than refusing, because
-    // the two failures do not cost the same: a visible arrival is a thing the player can see
-    // and report, while a gate that refuses on an unknown answer is how this mod went silent
-    // for three releases running.
+    // No usable facing, so this test has no opinion.
     return true;
   }
   let facing = (fwd.X * toPoint.X + fwd.Y * toPoint.Y) / (flatLen * dist);
@@ -217,23 +142,7 @@ func CBPointOutOfSight(game: GameInstance, ppos: Vector4, fwd: Vector4, at: Vect
   return sqs.SyncRaycastByCollisionGroup(eye, head, n"Static", res);
 }
 
-// Could V see a body standing here, whichever way V turns in the next few seconds? (1.7.1)
-//
-// CBPointOutOfSight is the question for somebody who is about to walk at V, and both of its
-// allowances only make sense for them: a point behind V passes with nothing in the way, and so
-// does one far off in front, because either way what the player sees is a person walking into
-// frame. Somebody who will stand still is different. They are placed at the very spot V is
-// heading for, and the body appears a few seconds after the point is chosen, so "behind V" is
-// exactly where a player who is looking for them turns next, and "far in front" is the spot they
-// are walking towards. That is "he wasn't there, then he spawned in front of me".
-//
-// So this asks about walls, not about facing. A body is hidden only when V's line of sight to
-// it is blocked at the shins, the waist and the top of the head: one ray let a lamp post or a
-// railing count as cover. Turning on the spot changes nothing a wall decides. The one
-// allowance kept is the distant one, out of frame and far enough to be a dot on the street.
-//
-// No spatial queries at all is no opinion, as everywhere in this file, and falls back to the
-// bearing test rather than refusing every placement for good.
+// Could V see a body standing here, whichever way V turns in the next few seconds?
 public func CBPointHiddenFrom(game: GameInstance, ppos: Vector4, fwd: Vector4, at: Vector4) -> Bool {
   let sqs = GameInstance.GetSpatialQueriesSystem(game);
   if !IsDefined(sqs) {
@@ -266,14 +175,7 @@ public func CBPointHiddenFrom(game: GameInstance, ppos: Vector4, fwd: Vector4, a
   return facing <= CBConfig.SpawnMaxFacingCosine();
 }
 
-// Free of anybody this group has put down, and of anybody any other group put down in the last few seconds (2.7.6).
-//
-// "Sometimes they spawn and look like one person but in fact they are 2-3 in the same space, and seem frozen." Only this
-// group's own points were known here, and the people who arrive together are placed by separate calls: a Rival, then their
-// escorts at four metres further out, then a partner; a crew, then its netrunner. Each asked the navmesh the same question
-// from the same spot and was handed the same first answer, so they were created inside each other, where the engine stacks
-// them and none of them can walk: frozen until somebody's alarm pulled them into a fight. Every body made is remembered for
-// a few seconds (CBCreateSpawn), which is as long as it takes them to walk off it.
+// Free of anybody this group has put down, and of anybody any other group put down in the last few seconds.
 func CBPointIsFree(used: array<Vector4>, p: Vector4) -> Bool {
   let i = 0;
   while i < ArraySize(used) {
@@ -292,18 +194,7 @@ public func CBSimNow(game: GameInstance) -> Float {
   return IsDefined(ts) ? EngineTime.ToFloat(ts.GetSimTime()) : 0.0;
 }
 
-// May somebody arriving be put here, as far as V's eyes go (2.7.6)?
-//
-// "Rivals sometimes just appear behind V, during fights and even stealth." "I retreat down an alley, turn to look back,
-// and the alley that was empty now has an enemy spawned out of nowhere directly behind me." "Entered an elevator in H10
-// and two Tygers spawn out of thin air behind me." Everybody sent against V was asked one question: is the spot behind V
-// (CBPointOutOfSight), however close and with nothing in between. Behind V is where V turns next. And when the navmesh
-// had nothing in range (a tight interior, an elevator) its fallback points came with no distance at all.
-//
-// So: V's own side (a crew member, people lent to V) keep the old test; they run up to V. Everybody else is never closer
-// than SpawnMinDistance, and is hidden from V by something solid at the shins, the waist and the head, or far off and out
-// of frame (CBPointHiddenFrom), the test the people who wait for V have always had. Every body of a group asks it: the
-// rest of a crew form up within eighteen metres of the first, which can be round the corner and out in the open.
+// May somebody arriving be put here, as far as V's eyes go?
 func CBArrivalUnseen(game: GameInstance, ppos: Vector4, fwd: Vector4, at: Vector4, side: Bool, inSightOk: Bool) -> Bool {
   if inSightOk {
     return true;
@@ -318,22 +209,6 @@ func CBArrivalUnseen(game: GameInstance, ppos: Vector4, fwd: Vector4, at: Vector
 }
 
 // Stand a candidate navmesh point on the floor under it, or refuse it.
-//
-// A navmesh point is meant to be standing room, and nearly always is. Nearly is not good
-// enough. FindPursuitPointsRange also returns a fallback list for when the strict pass finds
-// nothing, and in the vertical parts of the city - the walkways and decks around City Center,
-// overpasses, the lip of a ramp - a point can sit well above whatever is actually underneath
-// it. So every point is checked for a floor beneath it, and one over a drop is refused.
-//
-// What this no longer does is move the point. It used to re-seat every spawn at the raycast
-// floor plus 0.35 m, and that was the floating Rival. A spawned NPC is not dropped by physics
-// on arrival: it stands at the height it was created at until its movement puts it on the
-// navmesh or a hit reaction ragdolls it. One that never needs to walk anywhere - a Rival that
-// spawns close and opens fire where it stands - hovers there until enough damage knocks it
-// over, which is exactly the report. The game's own pursuers (PreventionSystem, which takes
-// its points from the same FindPursuitPointsRange) are created on the navmesh point as given,
-// and that is what is done here: the navmesh height, or the floor if the floor is a hair
-// higher, so nobody starts inside the surface either.
 func CBSettleOnGround(game: GameInstance, p: Vector4, out at: Vector4) -> Bool {
   let ground = 0.0;
   if !CBFloorUnder(game, p, ground) {
@@ -348,15 +223,6 @@ func CBSettleOnGround(game: GameInstance, p: Vector4, out at: Vector4) -> Bool {
 }
 
 // Put a point found by raycast alone onto the navmesh under it, or refuse it.
-//
-// The bearing sweep and the last-resort fallback find a floor by raycast and nothing else, and
-// used to create the NPC at that floor plus a lift. A body made off the navmesh hovers at that
-// lift for the reason given above, and cannot path toward V either, so it stands there in the
-// air. The point is now snapped to the navmesh directly under it; one with no navmesh close
-// underneath is refused like any other bad point, and the lane tries again shortly.
-//
-// Only when the navigation system cannot be asked at all is the old placement kept, so a world
-// state this cannot read still gets its arrival rather than going silent.
 func CBStandOnNavmesh(game: GameInstance, x: Float, y: Float, groundZ: Float, out at: Vector4) -> Bool {
   let nav = GameInstance.GetNavigationSystem(game);
   if !IsDefined(nav) {
@@ -379,17 +245,6 @@ func CBStandOnNavmesh(game: GameInstance, x: Float, y: Float, groundZ: Float, ou
 }
 
 // Find a place behind V that somebody could actually have walked from.
-//
-// The raycast above answers "is there a floor here". That is not the same question as "can a
-// person stand here and then reach V", and the gap between the two is where the bad arrivals
-// came from: a spawn on the far side of a wall, on a balcony across the street, inside a
-// sealed lot. The navmesh answers the real question, because it is the same data the NPC's own
-// pathfinder uses - if a point is on it, somebody can stand there and walk off it.
-//
-// Three tests, in order: find a point on the navmesh the requested distance away from V,
-// confirm a walkable path from it back to V, and prefer it behind V so the arrival is not
-// conjured in full view. Returns false if the area has no navmesh at all, which happens
-// indoors and in some interiors, and the caller falls back to the raycast.
 func CBNavAnchor(game: GameInstance, dist: Float, out anchor: Vector4) -> Bool {
   let nav = GameInstance.GetNavigationSystem(game);
   let player = GetPlayer(game);
@@ -409,18 +264,7 @@ func CBNavAnchor(game: GameInstance, dist: Float, out anchor: Vector4) -> Bool {
       let found: Vector4;
       if nav.FindNavmeshPointAwayFromReferencePoint(seed, ppos, dist, NavGenAgentSize.Human,
                                                     found, 10.0, 60.0) {
-        // The navmesh call honours the distance but not the direction, so the point can come
-        // back in front of V. That matters because the spawn itself is queued with
-        // spawnInView = false: a point in view is not refused loudly, it is quietly never
-        // placed, and the caller is told an entity was created. So the view test has to
-        // happen here, before anything is queued.
-        //
-        // Compared as a dot product rather than through GetAngleBetween, because that returns
-        // either degrees or radians and I have not verified which. A threshold of 70 against
-        // the wrong unit is never satisfied, which would silently disable this whole test and
-        // drop every spawn back to the raycast fallback - the failure would look like nothing
-        // at all. The cosine has no units to get wrong: cos(70 degrees) is about 0.342, and a
-        // point off to the side or behind V gives a value at or below it.
+        // The navmesh call honours the distance but not the direction, so the point can come back in front of V.
         let toPoint = new Vector4(found.X - ppos.X, found.Y - ppos.Y, 0.0, 0.0);
         let away = Vector4.Length(toPoint);
         let facing = 1.0;
@@ -446,11 +290,6 @@ func CBNavAnchor(game: GameInstance, dist: Float, out anchor: Vector4) -> Bool {
 }
 
 // Put one body on the navmesh near a candidate point.
-//
-// Used for the individual ranks once the group's anchor is settled, so a squad stays together
-// instead of each member going looking for its own corner of the district. A snap that lands
-// far from where it was asked for is refused: that means the nearest navmesh is somewhere else
-// entirely, and taking it would scatter the squad.
 func CBNavSnap(game: GameInstance, x: Float, y: Float, zHint: Float, out pos: Vector4) -> Bool {
   let nav = GameInstance.GetNavigationSystem(game);
   if !IsDefined(nav) {
@@ -474,9 +313,7 @@ func CBNavSnap(game: GameInstance, x: Float, y: Float, zHint: Float, out pos: Ve
   return true;
 }
 
-// How far out to try, as a fraction of the requested distance. A spot with no floor under it
-// (a drop behind V, the far side of a wall) walks the point back toward V, where the ground is
-// the ground V is standing on, instead of silently cancelling the encounter.
+// How far out to try, as a fraction of the requested distance.
 func CBSpawnDistanceScale(attempt: Int32) -> Float {
   if attempt <= 0 {
     return 1.0;
@@ -520,32 +357,14 @@ func CBCreateSpawn(des: ref<DynamicEntitySystem>, record: TweakDBID, appearance:
   return EntityID.IsDefined(created);
 }
 
-// Spawn `count` copies of `record` in a short row behind V. Returns how many were queued.
-// `lastSpawned` comes back as the entity of the last one placed, so a caller that cares about
-// a single arrival (a Rival) can hold onto it and attribute the kill later without relying on
-// the tag still being there.
-// Ask the game where a pursuer could stand.
-//
-// This is what the police use. `PreventionSystem.SpawnFallbackUnits` gets its positions from
-// `FindPursuitPointsRangeAsync`, and the synchronous form of the same thing lives on the
-// NavigationSystem, so there is no callback to plumb. It walks the navmesh around the player
-// and hands back points an agent of a given size can actually stand on, plus a fallback list
-// for when the strict pass finds nothing.
-//
-// Everything this mod did before was an approximation of this: probe the ground behind V, snap
-// to navmesh, retry at a few distances, sweep some bearings. All of it was reinventing, badly,
-// a function the game already exports - which is why an encounter could be refused for minutes
-// while the NCPD put a squad on the same street without difficulty.
-// Is the walkable ground at a place loaded yet? The game's NavigationSystem answers it; a place still streaming in has
-// no navmesh to stand on, and every spot asked of it fails until it arrives (2.7.3).
+// Spawn `count` copies of `record` in a short row behind V.
 public func CBNavmeshReady(game: GameInstance, at: Vector4) -> Bool {
   let nav = GameInstance.GetNavigationSystem(game);
   return IsDefined(nav) && nav.IsNavmeshStreamedInLocation(at, CBConfig.NavReadyTolerance());
 }
 
-// Standing points round a place rather than round V, out of V's sight by the navmesh's own visibility (2.7.3): the
-// same question the game asks for a pursuit, with the place as its origin. For people who gather somewhere (a street
-// event, a stronghold) when the rings round the place find nothing hidden.
+// Standing points round a place rather than round V, out of V's sight by the navmesh's own visibility: the same
+// question the game asks for a pursuit, with the place as its origin.
 public func CBPursuitPointsAround(game: GameInstance, ppos: Vector4, around: Vector4, count: Int32, minR: Float, maxR: Float,
                                   out pts: array<Vector4>) -> Bool {
   let nav = GameInstance.GetNavigationSystem(game);
@@ -574,9 +393,8 @@ public func CBPursuitPoints(game: GameInstance, ppos: Vector4, fwd: Vector4, cou
   nav.FindPursuitPointsRange(ppos, ppos, dir, minR, maxR, count, true,
                              NavGenAgentSize.Human, results, fallback);
   pts = results;
-  // The strict pass can come back empty in tight streets and interiors. The fallback list is
-  // the game's own second answer rather than ours, so it is still a place the navmesh says a
-  // person fits.
+  // The strict pass can come back empty in tight streets and interiors. The fallback list is the game's second answer
+  // rather than ours, so it is still a place the navmesh says a person fits.
   if ArraySize(pts) == 0 {
     pts = fallback;
   }
@@ -584,10 +402,6 @@ public func CBPursuitPoints(game: GameInstance, ppos: Vector4, fwd: Vector4, cou
 }
 
 // Which way to look on this attempt, in radians from directly behind V.
-//
-// Behind, then a quarter turn each way, then wider, then in front as a last resort. Ordered so
-// the common case still puts them at V's back and the player is not spawned in front of unless
-// there is nowhere else at all.
 func CBSpawnBearing(attempt: Int32) -> Float {
   if attempt <= 0 { return 0.0; }
   if attempt == 1 { return 0.52; }
@@ -600,13 +414,7 @@ func CBSpawnBearing(attempt: Int32) -> Float {
   return -2.36;
 }
 
-// One person on V's side, brought to V (2.6.4): V's crew answering a call, one called out to spar, a gang's people lent to
-// V. They were placed only within 14 to 38 metres of V, and where that ring had nowhere out of V's sight that could also be
-// walked to V, nobody came: "if the apex squad could come to me, why can't my crew?" Everybody sent against V starts 80
-// metres out or more (HitSquadMinSpawnDistance, RivalSpawnDistance, ApexSpawnDistance), where there always is such a place,
-// and walks or drives in. Now the same rings in order: close and out of sight, the middle ring out of sight, close where V
-// may see them walk up, and the hunters' distance. Followers run to V, and the crew is not counted lost inside
-// MyCrewLeaveDistance (120 m). Returns how many were placed (0 or 1) and which ring did it, for the log.
+// One person on V's side, brought to V: V's crew answering a call, one called out to spar, a gang's people lent to V.
 public func CBSpawnOnSide(game: GameInstance, record: TweakDBID, appearance: CName, squadTag: CName, nearDist: Float,
                           out body: EntityID, out ring: Int32, opt extraTag: CName) -> Int32 {
   ring = 0;
@@ -646,17 +454,12 @@ public func CBSpawnRingWords(ring: Int32) -> String {
   }
 }
 
-// `inSightOk` (2.6.3): V's own crew only, on a second try when nowhere out of V's sight would take them. The engine still
-// waits for V to look away before they appear (spawnInView), so it is the walk up that V may see, never the appearing.
+// `inSightOk`: V's own crew only, on a second try when nowhere out of V's sight would take them. The engine still waits
+// for V to look away before they appear (spawnInView), so it is the walk up that V may see, never the appearing.
 public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CName, wanted: Int32, squadTag: CName, baseDist: Float, out lastSpawned: EntityID, opt extraTag: CName, opt inSightOk: Bool) -> Int32 {
   // Further out on harder difficulties, so there is more time between a warning and a fight.
   let dist = baseDist + CBConfig.DifficultySpawnExtra() * Cast<Float>(CBDifficultyLevel());
-  // Never more of ours alive at once than the ceiling. A vendetta crew of twenty on top of an
-  // apex squad, escorts and a Rival is a lot of fully simulated NPCs for the game to stream in
-  // at one spot, and nothing about the fight needs every one of them at the same moment.
-  // Counting anybody still spawning as well, so groups asked for in the same tick share it.
-  // Everybody but V's own crew leaves the crew's places free while they could be called (2.6.3, CBCrewRoomKept): the
-  // crew used to need room the fight had already taken, so it could never come to the fights it was for.
+  // Never more of ours alive at once than the ceiling.
   let room = CBSpawnRoom(game) - (Equals(squadTag, n"CB_Own") ? 0 : CBCrewRoomKept(game));
   let count = wanted < room ? wanted : room;
   if room <= 0 {
@@ -687,7 +490,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   let ppos = player.GetWorldPosition();
   let fwd = player.GetWorldForward();
   let openAir = CBArrivalOpenAir(game, ppos);
-  // On V's side (2.6.5, CBSafeAreaBlocksSpawn): V's crew and people lent to V go where their own gate lets them.
+  // On V's side (CBSafeAreaBlocksSpawn): V's crew and people lent to V go where their own gate lets them.
   let side = Equals(squadTag, n"CB_Own") || Equals(squadTag, n"CB_Ally");
 
   // Where the group forms up. The navmesh anchor is the good answer; the flat offset behind V
@@ -706,19 +509,19 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
 
   let spawned = 0;
   let used: array<Vector4>;   // where bodies have already gone, so nobody lands on top of one
-  // Assume the worst and clear it on success, so a silent refusal cannot look like a success. Each spot refused from here
-  // is counted under its own reason (2.7.7), and the one that refused the most is what the log and the Hub name.
+  // Assume the worst and clear it on success, so a silent refusal cannot look like a success. Each spot refused from
+  // here is counted under its own reason, and the one that refused the most is what the log and the Hub name.
   let rtTally = CyberbaneRuntime.Get();
   if IsDefined(rtTally) {
     rtTally.ResetSpawnBlockTally();
   }
   CBAssumeSpawnBlock(CBBlockNoGround());
 
-  // The game's own answer first. If the navmesh offers places to stand, use them and skip the
-  // hand-rolled probing entirely; it is only there for when this comes back with nothing.
+  // The game's answer first. If the navmesh offers places to stand, use them and skip the hand-rolled probing entirely;
+  // it is only there for when this comes back with nothing.
   let navPts: array<Vector4>;
-  // V driving (2.7.3): people on foot are looked for ahead of the car, further ahead the faster it goes, the way the
-  // game's own police pick where to look for theirs. Behind a moving car they were left standing in the road.
+  // V driving: people on foot are looked for ahead of the car, further ahead the faster it goes, the way the game's
+  // police pick where to look for theirs. Behind a moving car they were left standing in the road.
   let car = player.GetMountedVehicle() as VehicleObject;
   let speed = IsDefined(car) ? AbsF(car.GetCurrentSpeed()) : 0.0;
   let foundPts = false;
@@ -737,9 +540,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let p = navPts[n];
       n += 1;
       let at: Vector4;
-      // The rest of a group form up near the first, because a squad that arrives together reads
-      // as a squad, and every one of them has to be joined to the group (CBPointArrivable).
-      // Each test that turns a spot down says which it was (2.7.7); the safe-area gate notes its own.
+      // The rest of a group form up near the first, because a squad that arrives together reads as a squad, and every
+      // one of them has to be joined to the group (CBPointArrivable).
       let ok = CBSettleOnGround(game, p, at) && CBPointIsFree(used, at);
       if !ok {
         CBNoteSpawnBlock(CBBlockNoGround());
@@ -747,8 +549,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       if ok {
         ok = !CBSafeAreaBlocksSpawn(game, at, side);
       }
-      // Nobody appears where the player is looking (CBArrivalUnseen). V's own side asks it of the first body only, and the
-      // rest form up within SpawnGroupRadius; everybody else asks it of every body (2.7.6).
+      // Nobody appears where the player is looking (CBArrivalUnseen). V's own side asks it of the first body only, and
+      // the rest form up within SpawnGroupRadius; everybody else asks it of every body.
       if ok && (ArraySize(used) == 0 || !side) {
         ok = CBArrivalUnseen(game, ppos, fwd, at, side, inSightOk);
         if !ok {
@@ -817,11 +619,6 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       }
     }
     // Sweep around V rather than staring at one spot.
-    //
-    // Behind the player first, because that is where an arrival should come from, then wider
-    // and wider to either side and finally in front. Only the direction changes; the ground,
-    // safe area and drop checks are exactly as strict as before, so this finds more places to
-    // stand without lowering the bar for what counts as one.
     let attempt = 0;
     while attempt < CBConfig.SpawnBearingTries() && !placed {
       let ang = CBSpawnBearing(attempt);
@@ -836,19 +633,16 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let px = ppos.X + bx * d + lx * lane * 2.5;
       let py = ppos.Y + by * d + ly * lane * 2.5;
       let gz: Float;
-      // An apartment, a bar, a clinic. The game forces V's hands empty in there, so an
-      // arrival is a fight the player cannot have (spec §16). Off unless they ask for it.
-      // Nested rather than skipped with a continue, which redscript does not have.
+      // An apartment, a bar, a clinic. The game forces V's hands empty in there, so an arrival is a fight the player
+      // cannot have (spec §16). Off unless they ask for it.
       if !CBSafeAreaBlocksSpawn(game, new Vector4(px, py, ppos.Z, 1.0), side) {
         // A floor far above or below V is another level entirely - a roof, the bottom of a
         // shaft - so it is refused and the point moves in rather than dropping someone there.
         let stand: Vector4;
         if CBGroundAt(game, px, py, ppos.Z, gz) && AbsF(gz - ppos.Z) <= CBConfig.GroundMaxDrop()
            && CBStandOnNavmesh(game, px, py, gz, stand) {
-          // Only a usable point ends this lane: placed, or the engine itself turned it down (2.7.3). A point taken,
-          // in V's sight or with no way to V is the wrong point, not a refusal, so the next bearing is tried. Before,
-          // the first such point ended the lane under "the game refused the spawn", which in Dogtown's tight streets
-          // was most of them.
+          // Only a usable point ends this lane: placed, or the engine itself turned it down. A point taken, in V's
+          // sight or with no way to V is the wrong point, not a refusal, so the next bearing is tried.
           if (ArraySize(used) == 0 || !side) && !CBArrivalUnseen(game, ppos, fwd, stand, side, inSightOk) {
             CBNoteSpawnBlock(CBBlockInView());
           } else {
@@ -869,15 +663,6 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       attempt += 1;
     }
     // Last resort: close in, and still on a floor.
-    //
-    // This used to take V's own height and place somebody there with no check at all. On flat
-    // ground that is fine; standing on a walkway, a bridge, a ramp or anywhere with a drop
-    // behind you, it puts an enemy in the air over the gap - which is the mid-air spawn that
-    // kept being reported after the other causes were fixed.
-    //
-    // It refuses now instead of guessing. The reason it was allowed to guess was that a
-    // refusal used to mean the encounter was silently lost; it no longer does - the lane keeps
-    // its turn and tries again shortly - so there is nothing left to buy by placing blind.
     if !placed {
       let fx = ppos.X - fwd.X * (dist * 0.4 + rankBack) + rx * lane * 2.5;
       let fy = ppos.Y - fwd.Y * (dist * 0.4 + rankBack) + ry * lane * 2.5;
@@ -885,20 +670,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let fallback: Vector4;
       if CBGroundAt(game, fx, fy, ppos.Z, fz) && AbsF(fz - ppos.Z) <= CBConfig.GroundMaxDrop()
          && CBStandOnNavmesh(game, fx, fy, fz, fallback) {
-        // The fallback is close in, so it is the likeliest of the lot to land indoors and the
-        // likeliest to land in frame. It refuses rather than guessing on both counts now; the
-        // lane keeps its turn and tries again shortly, so there is nothing to buy by placing
-        // somebody where the player watches them appear.
-        //
-        // It also has to be a free spot and, for the first body, one V can walk to. Neither was
-        // checked here, so two bodies could be dropped on one point (the engine then stacks them
-        // vertically) or the first could land somewhere sealed off from V.
-        //
-        // The one test not asked here is the roof. This is the last place anybody can be put, close
-        // to V and joined to V, and a street under a walkway should not be able to stop an arrival
-        // outright: a gate that refuses everywhere is how this mod has gone silent before.
-        // Each test names itself when it refuses (2.7.7). The else here used to write "out of your sight" whatever had
-        // stopped it, which is what hid a conversation's lock behind 237 wrong log lines.
+        // The fallback is close in, so it is the likeliest of the lot to land indoors and the likeliest to land in
+        // frame.
         if CBSafeAreaBlocksSpawn(game, fallback, side) {
           // noted by the gate itself
         } else {
@@ -930,7 +703,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   if spawned > 0 {
     CBAssumeSpawnBlock(CBBlockNone());
   } else {
-    // The reason that turned down the most spots, with the whole count beside it (2.7.7).
+    // The reason that turned down the most spots, with the whole count beside it.
     let tallyLine = "";
     if IsDefined(rtTally) {
       rtTally.AssumeSpawnBlock(rtTally.MostSpawnBlock());
@@ -951,16 +724,6 @@ public func CBLastSpawnBlock() -> Int32 {
 }
 
 // Tell a freshly arrived hostile to come and find V.
-//
-// Without this they are hostile but idle: the game only hands a spawned NPC a reason to move
-// if something gives it one, so Cyberbane's arrivals would stand where they were put until V
-// happened to walk into their line of sight. That is the single biggest reason the mod could
-// feel like nothing was happening - the encounter had spawned, forty metres back, behind a
-// wall, waiting. A sprint order at V turns an arrival into an encounter.
-//
-// `ignoreInCombat` and `finishWhenDestinationReached` are what keep this from fighting the
-// game's own combat AI: the command runs until they reach V and then releases, and normal
-// combat behaviour takes over from there.
 public func CBOrderHunt(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   let player = GetPlayer(game);
   if !IsDefined(player) || !IsDefined(puppet) || puppet.cbMoraleBroken {
@@ -973,11 +736,7 @@ public func CBOrderHunt(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void
   let cmd = new AIMoveToCommand();
   let dest: AIPositionSpec;
   let wp: WorldPosition;
-  // Where V was last seen, not where V is (2.6.8). "No matter how far I ran from a Rival she kept following me": this
-  // followed V's own entity, so a hunter sprinted after wherever V really was, round every corner and out of every line of
-  // sight, kept V in view the whole way, and the hunt never lost V. While somebody sees V the last seen place is where V
-  // is (CBHuntTick sets it every tick), and the order is renewed as V moves; once nobody does, they go to where V was, and
-  // search from there. With no hunt on record, where V is now, which whoever called this has just seen.
+  // Where V was last seen, not where V is.
   let sysHunt = CyberbaneSystem.Get(game);
   let target = player.GetWorldPosition();
   if IsDefined(sysHunt) && sysHunt.GetHuntState() != CBHuntNone() {
@@ -1001,13 +760,8 @@ public func CBOrderHunt(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void
 
 // ---- Orders, one at a time ------------------------------------------------------
 //
-// The game sends a script order to an NPC once, through the AI component
-// (AIComponent.SendCommand, core/components/aiComponent.script). Cyberbane sent every move order
-// twice, once as an AICommandEvent and once through SendCommand, and the hunt re-issues orders
-// every few seconds without ever cancelling the last one, so an NPC that could not reach its
-// target collected a growing queue of the same command object entered twice. Each NPC now has
-// at most one Cyberbane move order outstanding: the previous one is cancelled before the next
-// is sent, and it is sent once.
+// The game sends a script order to an NPC once, through the AI component (AIComponent.SendCommand,
+// core/components/aiComponent.script).
 @addField(ScriptedPuppet)
 public let cbMoveCmd: ref<AIMoveToCommand>;
 
@@ -1021,7 +775,7 @@ public func CBIssueMove(puppet: ref<ScriptedPuppet>, ai: ref<AIHumanComponent>, 
   if IsDefined(puppet.cbMoveCmd) {
     ai.CancelCommand(puppet.cbMoveCmd);
   }
-  // A conversation's hold-position order goes first (Reactions/StreetTalk.reds, 1.9.8): one order at a time.
+  // A conversation's hold-position order goes first (Reactions/StreetTalk.reds): one order at a time.
   if IsDefined(puppet.cbTalkHold) {
     CBEndHold(puppet, puppet.cbTalkHold);
     puppet.cbTalkHold = null;
@@ -1044,26 +798,17 @@ public func CBCancelMove(puppet: ref<ScriptedPuppet>) -> Void {
 }
 
 // Tell one NPC to get out of the car it is in. Once per NPC.
-//
-// With the game's own event, the one it sends passengers when a car is hijacked or stops for good
-// (VehicleComponent.QueueExitEventToAllNonFriendlyActivePassengers, AIEvents.ExitVehicleEvent). This
-// sent an AIUnmountCommand until 1.7.7, with nothing in it. That command is for a quest to hand over
-// a MountEventData, and the task that runs it reads that data and stays in progress for as long as it
-// is given none (aiVehicleBehaviorDelegate.script, MountCommandHandlerTask, MountRequestCondition). So
-// the crew never left their seats and sat there running an order with no end, until V walked up and
-// the game's own combat took them out of the car. Every car arrival since the crews were first seated
-// has only ever emptied that way.
 public func CBUnmountOnce(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(puppet) || puppet.cbUnmountSent || !puppet.IsAttached() || puppet.IsDead()
      || !VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) {
     return;
   }
   puppet.cbUnmountSent = true;
-  puppet.cbUnmountAt = CBSimNow(game);   // a seat still taken a few seconds on is lifted out (CBUnmountStuck, 2.7.6)
+  puppet.cbUnmountAt = CBSimNow(game);   // a seat still taken a few seconds on is lifted out (CBUnmountStuck)
   CBAskOutOfCar(puppet);
 }
 
-// When this one was first asked out of a car, in engine seconds (2.7.6).
+// When this one was first asked out of a car, in engine seconds.
 @addField(ScriptedPuppet)
 public let cbUnmountAt: Float;
 
@@ -1086,22 +831,8 @@ func CBAskOutOfCar(puppet: ref<ScriptedPuppet>) -> Void {
 
 // ---- Taking things out of the world ---------------------------------------------
 //
-// Every removal goes through here. DeleteTagged removed whatever carried the tag at that moment,
-// including an NPC sitting in a car seat and one the engine was still in the middle of
-// spawning. Neither is a state the game removes its own NPCs from. Those are skipped: they lose
-// the tag they were being removed for, so the lane that was waiting on them is free at once, and
-// they are marked CB_Orphan, which the slow tick clears once they are out of the car and fully
-// spawned (CBSweepOrphans). A car is only removed when none of Cyberbane's crew is still seated.
-// Map markers come off before anything is removed.
-//
-// `livingOnly` leaves bodies where they are. A body that has just fallen may still be ragdolling
-// in front of V; bodies are cleared by CBSweepRemains once V is well away from them.
-// `unseenOnly` is for the endings a player is watching: somebody who broke off and ran, or who
-// was let go. Those used to be deleted the instant the escape resolved, which is the "he just
-// vanished in front of my eyes" report - the enemy really did run, and then the mod took the
-// body away while it was still on screen. With it set, anybody V can still see is handed to the
-// CB_Orphan sweep instead, which already removes only what is out of view (CBSweepOrphans), so
-// they finish running off and go once nobody is watching.
+// Every removal goes through here. DeleteTagged removed whatever carried the tag at that moment, including an NPC
+// sitting in a car seat and one the engine was still in the middle of spawning.
 public func CBDeleteTaggedSafe(game: GameInstance, tag: CName, opt livingOnly: Bool,
                                opt unseenOnly: Bool) -> Int32 {
   let des = GameInstance.GetDynamicEntitySystem();
@@ -1152,9 +883,8 @@ func CBRemoveOne(game: GameInstance, des: ref<DynamicEntitySystem>, id: EntityID
     if crewSeated {
       return false;
     }
-    // Never the car V is sitting in (2.7.5): a gang's car V took after its crew went down still carries Cyberbane's tags,
-    // and whatever ended the thing it came with (a convoy released, Start over, an event over) deleted it from under V.
-    // It waits as an orphan, and goes once V has left it and cannot see it.
+    // Never the car V is sitting in: a gang's car V took after its crew went down still carries Cyberbane's tags, and
+    // whatever ended the thing it came with (a convoy released, Start over, an event over) deleted it from under V.
     let player = GetPlayer(game);
     let vCar = IsDefined(player) ? player.GetMountedVehicle() : null;
     if IsDefined(vCar) && Equals(vCar.GetEntityID(), id) {
@@ -1165,11 +895,11 @@ func CBRemoveOne(game: GameInstance, des: ref<DynamicEntitySystem>, id: EntityID
     if IsDefined(p) {
       if VehicleComponent.IsMountedToVehicle(game, id) {
         CBUnmountOnce(game, p);
-        CBUnmountStuck(game, p);   // still sitting there after being asked: lifted out once the car stands still (2.7.6)
+        CBUnmountStuck(game, p);   // still sitting there after being asked: lifted out once the car stands still
         return false;
       }
-      // Lying there, dead or down and breathing, where V can still come back to them (2.7.6): not now, whoever asked. They
-      // wait as an orphan and go once V has left them behind (CBSweepOrphans asks this again).
+      // Lying there, dead or down and breathing, where V can still come back to them: not now, whoever asked. They wait
+      // as an orphan and go once V has left them behind (CBSweepOrphans asks this again).
       if CBIsDown(p) && CBRemainsInReach(game, p.GetWorldPosition()) {
         return false;
       }
@@ -1179,10 +909,7 @@ func CBRemoveOne(game: GameInstance, des: ref<DynamicEntitySystem>, id: EntityID
   }
   CBTrace("remove: one of ours");
   let deleted = des.DeleteEntity(id);
-  // Not in the world (2.7.7): an apex squad still in its car far off, somebody streamed out. The engine keeps them on the
-  // tag lists until it can take them, so the story hold asked again every tick and logged "called back 4 of ours" thirty-
-  // five times over one scene. Whatever the engine answered, they come off every list of ours now and wait as an orphan
-  // (the orphan sweep takes them once they can go), so nothing asks about them twice.
+  // Not in the world: an apex squad still in its car far off, somebody streamed out.
   if !IsDefined(ent) && des.IsManaged(id) {
     CBOrphanOffLists(des, id);
     return true;
@@ -1190,7 +917,7 @@ func CBRemoveOne(game: GameInstance, des: ref<DynamicEntitySystem>, id: EntityID
   return deleted || !des.IsManaged(id);
 }
 
-// Every tag of ours but the mod's own taken off, and the orphan's put on (2.7.7, CBRemoveOne): no encounter, sweep or count
+// Every tag of ours but the mod's own taken off, and the orphan's put on (CBRemoveOne): no encounter, sweep or count
 // finds them again.
 func CBOrphanOffLists(des: ref<DynamicEntitySystem>, id: EntityID) -> Void {
   let tags = des.GetTags(id);
@@ -1230,8 +957,8 @@ public func CBSweepOrphans(game: GameInstance) -> Void {
     let ent = GameInstance.FindEntityByID(game, ids[i]);
     let seated = ent as ScriptedPuppet;
     if IsDefined(seated) && VehicleComponent.IsMountedToVehicle(game, ids[i]) {
-      // Out of the car first, seen or not (2.7.6): getting out is nothing to hide, and one sitting beside V in V's car
-      // was never out of view, so they were never even asked again and sat there for good.
+      // Out of the car first, seen or not: getting out is nothing to hide, and one sitting beside V in V's car was
+      // never out of view, so they were never even asked again and sat there for good.
       CBUnmountOnce(game, seated);
       CBUnmountStuck(game, seated);
     } else {
@@ -1243,15 +970,8 @@ public func CBSweepOrphans(game: GameInstance) -> Void {
   }
 }
 
-// Is somebody lying at `at` still V's to come back to (2.7.6)? Within RemainsSweepDistance of V, or, while V is still in a
+// Is somebody lying at `at` still V's to come back to? Within RemainsSweepDistance of V, or, while V is still in a
 // fight, within RemainsFightDistance; whether V can see the spot or not.
-//
-// "When I kill an enemy and finish the rest of the battle, sometimes they despawn before I get a chance to finish them
-// off." Every removal of somebody down asked only whether V could see them (CBOutOfView), and in a fight V is always
-// turning: whoever lay behind V while V shot at somebody else was taken, two metres away. A downed Rival's encounter
-// closing, a crew given up on, an event over, a runner's mates: each removed whoever wore the tag, down or not, the moment
-// V looked away. The dead had the right rule all along (CBSweepRemains: far and out of view); now everybody lying there
-// has it, in the one place every removal passes (CBRemoveOne).
 public func CBRemainsInReach(game: GameInstance, at: Vector4) -> Bool {
   let player = GetPlayer(game);
   if !IsDefined(player) {
@@ -1277,11 +997,6 @@ public func CBOutOfView(game: GameInstance, at: Vector4) -> Bool {
 }
 
 // Finish setting up one of our own, once the engine has actually built it.
-//
-// Scheduled from the attach callback instead of running there. See the note at the call site:
-// at attach time the puppet has no attitude agent and no AI controller, so every call below
-// would fail silently and leave a spawned enemy standing around as whatever record it came
-// from. Retries a few times, because how long the components take is not fixed.
 public class CBSpawnSetupCallback extends DelayCallback {
   public let entityId: EntityID;
   public let riding: Bool;
@@ -1290,9 +1005,8 @@ public class CBSpawnSetupCallback extends DelayCallback {
 
   public func Call() -> Void {
     let game = GetGameInstance();
-    // Not while the world is loading or streaming: everything below writes attitude, stats and
-    // orders on a native puppet, which is the crash this whole mod's tick is gated against.
-    // Waiting for a settled moment does not use up the tries meant for slow components.
+    // Not while the world is loading or streaming: everything below writes attitude, stats and orders on a native
+    // puppet, which is the crash this whole mod's tick is gated against.
     if !CBWorldStable(game) {
       if this.waits < CBConfig.CallbackStableWaits() {
         let ds = GameInstance.GetDelaySystem(game);
@@ -1327,8 +1041,8 @@ public class CBSpawnSetupCallback extends DelayCallback {
       if this.tries < CBConfig.SpawnSetupMaxTries() {
         CBRetrySpawnSetup(game, this);
       } else {
-        // Back to the sweep, which asks again on a later settled tick (2.6.5): left marked as queued, it was never set
-        // up at all and stood there as whatever it was spawned as.
+        // Back to the sweep, which asks again on a later settled tick: left marked as queued, it was never set up at
+        // all and stood there as whatever it was spawned as.
         CBSetupGiveBack(game, this.entityId);
         CBLog.Info(n"Spawn", "A spawned enemy was not ready to set up; trying again shortly.");
       }
@@ -1342,7 +1056,7 @@ public class CBSpawnSetupCallback extends DelayCallback {
   }
 }
 
-// A setup that could not finish hands its body back to the missed-setup sweep (CBRescueMissedSetup) (2.6.5).
+// A setup that could not finish hands its body back to the missed-setup sweep (CBRescueMissedSetup).
 func CBSetupGiveBack(game: GameInstance, id: EntityID) -> Void {
   let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
   if IsDefined(p) {
@@ -1383,12 +1097,6 @@ public func CBScheduleSpawnSetup(game: GameInstance, id: EntityID, riding: Bool)
 public let cbSetupQueued: Bool;
 
 // The second chance the attach event cannot give.
-//
-// That event stands down when the world is not stable, which is right for the event and wrong for
-// the NPC: nothing asks again, so anybody of ours who attached while V had a menu open, took a call
-// or sat through a scene was never made hostile, never marked, never ordered anywhere and never
-// kitted. They stood there as whatever they were spawned as, counted as a hunter, for the rest of
-// the encounter. The setup has its own wait for a settled world, so this only has to start it.
 public func CBRescueMissedSetup(game: GameInstance) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) || !des.IsPopulated(n"Cyberbane") {
@@ -1406,11 +1114,8 @@ public func CBRescueMissedSetup(game: GameInstance) -> Void {
   }
 }
 
-// Hand one of ours to the setup above, once: from the attach event (CyberbaneSystem), or from the sweep
-// above when the event stood down. Every Cyberbane-tagged puppet goes, and the setup decides by tag what
-// each one needs (CBApplySpawnSetup). The attach event used to ask about one list of tags while the setup
-// answered for a longer one, so the street's own people (2.0.0) were only ever set up by the sweep, a few
-// ticks late and logged as having attached while the world was busy.
+// Hand one of ours to the setup above, once: from the attach event (CyberbaneSystem), or from the sweep above when the
+// event stood down.
 public func CBQueueSpawnSetup(game: GameInstance, des: ref<DynamicEntitySystem>, p: ref<ScriptedPuppet>) -> Bool {
   if !IsDefined(des) || !IsDefined(p) || p.cbSetupQueued || p.IsDead() {
     return false;
@@ -1434,8 +1139,7 @@ public func CBApplySpawnSetup(sys: ref<CyberbaneSystem>, game: GameInstance,
                               puppet: ref<ScriptedPuppet>, riding: Bool) -> Void {
   CBSpawnSetupBody(sys, game, puppet, riding);
   // A build is recorded by the body's health when it is built, and what the set-up puts on after it (a Rival's traits,
-  // the kit V gave them, the ceiling in Spawn/Killable.reds) changes that health. Recorded again now, with all of it on,
-  // a body that streams out and back in is known for built and is not built a second time on top of the first.
+  // the kit V gave them, the ceiling in Spawn/Killable.reds) changes that health.
   if IsDefined(sys) && IsDefined(puppet) && CBStillStanding(puppet) {
     let stats = GameInstance.GetStatsSystem(game);
     if IsDefined(stats) {
@@ -1450,14 +1154,11 @@ func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref
     return;
   }
   let id = puppet.GetEntityID();
-  // Never one the game will not let die (2.7.0), whoever they are and however they came back into the world. The record's
-  // god mode is put back every time a body is built, and only some of ours had it taken off: the main path, the crew, allies,
-  // hunters and scouts did, while the street's people (a bagman, a debtor, a sit-down, a gang event, a wannabe), the turf
-  // patrols and an ended encounter's body streaming back in kept it, so an enemy from such a record could not be killed.
-  // First, before anything decides what they are; V's own crew are protected again by their own setup when the setting says.
+  // Never one the game will not let die, whoever they are and however they came back into the world.
   CBDisarmGodMode(game, puppet);
-  // And nothing brings them back from V's damage (2.7.2, Spawn/Killable.reds): every body Cyberbane puts in the world is
-  // watched while V lands hits. One that gets built takes its ceiling again then; this one only keeps what it came with.
+  // And nothing brings them back from V's damage (Spawn/Killable.reds): every body Cyberbane puts in the world is
+  // watched while V lands hits. One that gets built takes its ceiling again then; this one only keeps what it came
+  // with.
   CBSetKillLimit(game, puppet, CBConfig.KillableCrewSeconds());
   // Knocked out and streamed back in. Made hostile, told to chase V and marked, they used to be:
   // a body on the ground with an order it could not carry out and a pin that stayed until it died.
@@ -1474,7 +1175,7 @@ func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref
     CBSetUpPatrol(sys, game, puppet);
     return;
   }
-  // The street's own people (Spawn/LivingStreet.reds, 2.0.0): no hunting orders for any of them.
+  // The street's own people (Spawn/LivingStreet.reds): no hunting orders for any of them.
   if des.IsTagged(id, n"CB_Bagman") || des.IsTagged(id, n"CB_Meet") {
     CBSetUpStreet(sys, game, puppet, false);
     // A gang's best at a sit-down: built like its apex squad (Spawn/LivingStreet.reds).
@@ -1487,19 +1188,19 @@ func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref
     CBSetUpStreet(sys, game, puppet, true);
     return;
   }
-  // A gang's people hanging out on their own streets (Spawn/Hangouts.reds, 2.6.1): neutral, there to be talked to.
+  // A gang's people hanging out on their own streets (Spawn/Hangouts.reds): neutral, there to be talked to.
   if des.IsTagged(id, n"CB_Hangout") {
     CBSetUpStreet(sys, game, puppet, false);
     return;
   }
-  // A crew waiting on V's road (Spawn/HuntGrows.reds, 2.4.2): hostile from the start, kitted and built as a crew.
+  // A crew waiting on V's road (Spawn/HuntGrows.reds): hostile from the start, kitted and built as a crew.
   if des.IsTagged(id, n"CB_Ambush") {
     CBSetUpStreet(sys, game, puppet, true);
     CBKitSquadMember(puppet);
     CBApplyCrewBuild(sys, game, puppet);
     return;
   }
-  // Gang life's people (Spawn/StreetEvents.reds, 2.3.3): street people, and a deal's guard built like the gang's best.
+  // Gang life's people (Spawn/StreetEvents.reds): street people, and a deal's guard built like the gang's best.
   if des.IsTagged(id, n"CB_Event") {
     CBSetUpStreet(sys, game, puppet, false);
     let eventSeat = CBTaggedApexSeat(des, id);
@@ -1508,38 +1209,38 @@ func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref
     }
     return;
   }
-  // The one who owes a gang money (Spawn/LivingStreet.reds, 2.6.4): minding their own business until V leans on them.
+  // The one who owes a gang money (Spawn/LivingStreet.reds): minding their own business until V leans on them.
   if des.IsTagged(id, n"CB_Debtor") || des.IsTagged(id, n"CB_Witness") || des.IsTagged(id, n"CB_Mark") {
     CBSetUpStreet(sys, game, puppet, false);
     return;
   }
-  // A wannabe walks up first and only turns on V when they get there (Spawn/Wannabe.reds, 2.3.1).
+  // A wannabe walks up first and only turns on V when they get there (Spawn/Wannabe.reds).
   if des.IsTagged(id, n"CB_Wannabe") {
     CBSetUpStreet(sys, game, puppet, false);
     return;
   }
-  // One of V's own crew (Reactions/Crew.reds, 2.5.0): kitted for their seat, on the game's own follower role.
-  // A stronghold's garrison (Rivals/Strongholds.reds, 2.7.2).
+  // One of V's own crew (Reactions/Crew.reds): kitted for their seat, on the game's follower role. A stronghold's
+  // garrison (Rivals/Strongholds.reds).
   if des.IsTagged(id, n"CB_Hold") {
     CBSetUpHold(sys, game, puppet);
     return;
   }
 
-  // An add-on's convoy crew (API/Convoy.reds, 2.7.4): set up, then seated in their car.
+  // An add-on's convoy crew (API/Convoy.reds): set up, then seated in their car.
   if des.IsTagged(id, n"CB_Convoy") {
     CBApiConvoySetUp(sys, game, puppet);
     return;
   }
 
-  // An add-on's group (API/Requests.reds, 2.7.4).
+  // An add-on's group (API/Requests.reds).
   if des.IsTagged(id, n"CB_Api") {
     CBApiSetUpBody(sys, game, puppet);
     return;
   }
 
-  // One of V's crew at a post at home (Reactions/CrewHome.reds, 2.7.2).
+  // One of V's crew at a post at home (Reactions/CrewHome.reds).
   if des.IsTagged(id, n"CB_Loiter") {
-    CBSetUpLoiter(sys, game, puppet);   // V's crew on a corner (Reactions/CrewLoiter.reds, 2.7.7)
+    CBSetUpLoiter(sys, game, puppet);   // V's crew on a corner (Reactions/CrewLoiter.reds)
     return;
   }
   if des.IsTagged(id, n"CB_Guard") {
@@ -1555,7 +1256,7 @@ func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref
   if des.IsTagged(id, n"CB_Turned") {
     return;
   }
-  // One of a friendly gang's people riding with V (Reactions/Allies.reds, 2.4.5): the game's own follower role.
+  // One of a friendly gang's people riding with V (Reactions/Allies.reds): the game's follower role.
   if des.IsTagged(id, n"CB_Follower") {
     CBSetUpFollower(sys, game, puppet);
     return;
@@ -1564,13 +1265,13 @@ func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref
     CBSetUpAlly(sys, game, puppet);
     return;
   }
-  // One of the hunters' ladder (Spawn/Bounty.reds, 2.4.3): CB_Squad too, so every crew list reaches them, but a solo
-  // with their own build, never a sergeant, a grenadier or one of a squad.
+  // One of the hunters' ladder (Spawn/Bounty.reds): CB_Squad too, so every crew list reaches them, but a solo with
+  // their own build, never a sergeant, a grenadier or one of a squad.
   if des.IsTagged(id, n"CB_Bounty") {
     CBSetUpBountyHunter(sys, game, puppet, riding);
     return;
   }
-  // A scout looks without drawing, until they have called it in (Spawn/Hunted.reds, 2.4.1).
+  // A scout looks without drawing, until they have called it in (Spawn/Hunted.reds).
   if des.IsTagged(id, n"CB_Scout") {
     CBSetUpScout(sys, game, puppet);
     CBKitSquadMember(puppet);
@@ -1587,27 +1288,9 @@ func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref
     return;
   }
   // Aggressive first, because the rest of it depends on being aggressive.
-  //
-  // This is the piece that was missing, and it comes from how the game marks its own pursuers
-  // rather than from anything invented here. `prevention_unit_base` is the record every NCPD
-  // chase unit descends from, and its android variant carries `abilities += [
-  // "Ability.IsAggressive" ]`; the gang faction records (Arasaka, Scavengers, Tyger Claws,
-  // Wraiths) carry the same thing. That ability is backed by an `IsAggressive` stat flag, and
-  // `AIActionHelper.TryChangingAttitudeToHostile` checks exactly that flag before it will
-  // change anybody's attitude - it returns false and does nothing otherwise.
-  //
-  // An ordinary ganger plucked out of a crowd record does not have it, so everything downstream
-  // was being asked of an NPC the game still considered passive. Granted here through the same
-  // RPGManager path the role kits already use, rather than by copying the record, because the
-  // records we spawn from are sampled at runtime and cannot be edited.
   CBGrantAbility(puppet as NPCPuppet, t"Ability.IsAggressive");
-  // A Rival owed a facedown, and the people with them, walk up calm (Rivals/RivalMoments.reds, [53], 2.5.0). Sent in
-  // hostile, they saw V from forty metres and the fight was on before the facedown's twenty-four, so it all but never
-  // opened. Hostile the moment V hits one of them, or once it cannot happen (CBFacedownWaitTick).
-  // At their place too (2.5.7): every Rival encounter played since 2.4 was at the Rival's place, which went hostile on
-  // sight, so no facedown ever opened. They wait there calm, theirs with them, and step out to face V who walks up
-  // openly (Rivals/Whereabouts.reds); sneak up or open fire and it is the ambush it always was. Their wait only starts
-  // counting once they step out (CBLairPromote): before that they are where they live.
+  // A Rival owed a facedown, and the people with them, walk up calm (Rivals/RivalMoments.reds, [53]). Sent in hostile,
+  // they saw V from forty metres and the fight was on before the facedown's twenty-four, so it all but never opened.
   let lairCalm = isLair && CBFacedownAwaitsFor(sys, game, sys.FindRivalById(sys.GetLairRivalId()));
   if ((isRival || des.IsTagged(id, n"CB_Escort")) && !isLair && CBFacedownAwaits(sys, game)) || lairCalm {
     puppet.cbFacedownWait = true;
@@ -1616,79 +1299,65 @@ func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref
     CBMakeHostileToPlayer(game, puppet);
   }
   CBDisarmGodMode(game, puppet);
-  // Hostile is not the same as coming for you. Anybody in a car is excepted: the car travels.
-  // Where they go is the hunt's business: toward where V was last known, until somebody finds V
-  // (Spawn/Hunt.reds).
-  // Not one waiting at their place: hostile, so they fight when they see V, and otherwise left
-  // exactly where they were put. No order at all is the whole of the waiting.
+  // Hostile is not the same as coming for you. Anybody in a car is excepted: the car travels. Where they go is the
+  // hunt's business: toward where V was last known, until somebody finds V (Spawn/Hunt.reds).
   if !riding && !isLair {
     CBOrderPursue(sys, game, puppet);
   }
-  // Waiting at their place: one step where they stand (2.7.7, CBWakeStep), or nothing ever asked anything of them and they
+  // Waiting at their place: one step where they stand (CBWakeStep), or nothing ever asked anything of them and they
   // could stand in the default pose until hit.
   if isLair && !riding {
     CBWakeStep(puppet);
   }
   if isApex {
     CBApplyApexBuff(sys, game, puppet);
-    // Which chair: the one this body was spawned for, when it carries the tag that says so,
-    // otherwise the next one round. Only taken once, so a body that attaches twice does not
-    // spend a second chair and push everyone after it out of step.
+    // Which chair: the one this body was spawned for, when it carries the tag that says so, otherwise the next one
+    // round.
     if !puppet.cbKitted {
       let seat = CBTaggedApexSeat(des, id);
       if seat < 0 {
         seat = sys.NextApexRole();
       }
       CBKitApexSeat(puppet, seat);
-      // Their name, for the scanner (UI/ScannerName.reds, 2.6.1).
+      // Their name, for the scanner (UI/ScannerName.reds).
       puppet.cbApexName = CBApexMemberName(game, CBClassifyFaction(puppet), seat);
       puppet.SetScannerDirty(true);
     }
     CBShowBossBar(puppet);
   }
   // A marker on everyone the mod sends.
-  //
-  // This was Rivals and apex squad members only, on the reasoning that a crew arrives together
-  // and is obvious the moment it opens fire. It is not obvious. A player hunting for whoever
-  // the mod had just announced found nothing on the minimap, because the one standing there
-  // was crew and crew carried no marker, and there is no way to tell from outside that the
-  // marker is missing by design rather than broken. If Cyberbane sent them, the player can see
-  // where they are; the setting turns the lot off for anyone who would rather hunt.
   CBTrackOnMap(game, puppet);
   if isSquad {
-    // One of a crew leads it ([U2], 2.3.2): the first of them to arrive, never an escort or a scout, never one who
-    // came with an apex squad (the squad leads then). The scanner names them, and their fall shakes the rest.
+    // One of a crew leads it ([U2]): the first of them to arrive, never an escort or a scout, never one who came with
+    // an apex squad (the squad leads then). The scanner names them, and their fall shakes the rest.
     if des.IsTagged(id, n"CB_Squad") && !sys.ActiveSquadHasApex() && !puppet.cbSergeant && sys.TakeCrewSergeant() {
       puppet.cbSergeant = true;   // a field, not a tag: they are CB_Squad, which every list already covers
       puppet.SetScannerDirty(true);
     }
     CBKitSquadMember(puppet);
-    CBApplyCrewBuild(sys, game, puppet);   // their code and what they have prepared for V (2.3.2)
+    CBApplyCrewBuild(sys, game, puppet);   // their code and what they have prepared for V
   }
   if isApex || isSquad {
     CBJoinSquadWith(sys, puppet);
   }
-  // The first of a crew who can carry them carries the grenades (Spawn/Tactics.reds). The apex
-  // squad's shooter already does, so a crew that came with its apex has its grenadier there. The crew
-  // only: a Rival's escort or a scout attaching after the crew was sent took the one slot this crew had.
+  // The first of a crew who can carry them carries the grenades (Spawn/Tactics.reds). The apex squad's shooter already
+  // does, so a crew that came with its apex has its grenadier there.
   if des.IsTagged(id, n"CB_Squad") && !isApex && !CBAiKitOwner() && !sys.ActiveSquadHasApex()
      && CBCanBeGrenadier(puppet as NPCPuppet) && sys.TakeCrewGrenadier() {
     CBMakeGrenadier(puppet as NPCPuppet);
   }
   if isRival || isLair {
-    // Whose body this is. The body recorded at spawn is the exact answer, and the only one for a
-    // Rival waiting at their place, who is nobody's active encounter. For one sent after V the
-    // active Rival is the same person and stays the fallback for a body that was not recorded.
+    // Whose body this is. The body recorded at spawn is the exact answer, and the only one for a Rival waiting at their
+    // place, who is nobody's active encounter.
     let who = CBFindRivalByBody(sys, id);
     if !IsDefined(who) && !isLair {
       who = sys.FindRivalById(sys.GetActiveRivalId());
     }
     // Their name in the scanner (UI/ScannerName.reds).
     CBMarkRivalBody(puppet, who);
-    CBRivalNoteBody(game, who, puppet);   // the body's sex, for a signature record (Rivals/Signature.reds, 2.7.2)
-    // A named enemy that never uses cover or chrome is a ganger with a nameplate. A cyberpsycho
-    // takes the lighter kit, which adds no armour on top of what they already have.
-    // A Rival after a cyberpsychotic break fights like one (1.9.0).
+    CBRivalNoteBody(game, who, puppet);   // the body's sex, for a signature record (Rivals/Signature.reds)
+    // A named enemy that never uses cover or chrome is a ganger with a nameplate. A cyberpsycho takes the lighter kit,
+    // which adds no armour on top of what they already have. A Rival after a cyberpsychotic break fights like one.
     if IsDefined(who) && (CBRecordIsSightingCyberpsycho(who.recordID) || CBRivalHasTrait(who, n"Broken")) {
       CBKitCyberpsycho(puppet as NPCPuppet);
     } else {
@@ -1709,9 +1378,8 @@ func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref
   CBLog.Info(n"Spawn", "One of ours is up and coming for you.");
 }
 
-// The chase used to be kept going here by handing every hunter V's position every few seconds,
-// which is why nobody could ever lose them. Spawn/Hunt.reds owns that now: hunters search, find V
-// by sight or sound, and give up when V stays gone. The helpers below are shared with it.
+// The chase used to be kept going here by handing every hunter V's position every few seconds, which is why nobody
+// could ever lose them.
 
 // How far away the closest living hunter is, or -1 when there is nobody.
 func CBNearestHunterDistance(sys: ref<CyberbaneSystem>, game: GameInstance,
@@ -1746,9 +1414,7 @@ func CBNearestForTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dyn
 // You lost them. Clear the encounter out and let it count.
 func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, opt cold: Bool) -> Void {
   sys.SetChaseAwayTicks(0);
-  // A Rival you shook takes it personally and comes back harder; the rest simply lose you. Every
-  // Rival of the encounter, not only the one leading it: with a team out (1.9.0) this credited the
-  // lead alone and left the others filed as out after V, with bodies about to be removed below.
+  // A Rival you shook takes it personally and comes back harder; the rest simply lose you.
   CBRivalsShakenOff(sys, game, false);
   sys.ClearPack();
   // A gang crew or apex squad V ran from. Running costs a little standing with them, and lying
@@ -1768,11 +1434,11 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   CBDeleteTaggedSafe(game, n"CB_Escort", false, true);
   CBDeleteTaggedSafe(game, n"CB_Scout", false, true);
   sys.SetHuntEnd(CBT(n"Cyberbane-Spawner-LOSTTHEM"), CBConfig.HuntEndLineTicks());
-  // A trail gone cold (Spawn/Hunted.reds, 2.4.1) is V lying low, not V running: no cost, and the street says it.
+  // A trail gone cold (Spawn/Hunted.reds) is V lying low, not V running: no cost, and the street says it.
   if crewLost && NotEquals(ranFrom, n"") && !cold {
     let fs = sys.FindFaction(ranFrom);
     if IsDefined(fs) {
-      // Not with reputation frozen (2.4.2): every other change to how a gang sees V already stopped there.
+      // Not with reputation frozen: every other change to how a gang sees V already stopped there.
       if !CBReputationFrozen() {
         fs.renown = ClampF(fs.renown - CBConfig.RunRenownLoss(), 0.0, 100.0);
       }
@@ -1794,20 +1460,12 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
 }
 
 // One of a crew V gave the slip comes back with a name (spec §9.9 / §10.2).
-//
-// This used to live in the hit squad's timed sweep, which fired on the in-game clock whether or
-// not V had escaped anybody - usually in the middle of the fight - and made the Rival out of the
-// gang's sample record rather than out of anybody who had been there. It happens now at the one
-// moment the promise in the readme describes: the hunt has given up because V lost them. The
-// survivor is a real member of the crew that was standing when it did, so the Rival who comes
-// back is somebody V met, and the spot they were standing on is where the street saw them last
-// (Rivals/Whereabouts.reds).
 func CBCrewSurvivorTakesItPersonally(sys: ref<CyberbaneSystem>, game: GameInstance,
                                      des: ref<DynamicEntitySystem>, faction: CName) -> Void {
   if !IsDefined(sys) || !IsDefined(des) || Equals(faction, n"") || !CBRivalsOn() {
     return;
   }
-  // Somebody who killed one of V's own is the one who comes back (Reactions/Crew.reds, 2.5.0).
+  // Somebody who killed one of V's own is the one who comes back (Reactions/Crew.reds).
   if CBCrewKillerGotAway(sys, game, des, faction) {
     return;
   }
@@ -1834,17 +1492,6 @@ func CBCrewSurvivorTakesItPersonally(sys: ref<CyberbaneSystem>, game: GameInstan
 }
 
 // The attitude group the game itself gives this kind of NPC.
-//
-// `Character_Record.BaseAttitudeGroup` is the group the engine would have assigned had the NPC
-// come out of a world encounter rather than out of DynamicEntitySystem, so this is the game's
-// own answer and not a list of group names typed out from memory - which could not be verified
-// offline anyway, since the attitude groups live in a binary resource rather than in the
-// shipped tweak text.
-//
-// Explicitly NOT 'HostileToEveryone', which is the group `AIActionHelper.TargetAllSquadMembers`
-// assigns and the obvious-looking thing to reach for. That action exists to turn an NPC on its
-// own squad: everyone means everyone, so a Cyberbane crew of six would have opened fire on each
-// other on arrival.
 public func CBRecordAttitudeGroup(record: TweakDBID) -> CName {
   if !TDBID.IsValid(record) {
     return n"";
@@ -1867,17 +1514,6 @@ public func CBMakeHostileToPlayer(game: GameInstance, puppet: ref<ScriptedPuppet
   let pagent = player.GetAttitudeAgent();
   if IsDefined(agent) && IsDefined(pagent) {
     // Hostile to V, and hostile to whoever else is hostile to them.
-    //
-    // A player reported Valentinos opening fire inside an Animals nest while every Animal in
-    // the room ignored it, which reads as the mod spawning ghosts. The cause is that an NPC
-    // created with DynamicEntitySystem gets no attitude group unless the record gives it one,
-    // and an agent with no group has no relationship with anybody: the game's own gang-versus-
-    // gang attitudes are defined between groups, so with one side ungrouped there is nothing
-    // to look up and the answer is neutral both ways.
-    //
-    // Keeping the record's own group when it has one, and falling back to the faction's name,
-    // hands the lookup back to the game. Unsavable because these are throwaway NPCs and their
-    // group has no business being written into anybody's save.
     if !IsNameValid(agent.GetAttitudeGroup()) {
       let group = CBRecordAttitudeGroup(puppet.GetRecordID());
       if IsNameValid(group) {
@@ -1886,37 +1522,18 @@ public func CBMakeHostileToPlayer(game: GameInstance, puppet: ref<ScriptedPuppet
     }
     agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Hostile);
   }
-  // Watched for a while in case it slips (CBRearmTick, 1.9.6).
+  // Watched for a while in case it slips (CBRearmTick).
   let sysArm = CyberbaneSystem.Get(game);
   puppet.cbArmTick = IsDefined(sysArm) ? Max(sysArm.GetTickCount(), 1) : 1;
-  // And V's companions, who were never told. The game makes an enemy hostile to V's whole group
-  // (AIActionHelper.TryChangingAttitudeToHostile, SetAttitudeTowardsAgentGroup); this was V alone, so
-  // a follower - Jackie through Night City Allies - stood by while a Rival shot at V.
+  // And V's companions, who were never told.
   CBMakeHostileToCompanions(CyberbaneSystem.Get(game), puppet);
   // Hostile, and nothing more. They are not handed V as a target here.
-  //
-  // This used to inject V into their target tracker the moment they were set up, so that a
-  // spawned enemy had somebody to fight before its own perception had picked V up. The game
-  // counts V as in combat whenever any hostile is tracking V (playerCombatController.script,
-  // m_isTracked), wherever that hostile is - so from the instant a crew was placed, ninety metres
-  // off and out of sight, V was in combat: the phone refused to open ("you can't do that right
-  // now"), saving and fast travel were locked, and the hunt's own "searching for you" was a fight
-  // in all but name, because everybody already knew exactly where V was. A Rival waiting at their
-  // place knew V was coming the moment they were placed, which is not an ambush.
-  //
-  // What gives them V now is the hunt finding V (Spawn/Hunt.reds, CBHuntEngage): the moment one
-  // of them has eyes on V, or hears V fighting, everybody close is told where V is. Until then they
-  // search, and if they walk into V's line of sight the game's own perception starts the fight,
-  // because they are hostile and aggressive.
 }
 
-// ---- Re-armed if they come up neutral (1.9.6) --------------------------------------------------------
+// ---- Re-armed if they come up neutral --------------------------------------------------------
 //
-// Another mod (Stay Dead) measured its spawned squads alive but neutral to V: hostility was set once,
-// at spawn, and had slipped by the time they mattered, for reasons it could not pin down. Cyberbane also sets
-// hostility once (CBMakeHostileToPlayer), so for the first RearmWatchTicks after that every one of ours is
-// looked at, and set hostile again if it reads anything else. Attitude only: no AI order, nobody who is down
-// or running, and nothing for the patrols, which are neutral on purpose and never pass through here.
+// Another mod (Stay Dead) measured its spawned squads alive but neutral to V: hostility was set once, at spawn, and had
+// slipped by the time they mattered, for reasons it could not pin down.
 @addField(ScriptedPuppet)
 public let cbArmTick: Int32;
 
@@ -1934,8 +1551,8 @@ public func CBRearmTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     return;
   }
   let tick = sys.GetTickCount();
-  // The street's own people too (2.0.0): only the ones set hostile on purpose carry cbArmTick (a favour's
-  // lookout, a gang at war with V), so the rest are left as they are.
+  // The street's own people too: only the ones set hostile on purpose carry cbArmTick (a favour's lookout, a gang at
+  // war with V), so the rest are left as they are.
   let tags: array<CName> = [n"CB_Squad", n"CB_Escort", n"CB_Apex", n"CB_Rival", n"CB_Scout", n"CB_Lair"];
   for streetTag in CBStreetTags() {
     ArrayPush(tags, streetTag);
@@ -1961,9 +1578,8 @@ public func CBRearmTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   }
 }
 
-// One of ours is told exactly where V is, which starts the fight. Only ever from the hunt, once V
-// has actually been found (CBHuntEngage). The game's own call for it (targetTrackingComponent
-// .script), which does nothing if V is already on their tracker.
+// One of ours is told exactly where V is, which starts the fight. Only ever from the hunt, once V has actually been
+// found (CBHuntEngage).
 public func CBEngageV(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   let player = GetPlayer(game);
   if !IsDefined(player) || !CBStillStanding(puppet) || !puppet.IsAttached() {
@@ -1976,12 +1592,8 @@ public func CBEngageV(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
 
 // ---- Clearing up after ourselves --------------------------------------------------
 //
-// Everything Cyberbane spawns is a managed entity that stays registered until it is removed, and
-// before 1.5.2 two kinds never were for the rest of the session: the bodies of anyone killed, and
-// the car every convoy arrived in. Over a long session that is dozens of registered bodies and
-// cars across the city, each one spawned back in whenever V passes. This clears them on the slow
-// tick, through the same safe removal as everything else, once V is far enough away that nothing
-// can be seen to vanish: a body V might still loot, or a car somebody is still sitting in, stays.
+// Over a long session that is dozens of registered bodies and cars across the city, each one spawned back in whenever V
+// passes.
 public func CBSweepRemains(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   let player = GetPlayer(game);
@@ -2010,12 +1622,8 @@ public func CBSweepRemains(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
     }
   }
 
-  // Ours who were put down alive and left there: knocked out, a non-lethal takedown. They never
-  // reach the death handler, so they are not in the list above, and until 1.6.3 the only thing
-  // that ever cleared them was the crew's timed despawn - which is gone because it was also
-  // deleting crews in the middle of fights. Same rule as a body: only once V is well away and
-  // cannot see them. Rivals are left to their own endings (the mercy path closes those), and a
-  // waiting Rival's place has its own sweep (Rivals/Whereabouts.reds).
+  // Ours who were put down alive and left there: knocked out, a non-lethal takedown. Same rule as a body: only once V
+  // is well away and cannot see them.
   CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Squad");
   CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Apex");
   CBSweepDownedTag(sys, game, des, ppos, reach, n"CB_Escort");
@@ -2069,8 +1677,8 @@ public func CBTrace(what: String) -> Void {
   CBLog.Verbose(n"Trace", what);
 }
 
-// V's companions, by the game's own test (ScriptedPuppet.IsPlayerCompanion), among the NPCs Cyberbane
-// already tracks (every attached NPC, Reactions/NpcRegistry.reds). Settled ones only.
+// V's companions, by the game's test (ScriptedPuppet.IsPlayerCompanion), among the NPCs Cyberbane already tracks (every
+// attached NPC, Reactions/NpcRegistry.reds). Settled ones only.
 public func CBPlayerCompanions(sys: ref<CyberbaneSystem>) -> array<wref<ScriptedPuppet>> {
   let out: array<wref<ScriptedPuppet>>;
   let reg = IsDefined(sys) ? sys.GetRegistry() : null;
@@ -2085,9 +1693,7 @@ public func CBPlayerCompanions(sys: ref<CyberbaneSystem>) -> array<wref<Scripted
   return out;
 }
 
-// One of ours and each companion of V's, hostile to each other. Pair by pair, the same call that makes
-// them hostile to V: never the group form, which would set whole groups against each other and turn
-// vanilla NPCs who have nothing to do with this.
+// One of ours and each companion of V's, hostile to each other.
 public func CBMakeHostileToCompanions(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(sys) {
     return;
@@ -2118,10 +1724,7 @@ public func CBMakeHostileToTheseCompanions(sys: ref<CyberbaneSystem>, puppet: re
   }
 }
 
-// The other way (2.5.0): one of ours standing down, and V's companions, neutral to each other both ways. Set hostile
-// pair by pair when ours arrived, the pairs outlived the reason: V's crew (Reactions/Crew.reds), a borrowed crew or a
-// friend from another mod opened fire on a Rival's people holding for a facedown, a sergeant's crew at a parley, or a
-// crew V had just paid to walk away, and the fight came back.
+// The other way: one of ours standing down, and V's companions, neutral to each other both ways.
 public func CBCalmTowardCompanions(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(sys) || !IsDefined(puppet) || !puppet.IsAttached() {
     return;
@@ -2142,10 +1745,8 @@ public func CBCalmTowardCompanions(sys: ref<CyberbaneSystem>, puppet: ref<Script
   }
 }
 
-// A companion recruited, or streamed in, after ours were set up. Every few settled ticks while any of
-// ours who is hostile to V is standing: pairs not yet set are set. Nothing at all without a companion.
-// The companions are looked for once a pass, not once for each of ours: the registry is every NPC
-// near V, up to two hundred of them.
+// A companion recruited, or streamed in, after ours were set up. Every few settled ticks while any of ours who is
+// hostile to V is standing: pairs not yet set are set. Nothing at all without a companion.
 public func CBCompanionHostilityTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   let player = GetPlayer(game);
@@ -2172,12 +1773,7 @@ public func CBCompanionHostilityTick(sys: ref<CyberbaneSystem>, game: GameInstan
   }
 }
 
-// Nobody Cyberbane sends is unkillable (1.9.4).
-//
-// Records the game marks Immortal or Invulnerable are refused as Rivals and templates now
-// (CBRecordIsUniqueCharacter), but saves already hold some, and another mod can add the mark too. The
-// game keeps it as god mode on the entity, by source; every source is taken off our own spawns here,
-// once they are set up, so what turns up can always be put down by the gun V is carrying.
+// Nobody Cyberbane sends is unkillable.
 func CBDisarmGodMode(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   let gms = GameInstance.GetGodModeSystem(game);
   if !IsDefined(gms) || !IsDefined(puppet) {

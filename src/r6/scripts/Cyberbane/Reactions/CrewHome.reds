@@ -1,18 +1,6 @@
-// Cyberbane - The crew at home (2.7.2)
+// Cyberbane - The crew at home
 //
-// "From rookie to enforcer", "one by the parking lot and another by the entrance"; "a crew stash for the legendary guns";
-// spared Rivals who joined should "talk about the gang they ran with, and pass on what they know".
-//
-//   - Watch the house: a fourth kind of work on the crew's Work row. Up to Guards at home members take it. When V is on
-//     home ground (Spawn/HomeGround.reds) they are at their posts: the building's door and the car park, both learned
-//     from where V comes and goes. They are placed out of V's sight, stand their post, can be talked to, and fight anybody
-//     of Cyberbane's who starts something there. They go, out of sight, once V leaves. One who goes down is hurt, as a
-//     crew member knocked down on a call is.
-//   - The armory is V's stash: near it, the Hub's weapon list shows the stash's guns as well as V's own. One given from the
-//     stash stays in it; the member fights with its kind and tier, so nothing is carried and no mod comes off. If it is
-//     gone from the stash the next time V is at it, it is gone from them.
-//   - Talking to your own: how they are holding up, what their old gang was like from the inside, and whether they have
-//     heard anything about a Rival from that gang.
+// Crew members guard V's building, use V's stash as their armoury and can be talked to there.
 
 public func CBTalkActCrewHolding() -> Int32 = 62
 public func CBTalkActCrewGang() -> Int32 = 63
@@ -127,8 +115,8 @@ public func CBGuardStandDown(game: GameInstance, id: Int32) -> Void {
   gb.Remove(id);
   let k = gb.BodyIndexOfMember(id);
   if k >= 0 {
-    // Through the one safe removal (2.7.6), never straight out of the world: a guard sent off their post while V stood in
-    // the car park vanished in front of V. One V can see, or one lying hurt near V, goes once V cannot see them.
+    // Through the one safe removal, never straight out of the world: a guard sent off their post while V stood in the
+    // car park vanished in front of V. One V can see, or one lying hurt near V, goes once V cannot see them.
     let des = GameInstance.GetDynamicEntitySystem();
     if IsDefined(des) {
       let body = gb.BodyAt(k);
@@ -189,7 +177,7 @@ func CBPlaceOneAt(sys: ref<CyberbaneSystem>, game: GameInstance, record: TweakDB
     }
     ring += 1;
   }
-  // Nowhere hidden that close: the navmesh's own hidden points near the spot, one query (2.7.3, Spawn/Spawner.reds).
+  // Nowhere hidden that close: the navmesh's own hidden points near the spot, one query (Spawn/Spawner.reds).
   let pts: array<Vector4>;
   if CBPursuitPointsAround(game, ppos, at, 2, 3.0, CBConfig.PlaceAroundPursuitMax(), pts) {
     for p in pts {
@@ -290,7 +278,7 @@ public func CBSetUpGuard(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: 
     CBCrewApplyKit(sys, game, puppet, m);
   }
   CBCrewFriendlyToV(game, puppet);
-  CBWakeStep(puppet);   // a step at their post (2.7.7): nothing else asks anything of a guard until trouble comes
+  CBWakeStep(puppet);   // a step at their post: nothing else asks anything of a guard until trouble comes
 }
 
 // Anybody of Cyberbane's in a fight near a post is the watch's fight too. Told to V once a visit.
@@ -581,7 +569,7 @@ public func CBCrewOfTalk(game: GameInstance, npc: wref<ScriptedPuppet>) -> ref<C
     m = book.Find(gb.MemberOfBody(npc.GetEntityID()));
   }
   if !IsDefined(m) {
-    m = book.Find(CBLoiterMemberOfBody(game, npc.GetEntityID()));   // on a corner (2.7.7)
+    m = book.Find(CBLoiterMemberOfBody(game, npc.GetEntityID()));   // on a corner
   }
   return m;
 }
@@ -604,7 +592,7 @@ public func CBCrewTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: re
     w.said = CBTalkDid(t.npc, CBTalkActCrewHeard());
     ArrayPush(out, w);
   }
-  // One of the others, and what they make of them (2.7.7, Reactions/TalkMore.reds).
+  // One of the others, and what they make of them (Reactions/TalkMore.reds).
   let other = CBCrewOtherLine(sys, game, t, m);
   if IsDefined(other) {
     ArrayPush(out, other);

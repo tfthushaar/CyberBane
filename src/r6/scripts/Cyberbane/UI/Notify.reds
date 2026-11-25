@@ -6,10 +6,6 @@
 // Signatures compile-verified against 2.31.
 
 // How long an on-screen message stays, as a multiple of what the caller asked for.
-//
-// Applied here rather than at the twenty-odd call sites, so there is one place that decides and
-// no chance of a message being missed. The call sites ask for what the message is worth
-// relative to the others; this is the player saying how long they need to read one.
 func CBMessageHold() -> Float {
   let rt = CyberbaneRuntime.Get();
   if !IsDefined(rt) || !rt.HasSettings() {
@@ -18,14 +14,7 @@ func CBMessageHold() -> Float {
   return ClampF(Cast<Float>(rt.GetSettings().messageHold) / 100.0, 0.5, 5.0);
 }
 
-// One card at a time, each kept for its whole time (2.6.3).
-//
-// This channel shows a single message. Up to 2.6.2 a card that came within 3.5 s of the last was dropped, and one that
-// came after replaced it, whatever the card on screen had asked for: at the default hold a card meant for nine seconds
-// could be gone after three and a half ("the texts go away way too fast"), and a menu's answer was lost whenever anything
-// had shown a moment before. Now a card that comes while another is up waits behind it, at most three in line, each
-// dropped once it has waited CardStaleSeconds (so nothing shows long after the thing it describes), and a menu's answer
-// (`urgent`, CBMenuNote) goes to the front and is never dropped for room.
+// One card at a time, each kept for its whole time.
 public func CBShowMessage(game: GameInstance, text: String, duration: Float, opt urgent: Bool) -> Void {
   let rt = CyberbaneRuntime.Get();
   let ts = GameInstance.GetTimeSystem(game);
@@ -132,8 +121,8 @@ public class CBCardPumpCallback extends DelayCallback {
   }
 }
 
-// The card on the screen, and its clear (2.5.6, CBCardClearCallback). How long it stays, in seconds; 0 when it could not
-// be shown. `stamp` is the sim time it went up, -1 when unknown.
+// The card on the screen, and its clear (CBCardClearCallback). How long it stays, in seconds; 0 when it could not be
+// shown. `stamp` is the sim time it went up, -1 when unknown.
 func CBPutCard(game: GameInstance, text: String, duration: Float, stamp: Float) -> Float {
   // The blackboard system is null during world transitions; dereferencing it then crashes.
   let bbs = GameInstance.GetBlackboardSystem(game);
@@ -149,7 +138,7 @@ func CBPutCard(game: GameInstance, text: String, duration: Float, stamp: Float) 
   msg.duration = MaxF(duration * CBMessageHold(), CBConfig.MessageMinSeconds());
   msg.message = text;
   bb.SetVariant(GetAllBlackboardDefs().UI_Notifications.OnscreenMessage, ToVariant(msg), true);
-  // And taken down when its time is up, if the game has not already done it (2.5.6, CBCardClearCallback).
+  // And taken down when its time is up, if the game has not already done it (CBCardClearCallback).
   let ds = GameInstance.GetDelaySystem(game);
   if IsDefined(ds) {
     let cb = new CBCardClearCallback();
@@ -160,11 +149,7 @@ func CBPutCard(game: GameInstance, text: String, duration: Float, stamp: Float) 
   return msg.duration;
 }
 
-// The card put away when its time is up (2.5.6). The game's own on-screen message is meant to fade by itself after
-// its duration, and now and then it did not: with messages going to cards, one stayed up until the next message came,
-// five minutes or half an hour later. Cyberbane now takes it down itself, a moment after the game should have, and
-// only while it is still the card Cyberbane put up: nothing of Cyberbane's has replaced it since (the stamp), and no
-// message of the game's or another mod's either (the text).
+// The card put away when its time is up.
 public class CBCardClearCallback extends DelayCallback {
   public let text: String;
   public let stamp: Float;

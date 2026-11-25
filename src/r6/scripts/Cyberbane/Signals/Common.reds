@@ -4,18 +4,12 @@
 // against Cyberpunk 2077 2.5.
 
 // Can the world clock be read yet?
-//
-// Right after a load the time system is not up, and every clock helper here answers 0 rather
-// than failing. That is fine for a cooldown and ruinous for a timetable: a plan built at that
-// moment is a plan for day 0 starting at midnight, and the real save was on day 87 in the
-// afternoon. The log shows exactly that - "Day 0: timetable set" seconds before a load, then
-// nothing from any lane until the day corrected itself five minutes later.
 public func CBClockReady(game: GameInstance) -> Bool {
   return IsDefined(GameInstance.GetTimeSystem(game));
 }
 
-// Which day of the playthrough this is, by the game's own calendar. GameTime.Days is exact and needs
-// no interpretation; anything paced "per day" uses this.
+// Which day of the playthrough this is, by the game's calendar. GameTime.Days is exact and needs no interpretation;
+// anything paced "per day" uses this.
 public func CBGameDay(game: GameInstance) -> Int32 {
   let ts = GameInstance.GetTimeSystem(game);
   if !IsDefined(ts) {
@@ -24,8 +18,8 @@ public func CBGameDay(game: GameInstance) -> Int32 {
   return GameTime.Days(ts.GetGameTime());
 }
 
-// In-game time as Float game-seconds (spec §6.1). TimeSystem.GetGameTimeStamp() returns the in-game
-// clock as a Float, which is exactly the unit Cyberbane stores.
+// In-game time as Float game-seconds (spec §6.1). TimeSystem.GetGameTimeStamp returns the in-game clock as a Float,
+// which is exactly the unit Cyberbane stores.
 public func CBGameSeconds(game: GameInstance) -> Float {
   let ts = GameInstance.GetTimeSystem(game);
   if !IsDefined(ts) {
@@ -47,10 +41,8 @@ public func CBPlayerStreetCred(game: GameInstance) -> Float {
   return stats.GetStatValue(Cast<StatsObjectID>(player.GetEntityID()), gamedataStatType.StreetCred);
 }
 
-// How far V's name carries yet (2.7.0), 0 to 1, by the game's own Street Cred: 0 for a merc new to the street, 1 from
-// StandingFullCred (about the Heist) on. "Apex squads and Rivals are brutal early, and V gets known far too fast before the
-// Heist": a merc doing gigs with Jackie is a name in a few bars, and no gang spends its best on one. 1 always with
-// "Before you're known" off.
+// How far V's name carries yet, 0 to 1, by the game's Street Cred: 0 for a merc new to the street, 1 from
+// StandingFullCred (about the Heist) on.
 public func CBMercStanding(game: GameInstance) -> Float {
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().earlyGrace {
@@ -64,7 +56,7 @@ public func CBStandingScale(game: GameInstance, share: Float) -> Float {
   return share + (1.0 - share) * CBMercStanding(game);
 }
 
-// No gang sends its best after a merc it has barely heard of (2.7.0). False with "Before you're known" off.
+// No gang sends its best after a merc it has barely heard of. False with "Before you're known" off.
 public func CBTooUnknownForApex(game: GameInstance) -> Bool {
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().earlyGrace {
@@ -73,10 +65,7 @@ public func CBTooUnknownForApex(game: GameInstance) -> Bool {
   return CBPlayerStreetCred(game) < CBConfig.ApexMinStreetCred();
 }
 
-// Which life V started from (1.8.3): EnumInt(gamedataLifePath), or -1 when it cannot be read.
-// It is saved with V and can never change inside a playthrough, which is what lets it tell two
-// characters apart (CyberbaneSystem.VerifyPlaythroughOwner). The game's own getter answers
-// Invalid when V's development data is not there yet (playerDevelopmentSystem.script).
+// Which life V started from: EnumInt(gamedataLifePath), or -1 when it cannot be read.
 public func CBPlayerLifePath(game: GameInstance) -> Int32 {
   let player = GetPlayer(game);
   if !IsDefined(player) {
@@ -95,10 +84,6 @@ public func CBPlayerLifePath(game: GameInstance) -> Int32 {
 }
 
 // Fetch a scriptable system by name, or null when the container is not there.
-//
-// The systems container is null during world transitions (loads, fast travel, Skip Time,
-// braindance entry). Calling Get on a null container reads a null context and crashes, so
-// every system lookup in the mod goes through this (crash safety).
 public func CBGetSystem(game: GameInstance, name: CName) -> ref<ScriptableSystem> {
   let container = GameInstance.GetScriptableSystemsContainer(game);
   if !IsDefined(container) {
@@ -107,9 +92,8 @@ public func CBGetSystem(game: GameInstance, name: CName) -> ref<ScriptableSystem
   return container.Get(name);
 }
 
-// Current Cyberbane district id (spec Appendix C), via PreventionSystem (S-06).
-// The game may report a sub-district (e.g. Kabuki); CBMapGameDistrict folds those
-// into the eight Cyberbane districts. Unknown names map to n"" (effects skipped).
+// Current Cyberbane district id (spec Appendix C), via PreventionSystem (S-06). The game may report a sub-district
+// (e.g. Kabuki); CBMapGameDistrict folds those into the eight Cyberbane districts.
 public func CBCurrentDistrict(game: GameInstance) -> CName {
   let prev = CBGetSystem(game, n"PreventionSystem") as PreventionSystem;
   if !IsDefined(prev) {
@@ -126,10 +110,8 @@ public func CBCurrentDistrict(game: GameInstance) -> CName {
   return CBMapGameDistrict(rec.EnumName());
 }
 
-// District to attribute an event to, for code that runs outside the fast tick - a kill, a
-// player death, the Hub. Prefers the district the tick already sampled, and only queries
-// the Prevention system live when that cache is still empty and the world is settled, so
-// these paths never drive a native world query mid-transition (crash safety).
+// Prefers the district the tick already sampled, and only queries the Prevention system live when that cache is still
+// empty and the world is settled, so these paths never drive a native world query mid-transition (crash safety).
 public func CBEventDistrict(sys: ref<CyberbaneSystem>, game: GameInstance) -> CName {
   if IsDefined(sys) {
     let cached = sys.GetCurrentDistrict();
@@ -143,16 +125,10 @@ public func CBEventDistrict(sys: ref<CyberbaneSystem>, game: GameInstance) -> CN
   return CBCurrentDistrict(game);
 }
 
-// Maps a game district/sub-district enum name to a Cyberbane district id.
-// Exact game names are confirmed in spike S-06; this covers the common forms.
-// District_Record.EnumName() returns a String.
+// Maps a game district/sub-district enum name to a Cyberbane district id. Exact game names are confirmed in spike S-06;
+// this covers the common forms. District_Record.EnumName returns a String.
 public func CBMapGameDistrict(name: String) -> CName {
-  // Lower-cased first, because the game does not spell its own districts one way. It is JapanTown
-  // with a capital T, and both Vista_del_Rey and Vista_del_rey, and a case-sensitive "Japantown"
-  // never matched: all of Japantown was no district at all, so nothing V did there counted, no gang
-  // was on its own streets there and Westbrook only ever heard about half of itself. Checked by
-  // running this over every value of gamedataDistrict. Morro Rock and the Langley clinic are the
-  // only ones left out, and both are quest stages with no parent district.
+  // Lower-cased first, because the game does not spell its own districts one way.
   let n = StrLower(name);
   if StrContains(n, "kabuki") || StrContains(n, "northside") || StrContains(n, "littlechina")
      || StrContains(n, "watson") || StrContains(n, "arasakawaterfront") {

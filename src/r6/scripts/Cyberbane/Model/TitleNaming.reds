@@ -1,19 +1,6 @@
-// Cyberbane - Title naming: the place or gang a title is actually about (spec Appendix G)
+// Cyberbane - Title naming (spec Appendix G)
 //
-// Six titles are parameterised on a district or a faction. The seed table shipped the generic
-// wording ("Butcher of the District") with a comment saying substitution would arrive with the
-// Hub. The Hub arrived in 0.1.11; this did not, so players earned "Butcher of the District"
-// while the readme advertised "Butcher of Watson". This is that substitution.
-//
-// The token is worked out from current state at display time rather than stored at unlock.
-// That is deliberate: it needs no new persistent field and so no migration, it fixes saves
-// that already hold these titles instead of leaving them stuck on the generic wording, and the
-// district your name belongs to reads better as "where you do this" than as "where you first
-// crossed a threshold".
-//
-// Iteration uses the same `for x in sys.GetXStates()` form the title conditions already use.
-// The by-value copy stays alive for the loop, which is safe; the trap called out in
-// CBTrimRumors is indexing a getter's result inside a single statement, which this never does.
+// Six titles are about a district or a faction. This fills in the actual place or gang the title was earned against.
 
 public func CBDistrictLabel(id: CName) -> String {
   if Equals(id, n"Watson") { return CBT(n"Cyberbane-TitleNaming-Watson"); }
@@ -27,9 +14,8 @@ public func CBDistrictLabel(id: CName) -> String {
   return "";
 }
 
-// A faction Cyberbane does not name itself (an add-on's, CyberbaneAPI.RegisterFaction): named from its profile (2.7.5, the
+// A faction Cyberbane does not name itself (an add-on's, CyberbaneAPI.RegisterFaction): named from its profile (the
 // nomad expansion's R1: a registered nation showed as a row with no title, and every text that named it said nothing).
-// The label ("the Wraiths") or the name ("Wraiths"), each falling back to the display key it was registered with.
 public func CBFactionProfileName(id: CName, label: Bool) -> String {
   let content = CyberbaneContent.Get();
   let p = IsDefined(content) && NotEquals(id, n"") ? content.GetFaction(id) : null;
@@ -46,7 +32,7 @@ public func CBFactionProfileName(id: CName, label: Bool) -> String {
 }
 
 public func CBFactionLabel(id: CName) -> String {
-  if CBIsCrewTurf(id) { return CBCrewTurfLabel(); }   // V's crew, holding a district (2.7.6)
+  if CBIsCrewTurf(id) { return CBCrewTurfLabel(); }   // V's crew, holding a district
   if Equals(id, n"Maelstrom") { return CBT(n"Cyberbane-TitleNaming-Maelstrom"); }
   if Equals(id, n"TygerClaws") { return CBT(n"Cyberbane-TitleNaming-TheTygerClaws"); }
   if Equals(id, n"Valentinos") { return CBT(n"Cyberbane-TitleNaming-TheValentinos"); }
@@ -67,10 +53,10 @@ public func CBFactionLabel(id: CName) -> String {
   return CBFactionProfileName(id, true);
 }
 
-// A gang's name on its own, with no article: a phone contact, a bar over a head (2.7.1). Said where a stripped label used to
-// be ("the Tyger Claws" less "the "), which only works in English.
+// A gang's name on its own, with no article: a phone contact, a bar over a head. Said where a stripped label used to be
+// ("the Tyger Claws" less "the "), which only works in English.
 public func CBFactionName(id: CName) -> String {
-  if CBIsCrewTurf(id) { return CBCrewTurfName(); }   // V's crew, holding a district (2.7.6)
+  if CBIsCrewTurf(id) { return CBCrewTurfName(); }   // V's crew, holding a district
   if Equals(id, n"Maelstrom") { return CBT(n"Cyberbane-TitleNaming-Maelstrom"); }
   if Equals(id, n"TygerClaws") { return CBT(n"Cyberbane-TitleNaming-TygerClaws"); }
   if Equals(id, n"Valentinos") { return CBT(n"Cyberbane-TitleNaming-Valentinos"); }
@@ -92,10 +78,6 @@ public func CBFactionName(id: CName) -> String {
 }
 
 // The same, to start a sentence with: "the Tyger Claws" opens with a small letter.
-//
-// Only a plain a to z is raised (2.7.1). A translation can start a line with a letter the game writes in more than one byte
-// (é, ü, д, あ), and taking the first one alone would cut it in half and garble the line; such a line is left as written,
-// which a translator can capitalise in the text itself.
 public func CBCapFirst(s: String) -> String {
   if StrLen(s) == 0 {
     return s;
@@ -107,7 +89,7 @@ public func CBCapFirst(s: String) -> String {
   return StrUpper(first) + StrMid(s, 1, StrLen(s) - 1);
 }
 
-// The other way round, to carry on a sentence: only a plain A to Z is lowered, for the same reason (2.7.1).
+// The other way round, to carry on a sentence: only a plain A to Z is lowered, for the same reason.
 public func CBLowFirst(s: String) -> String {
   if StrLen(s) == 0 {
     return s;
@@ -190,8 +172,7 @@ func CBTopFactionLabel(sys: ref<CyberbaneSystem>, friendly: Bool) -> String {
 }
 
 // The gang a Nightmare title is about: the one that earned it (75 of theirs down, fearing V at TitleFearNeeded), the
-// most of theirs down first; before any does, the gang V has put the most of down. It named the gang with the worst
-// standing, which need not be the one the title was earned on.
+// most of theirs down first; before any does, the gang V has put the most of down.
 func CBNightmareGangLabel(sys: ref<CyberbaneSystem>) -> String {
   if !IsDefined(sys) {
     return "";

@@ -1,21 +1,7 @@
-// Cyberbane - The crew at work, and goods that change hands (2.7.2)
+// Cyberbane - Crew jobs, the kitty and goods
 //
-// "Take out a Rival; one of yours vs one of mine; take out a bagman; be a bagman and bank the cash; all without V there.
-// And sell what comes out of a stolen bag to other gangs."
-//
-// All of it is arithmetic on the crew's tick, told by text and shown on the Hub; nothing is spawned for it.
-//   - Send them on a job (a member's Orders): a hit on a Rival V knows (from Veteran up), or a gang's bag (from Soldier
-//     up). Away some hours, then the odds decide: their rank, the weapon and chrome V gave them, their training, a spar's
-//     edge, and for a hit what the crew knows of the Rival's weak spot, against the Rival's rank and escapes or the gang's
-//     strength. A hit lands (the Rival is dead, on V's side), leaves the Rival wounded and holed up (a lead with a pin),
-//     or goes wrong (the member comes back hurt, or not at all, and the Rival climbs).
-//   - The kitty: what the crew brings in (earnings and bags) goes into it. It pays the weekly cut by itself, V takes it on
-//     the Hub when home, and a member running the money drops it at V's place every couple of days, unless a gang that
-//     hates the crew jumps them on the way.
-//   - One of yours against one of mine: the Tyger Claws and the Valentinos, gangs with a code for it, now and then send
-//     V a challenge. V picks somebody on the Hub, or turns it down and loses face with them. Settled off-screen.
-//   - Goods: now and then a robbed bag is a gang's goods instead of cash, kept as a number (never an item). Sold to
-//     somebody of another gang, best to that gang's enemies, or back to its owners for less. Goods go stale in days.
+// Jobs from a member's orders (a hit on a Rival, a gang's bag), the crew's shared money, challenges from other gangs
+// and goods to sell. All worked out on the crew's tick and told by text; nothing is spawned.
 
 public func CBCrewJobHit() -> Int32 = 1
 public func CBCrewJobBag() -> Int32 = 2
@@ -396,7 +382,7 @@ public func CBCrewJobsTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: 
       let gang = jb.GangAt(i);
       let odds = jb.OddsAt(i);
       jb.RemoveAt(i);
-      // A Rival who put them on the ground before may be waiting (Rivals/RivalTimeline.reds, 2.7.7).
+      // A Rival who put them on the ground before may be waiting (Rivals/RivalTimeline.reds).
       if IsDefined(m) {
         odds = CBRivalHuntsCrewOnJob(sys, game, m, odds);
       }

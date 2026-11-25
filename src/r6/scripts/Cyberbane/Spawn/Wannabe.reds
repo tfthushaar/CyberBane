@@ -1,23 +1,7 @@
-// Cyberbane - Wannabes ([1], 2.3.1)
+// Cyberbane - Wannabes ([1])
 //
 // Once V's name means something, a kid out to make theirs walks up and squares up, fists only. Win, walk away
 // or lose, and the street hears how it went.
-//
-// One at a time, out of sight to start with, never in a safe area, a quest area, on a job, in a scene or with a
-// hunt on. Spawned from a record the game itself arms with fists (Character.*_melee1_fists_* and the like), by
-// the district: a Tyger Claws hopeful in Watson, a Valentino in Heywood, an Animal in Santo Domingo and
-// Pacifica, a scav out past the walls. Nothing is given or taken from anybody; no gun ever enters it, unless V
-// brings one, and the street notices that too.
-//
-//   approach  they walk up (one move order at a time, CBIssueMove), and within a few metres say their piece and
-//             turn hostile to V alone
-//   the fight V puts them down (a win), V's health drops too far (they stand down and gloat: a loss), or V walks
-//             off (the kid tells everybody V would not fight)
-//   after     they stand down if still up, and are removed once V is not looking (CBDeleteTaggedSafe)
-//
-// Tagged CB_Wannabe, one of the street's own (CBStreetTags), so the combat release, the sanctuary hold and the
-// re-arm watch reach them. Set up as a street person (CBSetUpStreet, Spawn/Spawner.reds). Session state only,
-// in the street book: a load drops whoever was out, and the world drops them with it.
 
 public func CBWannabesOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -64,7 +48,7 @@ public func CBWannabeTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
   let busy = sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsOnJob() || sys.IsInSanctuary()
           || sys.IsInSafeZone() || CBPlayerInScene(game);
   if book.wannabeStage == CBWannabeNone() {
-    // Not on home ground, nor in the quiet a night at home bought (2.7.1, Spawn/HomeGround.reds).
+    // Not on home ground, nor in the quiet a night at home bought (Spawn/HomeGround.reds).
     if !busy && !CBHomeKeepsOut(sys) && !CBSleepPeace(game) && sys.GetTickCount() % 5 == 0 {
       CBWannabeMaybe(sys, game, book, player);
     }
@@ -145,8 +129,8 @@ func CBWannabeMaybe(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBS
   }
   book.wannabeNext = now + CBConfig.WannabeGapHours() * CBConfig.SecondsPerHour() * (0.75 + RandF() * 0.5);
   let district = sys.GetCurrentDistrict();
-  // Where V's name is newest (2.6.5): talked about but not yet a legend, the kids want it most; where nobody knows V
-  // there is nothing to win, and where V is a legend few dare.
+  // Where V's name is newest: talked about but not yet a legend, the kids want it most; where nobody knows V there is
+  // nothing to win, and where V is a legend few dare.
   if RandF() >= CBConfig.WannabeChance() * CBWannabeDistrictPull(sys, district) {
     return;
   }
@@ -160,7 +144,7 @@ func CBWannabeMaybe(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBS
     book.wannabeTick = sys.GetTickCount();
     book.wannabeStage = CBWannabeWalking();
     book.wannabeDistrict = district;
-    // Friends to watch (2.6.5), who carry the story whichever way it goes. Only with room to spare.
+    // Friends to watch, who carry the story whichever way it goes. Only with room to spare.
     let friends = 0;
     if CBSpawnRoom(game) > CBConfig.WannabeFriends() + CBConfig.TurfPatrolKeepRoom() {
       let friendBody: EntityID;
@@ -170,7 +154,7 @@ func CBWannabeMaybe(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBS
   }
 }
 
-// How much more likely a wannabe is here (2.6.5), by how V's name stands in the district.
+// How much more likely a wannabe is here, by how V's name stands in the district.
 func CBWannabeDistrictPull(sys: ref<CyberbaneSystem>, district: CName) -> Float {
   let ds = IsDefined(sys) && NotEquals(district, n"") ? sys.FindDistrict(district) : null;
   let renown = IsDefined(ds) ? ds.renown : 0.0;
@@ -183,7 +167,7 @@ func CBWannabeDistrictPull(sys: ref<CyberbaneSystem>, district: CName) -> Float 
   return renown < 80.0 ? 1.0 : 0.4;
 }
 
-// The friends keep up, and stop where they can see (2.6.5).
+// The friends keep up, and stop where they can see.
 func CBWannabeFriendsWalk(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>) -> Void {
   for id in des.GetTaggedIDs(n"CB_WannabeFriend") {
     let f = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
@@ -262,7 +246,7 @@ func CBWannabeWon(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBStr
     }
     return;
   }
-  // Friends who watched carry it further (2.6.5).
+  // Friends who watched carry it further.
   let watched = CBWannabeFriendsLeave(sys, game);
   CBApplyDistrictRenown(sys, book.wannabeDistrict, CBConfig.WannabeRenown() * (watched > 0 ? 1.5 : 1.0));
   CBFileLog(sys, n"WannabeBeaten", now, CBEventDistrict(sys, game), CBClassifyFaction(p), 0.0);
@@ -270,7 +254,7 @@ func CBWannabeWon(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBStr
     CBOverheard(game, CBT(n"Cyberbane-Wannabe-WannabeSFriend"), CBPick3(CBT(n"Cyberbane-Wannabe-GetUpHeSNotGetting"), CBT(n"Cyberbane-Wannabe-ToldHimToldHimItWas"),
                                                   CBT(n"Cyberbane-Wannabe-NobodySGonnaBelieveThisI")), true);
   }
-  // Dead, said as dead (2.5.5): a kid V beat to death with fists or a blade was told as "out cold".
+  // Dead, said as dead: a kid V beat to death with fists or a blade was told as "out cold".
   if CBMessagesOn() && IsDefined(p) && p.IsDead() {
     CBHearsayFromStreet(game, CBPick2(CBT(n"Cyberbane-Wannabe-ThatKidWhoSquaredUpTo"),
                                       CBT(n"Cyberbane-Wannabe-AKidWantedAFistfightWith")), n"");

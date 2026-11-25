@@ -54,10 +54,9 @@ print('%d options, %d with no effect' % (len(options), len(dead)))
 if dead:
     print('dead: ' + ', '.join(n for _, n in dead))
 
-# Every option carries exactly one label and one description, its own (2.5.6). redscript hands a field every annotation
-# written above it since the last field, so a field slipped in between an option's annotations and its `let` takes them:
-# 2.4.6 did that to "Hub in the pause menu", which became a second name on Voices while the real switch left the menu.
-# The settings class is a Mod Settings class, so every public field in it is an option and needs both.
+# Every option needs exactly one label and one description. redscript gives a field every annotation written since
+# the previous field, so a field slipped in between an option's annotations and its `let` steals them. Every public
+# field in the settings class is a Mod Settings option and needs both.
 loose = []
 labels, descs = [], []
 for n, line in enumerate(src[SETTINGS].split('\n'), 1):

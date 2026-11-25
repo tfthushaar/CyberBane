@@ -4,8 +4,6 @@
 // the pure ScoreMath functions, caches the derived headline values, and exposes
 // them to the reaction and UI layers. Live inputs (chrome, look, heat, street
 // cred) are pushed in by the Signals layer; everything else is read from state.
-//
-// The engine is a runtime object (not persisted); CyberbaneSystem lazily creates it.
 
 public class CBScoreEngine {
   private let m_system: wref<CyberbaneSystem>;
@@ -79,9 +77,8 @@ public class CBScoreEngine {
   public func GetLook() -> Float { return this.m_look; }
   public func GetDisguise() -> Float { return this.m_disguise; }
   public func GetHeatStage() -> Int32 { return this.m_heatStage; }
-  // Momentary menace (spec 8.6): what V looks like doing right now, as opposed to what V is
-  // known for. Drawn weapon, running combat chrome, mid-fight, fresh bodies nearby, police
-  // attention. Recomputed on the sampling tick; never persisted, because it describes a moment.
+  // Momentary menace (spec 8.6): what V looks like doing right now, as opposed to what V is known for. Drawn weapon,
+  // running combat chrome, mid-fight, fresh bodies nearby, police attention.
   public func GetAura() -> Float { return this.m_aura; }
 
   // Content via the system's cached accessor (never re-locks the global container; crash safety).
@@ -110,11 +107,6 @@ public class CBScoreEngine {
     let x = CBDeedDreadComponent(sys.GetDeedDreadPoints());
     let h = CBHeatDreadComponent(sys.GetHeatPoints());
     // Visible chrome, not installed chrome.
-    //
-    // This read m_chrome, which is the humanity-weighted total of everything fitted, so dread
-    // could never respond to clothing: a player who put a coat on over gorilla arms saw the
-    // number stay exactly where it was. What frightens a stranger is what the stranger can
-    // see, which is what m_chromeVisible is for and what Concealment.reds reduces.
     this.m_dread = CBComputeDread(k, this.m_chromeVisible, this.m_look, x, h);
 
     let stats = sys.GetStats();
@@ -147,8 +139,8 @@ public class CBScoreEngine {
     return this.m_renown;
   }
 
-  // Renown from what Cyberbane has counted alone, without the Street Cred floor (2.5.2). Below GetRenown while the floor
-  // holds it up, which the Standing page says, since nothing V does moves the number until this passes it.
+  // Renown from what Cyberbane has counted alone, without the Street Cred floor. Below GetRenown while the floor holds
+  // it up, which the Standing page says, since nothing V does moves the number until this passes it.
   public func GetEarnedRenown() -> Float {
     this.Recompute();
     return this.m_renownEarned;
@@ -177,10 +169,8 @@ public class CBScoreEngine {
     return -1;
   }
 
-  // ---- Faction-derived values -------------------------------------------
-  // The standing the gang acts on: what V earned, or the stance set by hand under How gangs see you in
-  // Mod Settings (CBActingStanding, 2.1.0). Posture is worked out from this, so everything keyed off it
-  // follows the setting too.
+  // ---- Faction-derived values ------------------------------------------- The standing the gang acts on: what V
+  // earned, or the stance set by hand under How gangs see you in Mod Settings (CBActingStanding).
   public func GetStanding(factionId: CName) -> Float {
     let sys = this.m_system;
     if IsDefined(sys) {
@@ -199,10 +189,8 @@ public class CBScoreEngine {
     return CBActingStanding(factionId, 0.0);
   }
 
-  // A faction switched off under Factions in Mod Settings has no posture towards V: Neutral, whatever
-  // its standing says (1.9.1, CBFactionOn). Every reaction keyed off posture - hostility on sight, the
-  // warning, whispers, crews, apex squads, ambushes, patrols, a pay-off - stands down with it from here.
-  // The standing itself is untouched and is what comes back when the faction is switched on again.
+  // A faction switched off under Factions in Mod Settings has no posture towards V: Neutral, whatever its standing says
+  // (CBFactionOn).
   public func GetPosture(factionId: CName) -> ECBPosture {
     if !CBFactionOn(factionId) {
       return ECBPosture.Neutral;

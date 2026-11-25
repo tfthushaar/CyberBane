@@ -4,9 +4,6 @@
 // Renown there and then spreads to adjacent districts on the slow tick (every 6
 // in-game hours, up to 2 hops, 50% magnitude per hop) before expiring after 3
 // in-game days. Reputation is "local before global" (spec pillar 3).
-//
-// Pure logic. Origin districts come from the district signal (S-06); until that
-// lands, origins are n"" and district effects are skipped, but the plumbing runs.
 
 public func CBApplyDistrictRenown(sys: ref<CyberbaneSystem>, districtId: CName, amount: Float) -> Void {
   if !IsDefined(sys) || Equals(districtId, n"") || amount <= 0.0 || CBReputationFrozen() {
@@ -54,10 +51,8 @@ public func CBBraindanceOn() -> Bool {
   return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().braindanceGoesRound;
 }
 
-// The braindance goes round ([9], 2.3.1). Somebody had a recorder running: a deed big enough, done where people
-// could see V's face, is on every BD stall in the city at once. It reaches every district in one go, at the
-// strength a story has after one hop, and goes no further (there is nowhere further to go). Through the same
-// renown and the same grapevine as any rumour, so nothing reads it twice.
+// The braindance goes round ([9]). Somebody had a recorder running: a deed big enough, done where people could see V's
+// face, is on every BD stall in the city at once.
 func CBBraindanceGoesRound(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRumor>) -> Void {
   if !CBBraindanceOn() || !IsDefined(r) || !r.witnessed || r.magnitude < CBConfig.BraindanceMinMagnitude()
      || CBDistrictIndex(r.origin) < 0 || RandF() >= CBConfig.BraindanceChance() {
@@ -84,11 +79,6 @@ func CBBraindanceGoesRound(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref
 }
 
 // Drop rumors once the store is over its cap, oldest-expired first.
-//
-// Every element is fetched through GetRumorAt, which indexes the live persistent array
-// directly. Never index the array returned by GetRumors(): that getter returns the array
-// *by value*, so indexing the call result reads out of a temporary copy that is torn down
-// at the end of the statement, leaving a handle to freed memory (crash safety).
 func CBTrimRumors(sys: ref<CyberbaneSystem>, now: Float) -> Void {
   let lifetime = CBConfig.RumorLifetimeDays() * CBConfig.SecondsPerDay();
   let guardTrips = 0;
@@ -150,10 +140,6 @@ public func CBRumorTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
 
 // Spread a rumor one hop outward: every district adjacent to one it has already reached
 // picks it up at half magnitude.
-//
-// The "already reached" set is a bit per district on the rumor itself, and the walk is a
-// counted loop over the fixed district list - there is no stored list to index into and
-// nothing here can run past the end of anything, whatever a save hands back.
 func CBSpreadRumor(sys: ref<CyberbaneSystem>, game: GameInstance, content: ref<CyberbaneContent>, r: ref<CBRumor>, now: Float) -> Void {
   if !IsDefined(sys) || !IsDefined(content) || !IsDefined(r) {
     return;

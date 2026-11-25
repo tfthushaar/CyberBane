@@ -1,17 +1,8 @@
-// Cyberbane - Cleared streets (2.6.1, experimental, off by default)
+// Cyberbane - Cleared streets (experimental, off by default)
 //
-// "An option to actually clear out gangs when you kill them, like they don't respawn."
-//
-// The game's own people come from its spawners, and no script can switch a spawner off. What the game itself does
-// with somebody it wants gone is let them run and mark them a despawn candidate (reactionComponent.script: a frightened
-// passer-by flees and is taken out of the world once nobody can see them; ReactionSystem.MarkDespawnCandidate). That is
-// what this uses, and nothing else: no body is deleted and nobody is removed where V can see it.
-//
-// When V wipes out a gang somewhere (ClearKills of theirs dead in one fight, and none of theirs left standing near the
-// last body), that spot is theirs no more for ClearDays in-game days. Anybody of that gang who turns up within
-// ClearRadius of it walks off, and the game takes them out of the world once out of sight. A quest's people, a
-// vendor, anybody the Safety Gate keeps out, Cyberbane's own and anybody already fighting are never touched. Kept in
-// its own book, so nothing already saved changes shape; switching the setting off stops it at once.
+// The game's people come from its spawners, and no script can switch a spawner off. What the game itself does with
+// somebody it wants gone is let them run and mark them a despawn candidate (reactionComponent.script: a frightened
+// passer-by flees and is taken out of the world once nobody can see them; ReactionSystem.MarkDespawnCandidate).
 
 public class CBClearBook extends ScriptableSystem {
   private persistent let m_x: array<Float>;

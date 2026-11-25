@@ -1,33 +1,18 @@
-// Cyberbane - The web of gangs ([H1], 2.4.3)
+// Cyberbane - The web of gangs ([H1])
 //
-// The Factions page as a picture: V in the middle, the eleven gangs round V placed roughly where they live, so the
-// ring reads as a rough Night City (Maelstrom and the Claws at the top for Watson and Westbrook, the Valentinos and
-// 6th Street lower middle for Heywood and Santo Domingo, the Animals, the Voodoo Boys and Barghest lower left for
-// Pacifica and Dogtown, the Wraiths and the Aldecaldos to the right for the Badlands), the corporations and the NCPD
-// in a small row beneath with V's lines only. A switch on the page goes between this and the list; the Hub remembers
-// which for the session.
-//
-//   V's line to a gang   by how they treat V: thick green Allied, green Friendly, thin grey Neutral, amber Hostile,
-//                        thick red Vendetta; with a word for what is live on it (OPEN SEASON, TRACKER, BACKED, PEACE
-//                        PAID, SAFE PASSAGE, PAY UP, A PRICE ON YOU)
-//   between two gangs    red at war now (a challenger for a district the other holds), dim red the standing feud,
-//                        cyan a truce against V, amber where V set one on the other, bright red a clash in the street
-//                        today
-//   a gang's box         name, how they treat V and the standing, streets held, the leader, and two bars: manpower
-//                        and the war chest
-//
-// Drawn in the Hub's own canvas (UI/Hud.reds, BuildWeb and RenderWeb): nothing is put into the game's menus, so the
-// crash rule for UI stands. A line is a thin rectangle turned about its left end (SetRenderTransformPivot,
-// SetRotation in degrees, clockwise on screen, as the game's own photo-mode stickers turn), both on 2.31 and 2.5.
-// Everything here is a read of a book that already exists; no saved data, no per-frame work.
+// The Factions page as a picture: V in the middle, the eleven gangs round V placed roughly where they live, so the ring
+// reads as a rough Night City (Maelstrom and the Claws at the top for Watson and Westbrook, the Valentinos and 6th
+// Street lower middle for Heywood and Santo Domingo, the Animals, the Voodoo Boys and Barghest lower left for Pacifica
+// and Dogtown, the Wraiths and the Aldecaldos to the right for the Badlands), the corporations and the NCPD in a small
+// row beneath with V's lines only.
 
 public func CBWebSlotCount() -> Int32 = 17
-// The gangs' places, 1 to this; the corporations and the law after them (2.6.4: twelve, with the Scrappers).
+// The gangs' places, 1 to this; the corporations and the law after them (twelve, with the Scrappers).
 public func CBWebGangSlots() -> Int32 = 12
 public func CBWebLinePool() -> Int32 = 64
 public func CBWebWordPool() -> Int32 = 14
 public func CBWebHeight() -> Float = 440.0
-// Boxes and type sized to read from a sofa (2.5.0): the first pictures were 16 to 20 px names and 11 px lines at 1080p.
+// Boxes and type sized to read from a sofa: the first pictures were 16 to 20 px names and 11 px lines at 1080p.
 public func CBWebGangW() -> Float = 220.0
 public func CBWebGangH() -> Float = 92.0
 public func CBWebSmallW() -> Float = 190.0
@@ -156,8 +141,8 @@ public func CBWebPostureColour(posture: ECBPosture) -> HDRColor {
   return CBHudGrey();
 }
 
-// The word on V's line to this gang: what is live between them, the most pressing first, or "".
-// The words that mean trouble, one function each so the tint below asks the same words the box shows (2.7.1).
+// The word on V's line to this gang: what is live between them, the most pressing first, or "". The words that mean
+// trouble, one function each so the tint below asks the same words the box shows.
 func CBWebWordOpenSeason() -> String {
   return CBT(n"Cyberbane-HubWeb-OPENSEASON");
 }
@@ -230,7 +215,7 @@ public func CBWebPair(sys: ref<CyberbaneSystem>, game: GameInstance, a: CName, b
     return CBWebPairWar();
   }
   // Each list in a local of its own before it is searched: ArrayContains handed a function's result, inside ||, took
-  // the gang's name for an address and crashed the game as the Gangs page opened (2.5.0). Never a temporary.
+  // the gang's name for an address and crashed the game as the Gangs page opened. Never a temporary.
   let content = sys.GetContent();
   if !IsDefined(content) {
     return CBWebPairNone();
@@ -272,10 +257,10 @@ public func CBWebBoxLine(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CN
   if !IsDefined(score) {
     return "";
   }
-  // One word (2.5.0): the standing's number, the streets held and the leader are in the panel under the picture,
-  // where the gang's box sent them as three lines of 11 px text.
+  // One word: the standing's number, the streets held and the leader are in the panel under the picture, where the
+  // gang's box sent them as three lines of 11 px text.
   let out = StrUpper(CBPostureName(score.GetPosture(gang)));
-  // A clan or raffen says so (2.7.4): "CLAN  ·  HOSTILE".
+  // A clan or raffen says so: "CLAN · HOSTILE".
   let label = CBFactionCardLabel(gang);
   return StrLen(label) > 0 ? StrUpper(label) + "  ·  " + out : out;
 }
@@ -333,7 +318,7 @@ public func CBWebLegend() -> String {
   return CBT(n"Cyberbane-HubWeb-EachCardIsAGangWhat");
 }
 
-// How a gang stands with the one picked, on its card (2.5.0).
+// How a gang stands with the one picked, on its card.
 public func CBCardPairWords(kind: Int32, other: String) -> String {
   if kind == CBWebPairClash() { return CBTf(n"Cyberbane-HubWeb-FoughtToday", [other]); }
   if kind == CBWebPairWar() { return CBTf(n"Cyberbane-HubWeb-AtWarWith", [other]); }
@@ -351,8 +336,8 @@ public func CBCardPairTint(kind: Int32) -> HDRColor {
   return CBHudDim();
 }
 
-// Where a gang's card goes among the rest: out for blood first, then hostile, neutral, friendly, allied, and within each
-// the worst standing first; a gang switched off goes last (2.5.0).
+// Where a gang's card goes among the rest: out for blood first, then hostile, neutral, friendly, allied, and within
+// each the worst standing first; a gang switched off goes last.
 public func CBCardRank(score: ref<CBScoreEngine>, gang: CName) -> Float {
   if !CBFactionOn(gang) || !IsDefined(score) {
     return 10000.0;

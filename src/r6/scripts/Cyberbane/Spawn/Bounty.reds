@@ -1,23 +1,7 @@
-// Cyberbane - A price on V's head, the hunters' ladder, and the corporations (2.4.3)
+// Cyberbane - Bounties and the corporations
 //
-//   [39] a price on V's head   a gang sworn against V with money in its chest and a leader to sign for it, a Rival who
-//                              has met V often enough, or a corporation, puts a price on V. Named solos take it: one at
-//                              a time, now and then two, each in their own time and with a text first. The price ends
-//                              when V pays it (the Hub's Standing page), kills whoever put it up, or whoever put it up
-//                              stops wanting V dead.
-//   the hunters' ladder        ten names, ranked ten to one. The one who comes is the one just above V. Beat them and V
-//                              takes their place; at the top V is the most dangerous merc in Night City, and the one
-//                              below comes for it. A hunter V beats and leaves breathing can come back as a Rival of
-//                              whoever was paying them.
-//   [20] the corporations      with this on, Arasaka, Militech and Kang Tao send no crews: they put out a contract and
-//                              hire the ladder, and a contract can be bought off, at a corporate price.
-//   [88] corporate interest    once V is a Legend, a corporation takes notice: one of its people (nobody from the story)
-//                              offers V a contract on a gang's leader, or warns V off when V has been costing it.
-//
-// Saved in the hunt book (CBHuntBook), whose bounty, ladder and corporation fields were laid out for this in 2.4.1, so
-// no saved shape changes. A hunter is CB_Squad, so every list that covers a crew covers them (hunted, ordered, held in a
-// safe area, released, swept, removed for the story), with CB_Bounty beside it to say which is which. Set up here
-// (CBSetUpBountyHunter, from Spawn/Spawner.reds), built like an apex member by their rank, kitted by their kind.
+// Prices on V's head from gangs, Rivals and corporations, the named hunters who come to collect, and corporate interest
+// in V.
 
 public func CBPriceOnHeadOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -54,7 +38,7 @@ public func CBHunterName(seed: Int32) -> String {
 public func CBHunterHandle(seed: Int32) -> String {
   let handles = ["the Hound", "Long Arm", "Bird Dog", "Lockjaw", "Steel Trap", "Crosshair", "Packwolf", "Manhunter",
                  "Sure Shot", "Homing", "the Collector", "Repo", "Night Owl", "Snare", "Gunsight", "Leash", "Headhunter"];
-  return CBEpithetText(handles[CBHashIndex(seed, 7, ArraySize(handles))]);   // translated as every epithet is (2.7.6)
+  return CBEpithetText(handles[CBHashIndex(seed, 7, ArraySize(handles))]);   // translated as every epithet is
 }
 
 // What they fight with: 0 a gunslinger, 1 a blade, 2 a heavy, 3 a netrunner, 4 a sniper.
@@ -82,9 +66,8 @@ public func CBHunterTraitWord(seed: Int32) -> String {
   }
 }
 
-// How long until the next hunter on the ladder (2.6.5): as the grudge clock reads a gang (Spawn/Grudge.reds), by the grudge
-// of whoever put the price on V, and the player's How eager gangs are. A payer whose anger has cooled sends fewer; one at the
-// bottom of Vendetta, more. A corporation's price is business and keeps its pace.
+// How long until the next hunter on the ladder: as the grudge clock reads a gang (Spawn/Grudge.reds), by the grudge of
+// whoever put the price on V, and the player's How eager gangs are.
 func CBBountyGapHours(sys: ref<CyberbaneSystem>, book: ref<CBHuntBook>) -> Float {
   let hours = CBConfig.BountyGapHours();
   let payer = IsDefined(book) ? book.BountyBy() : n"";
@@ -139,8 +122,7 @@ public func CBHunterRecord(seed: Int32, payer: CName) -> TweakDBID {
     }
   }
   // Nobody's: a solo for V's crew (Reactions/Crew.reds, [C3]). The roster has no list for no gang, so without Phantom
-  // Liberty this was always invalid and the broker never once offered a solo (2.5.0). Freelance-looking fighters the
-  // base game has, by the seed, so the one offered is the one hired.
+  // Liberty this was always invalid and the broker never once offered a solo.
   let from = payer;
   if !IsNameValid(from) {
     let freelance: array<CName> = [n"Militech", n"KangTao", n"Arasaka", n"SixthStreet", n"Aldecaldos"];
@@ -333,7 +315,7 @@ func CBBountyPost(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBHun
   book.SetHunterNext(now + RandRangeF(CBConfig.BountyFirstHoursMin(), CBConfig.BountyFirstHoursMax()) * CBConfig.SecondsPerHour());
   let gang = CBBountyGang(sys, by);
   CBFileLog(sys, n"BountyPosted", now, CBEventDistrict(sys, game), gang, Cast<Float>(amount));
-  CBEmit(n"Cyberbane/BountyPosted", gang, Cast<Float>(amount));   // [91], 2.4.6
+  CBEmit(n"Cyberbane/BountyPosted", gang, Cast<Float>(amount));   // [91]
   CBLog.Info(n"Spawn", s"A price on V's head: \(amount)eb from \(NameToString(by)).");
   if !CBMessagesOn() {
     return;
@@ -698,11 +680,11 @@ func CBHunterBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBH
   sys.AddRenownPoints((CBConfig.HunterRenownBase() + CBConfig.HunterRenownPerPlace() * Cast<Float>(CBConfig.LadderPlaces() + 1 - rank)) * mult);
   if after != before {
     CBFileLog(sys, n"LadderRank", now, CBEventDistrict(sys, game), n"", Cast<Float>(after));
-    CBEmit(n"Cyberbane/LadderRank", gang, Cast<Float>(after));   // [91], 2.4.6
+    CBEmit(n"Cyberbane/LadderRank", gang, Cast<Float>(after));   // [91]
   }
   if killed {
     CBGiveStreetCred(game, CBConfig.CredHunterPerPlace() * (CBConfig.LadderPlaces() + 1 - rank)
-                           + (after == 1 && before != 1 ? CBConfig.CredLadderTop() : 0));   // [87], 2.4.6
+                           + (after == 1 && before != 1 ? CBConfig.CredLadderTop() : 0));   // [87]
   }
   CBLog.Info(n"Spawn", s"Bounty hunter rank \(rank) beaten (killed: \(killed)); V is rank \(after).");
   if !CBMessagesOn() {

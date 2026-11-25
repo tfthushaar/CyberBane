@@ -4,10 +4,8 @@
 // event into point deltas. Unwitnessed multipliers are applied by the caller
 // (renown 0.25x, dread 0.5x, standing 0.25x).
 
-// ---- Archetype primary (spec §8.3) ---------------------------------------
-// Returns the primary archetype index, or -1 (Unknown) when the total is below
-// the minimum. Switching primary requires the new leader to beat 1.25x the
-// current primary's value (hysteresis), which avoids flip-flopping.
+// ---- Archetype primary (spec §8.3) --------------------------------------- Returns the primary archetype index, or -1
+// (Unknown) when the total is below the minimum.
 public func CBPrimaryArchetype(archetype: array<Float>, currentPrimary: Int32) -> Int32 {
   let count = ArraySize(archetype);
   if count == 0 {
@@ -22,9 +20,8 @@ public func CBPrimaryArchetype(archetype: array<Float>, currentPrimary: Int32) -
   if total < CBConfig.ArchetypeMinTotal() {
     return -1;
   }
-  // Start from whatever V already reads as, so an exact tie keeps the existing label rather
-  // than snapping to whichever archetype happens to sit at index 0 (Butcher). Without this,
-  // a player whose Ghost and Butcher scores are level is told they are a Butcher.
+  // Start from whatever V already reads as, so an exact tie keeps the existing label rather than snapping to whichever
+  // archetype happens to sit at index 0 (Butcher).
   let best = 0;
   let bestVal = archetype[0];
   if currentPrimary >= 0 && currentPrimary < count {
@@ -107,11 +104,6 @@ public func CBFactionRenownForKill(victimClass: Int32, brutal: Bool) -> Float {
 
 // A kill counts as brutal when it was a killing takedown, or done with a blade or bare hands
 // (spec §7.1.2).
-//
-// This test used to include dismemberment, which has no signal on 2.5 and is gone, and it read
-// a blade flag that was set for every melee attack including clubs. Both inputs it has now are
-// real: the weapon is inspected for blade and fists, and the finisher comes from the takedown
-// type. Shooting someone is not brutal, and a hammer is its own thing.
 public func CBIsBrutalKill(finisher: Bool, blade: Bool, fists: Bool) -> Bool {
   return finisher || blade || fists;
 }

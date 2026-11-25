@@ -4,9 +4,6 @@
 // flags and bonuses (spec §8.1/§8.2). An episode starts on V's first kill, and
 // resolves once V has been out of combat for EncounterEndTimeout ticks (~seconds).
 // Runtime object; not persisted. Tick timing uses the system's ~1 Hz tick counter.
-//
-// Flawless is judged on the lowest health V fell to over the whole fight, from the moment V is in
-// combat rather than from the first kill (CBEncounterTick); Massacre and BossDown on what went down.
 
 public class CBEncounter {
   public let active: Bool;
@@ -22,16 +19,14 @@ public class CBEncounter {
   // Lowest health V dropped to during this fight, as a stat-pool percentage. -1.0 means
   // nothing has been sampled yet.
   public let playerHpMin: Float;
-  // The same, for the part of a fight before V's first kill, when no encounter is open yet. The
-  // fight starts when V is in combat, not when somebody first goes down, so this is carried into the
-  // encounter when it opens. Forgotten once V is out of combat with nobody down.
+  // The same, for the part of a fight before V's first kill, when no encounter is open yet. The fight starts when V is
+  // in combat, not when somebody first goes down, so this is carried into the encounter when it opens.
   public let preHpMin: Float;
   public let preSampled: Bool;
-  // Where the last of them went down, and whose they were (2.3.1): a massacre is remembered there
-  // (Model/StreetBook.reds).
+  // Where the last of them went down, and whose they were: a massacre is remembered there (Model/StreetBook.reds).
   public let lastBodyAt: Vector4;
   public let lastBodyGang: CName;
-  public let lastGangBodies: Int32;     // how many of lastBodyGang V has killed in this fight (2.6.1, Spawn/ClearedStreets.reds)
+  public let lastGangBodies: Int32;     // how many of lastBodyGang V has killed in this fight (Spawn/ClearedStreets.reds)
 }
 
 // How much health V may lose and still call a fight flawless.
@@ -50,9 +45,7 @@ func CBSamplePlayerHp(game: GameInstance, player: ref<PlayerPuppet>) -> Float {
   return sps.GetStatPoolValue(Cast<StatsObjectID>(player.GetEntityID()), gamedataStatPoolType.Health, true);
 }
 
-// `alreadyDown`: this one was counted in the encounter when they went down alive, and has now
-// been finished. Inside that same encounter they become a body without being counted twice; if
-// the encounter has closed since, this is a fresh incident like any other.
+// `alreadyDown`: this one was counted in the encounter when they went down alive, and has now been finished.
 public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>, opt alreadyDown: Bool) -> Void {
   if !IsDefined(sys) || !IsDefined(info) {
     return;
@@ -97,9 +90,7 @@ public func CBEncounterRecordKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInf
     enc.bodies += 1;
     ArrayPush(enc.killTicks, sys.GetTickCount());
   }
-  // The massacre test only looks at a 30-tick window, so older entries can never change
-  // the answer. Keeping the list bounded matters because a fight V never breaks off would
-  // otherwise grow it for the whole session, and the window scan is quadratic.
+  // The massacre test only looks at a 30-tick window, so older entries can never change the answer.
   while ArraySize(enc.killTicks) > CBConfig.CapEncounterKillTicks() {
     ArrayErase(enc.killTicks, 0);
   }
@@ -126,9 +117,7 @@ public func CBEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     }
     return;
   }
-  // Flawless needs to know whether V was ever hurt. Sampling the health pool on the tick
-  // gives that without hooking the player's damage path, which is the hottest path in the
-  // game and the last place this mod should be adding a wrapper.
+  // Flawless needs to know whether V was ever hurt.
   let hp = CBSamplePlayerHp(game, player);
   if hp >= 0.0 {
     if enc.playerHpMin < 0.0 || hp < enc.playerHpMin {
@@ -184,7 +173,7 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
     CBCreateRumor(sys, game, n"Massacre", 8.0, CBEventDistrict(sys, game), n"", true);
     if enc.bodies > 0 {
       CBRememberPlace(sys, game, n"Massacre", enc.lastBodyGang, CBEventDistrict(sys, game), enc.lastBodyAt);
-      CBWarLoseMen(game, enc.lastBodyGang, CBConfig.WarMenMassacre());   // their ranks empty for a while (2.4.0)
+      CBWarLoseMen(game, enc.lastBodyGang, CBConfig.WarMenMassacre());   // their ranks empty for a while
     }
     CBFileLog(sys, n"Massacre", CBGameSeconds(game), CBEventDistrict(sys, game), n"", Cast<Float>(enc.bodies));
     CBLog.Info(n"Model", s"Massacre resolved (\(enc.bodies) bodies).");
@@ -193,7 +182,7 @@ func CBEncounterResolve(sys: ref<CyberbaneSystem>, game: GameInstance, enc: ref<
   if enc.bossDown {
     sys.AddRenownPoints(10.0 * renownMult);
   }
-  // A gang wiped off a spot stays off it for a while (Spawn/ClearedStreets.reds, 2.6.1, off by default).
+  // A gang wiped off a spot stays off it for a while (Spawn/ClearedStreets.reds, off by default).
   CBNoteWipedOut(sys, game, enc.lastBodyGang, enc.lastBodyAt, enc.lastGangBodies);
 
   CBEvaluateTitles(sys, game);
@@ -221,11 +210,8 @@ func CBMaxKillsInWindow(ticks: array<Int32>, window: Int32) -> Int32 {
   return best;
 }
 
-// Something people will be frightened by for a while: a massacre, a boss, MaxTac, a gang's best, a
-// Rival put in the ground (1.9.3). "Terrifying deeds" is a fifth of Dread, and until now the only
-// things that fed it were the Heist and killing nobody saw, so for most players it stood near zero
-// and the top of the Dread scale, with the titles and tribute that hang off it, could not be reached.
-// It fades while V lies low like the rest (Model/Decay.reds).
+// Something people will be frightened by for a while: a massacre, a boss, MaxTac, a gang's best, a Rival put in the
+// ground.
 public func CBTerrorDeed(sys: ref<CyberbaneSystem>, points: Float) -> Void {
   if !IsDefined(sys) || points <= 0.0 {
     return;

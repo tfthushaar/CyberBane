@@ -1,45 +1,20 @@
 // Cyberbane - The apex squad (spec §9.9)
 //
-// A gang's apex is not one heavy any more, it is a four-strong team that turns up in a car:
-// a tank, a shooter, a blade and a netrunner. The point is that it fights like MaxTac rather
-// than like four copies of the same ganger standing in a row.
-//
-// The trick is to let the game do the work. Each chair is filled with a real record of that
-// kind from that gang's own people (Data/ApexRoster.reds), so the game's own AI gives them the
-// right weapon, the right stance and the right behaviour with no faking at all: a netrunner
-// record netruns, a blade record closes in with a katana, a heavy record walks at you behind an
-// HMG. On top of that each one is handed a small kit of behaviour-only abilities (crash rule 6).
-//
-// Roles are read from the game's own `gamedataArchetypeType`, so this is the game's opinion of
-// what a record is, not a guess from its name.
+// A four-strong team that arrives by car: a tank, a shooter, a blade and a netrunner, built to fight like MaxTac rather
+// than four copies of one ganger.
 
-// Has this one already been kitted out? Applying a gameplay ability package twice stacks it,
-// so a puppet that attaches more than once (streaming can do this) would end up with two
-// Sandevistans. Much Better AI guards the same way for the same reason.
+// Has this one already been kitted out? Applying a gameplay ability package twice stacks it, so a puppet that attaches
+// more than once (streaming can do this) would end up with two Sandevistans.
 @addField(ScriptedPuppet)
 public let cbKitted: Bool;
 
 // Which chair of the squad this one was given, plus one, so that zero means "not one of a
 // squad" and there is no need for a negative default - which redscript field declarations do
 // not accept anyway.
-//
-// This exists because the boss bar and the kit were reading the role from two different
-// places and could disagree. The kit has come from the seat since 1.4.5, so a squad is always
-// a heavy, a shooter, a blade and a netrunner whatever records the gang has on file; the bar
-// still read each puppet's own archetype, which for a gang that has only ever lost shooters
-// means four bars all saying SHOOTER above four enemies fighting four different ways. That is
-// the "not a crew of 4 with their own roles" report, visible in the one place the player
-// actually looks.
 @addField(ScriptedPuppet)
 public let cbApexSeatRole: Int32;
 
 // Has this one already had its stat buffs applied?
-//
-// Without this, an enemy that attaches twice - which streaming can do - gets every multiplier
-// applied twice over. At full strength that is roughly sixteen times armour becoming two
-// hundred and fifty six times, and health twenty five times becoming six hundred. The result
-// is not a hard fight, it is an enemy that takes literally no damage, which is exactly what
-// was reported. The kit had this guard from the start; the buffs did not.
 @addField(ScriptedPuppet)
 public let cbBuffed: Bool;
 
@@ -50,7 +25,7 @@ public enum ECBApexRole {
   Netrunner = 3
 }
 
-// What kind of fighter is this record, in the game's own terms?
+// What kind of fighter is this record, in the game's terms?
 public func CBRecordArchetype(record: TweakDBID) -> gamedataArchetypeType {
   if !TDBID.IsValid(record) {
     return gamedataArchetypeType.Invalid;
@@ -71,9 +46,6 @@ public func CBRecordArchetype(record: TweakDBID) -> gamedataArchetypeType {
 }
 
 // Sort an archetype into one of the four chairs on the team.
-//
-// Returns false for anything that does not clearly belong in one, which is most of the city:
-// a crowd record, a vehicle, a drone. Those are simply not kept as role templates.
 public func CBArchetypeRole(a: gamedataArchetypeType, out role: ECBApexRole) -> Bool {
   switch a {
     case gamedataArchetypeType.HeavyMeleeT2:
@@ -119,9 +91,6 @@ public func CBArchetypeRole(a: gamedataArchetypeType, out role: ECBApexRole) -> 
 }
 
 // The chair this one was actually given, if it was given one.
-// An apex squad member's name (2.6.1): the one their gang's warning named for the first chair ("X and three of ours"),
-// and names of the same gang's own for the other three, from the same seed so a squad keeps its names however often it
-// is scanned. Stamped on the body when it is set up (Spawn/Spawner.reds).
 @addField(ScriptedPuppet)
 public let cbApexName: String;
 
@@ -165,10 +134,6 @@ public func CBRoleName(role: ECBApexRole) -> String {
 }
 
 // Remember this record as the gang's template for its role.
-//
-// Called from the same place the gang's sample and elite records are kept. The roster comes
-// first (CBApexRoleRecord); this is what a faction with no roster sends, built from people V has
-// genuinely fought.
 public func CBCaptureRoleRecord(fs: ref<CBFactionState>, record: TweakDBID) -> Void {
   if !IsDefined(fs) || !TDBID.IsValid(record) {
     return;
@@ -194,10 +159,6 @@ public func CBCaptureRoleRecord(fs: ref<CBFactionState>, record: TweakDBID) -> V
 }
 
 // Which record fills seat `seat` of the team.
-//
-// The gang's own person for that chair (Data/ApexRoster.reds). Only for a faction with no roster,
-// the kind of member V has fought, then the gang's elite, then whatever Cyberbane has, so a gang
-// Cyberbane knows little about still sends a full car rather than an empty one.
 public func CBApexRoleRecord(fs: ref<CBFactionState>, seat: Int32, fallback: TweakDBID) -> TweakDBID {
   if !IsDefined(fs) {
     return fallback;
@@ -227,24 +188,6 @@ public func CBApexRoleRecord(fs: ref<CBFactionState>, seat: Int32, fallback: Twe
 }
 
 // Hand one enforcer the kit its role should be fighting with.
-//
-// These are the game's own gameplay abilities, applied through their ability package, which is
-// how Much Better AI equips an NPC and the reason it works: the behaviour is already written,
-// it is simply switched on. Nothing here is invented, so there is nothing to go wrong beyond
-// an ability failing to apply, which is silent.
-// Arasaka, Militech and Kang Tao are not a gang with better guns.
-//
-// They already behave as full factions - they turn hostile, they breed Rivals, they send crews
-// and apex squads, because none of that was ever gated on being a gang (`isGang` only decides
-// whether a faction pays tribute, which a corp does not). What they lacked was any reason to
-// feel different from Maelstrom once the shooting started.
-//
-// So they get trained soldiering rather than more health. Every one of these changes what the
-// NPC does, not how long it survives: they advance while firing instead of trading shots from
-// one spot, they keep pace if you try to walk away, they call it in, they do not fall over to
-// a stun-lock, and they can see through optical camo so a stealth build has to work for it.
-// Making them tankier would have been one line and the wrong line - the complaint that started
-// this was an enemy nothing could hurt.
 public func CBIsCorpFaction(faction: CName) -> Bool {
   return Equals(faction, n"Arasaka") || Equals(faction, n"Militech")
       || Equals(faction, n"KangTao");
@@ -259,28 +202,17 @@ func CBApplyCorpKit(npc: ref<NPCPuppet>) -> Void {
   CBGrantAbility(npc, t"Ability.CanCatchUp");            // walking away is not an escape
   CBGrantAbility(npc, t"Ability.CanUseAntiStun");        // cannot be stun-locked in place
   CBGrantAbility(npc, t"Ability.CanSeeThroughOpticalCamos");
-  // 1.5.0 dropped reinforcement calls, the cooling system and EMP grenades from this kit. The
-  // first asks the game to bring in more NPCs on its own, the second plays a cyberware effect
-  // on a record that was never made for one, and the third needs grenades the record may not
-  // carry. None of them is worth a crash risk.
+  // The first asks the game to bring in more NPCs on its own, the second plays a cyberware effect on a record that was
+  // never made for one, and the third needs grenades the record may not carry. None of them is worth a crash risk.
 }
 
 // What a cyberpsycho learns from losing to you.
-//
-// Behaviour only, every line of it: press the attack while shooting, keep pace when you walk
-// away, do not freeze under a stun, do not be fooled by camo or your own smoke, use the cover
-// that is there. Not one point of health or armour, because they already have more of both than
-// anything else that walks, and adding to it is what made the first attempt at this a wall
-// rather than a fight. What they never had is any idea how to fight somebody who has beaten
-// them before.
 public func CBKitCyberpsycho(npc: ref<NPCPuppet>) -> Void {
   if !IsDefined(npc) || npc.cbKitted {
     return;
   }
   npc.cbKitted = true;
-  // Every other kit stands down when Much Better AI or New Game Plus owns kitting. This one had the
-  // test the wrong way round and ran only when one of them did, so a returning cyberpsycho got no kit
-  // at all without them and a doubled one with them.
+  // Every other kit stands down when Much Better AI or New Game Plus owns kitting.
   if CBAiKitOwner() {
     return;
   }
@@ -324,33 +256,10 @@ public func CBApplyRoleKit(npc: ref<NPCPuppet>, role: ECBApexRole) -> Void {
       CBGrantAbility(npc, t"Ability.CanShootWhileMoving");
       break;
   };
-  // 1.5.0: Kerenzikov, Charge Jump, combat stims and bolted-on quickhacks are gone from every
-  // kit. Kerenzikov and the jump drive cyberware effects and animations, stims play an item
-  // animation, and quickhacks run the hacking framework, on records the game never authored
-  // for any of them. That is the same shape as the shader effector crash below, and several
-  // Rivals and apex members were getting them on every spawn.
-  // Deliberately NOT granted: Sandevistan, optical camo and berserk.
-  //
-  // All three drive shader effectors, and a crash report came in from an engine assert inside
-  // gameEffectSystem/ApplyShaderEffector while an NPC was being processed. That is not proof -
-  // the report named no mod and the assert is asynchronous, so the script that queued the
-  // effect would not appear on the stack either way - but these three are the only things
-  // Cyberbane had just started doing that touch that system, and granting a visual chrome
-  // effect to an arbitrary gang record that was never authored for one is exactly the shape of
-  // thing that trips an assert like that. The behavioural abilities above carry no shader work
-  // and keep almost all of the value, so this is a cheap thing to give up until it is known.
+  // Kerenzikov, Charge Jump, combat stims and bolted-on quickhacks are gone from every kit.
 }
 
 // Apply one gameplay ability, through its package, the way the game does it itself.
-//
-// This is RPGManager.ApplyGLP written out, rather than a call to it, because that function's
-// signature is not the same on every patch Cyberbane supports: 2.31 has ApplyGLP(owner, package)
-// and 2.5 added an instigator, ApplyGLP(owner, instigator, package). Calling either form fails to
-// compile on the other patch, and a compile failure takes every script mod down with it. The two
-// engine calls inside it are identical on both patches (gameplayLogicPackageSystem.script), and
-// so is the body: skip a package that is already applied unless it stacks, otherwise apply it.
-// With the NPC as both owner and instigator this is exactly what 2.31's ApplyGLP did, and what
-// 2.5's does when given the same NPC twice.
 public func CBGrantAbility(npc: ref<NPCPuppet>, id: TweakDBID) -> Void {
   if !IsDefined(npc) || !TDBID.IsValid(id) || !npc.IsAttached() || npc.IsDead() {
     return;
@@ -367,11 +276,7 @@ public func CBGrantAbility(npc: ref<NPCPuppet>, id: TweakDBID) -> Void {
   if !IsDefined(glp) {
     return;
   }
-  // Never one the body already carries from its own record or archetype (2.7.2). The game applies those itself, and
-  // the check below only sees packages applied from script, so a Scavs heavy, whose archetype already has the game's
-  // subdermal armour, got it a second time from a Rival's implants. That package adds to HasSubdermalArmor and then
-  // multiplies armour and bonus health by it, so two of them compound: a Rival who shrugged off 3k crits. Any tier of
-  // subdermal armour on the body, from anywhere, keeps another tier off.
+  // Never one the body already carries from its own record or archetype.
   if CBRecordCarriesAbility(npc, ability) {
     return;
   }
@@ -399,17 +304,6 @@ public func CBApexRoleForSeat(seat: Int32) -> ECBApexRole {
 }
 
 // Kit one member of an apex squad.
-//
-// The squad is meant to read the way a MaxTac drop reads: a heavy, a shooter, a blade and a
-// netrunner, legible as four different problems rather than four of the same one. The chairs are
-// filled from the roster so that is what they really are, and the role here is what this body
-// really is, read off its record, with the chair only for a record the game files under no role.
-// Taking it from the chair alone is how four identical shooters came to be labelled a heavy, a
-// blade and a netrunner, with the bar promising a fight that never happened.
-//
-// Note what this deliberately does not do: spawn actual MaxTac. Reskinning them would hand
-// back the NCPD's own records, and killing those feeds heat and the prevention system. An apex
-// squad is the gang's own people, so putting them down draws nothing from the law.
 public func CBKitApexSeat(npc: ref<ScriptedPuppet>, seat: Int32) -> Void {
   let asNpc = npc as NPCPuppet;
   if !IsDefined(asNpc) || npc.cbKitted {
@@ -435,9 +329,6 @@ public func CBKitApexSeat(npc: ref<ScriptedPuppet>, seat: Int32) -> Void {
 }
 
 // Work out a spawned enforcer's role from what it actually is, and kit it out.
-//
-// Reading the puppet rather than remembering which seat it came out of: the puppet knows its
-// own archetype, so there is no bookkeeping to get out of step.
 public func CBKitApexMember(npc: ref<ScriptedPuppet>) -> Void {
   let asNpc = npc as NPCPuppet;
   if !IsDefined(asNpc) {
@@ -465,12 +356,6 @@ public func CBKitApexMember(npc: ref<ScriptedPuppet>) -> Void {
 }
 
 // The lighter kit, for the rank and file of a hit squad.
-//
-// Deliberately not the apex kit. Twenty gangers each with a Sandevistan and a bag of grenades
-// is not a harder fight, it is an unfair one, and it is twenty more things for the game to
-// simulate. What a crew actually needs is to stop standing in the open: cover use and not
-// being blinded by its own smoke is the difference between a squad that fights and a squad
-// that queues up to be shot.
 public func CBKitSquadMember(npc: ref<ScriptedPuppet>) -> Void {
   let asNpc = npc as NPCPuppet;
   if !IsDefined(asNpc) || npc.cbKitted {
@@ -482,11 +367,8 @@ public func CBKitSquadMember(npc: ref<ScriptedPuppet>) -> Void {
   }
   CBGrantAbility(asNpc, t"Ability.CanUseCovers");
   CBGrantAbility(asNpc, t"Ability.CanSeeThroughSmoke");
-  // Rank and file from a corp are still soldiers. A lighter version of the corp kit: they
-  // advance while firing, they keep pace, and they do not fold to a stun-lock. Not the full
-  // set, because a crew is not an apex squad and the difference between the two should still
-  // be worth something.
-  // So are 6th Street's veterans and Barghest's army, by their code (Data/GangCodes.reds, 2.3.2).
+  // Rank and file from a corp are still soldiers. A lighter version of the corp kit: they advance while firing, they
+  // keep pace, and they do not fold to a stun-lock.
   let side = CBClassifyFaction(npc);
   if CBIsCorpFaction(side) || CBCodeSoldiers(side) {
     CBGrantAbility(asNpc, t"Ability.CanShootWhileMoving");
@@ -498,15 +380,6 @@ public func CBKitSquadMember(npc: ref<ScriptedPuppet>) -> Void {
 }
 
 // Put the team in one squad, so they fight as a team.
-//
-// Without this they are four hostiles who happen to be standing together: each one picks its
-// own target, nobody flanks, nobody covers anybody, and the fight is four duels in a row
-// rather than an encounter. The game's squad system already does the coordinating; all that
-// was missing was telling it these four belong together.
-//
-// The first one to attach becomes the anchor and the rest join its squad. If the anchor is
-// gone (killed, despawned) the next one to attach takes over, so a team that arrives in pieces
-// still ends up in one squad.
 public func CBJoinSquadWith(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(sys) || !IsDefined(puppet) {
     return;
@@ -537,12 +410,9 @@ public func CBJoinSquadWith(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppe
 
 // ---- The chair a body was spawned for ----------------------------------------------------
 //
-// An apex squad is a heavy, a shooter, a blade and a netrunner. The record each body is spawned
-// from is picked by chair, and the kit and the bar's label are given by chair at setup, so the
-// two have to agree on which chair a body is. A shared counter handed them out in the order the
-// bodies finished building, which is not the order they were spawned in, so a walk-in could
-// carry the heavy's record with the netrunner's kit. A body Cyberbane spawns for a known chair
-// now carries that chair as a tag; the counter is only the fallback for one that has no tag.
+// An apex squad is a heavy, a shooter, a blade and a netrunner. The record each body is spawned from is picked by
+// chair, and the kit and the bar's label are given by chair at setup, so the two have to agree on which chair a body
+// is.
 public func CBApexRoleTag(seat: Int32) -> CName {
   switch seat % 4 {
     case 0: return n"CB_Role0";

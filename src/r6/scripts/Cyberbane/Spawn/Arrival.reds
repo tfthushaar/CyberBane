@@ -1,41 +1,10 @@
 // Cyberbane - Arriving by car (spec §9.9)
 //
 // A gang that wants you dead does not materialise behind a dumpster. They drive over.
-//
-// This is the arrival path for the encounters that are supposed to feel deliberate: a hit
-// squad sent after a vendetta, an apex coming to settle it. A car is spawned out of sight,
-// filled with the gang, and told to run V down; the crew gets out and fights when it stops.
-//
-// The sequence is spread over three attach events because each step needs the previous one to
-// exist in the world first:
-//
-//   1. CBSpawnVehicleArrival queues the car, tagged CB_Car.
-//   2. The car attaches. Only then can its seat count be read, so that is where the crew is
-//      queued, tagged CB_Crew, standing at the car's own position.
-//   3. Each crew member attaches and is mounted into the next seat. When the last seat is
-//      filled the car is handed its chase order.
-//
-// Crash safety: nothing here dereferences a handle it has not checked, the whole path sits
-// behind CBWorldStable and the ordinary safe area gate, and every step is allowed to fail
-// quietly. A car that never attaches simply means no encounter this cycle, and the hunt timer
-// comes round again - which is strictly better than forcing a spawn into a world that was not
-// ready for one.
 
 // Gang cars.
-//
-// These are the game's own savable vehicle records. There is no way to sample a vehicle from
-// the world the way Cyberbane samples NPC records, so this is a fixed list, kept to records
-// that are known to spawn correctly on this patch. A faction always draws from the same pair,
-// so the same gang keeps turning up in the same kind of car.
 
 // The seats a vehicle record really has, driver first.
-//
-// Read from the record's seat set - the same data the game mounts people by - rather than from
-// MaxVehiclePassengersCount. That field belongs to the prevention system's own chase vehicles
-// and the traffic records below leave it empty, so it read 0 for every car Cyberbane sent: the
-// car arrived, seated nobody, and the whole crew was walked in afterwards. And the crew used to
-// be mounted by a fixed list of four slot names whatever the car, so a two-seat car was handed
-// people for back seats it does not have, who were left standing in a heap beside it.
 public func CBVehicleSeatNames(record: TweakDBID) -> array<CName> {
   let names: array<CName>;
   let rec = TweakDBInterface.GetVehicleRecord(record);
@@ -84,14 +53,6 @@ public func CBVehicleSeatNames(record: TweakDBID) -> array<CName> {
 }
 
 // The car a gang sends, chosen by how many it has to carry.
-//
-// This was `(StrLen(name) * 3 + roll) % 10` over the pool below - a pick by the length of the
-// gang's name, blind to the crew, so a crew of four could be sent in a two-seat sports car. Now
-// the gang's own kind of car is tried first (a pickup for the crews that live rough, a saloon
-// for the ones who work the city, a van for the ones who turn up in numbers), then the rest of
-// the pool, and the first one with a seat for everybody is taken. If none seats them all, the
-// roomiest is, and whoever it cannot seat walks in behind it (CBSendByCar). `seatsOut` is how
-// many that car can actually carry; 0 means none of these will seat anybody.
 public func CBArrivalVehicle(factionId: CName, needed: Int32, roll: Int32, out seatsOut: Int32) -> TweakDBID {
   seatsOut = 0;
   let galena = t"Vehicle.cs_savable_thorton_galena";
@@ -105,11 +66,8 @@ public func CBArrivalVehicle(factionId: CName, needed: Int32, roll: Int32, out s
   let mackinaw = t"Vehicle.cs_savable_thorton_mackinaw";
   let alvarado = t"Vehicle.cs_savable_villefort_alvarado";
 
-  // Their own first, in an order that varies a little from one arrival to the next, then their colours (1.9.9): the game
-  // has gang-painted versions of these cars, and a lone Tyger Claw comes on a Claws Kusanagi. Read from the faction's
-  // profile since 2.7.4 (Data/FactionProfiles.reds), where the Aldecaldos, the Wraiths and the corporations have their own
-  // painted cars too; a faction with none comes in the plain city trio. A record this patch lacks seats nobody and is
-  // passed over.
+  // Their own first, in an order that varies a little from one arrival to the next, then their colours: the game has
+  // gang-painted versions of these cars, and a lone Tyger Claw comes on a Claws Kusanagi.
   let content = CyberbaneContent.Get();
   let profile = IsDefined(content) ? content.GetFaction(factionId) : null;
   let own: array<TweakDBID>;
@@ -181,11 +139,6 @@ public func CBArrivalVehicle(factionId: CName, needed: Int32, roll: Int32, out s
 }
 
 // Is a car the right way to do this arrival at all?
-//
-// Why a car cannot be sent right now, in words, or "" when one can. Every refusal on this path used
-// to be silent, so a player standing in the middle of the road got somebody on foot and the log
-// had nothing to say about it. The reason now goes in the log whenever it costs an arrival its
-// car (CBCarRefused).
 public func CBCarRefusal(game: GameInstance) -> String {
   let rt = CyberbaneRuntime.Get();
   if !IsDefined(rt) || !rt.IsEnabled() || !rt.HasSettings() {
@@ -203,20 +156,13 @@ public func CBCarRefusal(game: GameInstance) -> String {
   if !IsDefined(driver) {
     return "there is no player";
   }
-  // Delicate, so it has a switch of its own, on by default (crash rule 12). The dismount poll
-  // below was written for exactly this case: a crew pulling up to a player who is not driving.
+  // Delicate, so it has a switch of its own, on by default (crash rule 12).
   if !VehicleComponent.IsDriver(game, driver) && !rt.GetSettings().carsWhileOnFoot {
     return "the cars while on foot setting is off";
   }
   // There used to be one more test here: "is there a road near enough", answered by
-  // PreventionSpawnSystem.GetNearestRoadFromPlayerInfo. It went in with 1.4.7 and the log has no
-  // car after it. That query's only other caller is the police's own fallback, in the middle of a
-  // live chase (PreventionSystem.TrySpawnOnFootFallbackBasedOnRoadInfo), and a zero point was read
-  // as "no road here", so with no heat on V it is the likeliest reason every car was refused for
-  // a player standing in the road. It was also a call into the prevention system, which crash
-  // rule 1 forbids. There is no other road query (TrafficSystem has none), and none is needed:
-  // somewhere with room for a car is tested below, and a car that cannot get through is noticed
-  // and its crew come on foot (CBArrivalDismountCallback).
+  // PreventionSpawnSystem.GetNearestRoadFromPlayerInfo. It was also a call into the prevention system, which crash rule
+  // 1 forbids.
   return "";
 }
 
@@ -230,15 +176,6 @@ public func CBCarRefused(why: String) -> Void {
 }
 
 // Find somewhere a car can actually sit: on the navmesh, out of V's view, with room for it.
-//
-// There is no asking for a road. NavGenAgentSize has only Human, the navmesh masks are used by
-// nothing that says what their bits mean, and the one road query belongs to the prevention system
-// (crash rule 1). So a spot has to have everything a road has, which every route below is tested
-// for: open sky over it (CBPointCovered), a real walking route to V (CBPointReachable, so a crew
-// that has to get out can still come), and room for the car. This was claimed for years and only
-// half true: the pursuit points below had no route test at all, and with the road gate gone in
-// 1.7.0 nothing kept a car out of a car park or a warehouse. A spot that passes all this and is
-// still indoors is caught once the car exists (CBOnArrivalCarAttached).
 func CBCarSpawnPoint(game: GameInstance, dist: Float, out pos: Vector4, out ori: Quaternion) -> Bool {
   let player = GetPlayer(game);
   if !IsDefined(player) {
@@ -263,12 +200,6 @@ func CBCarSpawnPoint(game: GameInstance, dist: Float, out pos: Vector4, out ori:
     r += 1;
   }
   // Then the places the game itself would put a pursuer.
-  //
-  // CBNavAnchor makes one real attempt: its second looks in front of V, and its own facing test
-  // refuses anything in front, so a single crowded or awkward spot behind V sent the whole
-  // arrival in on foot. FindPursuitPointsRange offers a handful of standing points all round V,
-  // which are tested here exactly as strictly: out of V's sight, on V's level, a floor under
-  // them, far enough off, and room for a car.
   let pts: array<Vector4>;
   if !CBPursuitPoints(game, ppos, player.GetWorldForward(), CBConfig.CarPointCandidates(),
                       dist * 0.6, dist * 1.4, pts) {
@@ -302,10 +233,6 @@ func CBCarCanSitAt(game: GameInstance, anchor: Vector4, ppos: Vector4, openAir: 
 }
 
 // Is there room for a car here? Fills `pos` and `ori` when there is.
-//
-// Pointed at V if it fits that way, which is the direction it will drive, otherwise across that:
-// a street seldom runs straight at V, and a car pointed at V in a street that does not gets its
-// nose in a wall when the same spot, turned along the kerb, has all the room it needs.
 func CBCarFitsAt(game: GameInstance, anchor: Vector4, ppos: Vector4, out pos: Vector4,
                  out ori: Quaternion) -> Bool {
   let toPlayer = new Vector4(ppos.X - anchor.X, ppos.Y - anchor.Y, 0.0, 0.0);
@@ -342,13 +269,7 @@ func CBCarFitsAt(game: GameInstance, anchor: Vector4, ppos: Vector4, out pos: Ve
   return false;
 }
 
-// Step 1: queue the car. Returns false if no car could be placed, and the caller sends the
-// encounter in on foot instead.
-// `leadRecord` / `leadTag` are for an arrival that has somebody in particular in it - an apex
-// riding in with its escort. The first seat gets that record and that tag, the rest get the
-// ordinary crew. Pass TDBID.None() for a plain squad where everyone is the same.
-// `chairBase` is the apex chair this car's first seat fills, for the second and later cars of an
-// apex squad. `nextCar` marks a later car of a convoy already under way (CBConvoyTick).
+// Step 1: queue the car.
 public func CBSpawnVehicleArrival(sys: ref<CyberbaneSystem>, game: GameInstance, factionId: CName,
                                   crewRecord: TweakDBID, crew: Int32, squadTag: CName,
                                   leadRecord: TweakDBID, leadTag: CName, opt chairBase: Int32,
@@ -365,9 +286,8 @@ public func CBSpawnVehicleArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
     CBCarRefused("the world is still loading");
     return false;
   }
-  // One car boarding at a time, whichever way it is coming. A second car while the first is
-  // still loading its crew would take the seats meant for the first one. A convoy's later cars
-  // come through here too, one after another (CBConvoyTick); anything else waits for the convoy.
+  // One car boarding at a time, whichever way it is coming. A second car while the first is still loading its crew
+  // would take the seats meant for the first one.
   if sys.HasPendingArrival() {
     if !nextCar {
       CBCarRefused("another car is still boarding");
@@ -440,21 +360,6 @@ public func CBSpawnVehicleArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
 }
 
 // Send a group by car, and make sure the whole group turns up.
-//
-// A car seats as many as it really has seats for (CBVehicleSeatNames), four at most. A group
-// bigger than that used to put one car on the road and walk everybody else in, so a crew of
-// eight was one car and six people strolling up behind it. Now the group goes as a convoy: the
-// first car leaves now, and whoever it cannot seat waits for the next car, sent the moment the
-// first has its crew aboard (CBConvoyTick), and so on until everybody is seated or the
-// "Cars per arrival" limit is reached. Anybody left over then, and anybody a car could not be
-// sent for, walks in instead - so the car count follows the size of the group, and nobody is
-// ever left waiting for a car that is not coming.
-//
-// A group sent while a convoy for the same gang is under way joins it as the next leg: a crew
-// following its apex squad rides in the cars after theirs instead of walking.
-//
-// Returns how many are coming in all; zero means no car at all, and the caller walks the whole
-// group in as it always has.
 public func CBSendByCar(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>,
                         record: TweakDBID, wanted: Int32, tag: CName) -> Int32 {
   if !IsDefined(sys) || !IsDefined(fs) || !TDBID.IsValid(record) || wanted <= 0 {
@@ -502,9 +407,8 @@ public func CBSendByCar(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<C
   return wanted;
 }
 
-// The whole crew has been sent, by car or on foot: give the cars their chance to deliver, then
-// walk in whoever they did not (CBProcessCarTopUp). An apex squad is made whole by its chairs
-// instead (CBApexMusterTick), so this is never armed for one.
+// The whole crew has been sent, by car or on foot: give the cars their chance to deliver, then walk in whoever they did
+// not (CBProcessCarTopUp).
 func CBArmCrewTopUp(sys: ref<CyberbaneSystem>, faction: CName, record: TweakDBID, tag: CName,
                     wanted: Int32) -> Void {
   let wait = CBConfig.ArrivalStaleTicks() + 3;
@@ -521,11 +425,6 @@ public func CBCarsPerArrival() -> Int32 {
 }
 
 // Once per fast tick: the next car of a convoy, once the one before it has its crew aboard.
-//
-// One car boards at a time - the boarding state is one car's - so the next is only sent when
-// nothing is boarding. If no car can be sent (the road went, the world is busy, there is no room
-// for one, or the convoy is at its limit), that leg walks in instead after a few tries, so a
-// convoy can never strand the people waiting on it.
 public func CBConvoyTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) || !sys.HasConvoyLegs() {
     return;
@@ -648,9 +547,7 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
   if !sys.HasPendingArrival() {
     return;
   }
-  // Only the car this arrival asked for, and only the first time it attaches (1.9.3). Any car of
-  // ours attaching while an arrival was pending was boarded: a spent one streaming back in took the
-  // crew, and the real one attaching after it started boarding again with a second crew.
+  // Only the car this arrival asked for, and only the first time it attaches.
   if !Equals(car.GetEntityID(), sys.GetArrivalWantedCar()) || EntityID.IsDefined(sys.GetArrivalCarId()) {
     return;
   }
@@ -658,10 +555,7 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
   if !IsDefined(des) {
     return;
   }
-  // The game's own word on where this car ended up, which it can only give about something that
-  // exists. A car never comes for a V who is indoors (CBCarRefusal), so a car indoors is a car in
-  // the wrong place: nobody gets in, and this ends the way a car that never turned up ends, with
-  // whoever it was bringing walking in (CBProcessCarTopUp, the apex muster, the Rival's next try).
+  // The game's word on where this car ended up, which it can only give about something that exists.
   if IsEntityInInteriorArea(car) {
     CBCarRefused("the spot turned out to be indoors");
     sys.ClearPendingArrival();
@@ -683,9 +577,7 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
   if wanted < seats {
     seats = wanted;
   }
-  // An apex squad's seats are chairs, and only chairs still empty are filled. A chair can be
-  // filled while this car was on its way - the drive clock walking the squad in, a walk-in after
-  // a stalled car - and seating it again is a second heavy in the world.
+  // An apex squad's seats are chairs, and only chairs still empty are filled.
   let chairs: array<Int32>;
   if sys.IsArrivalRoleSquad() {
     let mustering = Equals(sys.GetApexMusterFaction(), sys.GetPendingArrivalFaction());
@@ -716,15 +608,6 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
   let at = car.GetWorldPosition();
   let ori = car.GetWorldOrientation();
   // Spread them around the car instead of stacking them on it.
-  //
-  // Every seat was created at exactly `car.GetWorldPosition()`, on the assumption that the
-  // mount a moment later would move them into the vehicle. When the mount does not happen, and
-  // it does not happen in interiors or wherever the car itself was badly placed, what is left
-  // is several entities occupying one point. The engine resolves that by pushing them apart
-  // vertically, and a player sent a photograph of eight Tyger Claws fused into a column on a
-  // balcony. Mounting teleports them into their seat regardless of where they were standing,
-  // so an offset costs nothing when it works and leaves a crew standing around a car when it
-  // does not.
   let side = Vector4.Normalize2D(Quaternion.GetRight(ori));
   let fwdV = Vector4.Normalize2D(Quaternion.GetForward(ori));
   let i = 0;
@@ -736,11 +619,6 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
       at.Y + side.Y * col * CBConfig.ArrivalSeatSpread() + fwdV.Y * row * CBConfig.ArrivalSeatSpread(),
       at.Z, 1.0);
     // On the ground beside the car, and no further than that was ever tested.
-    //
-    // A seat a metre and a half to the side of a car is only a sum: with the car against a wall it
-    // is inside the wall, and on a slope it is under the ground. Mounting teleports them into the
-    // car and hides that. When a mount fails, or they are told to get out, that is where they
-    // are, inside something, shooting nobody and impossible to reach.
     let snapped: Vector4;
     let standing: Vector4;
     if CBNavSnap(game, spot.X, spot.Y, at.Z, snapped) && CBSettleOnGround(game, snapped, standing)
@@ -769,10 +647,8 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
     spec.alwaysSpawned = false;
     spec.spawnInView = false;
     spec.active = true;
-    // A Rival driving in wears their own face from the moment they spawn, set on the spec the
-    // way the walk-in spawner sets it, so nothing has to change their appearance afterwards.
-    // Only the seat that is the Rival's: a Rival's car also carries their own people, who wear
-    // their own faces and whose bodies are not the Rival's.
+    // A Rival driving in wears their own face from the moment they spawn, set on the spec the way the walk-in spawner
+    // sets it, so nothing has to change their appearance afterwards.
     let rider: ref<CBRival>;
     if (isLead && Equals(leadTag, n"CB_Rival")) || (!isLead && Equals(squadTag, n"CB_Rival")) {
       rider = sys.FindRivalById(sys.GetRivalCarPending());
@@ -785,10 +661,8 @@ public func CBOnArrivalCarAttached(sys: ref<CyberbaneSystem>, game: GameInstance
     ArrayPush(tags, n"CB_Crew");
     ArrayPush(tags, CBCarSlotTag(sys.GetArrivalCarSlot()));
     ArrayPush(tags, isLead ? leadTag : squadTag);
-    // An apex seat carries the chair it was filled for, the same tag a walk-in carries, so the
-    // kit and the bar given at setup are the chair this body's record was picked for. Without it
-    // the seats took their chair from a counter in the order they finished building, which is
-    // not the order they were created in, and the heavy's record could get the netrunner's kit.
+    // An apex seat carries the chair it was filled for, the same tag a walk-in carries, so the kit and the bar given at
+    // setup are the chair this body's record was picked for.
     if sys.IsArrivalRoleSquad() {
       ArrayPush(tags, CBApexRoleTag(chairs[i]));
     }
@@ -855,15 +729,6 @@ public func CBOnArrivalCrewAttached(sys: ref<CyberbaneSystem>, game: GameInstanc
 }
 
 // Set a crewed car off and start watching for it to arrive.
-//
-// A moment for the seats to settle before the car is given its orders; issuing the command
-// while the driver is still being seated loses it. The watch is what makes sure somebody
-// actually gets out of it, however the drive goes.
-//
-// Called when the last seat is filled, and also when boarding has stalled (AgePendingArrival):
-// a seat whose occupant never attached used to mean the car was never started at all, and
-// whoever was already in it sat in a parked car out of sight for the rest of the session -
-// the hunt leaves seated crew to their car, so nothing else would ever move them.
 public func CBLaunchArrivalCar(game: GameInstance, carId: EntityID, slot: Int32) -> Void {
   if !EntityID.IsDefined(carId) {
     return;
@@ -887,17 +752,8 @@ public func CBLaunchArrivalCar(game: GameInstance, carId: EntityID, slot: Int32)
   ds.DelayCallback(watch, CBConfig.ArrivalDismountPoll(), false);
 }
 
-// A vendetta crew's alternative to chasing: a parked car somewhere up the road from a V who is
-// driving, pulling out as V comes past. The game's roadblocks are the police's own (spawned and
-// tracked by the prevention system, which crash rule 1 keeps us out of), so this is built from the
-// car arrival, which already does everything else: the seats, the crew, the chase, getting out.
-//
-// The only new thing is the wait. It can only ever end in CBLaunchArrivalCar, by V coming near, by V
-// going somewhere else, or by running out of patience, so a crew can never be left sitting.
-//
-// Experimental, and off unless the player turns it on. This is the only door into it: while the
-// setting is off the answer here is no before anything else is looked at, the wanted flag stays
-// false, CBSpawnVehicleArrival takes its usual spot and CBSendCarOff launches every car as before.
+// A vendetta crew's alternative to chasing: a parked car somewhere up the road from a V who is driving, pulling out as
+// V comes past.
 func CBCrewLiesInWait(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>, withApex: Bool) -> Bool {
   if !CBLieInWaitOn() {
     return false;
@@ -910,8 +766,8 @@ func CBCrewLiesInWait(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBF
   if !IsDefined(score) || !IsDefined(player) || !VehicleComponent.IsDriver(game, player) {
     return false;
   }
-  // Sworn against V, or the Wraiths on their own road whatever their grudge (Spawn/HuntGrows.reds, 2.4.2); likelier
-  // where V is known to go. A watcher V paid sees them park.
+  // Sworn against V, or the Wraiths on their own road whatever their grudge (Spawn/HuntGrows.reds); likelier where V is
+  // known to go. A watcher V paid sees them park.
   let wraithRoad = CBGangCodesOn() && Equals(fs.id, n"Wraiths") && Equals(sys.GetCurrentDistrict(), n"Badlands")
                    && Equals(score.GetPosture(fs.id), ECBPosture.Hostile);
   if !Equals(score.GetPosture(fs.id), ECBPosture.Vendetta) && !wraithRoad {
@@ -1036,16 +892,6 @@ public class CBAmbushWatchCallback extends DelayCallback {
 }
 
 // Wait for the car to arrive, then put the crew on the pavement.
-//
-// This is the step that makes a car arrival an encounter rather than a traffic event. Nothing
-// in the game guarantees that a crew Cyberbane mounted will choose to get out again: the
-// disembark behaviour belongs to the prevention system's own squads, not to an arbitrary
-// vehicle, so left alone the car pulls up and everybody sits in it.
-//
-// Polls rather than trusting one timer, because how long the drive takes depends entirely on
-// the traffic and the route. It gives up after a fixed number of tries and unloads them
-// anyway - a crew standing in the road a little early is a far better failure than a car
-// circling Night City forever with four gangers in it.
 public class CBArrivalDismountCallback extends DelayCallback {
   public let carId: EntityID;
   public let tries: Int32;
@@ -1107,9 +953,8 @@ public class CBArrivalDismountCallback extends DelayCallback {
     if IsDefined(sysD) && (sysD.IsInQuestArea() || sysD.IsOnJob() || sysD.GetStoryHold() != CBStoryNone()) {
       vDriving = true;
     }
-    // There, and still rolling: the order was to where V stood when it was given, and V has moved
-    // or the car would be slowing already. Left alone it drives on past V to that spot. Stopped once,
-    // here, the way the game stops a car for an emergency exit.
+    // There, and still rolling: the order was to where V stood when it was given, and V has moved or the car would be
+    // slowing already. Left alone it drives on past V to that spot.
     let braked = this.braked;
     if IsDefined(car) && car.IsAttached() && arrived && moving && !vDriving && !braked {
       car.ForceBrakesUntilStoppedOrFor(CBConfig.ArrivalBrakeSeconds());
@@ -1119,10 +964,8 @@ public class CBArrivalDismountCallback extends DelayCallback {
     if !holdOn && (moving || vDriving) && this.tries < CBConfig.ArrivalDismountMaxTries() * 3 {
       holdOn = true;
     }
-    // Sitting still short of V, with nothing to wait for: it cannot get through. Told once more,
-    // in case it only lost its order, and then the crew get out and come on foot. A car that
-    // could not reach V is the one thing that should turn into a foot chase, and it used to sit
-    // parked for a minute or three first, until the poll ran out.
+    // Sitting still short of V, with nothing to wait for: it cannot get through. Told once more, in case it only lost
+    // its order, and then the crew get out and come on foot.
     let carHere = IsDefined(car) && car.IsAttached();
     let stalled = carHere && !arrived && this.tries > 1 && AbsF(car.GetCurrentSpeed()) < CBConfig.CarStuckSpeed();
     let stuck = stalled ? this.stuck + 1 : 0;
@@ -1143,12 +986,6 @@ public class CBArrivalDismountCallback extends DelayCallback {
       this.target = player.GetWorldPosition();
     }
     // V on foot has moved well away from where the car was sent: send it on to where V is now.
-    //
-    // The drive order is a point, taken when the car set off. A crew sent to where V stood a
-    // minute ago used to pull up there, find nobody within reach, and sit until the poll gave up
-    // on them - a car parked out of sight for a minute, then four people getting out a long way
-    // from V. Bounded, and only every few polls, so a player running about cannot keep a car
-    // re-routing for ever; when it runs out the backstop below still lets them out.
     if holdOn && !arrived && !vDriving && IsDefined(car) && car.IsAttached()
        && this.retargets < CBConfig.ArrivalMaxRetargets()
        && this.tries > 0 && this.tries % CBConfig.ArrivalRetargetEvery() == 0
@@ -1180,7 +1017,7 @@ public class CBArrivalDismountCallback extends DelayCallback {
     // Parked next to V, having been sent to V: there is nothing left for them to search for.
     if carHere && arrived && !vDriving {
       CBHuntCrewPulledUp(sysD, game);
-      // Heard before they are seen (2.7.7): the car's horn as it pulls up, and the first of them out shouting.
+      // Heard before they are seen: the car's horn as it pulls up, and the first of them out shouting.
       CBCarHorn(game, car, n"CarArrives", 10.0);
       if IsDefined(sysD) {
         CBArrivalVoices(sysD, game, CBLiveTaggedPresent(game, n"CB_Apex") ? n"CB_Apex" : n"CB_Squad");
@@ -1191,9 +1028,7 @@ public class CBArrivalDismountCallback extends DelayCallback {
   }
 }
 
-// Getting out is asked for, and the event can land while somebody is busy. Asked again a few times
-// for anybody still seated, and said in the log if it never takes, because a crew sitting in a car
-// is otherwise silent: nothing else in the mod touches somebody in a seat.
+// Getting out is asked for, and the event can land while somebody is busy.
 public class CBArrivalCrewOutCallback extends DelayCallback {
   public let slot: Int32;
   public let tries: Int32;
@@ -1262,11 +1097,6 @@ public func CBCarSlotTag(slot: Int32) -> CName {
 }
 
 // Order everybody who came in this car to get out and come for V.
-//
-// By the car's own tag, not every CB_Crew there is. With one car on the road those were the
-// same people. With a convoy, the first car to pull up would have ordered the crews of the cars
-// still driving out of their seats at speed - unmounting somebody from a moving car is one of
-// the things 1.5.0 found taking the game down.
 public func CBDismountArrivalCrew(game: GameInstance, slot: Int32) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) {
@@ -1278,11 +1108,9 @@ public func CBDismountArrivalCrew(game: GameInstance, slot: Int32) -> Void {
     let puppet = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
     if IsDefined(puppet) && !puppet.IsDead() && puppet.IsAttached() {
-      // Only somebody actually sitting in a car gets told to get out of one, and only once
-      // (CBUnmountOnce). An unmount order handed to somebody already on the pavement leaves
-      // them face down with no AI, which is what was reported when this reached everyone with
-      // the crew tag. The hunt orders them on once they are on their feet: a move order given
-      // to somebody still in a seat is not one the game expects.
+      // Only somebody actually sitting in a car gets told to get out of one, and only once (CBUnmountOnce). The hunt
+      // orders them on once they are on their feet: a move order given to somebody still in a seat is not one the game
+      // expects.
       if VehicleComponent.IsMountedToVehicle(game, puppet.GetEntityID()) {
         CBUnmountOnce(game, puppet);
       } else {
@@ -1321,11 +1149,6 @@ public class CBArrivalDriveCallback extends DelayCallback {
 }
 
 // Hand a crewed car its chase order.
-//
-// Two different commands, because they are two different situations. If V is driving, this is
-// a car chase and the game has a command built for exactly that. If V is on foot, a chase
-// command has nothing to pursue at road speed, so the car is told to drive to where V is and
-// stop - which is what arriving looks like.
 public func CBDriveAtPlayer(game: GameInstance, car: ref<VehicleObject>, player: ref<PlayerPuppet>) -> Void {
   if !IsDefined(car) || !IsDefined(player) {
     return;
@@ -1367,12 +1190,8 @@ public func CBDriveAtPlayer(game: GameInstance, car: ref<VehicleObject>, player:
 
 // ---- Out of the attach event ---------------------------------------------------
 //
-// The car's crew used to be created, and each of them seated, from inside the engine's own
-// attach notification for the car and for them. Creating entities and mounting NPCs from
-// inside that notification is doing entity work while the engine is still in the middle of
-// its own, and an NPC is not fully built on the frame it attaches (the 1.2.1 lesson: orders
-// given before the engine had built the enemy). Both now happen a moment later, on a settled
-// world, after checking the car and the NPC still exist.
+// The car's crew used to be created, and each of them seated, from inside the engine's own attach notification for the
+// car and for them.
 
 public class CBConvoyBoardCallback extends DelayCallback {
   public let carId: EntityID;

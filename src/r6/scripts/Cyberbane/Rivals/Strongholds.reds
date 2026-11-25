@@ -1,20 +1,7 @@
-// Cyberbane - Strongholds (2.7.2)
+// Cyberbane - Strongholds
 //
-// "When a gang's Rivals run high in a district, a cleared gig base there is taken over by a named Rival boss, lieutenants
-// and a full squad. Clearing it takes that Rival down for good, swings the district's turf, and pays."
-//
-//   - Where: the gigs V finishes. While a fixer's gig (the journal's Contract quests, never NCPD's) is active, where its
-//     objective is pinned is noted; when the journal marks it done, that place is a cleared base (CBBaseBook). Only
-//     gigs finished with this installed are known.
-//   - When: once a game day, a gang hostile to V whose Rival is high enough (StrongholdMinRank) and free (in no fight
-//     with V, at no place of their own, not V's crew's, nobody's job) may take a cleared base in a district it holds.
-//     One per gang, StrongholdMax in the city; left alone, they move on after StrongholdDays.
-//   - Finding it: the street says so, and it is on the map.
-//   - Going there: within StrongholdReach, on foot, with the world settled and nothing else of Cyberbane's out, the
-//     garrison is put round the base out of V's sight: the Rival, two lieutenants at apex grade and the rest of the
-//     squad, StrongholdSize in all, under the room left. They wait there. Leave, and they are gone; the stronghold stays.
-//   - Cleared: the Rival dies as Rivals do (for good), the gang loses the place and ground in the district, and it pays.
-//     Spared, a Rival leaves the city as always, and the rest of them clear out.
+// A hostile gang can put one of its top Rivals in a place V cleared on a gig, with lieutenants and a squad. Clearing it
+// pays out, leaves the stash and costs the gang ground in that district.
 
 public func CBMemStronghold() -> Int32 = 5
 
@@ -108,8 +95,8 @@ public class CBBaseBook extends ScriptableSystem {
     if this.BaseIndex(hash) >= 0 {
       return;
     }
-    // One place is one base (2.7.5): a gig played again (Much Better Contracts replays a gig as a quest of its own) is a
-    // new journal entry at the same building, and two entries there let two gangs hold the one place.
+    // One place is one base: a gig played again (Much Better Contracts replays a gig as a quest of its own) is a new
+    // journal entry at the same building, and two entries there let two gangs hold the one place.
     let k = 0;
     while k < this.BaseCount() {
       if Vector4.Distance(this.BaseAt(k), at) <= CBConfig.StrongholdSameSite() {
@@ -531,8 +518,8 @@ func CBStrongholdPlace(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
   // Onto walkable ground near the pin, the first time (a gig's pin can be on a desk or a rooftop).
   let ground: Vector4;
   let snapped: Vector4;
-  // A job active at the place (a gig played again there) is a wait, not a broken place (2.7.5): counted as a failure, two
-  // tries during it threw the base away.
+  // A job active at the place (a gig played again there) is a wait, not a broken place: counted as a failure, two tries
+  // during it threw the base away.
   if sys.NearQuestPins(base, CBConfig.QuestSpawnClearance()) {
     book.nextTryTick = sys.GetTickCount() + 30;
     return;
@@ -626,14 +613,11 @@ public func CBSetUpHold(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: r
   CBApplyCrewBuild(sys, game, puppet);
 }
 
-// ---- The stash (2.7.3) ----------------------------------------------------------------------------------------------
+// ---- The stash ----------------------------------------------------------------------------------------------
 //
-// A cleared stronghold leaves what its Rival kept there on the floor, to go through: the game's own drop bag, laid the
-// way the game lays one when V drops things from the backpack (RPGManager.DropManyItems: the owner holds the items,
-// LootManager.SpawnItemDropOfManyItems moves them to a bag at a spot). The owner is V, never a body (crash rule 6: loot
-// put on corpses crashed). Only what the game itself bags goes in (materials, consumables); ammo stays in V's pockets
-// and the eddies were paid already. Laid once the fight is over and V is close, so it is there to be found; if the game
-// will not lay it, everything simply stays with V, and the note says so.
+// A cleared stronghold leaves what its Rival kept there on the floor, to go through: the game's drop bag, laid the way
+// the game lays one when V drops things from the backpack (RPGManager.DropManyItems: the owner holds the items,
+// LootManager.SpawnItemDropOfManyItems moves them to a bag at a spot).
 
 public class CBHoldStashBook extends ScriptableSystem {
   private persistent let m_owed: Bool;
@@ -710,11 +694,8 @@ func CBHoldStashDrop(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
   return laid > 0;
 }
 
-// Loot of these tiers, scaled to V's level the way loot is, laid in the game's own drop bag at a point (2.7.3's stash,
-// shared with the API's DropLoot in 2.7.5). The game's bag takes items from its owner (LootManager.SpawnItemDropOfManyItems
-// with V as owner, the way V's own dropped items go), so each is given to V first, and only general items and consumables
-// go in the bag. The kinds of item laid; 0 when there was nothing to lay, -1 when the game would not lay it (they stay
-// with V).
+// The game's bag takes items from its owner (LootManager.SpawnItemDropOfManyItems with V as owner, the way V's own
+// dropped items go), so each is given to V first, and only general items and consumables go in the bag.
 func CBLootBagAt(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, at: Vector4, tiers: array<Int32>) -> Int32 {
   let ts = GameInstance.GetTransactionSystem(game);
   let lm = GameInstance.GetLootManager(game);

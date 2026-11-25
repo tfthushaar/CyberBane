@@ -3,10 +3,6 @@
 // Thin hooks on ScriptedPuppet: OnHit records whether V dealt the damage and by
 // what method; OnDeath classifies the victim and applies the kill to the model.
 // All signatures here are compile-verified against Cyberpunk 2077 2.31.
-//
-// Method detection is a first pass (quickhack / melee / firearm). Finisher,
-// dismember, stealth and non-lethal-defeat detection are refined in spike S-01;
-// until then OnDeath is treated as a lethal, witnessed kill.
 
 // Per-puppet scratch state (transient; the puppet despawns after death).
 @addField(ScriptedPuppet)
@@ -16,10 +12,8 @@ public let cbDamagedByPlayer: Bool;
 public let cbLastAttackType: gamedataAttackType;
 
 @addField(ScriptedPuppet)
-// How V last hit this one, as a CBMethod* bit. The weapon only exists on the hit event, and
-// scoring happens on death or defeat long after that event is gone, so the classification has
-// to be done here and carried on the puppet. Reading the attack type alone is what made every
-// melee kill score as a blade.
+// How V last hit this one, as a CBMethod* bit. The weapon only exists on the hit event, and scoring happens on death or
+// defeat long after that event is gone, so the classification has to be done here and carried on the puppet.
 public let cbLastMethodMask: Int32;
 
 // Everything V has done to this one, accumulated across hits rather than just the last.
@@ -31,31 +25,21 @@ public let cbScarMask: Int32;
 @addField(ScriptedPuppet)
 public let cbLastAttacker: wref<ScriptedPuppet>;
 
-// Whether the last hit this puppet took came from somebody other than V (2.5.6). A death was V's whenever V had hit
-// them at any point, so a ganger V grazed and a rival gang then killed counted as V's kill: their gang's grudge, V's
-// fighting style, the Renown. The killing blow decides now (CBOnPuppetDeath), and one landed by somebody on V's side
-// still counts as V's for somebody V had hurt (CBOnVsSide). Who it was is cbLastAttacker, written with this.
+// Whether the last hit this puppet took came from somebody other than V.
 @addField(ScriptedPuppet)
 public let cbLastHitByOther: Bool;
 
 @wrapMethod(ScriptedPuppet)
 protected cb func OnHit(evt: ref<gameHitEvent>) -> Bool {
-  wrappedMethod(evt);   // as a statement (2.6.8): never typed off what the game's event returns
+  wrappedMethod(evt);   // as a statement: never typed off what the game's event returns
   CBOnPuppetHit(this, evt);
   return true;
 }
 
 // A death is worked through on the next frame, not here.
-//
-// The game delivers these on its worker threads, several at a time when a grenade takes out a group,
-// and the fast tick runs on another. Handled here, two deaths, or a death and the tick, changed the
-// same lists in Cyberbane's system at once; a player's crash in DropEscapeeByEntity is what that looks
-// like. The game's own scripts never change a shared system from inside a puppet's event: they queue
-// it (QueueRequest, DelayEvent). This queues it on the delay system, which is where the fast tick
-// already runs, so every change to Cyberbane's state from a fight happens one at a time.
 @wrapMethod(ScriptedPuppet)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
-  wrappedMethod(evt);   // as a statement (2.6.8): never typed off what the game's event returns
+  wrappedMethod(evt);   // as a statement: never typed off what the game's event returns
   CBQueueDeath(this);
   return true;
 }
@@ -66,9 +50,8 @@ public class CBDeathCallback extends DelayCallback {
   public let waits: Int32;
 
   public func Call() -> Void {
-    // Somebody died in the seconds V was down. Held until V is up again, which only a death
-    // alternative brings; a load throws the whole world away first, and this with it. Given up on,
-    // only the record goes, which touches nothing in the world.
+    // Somebody died in the seconds V was down. Held until V is up again, which only a death alternative brings; a load
+    // throws the whole world away first, and this with it.
     let game = GetGameInstance();
     if CBVDown(game) {
       let ds = GameInstance.GetDelaySystem(game);
@@ -110,14 +93,13 @@ func CBQueueDeath(puppet: ref<ScriptedPuppet>) -> Void {
   ds.DelayCallbackNextFrame(cb);
 }
 
-// The part of a hit that touches Cyberbane's shared state, on the next frame for the reason above.
-// What the hit was is written onto the puppet straight away (CBOnPuppetHit), so nothing is lost by
-// waiting. One per puppet at a time: a shotgun's pellets are one follow-up, not eight.
+// The part of a hit that touches Cyberbane's shared state, on the next frame for the reason above. What the hit was is
+// written onto the puppet straight away (CBOnPuppetHit), so nothing is lost by waiting.
 @addField(ScriptedPuppet)
 public let cbHitQueued: Bool;
 
-// The weapon V last hit them with (2.3.1). Written in the hit event with the rest of what the hit was, read a
-// frame later or at death; nothing shared is touched.
+// The weapon V last hit them with. Written in the hit event with the rest of what the hit was, read a frame later or at
+// death; nothing shared is touched.
 @addField(ScriptedPuppet)
 public let cbLastWeaponRecord: TweakDBID;
 
@@ -138,13 +120,13 @@ public class CBHitFollowUpCallback extends DelayCallback {
     }
     // V is fresh from a fight (Model/Moment.reds).
     sys.NoteFight(CBGameSeconds(game));
-    // One of a turf patrol: the rest turn on V together (Spawn/TurfPatrol.reds, 2.4.0).
+    // One of a turf patrol: the rest turn on V together (Spawn/TurfPatrol.reds).
     CBPatrolTurn(sys, game, p);
     // A wounded enemy may lose its nerve and run (spec §10.2).
     CBCombatFleeCheck(sys, game, p);
     // Put them down without killing them? That gets remembered too (spec §10.2).
     CBSparedCheck(sys, game, p);
-    // A Rival's fatal flaw, met (Reactions/StreetIntel.reds, 1.9.8).
+    // A Rival's fatal flaw, met (Reactions/StreetIntel.reds).
     CBFlawCheck(sys, game, p);
   }
 }
@@ -153,7 +135,7 @@ public class CBHitFollowUpCallback extends DelayCallback {
 // Ledger and Killer-Rival creation land in M5 (spec §10.8).
 @wrapMethod(PlayerPuppet)
 protected cb func OnDeath(evt: ref<gameDeathEvent>) -> Bool {
-  wrappedMethod(evt);   // as a statement (2.6.8): never typed off what the game's event returns
+  wrappedMethod(evt);   // as a statement: never typed off what the game's event returns
   CBOnPlayerDeath(this);
   return true;
 }
@@ -184,17 +166,8 @@ func CBOnPlayerDeath(player: ref<PlayerPuppet>) -> Void {
   CBLog.Info(n"Signals", "Player died; Death Ledger updated.");
 }
 
-// V went down in a fight and a death alternative stood V up somewhere else (2.7.6, Compat/FenixRebirth.reds). Run on the
-// first settled tick after V arrives.
-//
-// Without a death alternative a death is followed by a load, which throws the fight away with the world; the only thing
-// that carries over is the ledger, which promotes the killer. With one, the fight was still on the books when V got up
-// across the city, and the hunt then ended it the only way it knew for V being gone: V had run. Every Rival of it promoted
-// for being shaken off, standing lost for running, "Ran, did you?", one of the crew coming back with a name for having
-// been given the slip. None of that happened; V lost. So it ends the way a load would have ended it: the one who put V
-// down already promoted by the death (CBPlayerDeathCallback), every encounter closed without anybody counted as got away
-// from, everybody of ours still standing sent off out of sight (V is far away by now), and the gang that sent them in no
-// hurry to send more.
+// V went down in a fight and a death alternative stood V up somewhere else (Compat/FenixRebirth.reds). Run on the first
+// settled tick after V arrives.
 public func CBFightEndsWithVDown(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
     return;
@@ -251,19 +224,16 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
   if !IsDefined(evt) || !IsDefined(evt.attackData) {
     return;
   }
-  // A hit the game ignored as friendly fire is no hit (2.7.7): it dealt nothing, showed nothing, and the game's own status
-  // effects skip it (damageSystem.script, FriendlyFireIgnored). Marked as V's, V's stray shot through somebody standing
-  // with V counted as V hurting their gang, and turned it on V.
+  // A hit the game ignored as friendly fire is no hit: it dealt nothing, showed nothing, and the game's status effects
+  // skip it (damageSystem.script, FriendlyFireIgnored).
   if evt.attackData.HasFlag(hitFlag.FriendlyFireIgnored) {
     return;
   }
   let instigator = evt.attackData.GetInstigator();
-  // The player, and the player being V. A hit landed as the VR avatar or as Johnny is not V's: it
-  // marks nobody as V's to score, breaks nobody's nerve and spares nobody, so a VR bout cannot cost
-  // a real gang's standing or send a VR enemy back as a Rival (Core/StoryHold.reds).
+  // The player, and the player being V.
   if IsDefined(instigator) && instigator.IsPlayer() && CBPlayerIsVHere(instigator as PlayerPuppet) {
     puppet.cbDamagedByPlayer = true;
-    puppet.cbGaveUp = false;   // shot after giving up: back in it, and the game decides what they do (2.6.3)
+    puppet.cbGaveUp = false;   // shot after giving up: back in it, and the game decides what they do
     puppet.cbLastHitByOther = false;
     puppet.cbLastHitVehicle = CBNoEntity();
     puppet.cbLastAttackType = evt.attackData.GetAttackType();
@@ -283,7 +253,7 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
   }
   // Record the attacker on the target so V's killer is known at death time.
   let attacker = instigator as ScriptedPuppet;
-  // In a fight (2.7.7): a hit taken, and one landed by somebody who is not V. Read by V's crew's win (Reactions/Crew.reds,
+  // In a fight: a hit taken, and one landed by somebody who is not V. Read by V's crew's win (Reactions/Crew.reds,
   // CBCrewHitInFight) and cleared when that fight is over; only flags on the two people, never shared state here.
   puppet.cbFightHitTaken = true;
   if IsDefined(attacker) && !attacker.IsPlayer() && !Equals(attacker.GetEntityID(), puppet.GetEntityID()) {
@@ -301,9 +271,8 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
       puppet.cbHackedFrom = attacker.GetEntityID();
     }
   }
-  // Run down by a car (2.5.6): the instigator is the vehicle, not a person, so the last-hit test never saw it, and
-  // somebody V had shot once and a police car then hit was V's kill. Whose car it was is asked a frame after the death
-  // (CBLastHitWasOthers), never here on the hit thread: one V is driving is V's.
+  // Run down by a car: the instigator is the vehicle, not a person, so the last-hit test never saw it, and somebody V
+  // had shot once and a police car then hit was V's kill.
   let car = instigator as VehicleObject;
   if IsDefined(car) && !puppet.IsPlayer() {
     puppet.cbLastHitByOther = true;
@@ -311,11 +280,11 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
   }
 }
 
-// The car that landed the last hit on them, when it was a car (2.5.6).
+// The car that landed the last hit on them, when it was a car.
 @addField(ScriptedPuppet)
 public let cbLastHitVehicle: EntityID;
 
-// A hit taken, and one landed, in the fight under way (2.7.7): V's crew counts a win only for a fight they were in.
+// A hit taken, and one landed, in the fight under way: V's crew counts a win only for a fight they were in.
 @addField(ScriptedPuppet)
 public let cbFightHitTaken: Bool;
 
@@ -327,8 +296,8 @@ func CBNoEntity() -> EntityID {
   return none;
 }
 
-// Was the last hit on them somebody else's, and not V's side's (2.5.6)? A car counts as V's when V is in it; a person
-// when they fight on V's side (CBOnVsSide). Asked a frame after a death or a knockout, never on the hit thread.
+// Was the last hit on them somebody else's, and not V's side's? A car counts as V's when V is in it; a person when they
+// fight on V's side (CBOnVsSide). Asked a frame after a death or a knockout, never on the hit thread.
 func CBLastHitWasOthers(game: GameInstance, puppet: wref<ScriptedPuppet>) -> Bool {
   if !IsDefined(puppet) || !puppet.cbLastHitByOther {
     return false;
@@ -341,10 +310,8 @@ func CBLastHitWasOthers(game: GameInstance, puppet: wref<ScriptedPuppet>) -> Boo
   return !CBOnVsSide(game, puppet.cbLastAttacker);
 }
 
-// Somebody fighting on V's side (2.5.6): the game's companions and other mods' (IsPlayerCompanion), V's own crew (CB_Own,
-// never one who has turned, CB_Turned), and anybody a gang or a Rival sent to help V (CB_Ally). Asked a frame after a
-// death, of whoever landed the last hit on them, never on the hit thread; the tags first, the companion read only of
-// somebody still in the world and ready to be read (CBNpcSafe).
+// Somebody fighting on V's side: the game's companions and other mods' (IsPlayerCompanion), V's own crew (CB_Own, never
+// one who has turned, CB_Turned), and anybody a gang or a Rival sent to help V (CB_Ally).
 func CBOnVsSide(game: GameInstance, p: wref<ScriptedPuppet>) -> Bool {
   if !IsDefined(p) || !p.IsAttached() {
     return false;
@@ -362,15 +329,13 @@ func CBOnVsSide(game: GameInstance, p: wref<ScriptedPuppet>) -> Bool {
 
 func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let game = puppet.GetGame();
-  // Hurt by V, then killed by somebody else (2.5.6): not V's kill, for everything below that asks. Read here, a frame
-  // after the death, when the killing hit has been written down whichever event the game delivered first.
-  // Unless whoever landed it fights on V's side (CBOnVsSide): a bagman V shot and V's companion finished was robbed, a
-  // sit-down V and V's crew cut down was crashed, the way it always was before 2.5.6. The rule was for other gangs' kills.
+  // Hurt by V, then killed by somebody else: not V's kill, for everything below that asks. Read here, a frame after the
+  // death, when the killing hit has been written down whichever event the game delivered first.
   if puppet.cbDamagedByPlayer && CBLastHitWasOthers(game, puppet) {
     puppet.cbDamagedByPlayer = false;
     CBLog.Info(n"Signals", "Somebody V had hurt was killed by somebody else: not counted as V's kill.");
   }
-  // Extension API (2.7.4): written down here, told on Cyberbane's tick; the faction read only when somebody listens.
+  // Extension API: written down here, told on Cyberbane's tick; the faction read only when somebody listens.
   if CBApiListening(game) {
     CBApiNote(CBApiQKilled(), CBClassifyFaction(puppet), puppet.cbDamagedByPlayer ? 1 : 0, 0);
   }
@@ -401,27 +366,26 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"Cyberbane") {
     sysE.NoteDeadOurs(puppet.GetEntityID());
   }
-  // One of the crew at a post at home (Reactions/CrewHome.reds, 2.7.2): hurt, never a kill of their old gang's.
+  // One of the crew at a post at home (Reactions/CrewHome.reds): hurt, never a kill of their old gang's.
   if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"CB_Guard") {
     CBGuardBodyDied(sysE, game, puppet);
     return;
   }
-  // One of the crew on a corner of the crew's streets (Reactions/CrewLoiter.reds, 2.7.7): hurt, never a kill of their old gang's.
+  // One of the crew on a corner of the crew's streets (Reactions/CrewLoiter.reds): hurt, never a kill of their old
+  // gang's.
   if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"CB_Loiter") {
     CBLoiterBodyDied(sysE, game, puppet);
     return;
   }
-  // One of V's own crew (Reactions/Crew.reds, 2.5.0): theirs to handle, and never a kill of their old gang's. One who
-  // turned on V goes on through the rest, as anybody does (a Rival's death, if they became one).
+  // One of V's own crew (Reactions/Crew.reds): theirs to handle, and never a kill of their old gang's. One who turned
+  // on V goes on through the rest, as anybody does (a Rival's death, if they became one).
   if IsDefined(sysE) && IsDefined(desD)
      && (desD.IsTagged(puppet.GetEntityID(), n"CB_Own") || desD.IsTagged(puppet.GetEntityID(), n"CB_Turned")) {
     if CBCrewBodyDied(sysE, game, puppet) {
       return;
     }
   }
-  // Killed by one of V's crew (2.6.0): their gang thinks less of the crew (Reactions/CrewBanner.reds). Never a spar.
-  // The kill is theirs on their record too (2.7.7, Reactions/CrewLife.reds), and an enemy down near them puts them in
-  // the fight (CBCrewNoteEnemyDown).
+  // Killed by one of V's crew: their gang thinks less of the crew (Reactions/CrewBanner.reds). Never a spar.
   let crewKiller = 0;
   if IsDefined(sysE) && IsDefined(desD) && puppet.cbLastHitByOther && puppet.IsAttached() {
     let crewHand = puppet.cbLastAttacker;
@@ -441,11 +405,11 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   if IsDefined(sysE) && puppet.cbKilledCrew > 0 && puppet.cbDamagedByPlayer {
     CBCrewAvenged(sysE, game, puppet.cbKilledCrew);
   }
-  // One of the hunters' ladder (Spawn/Bounty.reds, 2.4.3).
+  // One of the hunters' ladder (Spawn/Bounty.reds).
   if IsDefined(sysE) && IsDefined(desD) && desD.IsTagged(puppet.GetEntityID(), n"CB_Bounty") {
     CBBountyHunterDied(sysE, game, puppet);
   } else {
-    // One of a crew picked off by V with nobody seeing V (Narrative/Telling.reds, [80], 2.4.6).
+    // One of a crew picked off by V with nobody seeing V (Narrative/Telling.reds, [80]).
     if IsDefined(sysE) && IsDefined(desD) && puppet.cbDamagedByPlayer
        && (desD.IsTagged(puppet.GetEntityID(), n"CB_Squad") || desD.IsTagged(puppet.GetEntityID(), n"CB_Escort")) {
       CBPanicInDark(sysE, game, puppet);
@@ -459,18 +423,12 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   if IsDefined(sysE) {
     sysE.DropEscapeeByEntity(puppet.GetEntityID());
     let desE = GameInstance.GetDynamicEntitySystem();
-    // Tagged is the normal case and can use the whole resolution chain. Untagged, only an
-    // exact body match counts: the retire sweep can clear the tag off a Rival who is still
-    // standing there, and before this a kill in that state was simply lost. The faction
-    // fallback is deliberately NOT used here, or any dead ganger of that gang would be
-    // mistaken for the Rival.
+    // Tagged is the normal case and can use the whole resolution chain.
     let tagged = IsDefined(desE) && desE.IsTagged(puppet.GetEntityID(), n"CB_Rival");
     let slain = tagged ? CBResolveSlainRival(sysE, puppet)
                        : CBFindRivalByBody(sysE, puppet.GetEntityID());
-    // Their encounter was already over and the body was still here: put down and left breathing, or
-    // got away, and finished after all - knocked out, then run over. That is the Rival dead, not a
-    // stranger. Their encounter needs no closing and nobody else's body may be swept for it: another
-    // Rival can be out by now.
+    // Their encounter was already over and the body was still here: put down and left breathing, or got away, and
+    // finished after all - knocked out, then run over. That is the Rival dead, not a stranger.
     let former = false;
     if !IsDefined(slain) && !tagged {
       let formerId = sysE.TakeFormerRivalBody(puppet.GetEntityID());
@@ -491,12 +449,12 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
         sysE.SetRivalDeathByV(false);
         // A price they put up dies with them, and a leader a corporation wanted gone is paid for (Spawn/Bounty.reds).
         CBBountyPosterSlain(sysE, game, slain, slainRole == CBRoleLeader(), puppet.cbDamagedByPlayer);
-        // Last words, a trophy, a bond answered, and how it ended (Rivals/RivalMoments.reds, 2.4.4).
+        // Last words, a trophy, a bond answered, and how it ended (Rivals/RivalMoments.reds).
         CBRivalFell(sysE, game, puppet, slain, puppet.cbDamagedByPlayer);
-        CBCrewRivalFell(sysE, game, slain, puppet.cbDamagedByPlayer);   // one who killed V's own, answered (2.5.0)
+        CBCrewRivalFell(sysE, game, slain, puppet.cbDamagedByPlayer);   // one who killed V's own, answered
         CBMapRemember(sysE, game, CBMemRivalFell(), puppet.GetWorldPosition(), slain.id, slain.faction, n"", n"",
-                      puppet.cbDamagedByPlayer);   // the map remembers where (UI/MapPins.reds, 2.5.0)
-        CBOweFuneral(game, slain.faction, puppet.cbDamagedByPlayer);   // their people bury them (Spawn/StreetEvents.reds, 2.3.3)
+                      puppet.cbDamagedByPlayer);   // the map remembers where (UI/MapPins.reds)
+        CBOweFuneral(game, slain.faction, puppet.cbDamagedByPlayer);   // their people bury them (Spawn/StreetEvents.reds)
         if puppet.cbDamagedByPlayer {
           CBTerrorDeed(sysE, CBConfig.TerrorRival());
         }
@@ -505,7 +463,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
           CBPayRivalBounty(sysE, game, slain, slainRole);
           let rivalIconic = (slain.rank >= 4 || slainRole == CBRoleLeader()) ? CBConfig.LootIconicChanceRival() : 0.0;
           if CBRivalSignatureKind(slain) > 0 {
-            rivalIconic += CBConfig.LootIconicSignatureBonus();   // 2.7.2
+            rivalIconic += CBConfig.LootIconicSignatureBonus();
           }
           CBScheduleLoot(sysE, game, puppet, CBLootTierRival(slain, slainRole), rivalIconic);
           // And V caught them before they knew V was there: an ambush, on top of the kill.
@@ -519,9 +477,8 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
         // marker is already off this puppet from the top of this function; this clears the
         // encounter slot and forgets the body.
         CBCloseRivalEncounter(sysE, game, slain, puppet);
-        // Do not delete the entity from inside its own death handler - the engine is still
-        // tearing this puppet down and destroying it here frees it underneath that work.
-        // Queue the sweep instead; the next settled fast tick clears the tag (crash safety).
+        // Do not delete the entity from inside its own death handler - the engine is still tearing this puppet down and
+        // destroying it here frees it underneath that work.
         sysE.RequestRivalSweep();
       }
     }
@@ -547,20 +504,15 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
     if IsDefined(desE) && puppet.cbDamagedByPlayer && CBIsMeetApex(desE, puppet.GetEntityID()) {
       CBScheduleLoot(sysE, game, puppet, CBLootTierApex(), CBConfig.LootIconicChanceApex());
     }
-    // Crew, escorts and scouts carry what the game gives any ganger, on their bodies (2.7.3): "I was getting loot into
-    // my inventory, and their bodies were dropping loot as well." Their reward is the body and the crew's bounty; the
-    // extra into V's pockets is for the ones who matter (Rivals, apex squads, a gang's best).
-    // The last of a crew: their gang's best is next (Spawn/Queue.reds). Counted without this
-    // body, which may or may not read as dead yet inside its own death event. A crew that came
-    // with its apex squad is one hit squad, and it is beaten when the last of either half goes
-    // down with nobody left in the other - not while four of their best are still on V.
+    // Crew, escorts and scouts carry what the game gives any ganger, on their bodies: Their reward is the body and the
+    // crew's bounty; the extra into V's pockets is for the ones who matter (Rivals, apex squads, a gang's best).
     let squadApex = sysE.ActiveSquadHasApex();
-    // A bounty hunter is CB_Squad for the lists, and nobody's crew (Spawn/Bounty.reds, 2.4.3).
+    // A bounty hunter is CB_Squad for the lists, and nobody's crew (Spawn/Bounty.reds).
     let crewBody = IsDefined(desE) && !desE.IsTagged(puppet.GetEntityID(), n"CB_Bounty")
                    && (desE.IsTagged(puppet.GetEntityID(), n"CB_Squad")
                        || (squadApex && desE.IsTagged(puppet.GetEntityID(), n"CB_Apex")));
     if crewBody && NotEquals(sysE.GetActiveSquadFaction(), n"") {
-      CBSquadLostOne(sysE, game, puppet.GetEntityID());   // losing badly, they may pull back (Spawn/Regroup.reds, 2.7.7)
+      CBSquadLostOne(sysE, game, puppet.GetEntityID());   // losing badly, they may pull back (Spawn/Regroup.reds)
     }
     if crewBody && NotEquals(sysE.GetActiveSquadFaction(), n"")
        && CBCountLiveOrSpawningExcept(game, n"CB_Squad", puppet.GetEntityID(), n"CB_Bounty") == 0
@@ -584,16 +536,9 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   // Keep the Renown floor current with V's Street Cred.
   sys.GetScore().SetStreetCred(CBPlayerStreetCred(game));
 
-  // Who was alive and close enough to carry the story is worked out inside the builder
-  // (spec §8.5); it was hardcoded before 0.1.16, which scored every kill as if a crowd watched.
   let info = CBBuildKillInfo(sys, game, puppet, true);
 
   // They were put down alive earlier and V has now finished them.
-  //
-  // Normally there is nothing to take back: the mercy waits on the escapee until V has left
-  // them breathing, and the escapee was dropped at the top of this function, so it is simply
-  // never scored and this is an ordinary kill. Only if V walked away, the mercy was settled, and
-  // V then came back and killed them, is there credit on the books to reverse.
   if puppet.cbSparedLogged && puppet.cbMercyScored {
     CBRevokeMercy(sys, info.faction, puppet.cbMercyInfo, puppet.cbMercyPsycho);
     puppet.cbMercyScored = false;
@@ -603,7 +548,7 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let tierBefore = sys.GetLastNotifiedTier();
   CBApplyKill(sys, info);
   if info.lethal {
-    CBCrewWarNoteVKill(sys, game, info.faction);   // V in the crew's war on them (Reactions/CrewLife.reds, 2.7.7)
+    CBCrewWarNoteVKill(sys, game, info.faction);   // V in the crew's war on them (Reactions/CrewLife.reds)
   }
   // Already counted in this fight as somebody down; now they are a body. Not a second person.
   CBEncounterRecordKill(sys, info, puppet.cbSparedLogged);
@@ -665,17 +610,15 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   if info.lethal && !wasRival && NotEquals(info.faction, n"")
      && (info.victimClass == EnumInt(ECBVictimClass.Boss) || info.victimClass == EnumInt(ECBVictimClass.Officer)) {
     if CBRivalRoll(sys, "avenger", CBConfig.RivalChanceAvenger(), info.recordID, true, info.faction) {
-      // Once the fight is over (Rivals/Births.reds, 1.9.1).
+      // Once the fight is over (Rivals/Births.reds).
       CBRivalAfterFight(sys, game, info.faction, info.recordID, n"", ECBRivalSource.Avenger,
                         info.district, info.at, null, 0, "");
     }
   }
 }
 
-// Map the victim's affiliation to a Cyberbane faction id (n"" if unmapped).
-// Whose this body is, worked out once per body (1.9.3). It was worked out again for the same person
-// on every pass of the Director, every hit and every death: a record read, a walk of sixteen
-// factions and, for the police, a string test.
+// Map the victim's affiliation to a Cyberbane faction id (n"" if unmapped). Whose this body is, worked out once per
+// body.
 @addField(ScriptedPuppet)
 public let cbFactionKnown: Bool;
 
@@ -703,15 +646,14 @@ func CBClassifyFactionNow(puppet: ref<ScriptedPuppet>, content: ref<CyberbaneCon
   }
   let aff = rec.Affiliation();
   let faction = IsDefined(aff) ? content.FactionForAffiliation(aff.EnumName()) : n"";
-  // Nobody's by affiliation: a gang the game knows only by its attitude group (2.6.4, the Scrappers). The record's base
-  // group, never the live one, which a quest can change for a scene.
+  // Nobody's by affiliation: a gang the game knows only by its attitude group (the Scrappers). The record's base group,
+  // never the live one, which a quest can change for a scene.
   if Equals(faction, n"") {
     faction = content.FactionForAttitude(rec.BaseAttitudeGroup());
   }
-  // MaxTac is not an affiliation. gamedataAffiliation has no such value and every MaxTac record is
-  // Factions.NCPD, so nobody was ever classed as MaxTac: their kills scored as cops, MaxTac's Problem
-  // could not be earned, and every "MaxTac holds its ground" test here was reading a name that
-  // never turned up. Only asked of the NCPD, so ordinary NPCs pay nothing for it.
+  // MaxTac is not an affiliation. gamedataAffiliation has no such value and every MaxTac record is Factions.NCPD, so
+  // nobody was ever classed as MaxTac: their kills scored as cops, MaxTac's Problem could not be earned, and every
+  // "MaxTac holds its ground" test here was reading a name that never turned up.
   if Equals(faction, n"NCPD") && CBRecordIsMaxTac(rec, puppet.GetRecordID()) {
     return n"MaxTac";
   }
@@ -733,22 +675,6 @@ func CBRecordIsMaxTac(rec: wref<Character_Record>, id: TweakDBID) -> Bool {
 }
 
 // Is this one of Night City's cyberpsychos?
-//
-// There is no typed way to ask on 2.5. Probed and absent: IsCyberpsycho on ScriptedPuppet,
-// on Character_Record and as a static; gamedataAffiliation has no Cyberpsycho or Psycho
-// member. The record id is the only handle left, and the game's cyberpsycho characters are
-// named for it.
-//
-// This is a best-effort heuristic, not a guarantee. If the id string is unavailable the
-// check simply never matches, which is exactly how the mod behaved before it existed - a
-// cyberpsycho then scores as an ordinary ganger. It has no other failure mode.
-//
-// 1.9.3: the record says so itself. Every cyberpsycho sighting carries the Cyberpsycho tag and the
-// MinorActivity quest affiliation (CBRecordIsSightingCyberpsycho), which needs no name. The name
-// was the only test, and it missed five of the seventeen (ma_bls_ina_se1_22_psycho, ma_wat_nid_22_monk
-// and others), who scored as gang bosses and never counted for Psycho Hunter or Psycho Whisperer;
-// and a record's name can only be read at all with Cyber Engine Tweaks installed. Kept as the
-// fallback for anything another mod adds.
 func CBIsCyberpsycho(puppet: ref<ScriptedPuppet>) -> Bool {
   if CBRecordIsSightingCyberpsycho(puppet.GetRecordID()) {
     return true;
@@ -772,10 +698,7 @@ func CBClassifyVictim(puppet: ref<ScriptedPuppet>, faction: CName) -> Int32 {
   if Equals(faction, n"NCPD") {
     return EnumInt(ECBVictimClass.Cop);
   }
-  // Somebody with no gang whom the game itself reacts to as a civilian is one, crowd or not (1.9.3). Never one of a gang
-  // (2.7.0): "why does killing a bunch of criminals with explosives worsen my Conduct?" The game puts plenty of gangers in
-  // its crowd (the ones loitering at a hangout or a crime scene), and every one of them caught in a blast was booked as a
-  // civilian killed, five points of Conduct each. A ganger is a ganger, crowd or not.
+  // Somebody with no gang whom the game itself reacts to as a civilian is one, crowd or not.
   if Equals(faction, n"") && (puppet.IsCrowd() || puppet.IsCharacterCivilian()) {
     return EnumInt(ECBVictimClass.Civilian);
   }
@@ -801,10 +724,7 @@ func CBClassifyVictim(puppet: ref<ScriptedPuppet>, faction: CName) -> Int32 {
   return EnumInt(ECBVictimClass.Ganger);
 }
 
-// First-pass method classification from the attack type (spec §7.1.2).
-// Which scar an attack leaves. The engine only separates a few kinds of damage at this
-// level, so this is deliberately coarse: enough for a Rival to remember the shape of what
-// happened to them, not a forensic record.
+// First-pass method classification from the attack type (spec §7.1.2). Which scar an attack leaves.
 public func CBScarBitFor(attackType: gamedataAttackType) -> Int32 {
   if Equals(attackType, gamedataAttackType.Hack) {
     return CBScarFried();
@@ -819,8 +739,6 @@ public func CBScarBitFor(attackType: gamedataAttackType) -> Int32 {
 }
 
 // Undo the credit a settled non-lethal takedown was given, because V went back and killed them.
-// The knockout itself still happened - the fear it caused and the standing it cost stay - but
-// what it earned for being mercy goes. `mercy` is what it was scored from (CBSettleMercy).
 public func CBRevokeMercy(sys: ref<CyberbaneSystem>, faction: CName, opt mercy: ref<CBKillInfo>,
                           opt psycho: Bool) -> Void {
   if !IsDefined(sys) {
@@ -859,10 +777,7 @@ public func CBMethodExplosive() -> Int32 = 32
 public func CBMethodFinisher() -> Int32 = 64
 
 // The methods above are bit values, not bit positions, so they are tested and added with these and never with
-// CBMaskHas/CBMaskSet (which take a position). From 1.3.2 to 2.4.3 every reader asked CBMaskHas, which turned 1 into
-// 2, 8 into 256 and 32 and 64 into nothing: a blade kill read as blunt, a hack as fists, and gunfire, quickhacks,
-// explosives and finishers never read at all. Everything that scores how V fights (the gang codes, the ledger, the
-// archetypes, the wannabe shot with a gun) was reading that.
+// CBMaskHas/CBMaskSet (which take a position).
 public func CBMethodHas(mask: Int32, method: Int32) -> Bool {
   return method != 0 && (mask & method) != 0;
 }
@@ -872,13 +787,6 @@ public func CBMethodAdd(mask: Int32, method: Int32) -> Int32 {
 }
 
 // What this blow actually was.
-//
-// The old version read the attack type and nothing else, so `Melee` became "blade" whether V
-// was holding a katana, a baseball bat or nothing at all, and explosives scored as gunfire.
-// The weapon is on the attack data, and the game classifies it for us: WeaponObject.IsBlade
-// covers machete, katana, sword, chainsword, long blade and mantis blades, and IsBlunt covers
-// hammers, clubs, gorilla arms and bare fists - fists are checked first so they do not get
-// filed as blunt.
 func CBMethodMaskFor(ad: ref<AttackData>) -> Int32 {
   if !IsDefined(ad) {
     return 0;
@@ -920,11 +828,6 @@ func CBSetMethodFlags(info: ref<CBKillInfo>, mask: Int32) -> Void {
 }
 
 // One classified incident, lethal or not.
-//
-// Pulled out of CBOnPuppetKilled so a non-lethal takedown can be scored through exactly the
-// same path. CBApplyKill has always had a !lethal branch on every axis it touches - the conduct
-// credit, the nonLethal tally, fs.spared, the quiet-takedown count - and nothing ever handed it
-// an info with lethal = false, so all of it was dead and Conduct could only ever fall.
 public func CBBuildKillInfo(sys: ref<CyberbaneSystem>, game: GameInstance,
                             puppet: ref<ScriptedPuppet>, lethal: Bool) -> ref<CBKillInfo> {
   let info = new CBKillInfo();
@@ -935,32 +838,17 @@ public func CBBuildKillInfo(sys: ref<CyberbaneSystem>, game: GameInstance,
   info.lethal = lethal;
   info.instigatorIsPlayer = true;
   // Never keep a story character as a spawn template.
-  //
-  // This was IsQuest alone, which is a much narrower question than the one being asked. A
-  // cyberpsycho is not quest-flagged; neither is a boss-rarity elite. So killing one filed its
-  // record as the gang's `eliteRecord`, and every apex squad that gang sent afterwards was
-  // built from it - four copies of something with a boss's own health, with the mod's
-  // apex multiplier applied on top. That is the enemy that cannot be killed, and it is the
-  // same record test the Rival roster already uses, so the two now agree.
-  // Three doors, because each catches something the others do not. IsQuest is true for a live
-  // puppet the quest system placed; the record test is true for anyone the story owns whether
-  // or not they are currently in a quest; and a companion is somebody fighting alongside V,
-  // who has no business becoming the template a gang spawns its crews from.
   info.victimIsUnique = puppet.IsQuest()
                      || ScriptedPuppet.IsPlayerCompanion(puppet)
                      || CBRecordIsUniqueCharacter(puppet.GetRecordID());
   info.district = CBEventDistrict(sys, game);
   info.position = puppet.GetWorldPosition();
   let witnesses = CBCountWitnesses(sys, info.position, info.victimEntityId);
-  // People saw it, but if V's face is covered they cannot say who did it, so nothing attaches
-  // to V's name. That is what `witnessed` governs: renown, standing damage and whether a story
-  // can name anybody. The body still turns up, so the unattributed dread path still runs, which
-  // is exactly the reputation a masked merc should build - a district frightened of something
-  // it cannot identify.
+  // People saw it, but if V's face is covered they cannot say who did it, so nothing attaches to V's name. That is what
+  // `witnessed` governs: renown, standing damage and whether a story can name anybody.
   info.witnessed = witnesses > 0 && !CBPlayerMasked(game);
-  // Stealth stays literal: it is about whether anyone was there at all, and it feeds the quiet
-  // takedown count rather than attribution. And never in an open fight (2.5.1): the last of a crew V shot their way
-  // through had nobody left standing to see it, and every such kill was scored as unseen, a ghost's.
+  // Stealth stays literal: it is about whether anyone was there at all, and it feeds the quiet takedown count rather
+  // than attribution.
   let you = GetPlayer(game);
   info.loud = IsDefined(you) && you.IsInCombat();
   info.stealth = witnesses == 0 && !info.loud;

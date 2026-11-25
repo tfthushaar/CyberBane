@@ -10,11 +10,7 @@ public abstract class CBSafetyGate {
     return CBSafetyGate.Check(puppet, true, true, CBConfig.QuestSpawnClearance());
   }
 
-  // Street talk (Reactions/StreetTalk.reds, 1.9.5). Words move nobody, so the two rules that exist to keep
-  // Cyberbane from moving or startling people are left out: somebody at a workspot (sitting, leaning,
-  // smoking, chatting) and somebody indoors in a safe place can be spoken to. What V's words then do to
-  // them is held to the same rules there (CBTalkTarget.atWork, .safe). The tracked job keeps a radius of
-  // its own: its people, not the whole neighbourhood.
+  // Street talk (Reactions/StreetTalk.reds).
   public static func CanTalkTo(puppet: ref<ScriptedPuppet>) -> Bool {
     return CBSafetyGate.Check(puppet, false, false, CBConfig.TalkTrackedClearance());
   }
@@ -41,10 +37,8 @@ public abstract class CBSafetyGate {
     if puppet.IsQuest() {
       return false;   // never touch quest NPCs (spec §16.1)
     }
-    // Nor anybody the story wrote. IsQuest is only set on some of them: a gig's contact such as
-    // Alan in Treating Symptoms is not flagged, and was turned hostile mid-conversation. The
-    // record's own quest affiliation is the game's statement about who it authored, the same test
-    // that keeps story characters off the Rival roster. Worked out once per NPC.
+    // Nor anybody the story wrote. IsQuest is only set on some of them: a gig's contact such as Alan in Treating
+    // Symptoms is not flagged, and was turned hostile mid-conversation.
     if puppet.cbAuthoredState == 0 {
       puppet.cbAuthoredState = CBRecordIsUniqueCharacter(puppet.GetRecordID()) ? 1 : 2;
     }
@@ -53,12 +47,6 @@ public abstract class CBSafetyGate {
     }
     // Standing at the job V is tracking: part of somebody else's story, whoever they are. This
     // covers crowd fear, morale, fleeing and hostility on sight alike, wherever V is.
-    //
-    // The tracked job's pins, not every active objective's. 1.8.4 put every objective's pins in one
-    // list, and through this gate that stopped morale, fleeing and mercy for anybody within sixty
-    // metres of any gig or quest marker on the map: a fight beside one made no Rivals and earned no
-    // Conduct. The Director, which turns world NPCs hostile or scared, keeps its own check against
-    // every job site (Reactions/Director.reds).
     let sysGate = CyberbaneSystem.Get(puppet.GetGame());
     if IsDefined(sysGate) && sysGate.NearTrackedPins(puppet.GetWorldPosition(), trackedRadius) {
       return false;
@@ -66,9 +54,8 @@ public abstract class CBSafetyGate {
     if puppet.IsPlayerCompanion() {
       return false;   // never touch companions / crew (spec §16.1)
     }
-    // V's own people, by the tag they came with, even once the follower role is off: one of V's crew walking home,
-    // or a friendly gang's people lent to V (Reactions/Crew.reds, Reactions/Allies.reds). Hurt by V on the way, they
-    // were taken for anybody V had put down, and could come back as a Rival (2.5.0).
+    // V's own people, by the tag they came with, even once the follower role is off: one of V's crew walking home, or a
+    // friendly gang's people lent to V (Reactions/Crew.reds, Reactions/Allies.reds).
     let desGate = GameInstance.GetDynamicEntitySystem();
     if IsDefined(desGate) && (desGate.IsTagged(puppet.GetEntityID(), n"CB_Own") || desGate.IsTagged(puppet.GetEntityID(), n"CB_Follower")
                               || desGate.IsTagged(puppet.GetEntityID(), n"CB_Guard") || desGate.IsTagged(puppet.GetEntityID(), n"CB_Loiter")) {
@@ -83,10 +70,8 @@ public abstract class CBSafetyGate {
     if workspots && IsDefined(ws) && ws.IsActorInWorkspot(puppet) {
       return false;
     }
-    // Somewhere the game protects, and indoors with it. This is the game's own test, and
-    // it is per NPC rather than per player: people inside a bar are left alone while the
-    // crowd on the pavement outside still reacts. An outdoor safe area, a memorial say,
-    // does not silence the people standing in it (spec §16).
+    // Somewhere the game protects, and indoors with it. This is the game's test, and it is per NPC rather than per
+    // player: people inside a bar are left alone while the crowd on the pavement outside still reacts.
     if interiors && CBNpcInSafeInterior(puppet) {
       return false;
     }

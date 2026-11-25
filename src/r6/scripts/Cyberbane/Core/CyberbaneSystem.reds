@@ -7,11 +7,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private persistent let m_schemaVersion: Int32;          // starts at 1 after first init
   private persistent let m_playthroughId: CName;          // e.g. n"CB_7F3A19C2"
   private persistent let m_bootstrapped: Bool;
-  // Game seconds this playthrough first met Cyberbane (1.8.3; 0 = a save from before that). The
-  // field has been saved since the first release and was never written, so filling it in now does
-  // not change the save's shape. Its copy in the service tells this playthrough's saves from another
-  // character's that ended up with the same id (VerifyPlaythroughOwner). Never renamed: a rename is
-  // a different field to the save, and would wipe it.
+  // Game seconds this playthrough first met Cyberbane (0 = a save from before that). The field has been saved since the
+  // first release and was never written, so filling it in now does not change the save's shape.
   private persistent let m_installedAt: Float;
 
   // Global accumulators (displayed values are derived, spec §8).
@@ -49,45 +46,43 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_score: ref<CBScoreEngine>;
   private let m_registry: ref<CBNpcRegistry>;
   private let m_director: ref<CBReactionDirector>;
-  // Talking to people in the street (Reactions/StreetTalk.reds, 1.9.5). Session only.
+  // Talking to people in the street (Reactions/StreetTalk.reds). Session only.
   private let m_talk: ref<CBStreetTalk>;
-  // The hold on a gang's fire while V talks to one of them (2.6.7, Reactions/TalkTruce.reds).
+  // The hold on a gang's fire while V talks to one of them (Reactions/TalkTruce.reds).
   private let m_truce: ref<CBTalkTruce>;
   private let m_sessionStarted: Bool;
   private let m_tickGeneration: Int32;
   private let m_playerAttachCbId: Uint32;
   private let m_tickCount: Int32;             // monotonic ~1/second, for encounter timing
   private let m_encounter: ref<CBEncounter>;  // active combat episode
-  // The pause menu, while it is up. The Hub is a page of it (UI/PauseMenuEntry.reds) and the menu
-  // owns that page; this is only how the scenario and the tick find it. Weak, so the
-  // system can never keep a closed menu alive. Not persisted.
+  // The pause menu, while it is up. The Hub is a page of it (UI/PauseMenuEntry.reds) and the menu owns that page; this
+  // is only how the scenario and the tick find it. Weak, so the system can never keep a closed menu alive.
   private let m_pauseMenu: wref<PauseMenuGameController>;
   private let m_hubOnMenu: wref<CBHud>;          // the Hub as a tab of the game's menu, while that is up (UI/HubTab.reds)
   private let m_pauseMenuGen: Int32;          // which pause menu registered last, so a stale one cannot unregister it
   private let m_hubTab: Int32;                // the Hub screen last looked at, this session
   // The Hub's pages that can be drawn as a picture (the web of gangs, the Rivals tree, the map, the crew): the ones
-  // switched to a list this session, a bit per page. Pictures by default (2.5.0).
+  // switched to a list this session, a bit per page. Pictures by default.
   private let m_hubListMask: Int32;
   private let m_pendingPeace: CName;          // a pay-off chosen on the Hub while paused, done on resume
   private let m_ledgerDue: Bool;              // the death ledger waits for the first settled tick (StartSession)
-  // V's equipment is read for the first time on the first settled tick too, never from inside the load
-  // (1.9.5). Until then nothing reads what V has fitted or is wearing (WornReady).
+  // V's equipment is read for the first time on the first settled tick too, never from inside the load. Until then
+  // nothing reads what V has fitted or is wearing (WornReady).
   private let m_wornDue: Bool;
   private let m_wornReady: Bool;
-  // The pins of every active objective that is not the tracked one (CBRefreshJobPins, 1.8.4), and
-  // whether V is on a job: near a pin or in a scene, which unlike the quest area leaves out the
-  // hostile zones (CBComputeOnJob). Session only.
+  // The pins of every active objective that is not the tracked one (CBRefreshJobPins), and whether V is on a job: near
+  // a pin or in a scene, which unlike the quest area leaves out the hostile zones (CBComputeOnJob). Session only.
   private let m_jobPins: array<Vector4>;
   private let m_onJob: Bool;
-  // Rivals forgotten one at a time on the Hub, carried out on the next settled tick (1.8.2).
+  // Rivals forgotten one at a time on the Hub, carried out on the next settled tick.
   private let m_pendingForgets: array<Int32>;
   // A Rival whose whereabouts V is buying on the Hub, the same way. 0 = none.
   private let m_pendingFind: Int32;
-  // A lead agreed by text (1.9.7): the price and who sold it. 0 when the Hub's request is a fresh one.
+  // A lead agreed by text: the price and who sold it. 0 when the Hub's request is a fresh one.
   private let m_pendingFindPrice: Int32;
   private let m_pendingFindTipster: CName;
   private let m_pendingFindSender: String;
-  // A Rival called out from the Hub (Rivals/RivalLife.reds, 1.9.9); 0 none.
+  // A Rival called out from the Hub (Rivals/RivalLife.reds); 0 none.
   private let m_pendingWord: Int32;
   // Safe passage bought in the street (Reactions/TalkTopics.reds): the gang, and until when (game seconds).
   // Session only: a few hours that a load does not bring back.
@@ -101,13 +96,13 @@ public class CyberbaneSystem extends ScriptableSystem {
   // The global service, fetched at session start or on a settled tick and reused, the same way
   // the content cache is (see GetContent). Session only.
   private let m_playService: ref<CyberbaneService>;
-  // The playthrough id this session drew for a save that came back without one (1.8.3). If the
-  // save's own id is restored over it, the two differ and the save is not new. Session only.
+  // The playthrough id this session drew for a save that came back without one. If the save's own id is restored over
+  // it, the two differ and the save is not new. Session only.
   private let m_mintedId: CName;
-  public let squadDown: Int32;        // the crew after V: how many of it are down (2.7.7, Spawn/Regroup.reds)
+  public let squadDown: Int32;        // the crew after V: how many of it are down (Spawn/Regroup.reds)
   public let squadRegrouped: Bool;    // and whether it has pulled back once
-  private let m_pendingWordPhone: Bool;   // asked for in a Rival's thread, so the answer goes back there (2.7.7)
-  private let m_birthDue: Bool;   // a new playthrough waiting for V to be here before it goes on record (2.7.7)
+  private let m_pendingWordPhone: Bool;   // asked for in a Rival's thread, so the answer goes back there
+  private let m_birthDue: Bool;   // a new playthrough waiting for V to be here before it goes on record
   // The forget chosen on the Hub is already on record in the service, and what the record said
   // before it, so "Keep them" can put it back exactly. Session only.
   private let m_purgeNoted: Bool;
@@ -128,29 +123,18 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_markerPins: array<NewMappinID>;  // in step with the owners
   private let m_lastTipAt: Float;             // game seconds of the last tip, this session
   // Where the Rival out in the world was last standing, and on which tick (Rivals/Whereabouts.reds).
-  // A Rival V outruns is a long way off by the time the hunt gives up, and often already streamed
-  // out, so their body cannot be asked where they are; this can. Session only.
-  // One entry per Rival out, so a team (1.9.0) is not one slot overwritten by whoever was noted last.
   private let m_rivalLastPosIds: array<Int32>;
   private let m_rivalLastPoses: array<Vector4>;
   private let m_rivalLastPosTicks: array<Int32>;
-  // Who held each district at the last look, by CBDistrictIndex, so a district changing hands is
-  // noticed once (Model/Territory.reds). Session only: the first look of a session only learns.
-  // Who is on their own streets in the district V is standing in, worked out on the district
-  // sample (a settled tick) so every reader - vendor prices included, which are asked for every
-  // item on a list - reads the answer instead of working it out again. Session only.
+  // Who held each district at the last look, by CBDistrictIndex, so a district changing hands is noticed once
+  // (Model/Territory.reds). Session only: the first look of a session only learns.
   private let m_turfHereDistrict: CName;
   private let m_turfHereGangs: array<CName>;
   private let m_threatBar: ref<CBThreatBar>;
   // The messenger. Session-only by design; see the note at the top of UI/PhoneMessages.reds
   // about why a persisted thread is not worth wiping everybody's reputation for.
   private let m_phone: ref<CBPhone>;
-  // One-shot clock measurement, session only. Every cooldown in the mod is in units of
-  // TimeSystem.GetGameTimeStamp(), which is a native import, so no amount of reading the game's
-  // scripts says whether it ticks in real seconds or in the compressed in-game clock. If it is
-  // the latter, the ten minutes between encounters is nothing like ten minutes of play. This
-  // measures it against the sim clock over sixty ticks and writes the ratio to the log once.
-  // Last visible-chrome figure written to the log, so the line only appears when it moves.
+  // One-shot clock measurement, session only.
   private let m_lastLoggedChrome: Int32;
   private let m_clockGame0: Float;
   private let m_clockSim0: Float;
@@ -168,12 +152,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_pendingSquadFaction: CName;   // gang whose vendetta squad is on its way
   private let m_pendingSquadTicks: Int32;     // fast ticks until it arrives (shown in the Hub)
   private let m_pendingSquadStuck: Int32;    // ticks spent expired but unable to arrive
-  // Whose turn it is next (Spawn/Queue.reds). Session-only: a queued encounter describes the
-  // next few minutes, not the playthrough, and one restored from a save would fire into a
-  // world that has moved on.
-  // Three lanes: one Rival, one crew, one apex squad, each with its own clock. Flat scalars
-  // per lane rather than an array, to match how the rest of this system stores small fixed
-  // sets, and because arrays on a persisted system are the one thing that has bitten here.
+  // Whose turn it is next (Spawn/Queue.reds). Session-only: a queued encounter describes the next few minutes, not the
+  // playthrough, and one restored from a save would fire into a world that has moved on.
   private let m_laneRivalId: Int32;
   private let m_laneRivalTicks: Int32;
   private let m_laneLastRival: Int32;
@@ -183,12 +163,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_laneApexFaction: CName;
   private let m_laneApexTicks: Int32;
   private let m_laneLastApexFaction: CName;
-  // Tick each lane last sent somebody. A spawn is queued, not instant: for a second or two
-  // afterwards nothing is attached yet, so "is anyone of this kind alive" answers no and the
-  // lane would cheerfully send a second one on top of the first.
-  // Last tick each lane was still busy. Subtracting it from now gives how long since that
-  // lane's encounter actually ended, which is what the gap between encounters is measured
-  // from - the end of the last fight, not the moment the last one was sent.
+  // Tick each lane last sent somebody.
   private let m_apexSeat: Int32;         // rotates 0..3 so a squad is always four roles
   // V's buy-price modifier as last worked out, and on which tick (VendorBuyModifier).
   private let m_vendorMod: Float;
@@ -199,10 +174,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   // (Spawn/HitSquad.reds, CBProcessCarTopUp). Session only, like every other arrival field.
   private let m_carSeats: Int32;         // how many seats that request could fill
   private let m_convoyCreated: Int32;    // crew (not apex) the convoy has put in the world so far
-  // The rest of a group waiting for the next car (Spawn/Arrival.reds, CBConvoyTick). One car
-  // boards at a time, so a group bigger than a car is carried in several, one after another.
-  // A leg is one group - an apex squad, a crew - and each car carries people from one leg only.
-  // Parallel arrays, like everything else here. Session only.
+  // The rest of a group waiting for the next car (Spawn/Arrival.reds, CBConvoyTick). One car boards at a time, so a
+  // group bigger than a car is carried in several, one after another.
   private let m_legFaction: array<CName>;
   private let m_legRecord: array<TweakDBID>;
   private let m_legTag: array<CName>;
@@ -238,21 +211,20 @@ public class CyberbaneSystem extends ScriptableSystem {
   // once (Model/Reputation.reds, CBVendettaWatch). Session only.
   private let m_seenPostureIds: array<CName>;
   private let m_seenPostureVals: array<Int32>;
-  // The How gangs see you setting each gang had when last looked at (2.1.0), so a posture that moved because
-  // the player changed it is not announced as the gang's own doing. Session only.
+  // The How gangs see you setting each gang had when last looked at, so a posture that moved because the player changed
+  // it is not announced as the gang's own doing. Session only.
   private let m_seenViewIds: array<CName>;
-  // When V last hurt somebody, in game seconds (Model/Moment.reds, 2.3.1). Session only.
+  // When V last hurt somebody, in game seconds (Model/Moment.reds). Session only.
   private let m_lastFightAt: Float;
   // A new playthrough's lifepath head start, given on the first settled tick with the faction table warm
-  // (Model/Lifepath.reds, 2.3.1): made any earlier, a gang's record would be created without its baseline.
-  // A flag and a value, never a negative default: field initialisers are not trusted here, and 0 is a lifepath.
+  // (Model/Lifepath.reds): made any earlier, a gang's record would be created without its baseline.
   private let m_headStartDue: Bool;
   private let m_headStartPath: Int32;
   private let m_seenViewVals: array<Int32>;
   // Which hostile gangs have restated their price this session, so each one does it once
   // (Model/Reputation.reds, CBVendettaWatch). Session only, like the phone threads it re-opens.
   private let m_peaceOfferedIds: array<CName>;
-  // When the last gang put its price to V (game seconds), 0 for not yet this session (2.6.1, PeaceOfferDue).
+  // When the last gang put its price to V (game seconds), 0 for not yet this session (PeaceOfferDue).
   private let m_lastPeaceOfferAt: Float;
   // The hunt (Spawn/Hunt.reds): what the people after V know. Session only.
   private let m_huntState: Int32;
@@ -281,8 +253,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Pay the bounty for this apex squad once, when the last of them goes down.
   private let m_apexBountyArmed: Bool;
   private let m_apexBountyFaction: CName;
-  // Iconic weapons V has had, from Cyberbane or seen on V (2.7.0: kept in the save). "Two Comrade's Hammers": the list
-  // lived for a session only, and V's own copy was never looked at, so a load or a stashed one let the same weapon drop.
+  // Iconic weapons V has had, from Cyberbane or seen on V (kept in the save). "Two Comrade's Hammers": the list lived
+  // for a session only, and V's own copy was never looked at, so a load or a stashed one let the same weapon drop.
   private persistent let m_iconicsGiven: array<TweakDBID>;
   // The hunt's presentation and its finer states (Spawn/Hunt.reds). Session only.
   private let m_huntGrade: String;
@@ -297,7 +269,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_scoutId: EntityID;
   private let m_scoutSentTick: Int32;
   private let m_scoutSeenTicks: Int32;
-  private let m_scoutInWorld: Bool;     // session only: they did appear, so gone again means V left them behind (2.5.5)
+  private let m_scoutInWorld: Bool;     // session only: they did appear, so gone again means V left them behind
   // Our own dead, waiting to be cleared once V is far enough away (Spawn/Spawner.reds,
   // CBSweepRemains). Session only.
   private let m_deadOurs: array<EntityID>;
@@ -313,13 +285,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_laneRivalFreed: Int32;
   private let m_laneSquadFreed: Int32;
   private let m_laneApexFreed: Int32;
-  // How many encounters each lane has already sent today, and the day those counts belong to.
-  // Persistent, so reloading a save does not hand the player a fresh day's worth.
-  // Today's timetable. Parallel arrays directly on the system, which is the rule everywhere
-  // here: an array nested inside a persisted class does not survive a save.
-  // No negative default: redscript only takes plain constants here. Day 0 with an empty slot
-  // list is indistinguishable from "never rolled", and CBScheduleTick rolls on an empty list
-  // anyway, so this needs no sentinel.
+  // How many encounters each lane has already sent today, and the day those counts belong to. Persistent, so reloading
+  // a save does not hand the player a fresh day's worth. Today's timetable.
   private persistent let m_schedDay: Int32;
   private persistent let m_slotLane: array<Int32>;
   private persistent let m_slotAt: array<Float>;     // in-game hour of day it is due
@@ -360,10 +327,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_arrivalLeadTag: CName;        // and the tag that makes them matter
   private let m_arrivalFaction: CName;        // whose car this is, for picking role records
   private let m_arrivalRoleSquad: Bool;       // fill the seats by role rather than four alike
-  // The apex squad being brought to four (Spawn/FactionApex.reds, CBApexMusterTick). Which chairs
-  // have been put in the world for it, as bits 0..3, so the chairs a car or a walk-in could not
-  // fill are filled later, and a chair whose member V has already killed is never filled twice.
-  // Session only, like every other arrival field.
+  // The apex squad being brought to four (Spawn/FactionApex.reds, CBApexMusterTick).
   private let m_musterFaction: CName;
   private let m_musterRecord: TweakDBID;
   private let m_musterMask: Int32;
@@ -371,34 +335,32 @@ public class CyberbaneSystem extends ScriptableSystem {
   // The hit squad out right now came with its gang's apex squad (Spawn/HitSquad.reds). Session only.
   private let m_activeSquadApex: Bool;
   private let m_squadAnchor: wref<ScriptedPuppet>;   // whose squad the rest of the team joins
-  private let m_crewGrenadier: Bool;                    // this crew's grenadier is already chosen (1.8.5)
-  private let m_crewSergeant: Bool;                     // and its sergeant (2.3.2)
-  private let m_apexSearchAt: Vector4;                  // where an apex squad that lost V is searching ([U4], 2.3.2)
+  private let m_crewGrenadier: Bool;                    // this crew's grenadier is already chosen
+  private let m_crewSergeant: Bool;                     // and its sergeant
+  private let m_apexSearchAt: Vector4;                  // where an apex squad that lost V is searching ([U4])
   private let m_apexSearchTick: Int32;
-  private let m_rivalDeathByV: Bool;                    // the Rival dying now died by V's hand (2.3.4)
-  // Rivals who came with the active one (1.9.0, Spawn/RivalEncounter.reds). Session only.
+  private let m_rivalDeathByV: Bool;                    // the Rival dying now died by V's hand
+  // Rivals who came with the active one (Spawn/RivalEncounter.reds). Session only.
   private let m_packIds: array<Int32>;
   // The ticks new Rivals were made on lately, so one fight cannot make a crowd of them
   // (CBRivalOdds, Rivals/RivalSystem.reds). Session only.
   private let m_rivalMadeTicks: array<Int32>;
-  // Rivals a fight has made who wait until it is over (Rivals/Births.reds, 1.9.1), and how many
-  // settled ticks V has been out of combat. Session only, like the escapees they come from.
+  // Rivals a fight has made who wait until it is over (Rivals/Births.reds), and how many settled ticks V has been out
+  // of combat. Session only, like the escapees they come from.
   private let m_births: array<ref<CBPendingBirth>>;
   private let m_calmTicks: Int32;
-  // Factions whose people were seen hostile to V without Cyberbane having made them so, and the tick
-  // it was last seen (Reactions/Director.reds, NoteForeignHostility, 1.9.1). Session only.
+  // Factions whose people were seen hostile to V without Cyberbane having made them so, and the tick it was last seen
+  // (Reactions/Director.reds, NoteForeignHostility). Session only.
   private let m_seenHostileIds: array<CName>;
   private let m_seenHostileTicks: array<Int32>;
-  // Ticks the story-companion pass was last run on, and what it found (CBStoryCompanionWithV, 1.9.1).
+  // Ticks the story-companion pass was last run on, and what it found (CBStoryCompanionWithV).
   private let m_companionScanTick: Int32;
   private let m_companionScanFound: Bool;
   // What V was last seen wearing and what it covers (Signals/Concealment.reds), read once a sample by
   // CBUpdateChrome and shared by the look, the disguise and the mask test. Session only.
   private let m_worn: ref<CBWornRead>;
   private let m_huntHoldReason: Int32;        // why no Rival can arrive right now (CBHold*)
-  // Kills V has made recently, for Aura. Session-only: it describes the last minute, not the
-  // playthrough. Counting V's own kills rather than scanning for nearby corpses is deliberate -
-  // a kill V made was by definition next to V when it happened, and it needs no spatial query.
+  // Kills V has made recently, for Aura. Session-only: it describes the last minute, not the playthrough.
   private let m_recentKills: Int32;
   private let m_recentKillTick: Int32;
   private let m_pendingApexCame: Bool;        // somebody took a chair during this drive
@@ -418,7 +380,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_stealthHoldTicks: Int32;
   private let m_pendingRivalSweep: Bool;      // a CB_Rival delete deferred out of an entity callback (crash safety)
   // A death alternative's count of V's rebirths this session, as last read, and the fight V fell in still to end on the
-  // next settled tick (Compat/FenixRebirth.reds, 2.7.6). Session-only: Fenix Rebirth's own count starts again with a load.
+  // next settled tick (Compat/FenixRebirth.reds). Session-only: Fenix Rebirth's own count starts again with a load.
   private let m_deathAltSeen: Int32;
   private let m_deathAltRead: Bool;
   private let m_vFellPending: Bool;
@@ -426,11 +388,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   private let m_inQuestArea: Bool;            // V is on a job (tracked objective close by), in a scene or a hostile zone
   private let m_storyHold: Int32;             // why the story has the stage right now, CBStory* (Core/StoryHold.reds; not persisted)
   private let m_storyRestrictTicks: Int32;    // settled ticks in a row a story restriction has been on V (not persisted)
-  // Every active objective's map pins, the tracked one's included, refreshed every 3 ticks: the job
-  // sites nobody of ours is placed at or sent to (NearQuestPins). And the tracked objective's alone,
-  // for whether V is at the job (CBComputeQuestArea, NearTrackedPins): 1.8.4 put every objective's
-  // pins into the one list, and that turned the quest area on around every gig on the map, which took
-  // the whole street's reactions to V away near any of them.
+  // Every active objective's map pins, the tracked one's included, refreshed every 3 ticks: the job sites nobody of
+  // ours is placed at or sent to (NearQuestPins).
   private let m_questPins: array<Vector4>;
   private let m_trackedPins: array<Vector4>;
   private let m_safeArmsApplied: Bool;        // Cyberbane lifted the safe-zone weapon lock and has to keep it lifted
@@ -481,8 +440,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       return;   // not available yet - a later call will register
     }
     cbs.RegisterCallback(n"Entity/Attached", this, n"OnCBEntityAttached");
-    // The crew's key (2.6.3), Codeware's raw key event: every press passes through, so the handler is a settings read
-    // and a comparison, and it only ever asks (CBCrewKeyInput).
+    // The crew's key, Codeware's raw key event: every press passes through, so the handler is a settings read and a
+    // comparison, and it only ever asks (CBCrewKeyInput).
     cbs.RegisterCallback(n"Input/Key", this, n"OnCBKeyInput");
     this.m_callbacksRegistered = true;
   }
@@ -494,7 +453,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Session start (spec §5.3): build runtime objects, register the entity callback
   // once, clean up stray Cyberbane spawns, and (re)start the fast tick.
   private func StartSession() -> Void {
-    // Not behind the main menu (2.7.8, CBInPreGame): nothing there is V's, so nothing starts, no tick, no clock and no
+    // Not behind the main menu (CBInPreGame): nothing there is V's, so nothing starts, no tick, no clock and no
     // playthrough on record. The world a save loads into has its own system and its own player, and starts then.
     if CBInPreGame() {
       CBLog.Info(n"Core", "The main menu's world: Cyberbane waits for a game to be loaded.");
@@ -513,46 +472,31 @@ public class CyberbaneSystem extends ScriptableSystem {
     if !this.m_sessionStarted {
       this.m_sessionStarted = true;
       CBDeleteTaggedSafe(this.GetGameInstance(), n"Cyberbane");
-      // Which character this save is, before anything below trusts its playthrough id (1.8.3).
+      // Which character this save is, before anything below trusts its playthrough id.
       this.VerifyPlaythroughOwner();
       CBLog.Info(n"Core", s"Loaded playthrough \(NameToString(this.m_playthroughId)), on record since game time \(RoundF(this.m_installedAt)).");
-      // What the player has told Cyberbane about this playthrough on any save of it: Rivals they
-      // forgot, or that they started over. Read before the ledger, because a forgotten Rival must
-      // not be promoted, and a death from before the forget must not make a new one.
+      // What the player has told Cyberbane about this playthrough on any save of it: Rivals they forgot, or that they
+      // started over.
       let startedOver = this.ApplyPlaythroughNotes();
       // Apply any deaths recorded in the global ledger for this playthrough. Not for one that is
       // about to be started over: the reset would wipe what it made a moment later.
-      //
-      // On the first settled tick, not here. This runs from the player-attached callback, in the
-      // middle of the load, and it is the one thing a load does only after V has died: make the
-      // killer a Rival, fill a chair, send two texts. None of it is world work the load needs, and
-      // the crash rules have long said delayed work waits for a settled world.
       this.m_ledgerDue = !startedOver;
       // And take any story characters off the Rival roster before they can be sent again.
       CBPruneUniqueRivals(this);
       this.RenumberRivalZero();
     }
-    // A conversation's voice from the last session is nobody's in this one (2.7.8, Reactions/TalkVoice.reds): the runtime
+    // A conversation's voice from the last session is nobody's in this one (Reactions/TalkVoice.reds): the runtime
     // outlives a load, and an answer still waiting for its words would put them up in the new world.
     CBTalkVoiceClear();
-    // V's chrome and clothes are read on the first settled tick, not here (1.9.5).
-    //
-    // This used to seed the chrome reading on the spot, and it is the one read that reaches into V's
-    // attachment slots. This runs from the player-attached callback, in the middle of the load, while
-    // an outfit mod is still rebuilding what V wears: Equipment-EX clears its leftover preview copies
-    // when the save is restored and puts the outfit back on a frame later. Reading the slots in that
-    // window met garments that had not finished loading, and with an Equipment-EX outfit on, the game
-    // crashed on the load, most often the reload after V died (reported on 1.9.4, the log ending on a
-    // line of ours). The death ledger was moved off this callback for the same reason; the chrome
-    // reading now waits for the same settled tick, and nothing reads V's equipment until it has run.
+    // V's chrome and clothes are read on the first settled tick, not here.
     this.m_wornReady = false;
     this.m_wornDue = true;
     this.m_worn = null;
-    // They Will Remember's answers were the last save's (2.4.2); asked again on the first settled tick.
+    // They Will Remember's answers were the last save's; asked again on the first settled tick.
     let rtTwr = CyberbaneRuntime.Get();
     if IsDefined(rtTwr) {
       rtTwr.ClearTwrHostility();
-      rtTwr.ClearCards();   // cards waiting from the last session are about a world that is gone (2.6.3)
+      rtTwr.ClearCards();   // cards waiting from the last session are about a world that is gone
     }
 
     // Nothing asked for on a Hub in another session is carried into this one.
@@ -574,7 +518,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // Bump the generation so any stale tick chain stops, then start a fresh one.
     this.m_tickGeneration += 1;
     this.ScheduleFastTick();
-    // And street talk's own, faster one (1.9.5). It stands still until the first settled tick.
+    // And street talk's own, faster one. It stands still until the first settled tick.
     this.m_talk.Start(this.GetGameInstance());
     this.GetTruce().Reset();
   }
@@ -583,16 +527,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     // Count every attach (before any guard) so the fast tick can tell when the world is
     // streaming heavily - a flood - and stand down even with no menu / time-jump signal.
     // Count people, not everything.
-    //
-    // This counter feeds the flood detector, whose job is to notice the engine rebuilding the
-    // world and stand our native queries down until it is done. It was counting every entity
-    // that streamed in: pedestrians, cars, parked bikes, props, vending machines, doors. The
-    // threshold was chosen thinking about NPCs, so on any populated street it was tripped
-    // continuously, and the stand-down it arms skips the whole tick body - the Rival clocks,
-    // the Hub refresh, and the slow tick that drives hit squads and apex squads. The result
-    // was a mod that did nothing at all while you walked anywhere interesting.
-    //
-    // Only puppets matter here, because they are what the gated queries actually touch.
     let attachedEntity = event.GetEntity();
     let puppet = attachedEntity as ScriptedPuppet;
     if IsDefined(puppet) {
@@ -603,10 +537,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     if !IsDefined(this.m_registry) {
       return;
     }
-    // A car we sent. Its seat count is only readable now it exists, so this is where the crew
-    // is queued (see Arrival.reds).
-    // This fires for every door, prop and vending machine that streams in. Anything that is
-    // neither a person nor a car is done here, with one cast each (1.9.3).
+    // A car we sent. Its seat count is only readable now it exists, so this is where the crew is queued (see
+    // Arrival.reds). This fires for every door, prop and vending machine that streams in.
     let car = attachedEntity as VehicleObject;
     if IsDefined(car) {
       let desCar = GameInstance.GetDynamicEntitySystem();
@@ -616,24 +548,13 @@ public class CyberbaneSystem extends ScriptableSystem {
       }
     }
     if IsDefined(puppet) {
-      // Registering is always safe and must always happen. Add() stores a weak reference and
-      // checks IsPlayer; cbSeenTick is a plain field write. Neither reads a native component,
-      // and CBNpcSafe holds every reader off for NpcReadyTicks afterwards anyway.
-      //
-      // This used to sit behind CBWorldStable, which meant any NPC that attached while the
-      // world was busy was dropped and never looked at again - there is no second chance,
-      // nothing re-scans. Crowds stream in constantly while you walk, so a large share of
-      // them were invisible to Cyberbane for their whole life, and the city appeared to
-      // ignore V no matter how frightening V was.
+      // Registering is always safe and must always happen. Add stores a weak reference and checks IsPlayer; cbSeenTick
+      // is a plain field write.
       this.m_registry.Add(puppet);
       puppet.cbSeenTick = this.m_tickCount;   // leave it alone until its components are ready
 
-      // Only Cyberbane's own spawns need anything more, and every one of them carries the Cyberbane
-      // tag (Spawn/Spawner.reds, Spawn/Arrival.reds). Asked first (1.9.1): this runs for every person
-      // who streams in, and on a crowded street that is a constant flow. Each one used to pay for the
-      // whole world-stable check below - a dozen engine reads, a workspot query among them - and up to
-      // eight tag lookups, to find out it was a passer-by. The same tag test the car above has always
-      // made before its own stable check, so it is no new kind of call from here.
+      // Only Cyberbane's own spawns need anything more, and every one of them carries the Cyberbane tag
+      // (Spawn/Spawner.reds, Spawn/Arrival.reds).
       let des = GameInstance.GetDynamicEntitySystem();
       if !IsDefined(des) || !des.IsTagged(puppet.GetEntityID(), n"Cyberbane") {
         return;
@@ -648,19 +569,6 @@ public class CyberbaneSystem extends ScriptableSystem {
         let id = puppet.GetEntityID();
         // Everything about one of ours - a crew member's seat, turning it hostile, telling it to come, its
         // buffs, its kit, its squad and its health bar - is deferred rather than done here.
-        //
-        // This is why spawned enemies stood around doing nothing until V walked into them.
-        // At the instant an entity attaches its native components do not exist yet: the
-        // attitude agent and the AI controller both come back null for the first few frames.
-        // Every one of those calls checks IsDefined and returns quietly when it is missing, so
-        // the hostility and the order to hunt were being dropped on the floor in silence and
-        // the NPC carried on as whatever it was spawned as - a neutral NCPD officer standing
-        // in the street. The mod already had the rule for this and was not following it:
-        // CBNpcSafe holds every other reader off for NpcReadyTicks after attach, and this path
-        // ignored it.
-        //
-        // One door for every one of ours, the same one the missed-setup sweep uses: the setup
-        // decides by tag what each needs (Spawn/Spawner.reds, CBQueueSpawnSetup).
         CBQueueSpawnSetup(this.GetGameInstance(), des, puppet);
 
         // Somebody who runs a crew should take more killing than the rank and file do.
@@ -676,12 +584,6 @@ public class CyberbaneSystem extends ScriptableSystem {
             // Built to apex grade, scaled by how far up the ladder they have climbed: every
             // escape and every mercy makes the one who comes back harder than the one who
             // left, and the chair-of-the-crew bonus is one term inside the same build.
-            //
-            // Yes, CBApplySpawnSetup does this too. Deliberately: that path is delayed until
-            // the puppet's AI components exist and may never run for somebody shot on the way
-            // in, while stats exist from attach. CBApplyApexBuild's cbBuffed guard means
-            // whichever gets there first wins and the second does nothing, which is the point
-            // of having the guard inside the builder rather than at the call sites.
             CBApplyRivalApexBuff(this, this.GetGameInstance(), puppet, who, CBRivalRole(this, who));
             // Every Rival gets the bar, because every Rival is built to apex grade.
             if CBRivalGrade(who) >= CBConfig.RivalBossBarGrade() {
@@ -695,9 +597,7 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   // ---- Car arrivals (spec §9.9) ----
   //
-  // Deliberately small and blunt: a single convoy, a seat counter, and a hard clear. A missed
-  // step leaves the fields set, so SetPendingArrival refuses to start a second convoy and the
-  // next CBArrivalSweep tick clears a stale one rather than letting it block arrivals forever.
+  // Deliberately small and blunt: a single convoy, a seat counter, and a hard clear.
   public func HasPendingArrival() -> Bool {
     return TDBID.IsValid(this.m_arrivalRecord);
   }
@@ -729,20 +629,16 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_arrivalLeadTag;
   }
 
-  // A car asked for out of sight is not guaranteed to appear: if the point turns out to be in
-  // view, or the world moves on, the engine simply never attaches it. Without this the pending
-  // convoy would sit there forever and every later arrival would be refused as a double
-  // booking - the one failure in this whole path that would be permanent rather than a missed
-  // cycle. Age it out and let the next encounter try again.
+  // A car asked for out of sight is not guaranteed to appear: if the point turns out to be in view, or the world moves
+  // on, the engine simply never attaches it.
   public func AgePendingArrival() -> Void {
     if !this.HasPendingArrival() {
       return;
     }
     this.m_arrivalAge += 1;
     if this.m_arrivalAge > CBConfig.ArrivalStaleTicks() {
-      // The car is here and somebody is in it, but a seat never filled: send it with whoever
-      // got in rather than leaving them parked (CBLaunchArrivalCar). Anybody it was meant to
-      // carry and did not is walked in by the top-up, which counts seats created, not filled.
+      // The car is here and somebody is in it, but a seat never filled: send it with whoever got in rather than leaving
+      // them parked (CBLaunchArrivalCar).
       if EntityID.IsDefined(this.m_arrivalCarId) && this.m_arrivalFilled > 0
          && this.m_arrivalFilled < this.m_arrivalSeats {
         CBLog.Info(n"Spawn", s"Boarding stalled at \(this.m_arrivalFilled) of \(this.m_arrivalSeats); sending the car with them.");
@@ -814,12 +710,6 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // The people created for the car now boarding. Only they are given its seats.
-  //
-  // Seating was keyed on the CB_Crew tag, which every car's crew keeps for good, and the attach
-  // callback that seats people fires again whenever one of them streams back in. So somebody who
-  // got out of an earlier car and streamed in again while a later car was boarding was taken by
-  // that car: an instant mount moved them from wherever they were into a seat out of sight, and
-  // the car left with a seat its own crew needed.
   public func NoteArrivalBoarder(id: EntityID) -> Void {
     if EntityID.IsDefined(id) {
       ArrayPush(this.m_arrivalBoarders, id);
@@ -920,7 +810,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_apexSearchTick = tick;
   }
 
-  // The crew being dispatched has its sergeant now ([U2], 2.3.2). True once per crew.
+  // The crew being dispatched has its sergeant now ([U2]). True once per crew.
   public func TakeCrewSergeant() -> Bool {
     if this.m_crewSergeant {
       return false;
@@ -987,13 +877,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     // does, so it can never wait around to hijack a pause menu opened by hand later on.
     let game = this.GetGameInstance();
 
-    // Crash safety (spec §16): stand down during loading, fast travel, time skips, ripperdoc
-    // installs, menus and scripted scenes. The engine tears the world down and rebuilds it
-    // across those (the resource-streaming "flood"), and running our native NPC / entity /
-    // spawn queries mid-stream reads a half-built or freed native object and crashes - seen as
-    // a dynamicBuffer assert and as an access violation in DelaySystem/Tick. We keep the tick
-    // chain alive and arm a settle window so we resume only once the world is back and the
-    // flood has drained, not the instant the loading screen clears.
+    // Crash safety (spec §16): stand down during loading, fast travel, time skips, ripperdoc installs, menus and
+    // scripted scenes.
 
     // No controllable player means a load / teleport / fast-travel is in flight - the biggest
     // floods. Cover the whole thing.
@@ -1004,8 +889,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.ScheduleFastTick();
       return;
     }
-    // A death alternative carrying V on (Compat/FenixRebirth.reds, 2.7.6). Asked before the gate below, which a rebirth
-    // closes (Fenix Rebirth puts V in a scene tier while it moves V), and which reads the answer through CBVDown.
+    // A death alternative carrying V on (Compat/FenixRebirth.reds). Asked before the gate below, which a rebirth closes
+    // (Fenix Rebirth puts V in a scene tier while it moves V), and which reads the answer through CBVDown.
     CBFenixTick(this, game, player);
     // A menu / loading screen / scripted scene (incl. the ripperdoc chair) is up: stand down,
     // and keep whatever longer flood settle is already armed.
@@ -1013,10 +898,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       if this.m_streamSettleTicks < CBConfig.StreamSettleTicks() {
         this.m_streamSettleTicks = CBConfig.StreamSettleTicks();
       }
-      // V is down (1.9.1): take Cyberbane's line, bars and cards off the screen. The tick stands still
-      // until V is up or the load comes, so whatever they showed froze there, and the HUD layer keeps
-      // it through the load. Visibility only, on Cyberbane's own widgets: no world query, nothing
-      // forgotten, and the next settled tick draws whatever is still true.
+      // V is down: take Cyberbane's line, bars and cards off the screen. The tick stands still until V is up or the
+      // load comes, so whatever they showed froze there, and the HUD layer keeps it through the load.
       if CBVDown(game) {
         this.GetThreatBar().Conceal();
         this.GetPhone().Conceal();
@@ -1030,26 +913,11 @@ public class CyberbaneSystem extends ScriptableSystem {
     // - e.g. walking a dense district or a scene loading around you. Stand down until it drains.
     // The counter is read and reset every tick.
     // Heavy streaming no longer stops the whole tick.
-    //
-    // This heuristic has now caused three separate rounds of "nothing in the mod happens", and
-    // the last one is the clearest: arrivals landed while the player stood still talking about
-    // the bug, and not while they walked around the city. That is this check, exactly.
-    //
-    // The reason it was wrong is that it was never the real safety gate. Loads, fast travels,
-    // menus, scenes and time jumps all announce themselves properly through the player handle,
-    // CBWorldStable and the game clock, and those still hard-stop the tick above. Counting
-    // attaches was a guess at "something might be streaming", and it was being used to stand
-    // down scheduling and timekeeping that touch no engine object at all.
-    //
-    // So it now does the one job it can justify: skipping the Director's walk over every
-    // registered NPC, which is the genuinely heavy native work. Everything else runs. The
-    // spawn path keeps its own CBWorldStable check, so an arrival still refuses to land in a
-    // world that is not ready - it simply reschedules instead of the whole mod going quiet.
     let attached = this.m_attachCount;
     this.m_attachCount = 0;
     let heavyStreaming = attached >= CBConfig.FloodAttachThreshold();
     if IsDefined(this.m_registry) {
-      this.m_registry.ArmPrune();   // one prune from a full registry's next add, at most (1.9.1)
+      this.m_registry.ArmPrune();   // one prune from a full registry's next add, at most
     }
 
     // A large jump in the in-game clock since the last processed tick means a time skip just
@@ -1068,12 +936,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     if this.m_streamSettleTicks > 0 {
       this.m_streamSettleTicks -= 1;
       // Keep our own bookkeeping moving while the world settles.
-      //
-      // Standing every system down was over-broad. Counting a timer towards zero is arithmetic
-      // on fields we own: it reads no native object and cannot be the thing that crashes. Only
-      // the arrival itself needs a settled world, and that is gated separately inside
-      // CBSpawnGroup. Freezing the clocks as well is what made a settle window indistinguishable
-      // from the mod being broken, because an appointment that never approaches never arrives.
       CBTickClocksOnly(this);
       this.SetHuntHoldReason(CBHoldWorldBusy());
       CBApiWorldBusy(game);
@@ -1085,7 +947,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // lookup happens here, in a safe context, so the slow tick can reuse the cached reference
     // instead of re-locking a possibly-dead container (crash safety).
     this.GetContent();
-    this.WarmPlaythroughService();   // same reasoning, for the global service (1.6.2)
+    this.WarmPlaythroughService();   // same reasoning, for the global service
     this.EnsureCallbacks();   // last-resort retry if the callback system was not up earlier
 
     // Carry out any entity cleanup that was deferred out of a lifecycle callback. This tick
@@ -1096,8 +958,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       // Rival out right now owns: with two Rivals out, one going down used to take the other with it.
       CBSweepStrayRivalBodies(this, game);
     }
-    // V went down in a fight and a death alternative stood V up somewhere else (2.7.6). The fight ended where V fell: on
-    // this first settled tick after it, before the hunt can read V's being gone as V having run.
+    // V went down in a fight and a death alternative stood V up somewhere else. The fight ended where V fell: on this
+    // first settled tick after it, before the hunt can read V's being gone as V having run.
     if this.TakeVFell() {
       CBFightEndsWithVDown(this, game);
     }
@@ -1111,8 +973,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBMenuNote(game, CBT(n"Cyberbane-CyberbaneSystem-ReputationWipedNightCityHasNever"), 6.0);
       this.GetPhone().Clear();
     }
-    // "This save is another character" (1.8.3). After the reset, which gives the save a new
-    // playthrough of its own anyway; a request made for the old one is then dropped.
+    // "This save is another character". After the reset, which gives the save a new playthrough of its own anyway; a
+    // request made for the old one is then dropped.
     if IsDefined(rtReset) && rtReset.TakeSeparateRequest(this.m_playthroughId) {
       this.SeparateOnRequest(game);
     }
@@ -1121,11 +983,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // of them reads the same answer for this tick.
     this.RefreshStoryHold(game);
     if this.m_storyHold == CBStoryNotV() {
-      // Not V at all: the VR avatar, Johnny in a flashback, V in cyberspace or a braindance. Nothing
-      // the rest of this tick does means anything here - it would send people into a world V is
-      // not in, score fights V is not having against gangs that are not there, and sample the
-      // chrome and the look of somebody else. Everybody of ours out of sight has been called back
-      // above; the clocks stand still, the line at the top of the screen comes down, the texts wait.
+      // Not V at all: the VR avatar, Johnny in a flashback, V in cyberspace or a braindance.
       this.GetThreatBar().Hide();
       this.ScheduleFastTick();
       return;
@@ -1137,28 +995,26 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBApplyDeathLedger(this, game);
       CBPruneUniqueRivals(this);
     }
-    // A new playthrough that waited for V (2.7.7, VerifyPlaythroughOwner).
+    // A new playthrough that waited for V (VerifyPlaythroughOwner).
     if this.m_birthDue && CBGameHasVHere(game) && CBPlayerLifePath(game) >= 0 && !CBInPreGame() {
       this.VerifyPlaythroughOwner();
     }
     if this.m_headStartDue && this.HasContent() {
       this.m_headStartDue = false;
       CBLifepathHeadStart(this, this.m_headStartPath);
-      CBApiNote(CBApiQBorn(), n"", this.m_headStartPath, 0);   // a playthrough begun, for add-ons (2.7.4)
+      CBApiNote(CBApiQBorn(), n"", this.m_headStartPath, 0);   // a playthrough begun, for add-ons
     }
-    // And the first look at what V has fitted and is wearing, now that the load is over and V's own
-    // body is the one in the world (StartSession, 1.9.5).
+    // And the first look at what V has fitted and is wearing, now that the load is over and V's own body is the one in
+    // the world (StartSession).
     if this.m_wornDue {
       this.m_wornDue = false;
       this.m_wornReady = true;
       CBTwrRefreshHostility(game);
       CBUpdateChrome(this, game);
       CBUpdateLook(this, game);
-      // And V's Street Cred, the floor under Renown (2.5.2). The score engine starts every session at none, and it
-      // was first read on a quiet tick, which on a busy street came minutes after a load: until then the Hub, the
-      // titles, the prices and everything else that reads Renown saw it without the floor, and then it jumped.
+      // And V's Street Cred, the floor under Renown.
       CBRefreshStreetCred(this, game);
-      // Any gang with a Rival after V and no record, put on the books with its chairs filled (2.5.3).
+      // Any gang with a Rival after V and no record, put on the books with its chairs filled.
       CBFileRivalGangs(this);
     }
 
@@ -1171,7 +1027,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // clinic in well under ten seconds, and the reaction systems read this.
     this.m_inSafeZone = CBPlayerInSafeZone(game);
     this.m_inSanctuary = CBComputeSanctuary(this, game);
-    // Home ground and a night at home (2.7.1, Spawn/HomeGround.reds): read every tick, like the safe area, because the
+    // Home ground and a night at home (Spawn/HomeGround.reds): read every tick, like the safe area, because the
     // arrivals gate reads it.
     let homeBook = CBHomeBook.Get(game);
     if IsDefined(homeBook) {
@@ -1188,7 +1044,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBSafeZoneArmsTick(this, game);     // keep the weapon lock lifted in safe areas when asked
     if this.m_tickCount % 2 == 0 {
       CBCombatReleaseTick(this, game);  // let go of anyone of ours keeping V in combat from afar
-      CBRearmTick(this, game);          // and set hostile again anyone of ours who came up neutral (1.9.6)
+      CBRearmTick(this, game);          // and set hostile again anyone of ours who came up neutral
     }
     if this.m_tickCount % 5 == 2 {
       CBCompanionHostilityTick(this, game);   // V's companions and ours, set against each other
@@ -1196,26 +1052,20 @@ public class CyberbaneSystem extends ScriptableSystem {
     if this.m_tickCount % CBConfig.CutOffPassTicks() == 0 {
       CBCutOffTick(this, game);         // and of anyone who cannot get to V, however close
     }
-    // The player/world sampling (chrome, look, menace, Street Cred + Heat, current district)
-    // runs only on this slow sample, and only on a stable, non-flood tick reached above - so the
-    // Prevention-system district/heat queries never fire mid-stream. The director reads the
-    // cached district rather than querying every tick.
-    // What V has fitted and is wearing is read whatever the streaming is doing: it is V's own
-    // equipment and stats and nothing in the world, and on a busy street, where streaming is heavy
-    // for minutes at a time, it stood still, so putting a coat on changed nothing that could be seen.
-    // Who They Will Remember has hostile, for everything that reads a gang's standing (2.4.2): its data
-    // only, never the world, so like the wardrobe it is read whatever the streaming is doing.
+    // The player/world sampling (chrome, look, menace, Street Cred + Heat, current district) runs only on this slow
+    // sample, and only on a stable, non-flood tick reached above - so the Prevention-system district/heat queries never
+    // fire mid-stream.
     if this.m_tickCount % 2 == 0 {
       CBTwrRefreshHostility(game);
     }
     if this.m_tickCount % 10 == 0 {
       CBUpdateChrome(this, game);
       CBUpdateLook(this, game);
-      // V's own stat, nothing in the world, so read whatever the streaming is doing, like the wardrobe (2.5.2).
+      // V's own stat, nothing in the world, so read whatever the streaming is doing, like the wardrobe.
       CBRefreshStreetCred(this, game);
     }
-    // How V looks right now: a weapon out, a fight, fresh bodies. Every other second (1.9.3); at
-    // every tenth, drawing a gun on a street took up to ten seconds to register with anybody.
+    // How V looks right now: a weapon out, a fight, fresh bodies. Every other second; at every tenth, drawing a gun on
+    // a street took up to ten seconds to register with anybody.
     if this.m_tickCount % 2 == 0 {
       CBUpdateAura(this, game);
     }
@@ -1223,16 +1073,10 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBRefreshLiveInputs(this, game);
       CBUpdateMenace(this, game);
     }
-    // Where V is (2.6.3). This was read only when streaming was light, and a busy street keeps it heavy for minutes after
-    // a load, so the district stayed unknown ("None") while bagmen, sit-downs, front lines and recruitment rolled, found
-    // nobody holding "None" and spent their clocks: the log's line after every load. It is one read of a district the
-    // game already keeps, so while it is unknown it is asked every other tick whatever the streaming; and an interior or
-    // a corner with no district of its own no longer wipes the one V walked in from.
+    // Where V is.
     if (this.m_tickCount % 10 == 0 && !heavyStreaming) || (Equals(this.m_currentDistrict, n"") && this.m_tickCount % 2 == 1) {
-      // Changing district is a thing that happens to the player - walking across a boundary,
-      // stepping off a fast travel - so it is worth one message from whoever works the new
-      // part of town if V's name got there first. Compared before the write, since the write
-      // is what makes it the current one.
+      // Changing district is a thing that happens to the player - walking across a boundary, stepping off a fast travel
+      // - so it is worth one message from whoever works the new part of town if V's name got there first.
       let arrivedIn = CBCurrentDistrict(game);
       let movedOn = NotEquals(arrivedIn, n"") && NotEquals(arrivedIn, this.m_currentDistrict);
       if NotEquals(arrivedIn, n"") {
@@ -1241,10 +1085,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       if movedOn {
         CBGrapevineOnArrival(this, game, arrivedIn, CBGameSeconds(game));
       }
-      // The district line has news twice: when V arrives somewhere, and when their standing
-      // there crosses into the next word. Noted here rather than where the line is drawn,
-      // because the thing that draws it runs every tick and a render path must never write
-      // state (UI/ThreatBar.reds).
+      // The district line has news twice: when V arrives somewhere, and when their standing there crosses into the next
+      // word.
       let standing = CBDistrictRenownWord(this, this.m_currentDistrict);
       if movedOn || NotEquals(standing, this.m_districtWord) {
         this.m_districtWord = standing;
@@ -1255,13 +1097,12 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBEncounterTick(this, game);
     CBSparedSweep(this, game);          // mercy the hit hook did not see (spec §10.2)
     CBProcessEscapees(this, game);
-    CBRivalBirthTick(this, game);       // and the Rivals a fight made, once it is over (1.9.1)
+    CBRivalBirthTick(this, game);       // and the Rivals a fight made, once it is over
     CBProcessPendingApex(this, game);   // announced apex walks in a beat after the warning
     CBProcessPendingSquad(this, game);  // and a vendetta squad arrives when its timer runs out
     this.AgePendingArrival();           // forget a car that was sent and never arrived
-    // The hunt line and the bars for whoever is hunting you. Cheap: it reads one stat pool and
-    // resizes one rectangle, and hides itself the moment its target is gone. Always called, even
-    // with both switched off, because it is also what takes them down (UI/ThreatBar.reds).
+    // The hunt line and the bars for whoever is hunting you. Cheap: it reads one stat pool and resizes one rectangle,
+    // and hides itself the moment its target is gone.
     this.GetThreatBar().Update(this, game);
     // Our marker stays on the minimap through the fight; only the one over their heads goes.
     CBMarkerCombatTick(this, game);
@@ -1283,41 +1124,41 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBHuntTick(this, game);             // the people after you search, find you, lose you
     CBRivalHuntTick(this, game);        // confirms a queued rival actually arrived
     CBWhereaboutsTick(this, game);      // a Rival waiting where they were last seen, and its pin
-    CBNoteDriving(game);                // the car V is in, for the car the street knows (2.3.1)
-    CBWitnessTick(this, game);          // a witness on their way to a gang gets there, or does not (2.3.1)
-    CBWarNoteWestbrook(this, game);     // working Japantown, for the Claws (2.4.0)
-    CBHuntedTick(this, game);           // haunts, and the trail going cold (2.4.1)
-    CBHuntGrowsTick(this, game);        // trackers and open season (2.4.2)
-    CBBountyTick(this, game);           // the price on V's head and the hunters' ladder (2.4.3)
-    CBRivalMomentsTick(this, game);     // a facedown, and a Rival's taunts (2.4.4)
-    CBAlliesTick(this, game);           // a borrowed crew, a ransom, a sergeant's parley (2.4.5)
-    CBMyCrewTick(this, game);           // V's own crew, out with V (2.5.0)
-    CBCrewLifeTick(this, game);         // and their own lives: kit texts as one, asks, funerals (Reactions/CrewLife.reds, 2.7.7)
-    CBRivalTimelineTick(this, game);    // a Rival's calling card, and the ones who turn (Rivals/RivalTimeline.reds, 2.7.7)
-    CBChippinInTick(this, game);        // and one of them listening in on an apex fight (Reactions/ChippinIn.reds, 2.7.6)
-    CBGuardTick(this, game);            // and at home, watching the house (2.7.2)
-    CBVsSideHostilityTick(this, game);  // V's crew and an add-on's people on V's side against V's enemies (2.7.5)
-    CBApiTick(game);                    // add-ons told what happened since the last tick (API/Listeners.reds, 2.7.4)
+    CBNoteDriving(game);                // the car V is in, for the car the street knows
+    CBWitnessTick(this, game);          // a witness on their way to a gang gets there, or does not
+    CBWarNoteWestbrook(this, game);     // working Japantown, for the Claws
+    CBHuntedTick(this, game);           // haunts, and the trail going cold
+    CBHuntGrowsTick(this, game);        // trackers and open season
+    CBBountyTick(this, game);           // the price on V's head and the hunters' ladder
+    CBRivalMomentsTick(this, game);     // a facedown, and a Rival's taunts
+    CBAlliesTick(this, game);           // a borrowed crew, a ransom, a sergeant's parley
+    CBMyCrewTick(this, game);           // V's own crew, out with V
+    CBCrewLifeTick(this, game);         // and their own lives: kit texts as one, asks, funerals (Reactions/CrewLife.reds)
+    CBRivalTimelineTick(this, game);    // a Rival's calling card, and the ones who turn (Rivals/RivalTimeline.reds)
+    CBChippinInTick(this, game);        // and one of them listening in on an apex fight (Reactions/ChippinIn.reds)
+    CBGuardTick(this, game);            // and at home, watching the house
+    CBVsSideHostilityTick(this, game);  // V's crew and an add-on's people on V's side against V's enemies
+    CBApiTick(game);                    // add-ons told what happened since the last tick (API/Listeners.reds)
     CBApiRequestsTick(game);            // and their pins taken down when due (API/Requests.reds)
     CBApiConvoyTick(this, game);        // add-ons' convoys, on paper or on the road (API/Convoy.reds)
     CBApiHubTick(game);                 // and the clicks on their Hub cards, told once the world has settled
-    CBStrongholdTick(this, game);       // cleared gig bases a Rival holds (Rivals/Strongholds.reds, 2.7.2)
-    CBWarChestTick(this, game);         // a beaten gang's war chest, laid when V gets there (Reactions/CrewWar.reds, 2.7.6)
+    CBStrongholdTick(this, game);       // cleared gig bases a Rival holds (Rivals/Strongholds.reds)
+    CBWarChestTick(this, game);         // a beaten gang's war chest, laid when V gets there (Reactions/CrewWar.reds)
     CBSecretStashTick(this, game);      // and the district's hidden stashes the crew marked, unmarked once V is there
-    CBMbcTick(this, game);              // Much Better Contracts' finished contracts are finished jobs (2.7.5)
+    CBMbcTick(this, game);              // Much Better Contracts' finished contracts are finished jobs
     if this.m_tickCount % 5 == 2 {
-      CBMapMemoryTick(this, game);      // the map remembers, a day at a time (2.5.0)
+      CBMapMemoryTick(this, game);      // the map remembers, a day at a time
     }
     if !heavyStreaming {
-      CBWannabeTick(this, game);        // a kid out to make a name off V (2.3.1)
+      CBWannabeTick(this, game);        // a kid out to make a name off V
     }
     if this.m_tickCount % 5 == 0 {
       CBTurfPatrolTick(this, game);
       if !heavyStreaming {
-        CBClashTick(this, game);        // rival gangers clash on a contested street (2.4.3)
+        CBClashTick(this, game);        // rival gangers clash on a contested street
       }
     }
-    // Bagmen, favours, sit-downs and the rest of the street's own life (Spawn/LivingStreet.reds, 2.0.0).
+    // Bagmen, favours, sit-downs and the rest of the street's own life (Spawn/LivingStreet.reds).
     if IsDefined(this.m_talk) && !heavyStreaming {
       this.m_talk.GetLife().Tick(this, game);
     }
@@ -1361,9 +1202,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       rt.SetClockRatio(ratio);
     }
     CBLog.Info(n"Core", s"Clock check: game \(dg)s vs sim \(ds)s over 60 ticks (ratio \(ratio)). 1.0 means cooldowns are in real seconds.");
-    // While we have a one-shot slot: what the game tags V's clothes with. The concealment
-    // rules key off which slots are filled because sleeve length is not in TweakDB, and this
-    // is the only way to find out whether the real visual tags could do better.
+    // While we have a one-shot slot: what the game tags V's clothes with.
     CBLogEquippedTags(game);
   }
 
@@ -1397,9 +1236,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_storyHold;
   }
 
-  // Once per settled tick. Says so in the log whenever the answer changes, because "nobody came for
-  // the whole of that quest" is only reassuring if it can be seen to be deliberate, and calls back
-  // anybody of ours who has not reached V for as long as the story has the stage.
+  // Once per settled tick.
   private func RefreshStoryHold(game: GameInstance) -> Void {
     let was = this.m_storyHold;
     // A restriction counts once it has held for a few ticks in a row, so the moment-long ones the
@@ -1417,7 +1254,6 @@ public class CyberbaneSystem extends ScriptableSystem {
       } else {
         CBLog.Info(n"Spawn", s"The story has the stage: \(CBStoryLabel(this.m_storyHold)). Nobody is sent until it lets go.");
         if this.m_storyHold == CBStoryNotV() {
-          // Which body, so a report of Cyberbane going quiet can be traced to a record at once.
           let who = GetPlayer(game);
           if IsDefined(who) {
             CBLog.Info(n"Spawn", s"Playing as \(TDBID.ToStringDEBUG(who.GetRecordID())), not V.");
@@ -1520,9 +1356,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_pendingPeace;
   }
 
-  // Chosen on the Hub, carried out on resume. On record the moment it is chosen, so quitting from
-  // the pause menu cannot lose it and no older save of this playthrough can bring them back;
-  // "Keep them" takes the record back out exactly as it was.
+  // Chosen on the Hub, carried out on resume.
   public func RequestRivalPurge(wanted: Bool) -> Void {
     if wanted && !this.m_pendingRivalPurge {
       this.NoteRivalPurge();
@@ -1533,7 +1367,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_pendingRivalPurge = wanted;
   }
 
-  // ---- What the player has told Cyberbane about this playthrough (1.6.2) ------------------
+  // ---- What the player has told Cyberbane about this playthrough ------------------
 
   // The global service, cached. Only ever fetched at session start, which the death ledger has
   // always done, or from a settled tick, never from a menu or a transition.
@@ -1586,9 +1420,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
   }
 
-  // Undo the last Start over (2.6.3, the Hub's History page): data only, so on the click. Returns the playthrough taken
-  // off the record, n"" when there was none. Its saves from before the Start over load as they were from now on; a reset
-  // still waiting for it is taken back.
+  // Undo the last Start over (the Hub's History page): data only, so on the click. Returns the playthrough taken off
+  // the record, n"" when there was none.
   public func UndoLastStartOver() -> CName {
     let svc = this.GetPlayService();
     if !IsDefined(svc) {
@@ -1611,9 +1444,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     return IsDefined(svc) && IsNameValid(svc.LastRetired());
   }
 
-  // Read the service's notes on this playthrough and act on them. Called once a session, from
-  // StartSession, which is where the death ledger has always read the same service. Returns true
-  // when the playthrough was started over on some save and this one is about to be reset too.
+  // Read the service's notes on this playthrough and act on them. Called once a session, from StartSession, which is
+  // where the death ledger has always read the same service.
   private func ApplyPlaythroughNotes() -> Bool {
     let rt = CyberbaneRuntime.Get();
     if IsDefined(rt) {
@@ -1645,7 +1477,7 @@ public class CyberbaneSystem extends ScriptableSystem {
         CBLog.Info(n"Rivals", s"Forgot \(removed) rival(s) that were forgotten on a later save of this playthrough.");
       }
     }
-    // And the ones forgotten one at a time (1.8.2). Same rule for new ids: numbered past them.
+    // And the ones forgotten one at a time. Same rule for new ids: numbered past them.
     let one = 0;
     let highest = -1;
     for f in svc.GetForgottenRivals() {
@@ -1667,7 +1499,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     return false;
   }
 
-  // ---- Which V this save is (1.8.3) --------------------------------------------------------
+  // ---- Which V this save is --------------------------------------------------------
 
   // The birth for a playthrough that starts now. Never zero, which means "not stamped".
   private func NewBirthStamp() -> Float {
@@ -1675,12 +1507,6 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // Is this save the character its playthrough id is on record for (CBPlaythroughBirth)?
-  //
-  // Once a session, from StartSession, before anything else reads the service for this playthrough:
-  // the forget and start-over notes and the death ledger all trust the id, so a save carrying
-  // another character's has to have its own before any of them run, or that character's Start over
-  // would wipe this one and their deaths would come after this V. Data only: the service, this
-  // save's own fields and V's lifepath, the same kind of work ApplyPlaythroughNotes does here.
   private func VerifyPlaythroughOwner() -> Void {
     let minted = this.m_mintedId;
     this.m_mintedId = n"";
@@ -1695,10 +1521,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // The save came back with no Cyberbane state at all: a new playthrough, under the id drawn for
     // it in Initialize. If that draw had no service to ask and landed on a taken id, draw again.
     if Equals(this.m_playthroughId, minted) {
-      // Nobody who is V yet (2.7.7): the main menu's world attaches a player with no lifepath, and every game start logged
-      // a playthrough born "with lifepath -1" and put it on record outside the saves, where Start over reads. It waits
-      // for the first settled tick with V here, and goes on record then.
-      // That world has a lifepath (2.7.8, the play log: "starts here (lifepath 0)" on every launch); asked of the game.
+      // It waits for the first settled tick with V here, and goes on record then.
       if lifepath < 0 || !CBGameHasVHere(game) || CBInPreGame() {
         this.m_mintedId = minted;
         this.m_birthDue = true;
@@ -1711,7 +1534,7 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.m_installedAt = this.NewBirthStamp();
       svc.NoteBirth(this.m_playthroughId, this.m_installedAt, lifepath);
       CBLog.Info(n"Core", s"Playthrough \(NameToString(this.m_playthroughId)) starts here (lifepath \(lifepath)). Reputation, rivals and gang standing all start from zero; if this was not a new game, a mod update changed the saved layout and the old state is gone.");
-      this.m_headStartDue = true;            // a new playthrough only (Model/Lifepath.reds, 2.3.1)
+      this.m_headStartDue = true;            // a new playthrough only (Model/Lifepath.reds)
       this.m_headStartPath = lifepath;
       return;
     }
@@ -1720,7 +1543,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     let otherV = IsDefined(birth) && birth.lifepath >= 0 && lifepath >= 0 && birth.lifepath != lifepath;
     let shared = "another character shared its playthrough id before 1.8.3";
     if this.m_installedAt > 0.0 {
-      // Stamped with its birth (1.8.3 on).
       if !IsDefined(birth) {
         // On record nowhere: the service's file was lost, or the record made room for newer ones.
         // This save's word is all there is.
@@ -1748,7 +1570,6 @@ public class CyberbaneSystem extends ScriptableSystem {
       return;
     }
 
-    // A save from before 1.8.3, with no birth of its own.
     if !IsDefined(birth) {
       // The first save of this id to load since. Its birth is now, and every later save of it
       // carries that. A claim, not proof: another character may have shared the id, which only
@@ -1767,11 +1588,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.MoveToOwnPlaythrough(svc, lifepath, true, "its playthrough id is on record for a V with another lifepath");
       return;
     }
-    // Nothing tells it apart from the playthrough on record, and that is what it almost always is:
-    // an older save of the same one. It takes that birth, so its later saves carry it, and a split of
-    // this character finds them all under the same birth (CyberbaneService.FindSplit). Two characters
-    // with the same lifepath that already share an id cannot be told apart from here; "This save is
-    // another character" in Mod Settings separates them.
+    // Nothing tells it apart from the playthrough on record, and that is what it almost always is: an older save of the
+    // same one.
     this.m_installedAt = birth.bornAt;
     if birth.disputed {
       this.MoveToOwnPlaythrough(svc, lifepath, true, shared);
@@ -1780,18 +1598,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     svc.NoteBirthLifepath(this.m_playthroughId, lifepath);
   }
 
-  // Put this save on a playthrough of its own (1.8.3), because the id it carries is another
-  // character's. Unlike Start over, nothing it earned is touched and the old id is not retired: the
-  // old id still belongs to somebody, and retiring it would start them over the next time they load.
-  //
-  // Another save of this same character that already split off from the same id is joined rather
-  // than a new playthrough started (CyberbaneService.FindSplit), so a character's saves stay one
-  // playthrough. A new one keeps what the old id's records said at this point in this save's own
-  // time (CopyPlaythroughRecords). Killer Rivals that came from the other character's deaths go
-  // (CBForeignKillers): in this session's first moments nobody is out in the world, so they are taken
-  // off the roster directly; later, from the settled tick, each goes the way the Hub's forget does.
-  //
-  // Returns how many Killer Rivals went.
+  // Put this save on a playthrough of its own, because the id it carries is another character's.
   private func MoveToOwnPlaythrough(svc: ref<CyberbaneService>, lifepath: Int32, atSessionStart: Bool, why: String) -> Int32 {
     let game = this.GetGameInstance();
     let oldId = this.m_playthroughId;
@@ -1853,8 +1660,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     return dropped;
   }
 
-  // "This save is another character", chosen in Mod Settings and carried out on a settled tick
-  // (1.8.3). For two characters that ended up with one id and could not be told apart on load.
+  // "This save is another character", chosen in Mod Settings and carried out on a settled tick. For two characters that
+  // ended up with one id and could not be told apart on load.
   private func SeparateOnRequest(game: GameInstance) -> Void {
     let svc = this.GetPlayService();
     if !IsDefined(svc) || !IsNameValid(this.m_playthroughId) {
@@ -2056,8 +1863,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     return false;
   }
 
-  // The Rivals who came with the one leading (1.9.0). Every way an encounter ends takes its Rival off
-  // this list (CBCloseRivalEncounter).
+  // The Rivals who came with the one leading. Every way an encounter ends takes its Rival off this list
+  // (CBCloseRivalEncounter).
   public func AddPackRival(id: Int32) -> Void {
     if id > 0 && !ArrayContains(this.m_packIds, id) {
       ArrayPush(this.m_packIds, id);
@@ -2153,8 +1960,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.SeenHostileWithin(faction, CBConfig.ForeignHostileShowTicks());
   }
 
-  // The story-companion pass, at most once every `window` ticks (CBStoryCompanionWithV, 1.9.1). True,
-  // with the last answer in `found`, while it is too soon to look again.
+  // The story-companion pass, at most once every `window` ticks (CBStoryCompanionWithV). True, with the last answer in
+  // `found`, while it is too soon to look again.
   public func TakeCompanionScan(window: Int32, out found: Bool) -> Bool {
     let age = this.m_tickCount - this.m_companionScanTick;
     if this.m_companionScanTick > 0 && age >= 0 && age < window {
@@ -2169,7 +1976,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_companionScanFound = found;
   }
 
-  // May V's equipment be read yet? Not between a session starting and its first settled tick (1.9.5).
+  // May V's equipment be read yet? Not between a session starting and its first settled tick.
   public func WornReady() -> Bool {
     return this.m_wornReady;
   }
@@ -2237,8 +2044,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     return 0;
   }
 
-  // One of V's crew is this Rival, or was (CBCrewBook.Keeps): every way the roster forgets people passes them by,
-  // from this save or from a note another save of the playthrough left (2.5.0).
+  // One of V's crew is this Rival, or was (CBCrewBook.Keeps): every way the roster forgets people passes them by, from
+  // this save or from a note another save of the playthrough left.
   public func RivalKeptByCrew(id: Int32) -> Bool {
     let crew = CBCrewBook.Get(this.GetGameInstance());
     return IsDefined(crew) && crew.Keeps(id);
@@ -2279,8 +2086,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_pendingRivalPurge;
   }
 
-  // One Rival forgotten on the Hub (1.8.2). On record in the service the moment it is chosen, like
-  // forgetting all of them, so quitting from the menu cannot lose it; taken back, the record goes too.
+  // One Rival forgotten on the Hub. On record in the service the moment it is chosen, like forgetting all of them, so
+  // quitting from the menu cannot lose it; taken back, the record goes too.
   public func RequestRivalForget(id: Int32, wanted: Bool) -> Void {
     let svc = this.GetPlayService();
     if wanted {
@@ -2307,8 +2114,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     return id > 0 && ArrayContains(this.m_pendingForgets, id);
   }
 
-  // Buying where a Rival is (1.8.2). Money moves and the world is searched, so it waits for the tick
-  // like a pay-off does. 0 takes the request back.
+  // Buying where a Rival is. Money moves and the world is searched, so it waits for the tick like a pay-off does. 0
+  // takes the request back.
   public func RequestRivalFind(id: Int32) -> Void {
     this.m_pendingFind = Max(id, 0);
     this.m_pendingFindPrice = 0;
@@ -2354,10 +2161,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     return i >= 0 && now < this.m_tollUntil[i];
   }
 
-  // Carry out what was chosen on the Hub while the game was paused. Called from the settled part
-  // of the fast tick, never from the page: paying a gang moves eddies and sends texts, and
-  // forgetting the Rivals deletes people from the world, and neither belongs inside a paused menu.
-  // Both go through exactly the code the old Shift + Hub key shortcut called, before the key went.
+  // Carry out what was chosen on the Hub while the game was paused.
   private func ServiceHubActions(game: GameInstance) -> Void {
     if this.m_pendingRivalPurge {
       this.m_pendingRivalPurge = false;
@@ -2394,8 +2198,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       let agreed = this.m_pendingFindPrice;
       this.m_pendingFind = 0;
       this.m_pendingFindPrice = 0;
-      // Agreed by text: bought at that price. Chosen on the Hub: a tipster texts a price to haggle over
-      // (1.9.7), or, with phone deals off or no phone to text, it is bought outright as before.
+      // Agreed by text: bought at that price. Chosen on the Hub: a tipster texts a price to haggle over, or, with phone
+      // deals off or no phone to text, it is bought outright as before.
       if agreed > 0 {
         CBBuyRivalWhereabouts(this, game, findId, agreed, this.m_pendingFindTipster, this.m_pendingFindSender);
       } else {
@@ -2515,12 +2319,6 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // The next seat in an apex squad, as a role index that cycles 0..3.
-  //
-  // A squad is meant to arrive as a heavy, a shooter, a blade and a netrunner, which was read
-  // off each spawned record's own archetype. That works when the gang has filed four different
-  // records and produces four identical enemies when it has not, which is the common case: the
-  // role records are only captured from kills of that exact kind. Handing out the roles in turn
-  // guarantees the shape whatever records the gang happens to have.
   public func NextApexRole() -> Int32 {
     let seat = this.m_apexSeat;
     this.m_apexSeat = (this.m_apexSeat + 1) % 4;
@@ -2540,9 +2338,7 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   // ---- Bringing an apex squad to four -------------------------------------------------
   //
-  // A squad is four chairs whatever the car seats, whatever the street will take on the first
-  // try. Every path that puts an apex member in the world marks their chair here; the muster
-  // tick walks in whoever is still missing until the squad is whole or the window closes.
+  // A squad is four chairs whatever the car seats, whatever the street will take on the first try.
   public func BeginApexMuster(faction: CName, record: TweakDBID) -> Void {
     this.m_musterFaction = faction;
     this.m_musterRecord = record;
@@ -2683,9 +2479,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayPush(this.m_legTries, 0);
   }
 
-  // The front leg, read field by field. Callers check HasConvoyLegs first, and each of these
-  // checks again: an index past the end of an array is a hard crash, not an error, and a leg can
-  // be dropped between two reads of it (a walk-in, a convoy cleared by a new car).
+  // The front leg, read field by field.
   public func LegFaction() -> CName { return ArraySize(this.m_legFaction) > 0 ? this.m_legFaction[0] : n""; }
   public func LegRecord() -> TweakDBID { return ArraySize(this.m_legRecord) > 0 ? this.m_legRecord[0] : TDBID.None(); }
   public func LegTag() -> CName { return ArraySize(this.m_legTag) > 0 ? this.m_legTag[0] : n""; }
@@ -2840,9 +2634,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     return true;
   }
 
-  // Is it time for another gang to put its price to V (2.6.1)? One every PeaceOfferSpacingHours, the first a little
-  // after a load: "one gang per pass" was every few seconds, so after every load each hostile gang texted its price
-  // inside a minute.
+  // Is it time for another gang to put its price to V?
   public func PeaceOfferDue(now: Float) -> Bool {
     if now <= 0.0 {
       return false;
@@ -3153,9 +2945,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Roll the counter over when the calendar day changes, then report what is left.
   public func ScheduleDay() -> Int32 { return this.m_schedDay; }
   public func ScheduleRolled() -> Bool { return this.m_schedRolled; }
-  // The timetable is four arrays kept in step and stored in the save. Counted by the shortest and
-  // read with bounds checks, so a save in which one of them came back short (written by another
-  // version, or cut off) is read as a shorter timetable rather than an index past the end.
+  // The timetable is four arrays kept in step and stored in the save.
   public func SlotCount() -> Int32 {
     return Min(Min(ArraySize(this.m_slotLane), ArraySize(this.m_slotAt)),
                Min(ArraySize(this.m_slotEnd), ArraySize(this.m_slotSpent)));
@@ -3339,10 +3129,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
   }
 
-  // ---- Vendetta hit squads (spec §9.9) -----------------------------------
-  // A gang at vendetta does not roll dice over whether to come for you; it is already coming,
-  // and this is how long it takes them to get there. Session-only for the same reason as the
-  // apex warning: a countdown restored from a save would fire into a world that has moved on.
+  // ---- Vendetta hit squads (spec §9.9) ----------------------------------- A gang at vendetta does not roll dice over
+  // whether to come for you; it is already coming, and this is how long it takes them to get there.
   public func SetPendingSquad(faction: CName, ticks: Int32) -> Void {
     this.m_pendingSquadFaction = faction;
     this.m_pendingSquadTicks = ticks;
@@ -3371,15 +3159,6 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // An expired appointment that cannot be kept has to be able to give up.
-  //
-  // This is the deadlock that made hit squads stop happening for a whole session. The scheduler
-  // refuses to arrange anything while one crew is pending, and the arrival holds - correctly -
-  // if the moment is wrong: mid-fight, a quiet job, a safe area, a gig, or a squad still in the
-  // world. But holding meant sitting at zero ticks forever, so one badly timed expiry
-  // permanently blocked every future squad. Walking around City Center is exactly where that
-  // bites, because a quest area there is easy to be standing in.
-  //
-  // Returns true when the caller should give up and let the scheduler start again.
   public func AgePendingSquadHold() -> Bool {
     this.m_pendingSquadStuck += 1;
     if this.m_pendingSquadStuck > CBConfig.PendingHoldGiveUpTicks() {
@@ -3401,9 +3180,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     return false;
   }
 
-  // ---- Faction apex (spec §9.9) -----------------------------------------
-  // Session-only: an announced apex that has not walked in yet. Nothing here is persisted, so
-  // a save taken mid-warning simply forgets it rather than restoring a half-state.
+  // ---- Faction apex (spec §9.9) ----------------------------------------- Session-only: an announced apex that has
+  // not walked in yet.
   public func SetPendingApex(faction: CName, ticks: Int32) -> Void {
     this.m_pendingApexFaction = faction;
     this.m_pendingApexTicks = ticks;
@@ -3412,10 +3190,6 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // The same clock, but for a squad that has already been dispatched and is on the road.
-  //
-  // The distinction matters more than it looks. Without it the clock running out is the signal
-  // to send a squad, so re-arming it to show the drive would dispatch a second squad when it
-  // expired, then a third, forever.
   public func SetPendingApexDriving(faction: CName, ticks: Int32) -> Void {
     this.m_pendingApexFaction = faction;
     this.m_pendingApexTicks = ticks;
@@ -3498,8 +3272,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_jobPins = pins;
   }
 
-  // On a job: near any active objective's pin, or in a scene (1.8.4). Hunters already out hold back
-  // while this is true, the way they do at a sanctuary (Spawn/Hunt.reds).
+  // On a job: near any active objective's pin, or in a scene. Hunters already out hold back while this is true, the way
+  // they do at a sanctuary (Spawn/Hunt.reds).
   public func IsOnJob() -> Bool {
     return this.m_onJob;
   }
@@ -3524,7 +3298,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     return false;
   }
 
-  // Is this point within `radius` of any active objective's pins (1.8.4: tracked or not)?
+  // Is this point within `radius` of any active objective's pins (tracked or not)?
   public func NearQuestPins(at: Vector4, radius: Float) -> Bool {
     let i = 0;
     while i < ArraySize(this.m_questPins) {
@@ -3544,11 +3318,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_safeArmsApplied = on;
   }
 
-  // Content service, fetched once (lazily) and cached. Everything goes through CBContent/this so
-  // the tick never re-locks the global service container, which during a load or streaming can
-  // return a dead-but-non-null reference that passes IsDefined and then crashes on the context
-  // lock. The warm-up call lives on a confirmed-stable fast tick, so the one real lookup happens
-  // in a safe context; the slow tick is held off until this is populated.
+  // Content service, fetched once (lazily) and cached.
   public func GetContent() -> ref<CyberbaneContent> {
     if !IsDefined(this.m_content) {
       this.m_content = CyberbaneContent.Get();
@@ -3579,8 +3349,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.m_lastSlowTickAt = now;
       return;
     }
-    // Only counted as done when it ran (2.4.2): the slow tick waits for the content cache, and an hour that came
-    // round before it was warm was marked done anyway, so that hour's decay, tribute and the rest never happened.
+    // Only counted as done when it ran: the slow tick waits for the content cache, and an hour that came round before
+    // it was warm was marked done anyway, so that hour's decay, tribute and the rest never happened.
     let elapsed = now - this.m_lastSlowTickAt;
     if elapsed >= CBConfig.SecondsPerHour() && this.HasContent() {
       this.OnSlowTick(elapsed / CBConfig.SecondsPerDay());
@@ -3591,21 +3361,20 @@ public class CyberbaneSystem extends ScriptableSystem {
   // Slow tick (spec §5.5): decay now; rumor spread, tribute, title evaluation and
   // scheduling checks are added as those systems land.
   public func OnSlowTick(elapsedDays: Float) -> Void {
-    // Hold the slow tick until the content cache is warm (populated by a stable fast tick). This
-    // is what crashed before: the first slow tick after a load hit the global service container
-    // while it was a dead-but-non-null reference. Now the slow tick only runs once the cached
-    // content is in hand, and everything below reads that cache via CBContent, never the container.
+    // Hold the slow tick until the content cache is warm (populated by a stable fast tick). This is what crashed
+    // before: the first slow tick after a load hit the global service container while it was a dead-but-non-null
+    // reference.
     if !this.HasContent() {
       return;
     }
     let game = this.GetGameInstance();
     CBApplyDecay(this, elapsedDays);
-    CBKeepThePeaceTick(this, game);   // an hour on a gang's streets with no trouble (1.9.3)
+    CBKeepThePeaceTick(this, game);   // an hour on a gang's streets with no trouble
     CBTributeTick(this, game);
     CBSweepOrphans(game);   // whatever was left in a car seat or mid-spawn goes now it can
     CBSweepRemains(this, game);   // our dead and our spent cars, once V is far from them
     CBApexTick(this, game);
-    CBDeedFactTick(this, game);     // what V has finished, from the game's own quest facts
+    CBDeedFactTick(this, game);     // what V has finished, from the game's quest facts
     if !this.m_factsProbed {
       this.m_factsProbed = true;
       CBProbeDeedFacts(game);       // Verbose only: names the deeds still need (spike S-02)
@@ -3614,31 +3383,31 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBRumorTick(this, game);
     let streetBook = CBStreetBook.Get(game);
     if IsDefined(streetBook) {
-      streetBook.Age(CBGameSeconds(game));   // places their district has forgotten (2.3.1)
+      streetBook.Age(CBGameSeconds(game));   // places their district has forgotten
     }
-    CBLedgerFade(game, elapsedDays);         // how V fights, fading (Model/Ledger.reds, 2.3.2)
-    CBWarTick(this, game, elapsedDays);      // chests, ranks, the cut, V's streets, truces, protection (2.4.0)
+    CBLedgerFade(game, elapsedDays);         // how V fights, fading (Model/Ledger.reds)
+    CBWarTick(this, game, elapsedDays);      // chests, ranks, the cut, V's streets, truces, protection
     let huntBook = CBHuntBook.Get(game);
     if IsDefined(huntBook) {
-      huntBook.FadeHaunts(elapsedDays);      // where V spends time, fading (2.4.1)
+      huntBook.FadeHaunts(elapsedDays);      // where V spends time, fading
     }
-    CBOpenSeasonRoll(this, game, elapsedDays);   // a gang at the top of its anger may declare it (2.4.2)
-    CBBountyRoll(this, game, elapsedDays);       // somebody may put a price on V's head (2.4.3)
+    CBOpenSeasonRoll(this, game, elapsedDays);   // a gang at the top of its anger may declare it
+    CBBountyRoll(this, game, elapsedDays);       // somebody may put a price on V's head
     CBCorpInterestRoll(this, game, elapsedDays); // and a Legend gets a corporation's attention
-    CBRivalLivesDaily(this, game, elapsedDays);  // bonds, feuds, returns, letters, chrome (2.4.4)
-    CBAlliesDaily(this, game, elapsedDays);      // one of theirs: the offer and the week's duty (2.4.5)
-    CBCrewDaily(this, game);                     // V's crew: loyalty, the cut, a solo on offer (2.5.0)
-    CBCrewLifeDaily(this, game);                 // and now and then one of them asks V for something (2.7.7)
-    CBCrewRivalsOffBoard(this, game);            // a Rival on the crew is no Rival on the board (2.7.7)
-    CBInformantsDaily(this, game, elapsedDays);  // an informant's gang may find out (2.4.5)
-    CBMorningBriefTick(this, game);              // a broker's text at dawn (2.4.6)
+    CBRivalLivesDaily(this, game, elapsedDays);  // bonds, feuds, returns, letters, chrome
+    CBAlliesDaily(this, game, elapsedDays);      // one of theirs: the offer and the week's duty
+    CBCrewDaily(this, game);                     // V's crew: loyalty, the cut, a solo on offer
+    CBCrewLifeDaily(this, game);                 // and now and then one of them asks V for something
+    CBCrewRivalsOffBoard(this, game);            // a Rival on the crew is no Rival on the board
+    CBInformantsDaily(this, game, elapsedDays);  // an informant's gang may find out
+    CBMorningBriefTick(this, game);              // a broker's text at dawn
     CBRivalProgressionTick(this, game);
     CBRivalEncounterTick(this, game);
     CBTipTick(this, game);          // somebody texts V where a Rival was seen (Rivals/Whereabouts.reds)
     CBTurfTick(this, game);         // a district changing hands is news (Model/Territory.reds)
-    CBCrewTurfTick(this, game);     // the crew's hold on its streets, and the street tax (Model/CrewTurf.reds, 2.7.6)
-    // An iconic V picked up anywhere is remembered while V carries it (2.7.0), so it never drops again after it goes in
-    // the stash, is sold or is handed to the crew (Spawn/Loot.reds).
+    CBCrewTurfTick(this, game);     // the crew's hold on its streets, and the street tax (Model/CrewTurf.reds)
+    // An iconic V picked up anywhere is remembered while V carries it, so it never drops again after it goes in the
+    // stash, is sold or is handed to the crew (Spawn/Loot.reds).
     CBLootNoteCarriedIconics(this, CBLootIconics());
     CBLog.Verbose(n"Model", s"Slow tick over \(elapsedDays) in-game days.");
   }
@@ -3693,9 +3462,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_wornPerk;
   }
 
-  // Has this NPC already been built, and is that build still on it? An NPC streamed out and back in
-  // comes back with this mod's flags cleared; asking the stat itself is the only way to tell a body
-  // that still carries the bonus from one that has lost it.
+  // Has this NPC already been built, and is that build still on it?
   public func WasBuiltAt(id: EntityID, health: Float) -> Bool {
     let i = 0;
     while i < ArraySize(this.m_builtIds) {
@@ -3753,13 +3520,6 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // What the player picked, as stored: n"" when they left it on automatic.
-  //
-  // Not the same question as GetActiveTitle, and treating it as one was the "I have five titles
-  // and can only switch to the last two" report. GetActiveTitle answers "which title is showing",
-  // so on automatic it returns the best earned one and never n"". The cycle asked it "am I on
-  // automatic?", always heard no, and stepped on from wherever the best title sat in the list -
-  // so with the best one fourth of five, the only stops left were the fifth and automatic, which
-  // shows the fourth. Anything that needs to know whether a choice was made asks this instead.
   public func GetChosenTitle() -> CName {
     if NotEquals(this.m_activeTitle, n"") && !ArrayContains(this.m_titles, this.m_activeTitle) {
       return n"";   // a choice that no longer names a held title is no choice
@@ -3807,11 +3567,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_log;
   }
 
-  // ---- Rivals (spec §10) ------------------------------------------------
-  // A save from before 1.6.2 can still hold a Rival numbered 0, and 0 means "nobody" in every slot
-  // that holds a Rival id. That one could never text first, never come by car and never be picked
-  // by a lane, for as long as they lived. After the playthrough's notes are applied, so a forget
-  // covering them has already taken them. Nothing else holds their id at session start.
+  // That one could never text first, never come by car and never be picked by a lane, for as long as they lived. After
+  // the playthrough's notes are applied, so a forget covering them has already taken them.
   private func RenumberRivalZero() -> Void {
     for r in this.m_rivals {
       if IsDefined(r) && r.id <= 0 {
@@ -3821,14 +3578,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   public func AllocateRivalId() -> Int32 {
-    // Ids start at 1. Everything that holds a Rival id in a slot - the active encounter, the
-    // warning already sent, the car in flight or the car that failed - uses 0 for "nobody", and
-    // this counter started at 0, so the first Rival on every save (and the first after Start
-    // over) was nobody to those slots. They arrived without texting first (the warning slot
-    // already read as theirs), never came by car (the failed-car slot always matched them), and
-    // fleeing V at low health was taken for an ordinary ganger fleeing, which made a second
-    // Rival out of them instead of promoting them. A save that already has a Rival 0 keeps them
-    // as they are; only new ids change.
+    // Ids start at 1.
     if this.m_nextRivalId < 1 {
       this.m_nextRivalId = 1;
     }
@@ -3905,30 +3655,16 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 
   // Wipe this save's Cyberbane data and start the city's opinion of V over from nothing.
-  //
-  // Offered because there was no way back. Reputation only ever accumulates, Conduct included,
-  // so a playthrough that went somewhere the player did not intend - a spree that put every
-  // gang into vendetta, a Conduct score deep in the red - was stuck that way for good, and the
-  // only remedy was a new save. This is the remedy.
-  //
-  // What is deliberately not touched: chrome, look, menace and the aura. Those are not stored
-  // progress, they are read back off V's cyberware, clothes and build every sample, so there
-  // is nothing in them to wipe - zeroing them would only make the Hub read 0 until the next
-  // refresh. They are re-sampled at the end instead, so the Hub is correct immediately.
-  //
-  // Called from a settled fast tick rather than from the settings callback, because it clears
-  // live encounters and sweeps spawned entities, and neither is safe to do mid-transition.
   public func HardReset() -> Void {
     let game = this.GetGameInstance();
-    // Add-ons hear of it before any Rival id is used again (API/Listeners.reds, 2.7.4); the epoch is kept in the save.
+    // Add-ons hear of it before any Rival id is used again (API/Listeners.reds); the epoch is kept in the save.
     let apiBook = CBApiBook.Get(game);
     if IsDefined(apiBook) {
       CBApiNote(CBApiQReset(), n"", apiBook.BumpEpoch(), 0);
     }
 
-    // Anything Cyberbane put in the world goes first, along with its markers, so the reset
-    // cannot leave an orphaned hunter or a pin behind. Every marker on the system's list, not those of
-    // five tags: a scout's, a patrol's, the street's and a favour's mark on a passer-by stayed up.
+    // Anything Cyberbane put in the world goes first, along with its markers, so the reset cannot leave an orphaned
+    // hunter or a pin behind.
     CBUntrackAllMarkers(this, game);
     // And whatever the street had going: a favour, a sit-down and its pin, anybody held with their hands up.
     if IsDefined(this.m_talk) {
@@ -3938,7 +3674,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBDropLead(this, game);
     this.m_lairActive = false;
     this.ClearApexMuster();   // nothing walks in after the reset to finish a squad
-    // A street clash, a borrowed crew and a ransom, ended as they would end on their own (2.5.0).
+    // A street clash, a borrowed crew and a ransom, ended as they would end on their own.
     CBWarStandDown(this, game, CBWarBook.Get(game));
     CBCrewStandDown(this, game);   // and V's own crew stop following V, for the same reason
     CBDeleteTaggedSafe(game, n"Cyberbane");
@@ -3979,14 +3715,14 @@ public class CyberbaneSystem extends ScriptableSystem {
     // coming back as Killer Rivals. The global ledger is shared across saves and is left
     // alone; this save simply stops answering to its old id.
     ArrayClear(this.m_appliedLedgerIds);
-    // And every older save of the old one is started over too when it next loads, so loading one
-    // cannot bring back what was wiped here (1.6.2). Where its Rivals were seen goes with it.
+    // And every older save of the old one is started over too when it next loads, so loading one cannot bring back what
+    // was wiped here. Where its Rivals were seen goes with it.
     let svc = this.GetPlayService();
     if IsDefined(svc) {
       svc.Retire(this.m_playthroughId);
       svc.DropPlaythroughSightings(this.m_playthroughId);
       svc.DropPlaythroughGangPower(this.m_playthroughId);   // and how hard V had hit each gang
-      svc.DropPlaythroughTalk(this.m_playthroughId);        // and what V said to whom today (1.9.5)
+      svc.DropPlaythroughTalk(this.m_playthroughId);        // and what V said to whom today
     }
     let turfBook = CBTurfBook.Get(this.GetGameInstance());
     if IsDefined(turfBook) {
@@ -3994,107 +3730,107 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     let intelBook = CBIntelBook.Get(this.GetGameInstance());
     if IsDefined(intelBook) {
-      intelBook.Clear();  // and nothing is known about its Rivals, and nobody owes V (1.9.8)
+      intelBook.Clear();  // and nothing is known about its Rivals, and nobody owes V
     }
     let streetBook = CBStreetBook.Get(this.GetGameInstance());
     if IsDefined(streetBook) {
-      streetBook.Clear(); // no place remembers, and nobody knows V's car or gun (2.3.1)
+      streetBook.Clear(); // no place remembers, and nobody knows V's car or gun
     }
     let ledger = CBLedgerBook.Get(this.GetGameInstance());
     if IsDefined(ledger) {
-      ledger.Clear();     // and no gang knows how V fights (2.3.2)
+      ledger.Clear();     // and no gang knows how V fights
     }
     let gangLife = CBGangLifeBook.Get(this.GetGameInstance());
     if IsDefined(gangLife) {
-      gangLife.Clear();   // and nobody is fighting for a chair (2.3.4)
+      gangLife.Clear();   // and nobody is fighting for a chair
     }
     let war = CBWarBook.Get(this.GetGameInstance());
     if IsDefined(war) {
-      war.Clear();        // and the war starts over (2.4.0)
+      war.Clear();        // and the war starts over
     }
     let hunt = CBHuntBook.Get(this.GetGameInstance());
     if IsDefined(hunt) {
-      hunt.Clear();       // and nobody knows where V spends time (2.4.1)
+      hunt.Clear();       // and nobody knows where V spends time
     }
     let rivalBook = CBRivalBook.Get(game);
     if IsDefined(rivalBook) {
-      rivalBook.Clear();  // and no Rival has a bond, an ending or a place (2.4.4)
+      rivalBook.Clear();  // and no Rival has a bond, an ending or a place
     }
     let crewBook = CBCrewBook.Get(game);
     if IsDefined(crewBook) {
-      crewBook.Clear();   // and nobody works for V (2.5.0)
+      crewBook.Clear();   // and nobody works for V
     }
     let kitBook = CBCrewKitBook.Get(game);
     if IsDefined(kitBook) {
-      kitBook.Clear();    // nor carries anything of V's, nor has a name (2.6.0)
+      kitBook.Clear();    // nor carries anything of V's, nor has a name
     }
     let nameBook = CBCrewNameBook.Get(game);
     if IsDefined(nameBook) {
-      nameBook.Clear();   // nor goes by a name V gave them (2.7.6)
+      nameBook.Clear();   // nor goes by a name V gave them
     }
     let crewTurf = CBCrewTurfBook.Get(game);
     if IsDefined(crewTurf) {
-      crewTurf.Clear();   // nor has a hold on anybody's streets (2.7.6)
+      crewTurf.Clear();   // nor has a hold on anybody's streets
     }
     let crewWars = CBCrewWarBook.Get(game);
     if IsDefined(crewWars) {
-      crewWars.Clear();   // nor is at war with anybody (2.7.6)
+      crewWars.Clear();   // nor is at war with anybody
     }
     let bannerBook = CBCrewBannerBook.Get(game);
     if IsDefined(bannerBook) {
-      bannerBook.Clear(); // nor colours, standing, fallen or a recruiter (2.6.0)
+      bannerBook.Clear(); // nor colours, standing, fallen or a recruiter
     }
     let mapBook = CBMapBook.Get(game);
     if IsDefined(mapBook) {
-      mapBook.Clear();    // and the map forgets (2.5.0); the tick takes the pins down
+      mapBook.Clear();    // and the map forgets; the tick takes the pins down
     }
     let clearBook = CBClearBook.Get(game);
     if IsDefined(clearBook) {
-      clearBook.Clear();  // and no street is cleared of anybody (2.6.1)
+      clearBook.Clear();  // and no street is cleared of anybody
     }
     let guardBook = CBGuardBook.Get(game);
     if IsDefined(guardBook) {
-      guardBook.Clear();  // and nobody watches the house (2.7.2)
+      guardBook.Clear();  // and nobody watches the house
     }
     let armoryBook = CBArmoryBook.Get(game);
     if IsDefined(armoryBook) {
-      armoryBook.Clear(); // nor fights with a gun from the stash (2.7.2)
+      armoryBook.Clear(); // nor fights with a gun from the stash
     }
     let jobBook = CBCrewJobBook.Get(game);
     if IsDefined(jobBook) {
-      jobBook.Clear();    // nor is anybody on a job, and the kitty is empty (2.7.2)
+      jobBook.Clear();    // nor is anybody on a job, and the kitty is empty
     }
     let goodsBook = CBGoodsBook.Get(game);
     if IsDefined(goodsBook) {
-      goodsBook.Clear();  // and V holds nobody's goods (2.7.2)
+      goodsBook.Clear();  // and V holds nobody's goods
     }
     let baseBook = CBBaseBook.Get(game);
     if IsDefined(baseBook) {
-      baseBook.Clear();   // no cleared base is known, and nobody holds one (2.7.2)
+      baseBook.Clear();   // no cleared base is known, and nobody holds one
     }
     let bodyBook = CBRivalBodyBook.Get(game);
     if IsDefined(bodyBook) {
-      bodyBook.Clear();   // nor what any Rival looks like (2.7.2)
+      bodyBook.Clear();   // nor what any Rival looks like
     }
     let stashBook = CBHoldStashBook.Get(game);
     if IsDefined(stashBook) {
-      stashBook.Clear();  // and no stronghold's stash is owed (2.7.3)
+      stashBook.Clear();  // and no stronghold's stash is owed
     }
     let lifeBook = CBCrewLifeBook.Get(game);
     if IsDefined(lifeBook) {
-      lifeBook.Clear();   // nor has a story, an ask, a funeral or a home (2.7.7)
+      lifeBook.Clear();   // nor has a story, an ask, a funeral or a home
     }
     let loiter = CBLoiterBook.Get(game);
     if IsDefined(loiter) {
       CBDeleteTaggedSafe(game, n"CB_Loiter", false, true);
-      loiter.Forget();    // and nobody of the crew hangs out on a corner (2.7.7)
+      loiter.Forget();    // and nobody of the crew hangs out on a corner
     }
     let timeline = CBRivalTimelineBook.Get(game);
     if IsDefined(timeline) {
       CBRivalCardDone(game, timeline);
-      timeline.Clear();   // and no Rival has a history with V (2.7.7)
+      timeline.Clear();   // and no Rival has a history with V
     }
-    // A new playthrough: an id nobody has, born now and on record as this V's (1.8.3).
+    // A new playthrough: an id nobody has, born now and on record as this V's.
     this.m_playthroughId = CBMintPlaythroughId(svc);
     this.m_installedAt = this.NewBirthStamp();
     if IsDefined(svc) {
@@ -4115,10 +3851,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayClear(this.m_escapees);
     this.ClearPendingArrival();
     this.ClearConvoy();
-    // And everything live that was still pointing at the old playthrough. Only the saved half was
-    // being cleared, so after a Start Over an apex squad already announced still walked in, the
-    // hunt line stayed up with nobody behind it, and with ids starting again at 1 the new Rival 1
-    // read as already warned and already by car.
+    // And everything live that was still pointing at the old playthrough.
     this.SetPendingApex(n"", 0);
     this.ClearTopUp();
     this.ClearScout();
@@ -4139,11 +3872,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_turfWatchFaction = n"";
     this.m_pendingRivalSweep = false;
     this.m_vFellPending = false;
-    // Everything 1.8.2 keeps about particular Rivals for the session. Rival ids start again from
-    // zero above, so a forget or a purchase still waiting from the Hub, or a body remembered as an old
-    // Rival's, would otherwise land on whichever new Rival is given that number: a knocked-out Rival
-    // from before the reset, lying in view when it ran and killed afterwards, was credited as the new
-    // playthrough's Rival of the same id. Word sent to an old Rival likewise (1.9.9).
+    // Rival ids start again from zero above, so a forget or a purchase still waiting from the Hub, or a body remembered
+    // as an old Rival's, would otherwise land on whichever new Rival is given that number: a knocked-out Rival from
+    // before the reset, lying in view when it ran and killed afterwards, was credited as the new playthrough's Rival of
+    // the same id.
     ArrayClear(this.m_pendingForgets);
     this.m_pendingFind = 0;
     this.m_pendingFindPrice = 0;
@@ -4153,14 +3885,14 @@ public class CyberbaneSystem extends ScriptableSystem {
     ArrayClear(this.m_formerBodyIds);
     ArrayClear(this.m_formerBodyRivals);
     ArrayClear(this.m_packIds);
-    // Keyed by Rival id as well, and ids start again at 1 (1.9.3): the new first Rival was being
-    // "last seen" where the old one had been.
+    // Keyed by Rival id as well, and ids start again at 1: the new first Rival was being "last seen" where the old one
+    // had been.
     ArrayClear(this.m_rivalLastPosIds);
     ArrayClear(this.m_rivalLastPoses);
     ArrayClear(this.m_rivalLastPosTicks);
     this.m_lairHinted = 0;
     this.m_lairMisses = 0;
-    ArrayClear(this.m_births);   // a Rival the old playthrough earned is not the new one's (1.9.1)
+    ArrayClear(this.m_births);   // a Rival the old playthrough earned is not the new one's
     ArrayClear(this.m_crewBeaten);
     ArrayClear(this.m_seenPostureIds);
     ArrayClear(this.m_seenPostureVals);
@@ -4222,8 +3954,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_pendingRivalSweep = true;
   }
 
-  // A death alternative's rebirth count, as last read this session (Compat/FenixRebirth.reds, 2.7.6). Unread until the
-  // first look, which only takes the count as it stands: a rebirth from before Cyberbane looked is not counted twice.
+  // A death alternative's rebirth count, as last read this session (Compat/FenixRebirth.reds). Unread until the first
+  // look, which only takes the count as it stands: a rebirth from before Cyberbane looked is not counted twice.
   public func DeathAltRead() -> Bool {
     return this.m_deathAltRead;
   }
@@ -4274,11 +4006,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_nextRumorId += 1;
     return id;
   }
-  // GetRumors returns the array *by value*, so callers must bind it to a local before
-  // reading it. Anything that walks the store while it can also change (the slow tick's
-  // expire/spread pass) must use GetRumorCount/GetRumorAt instead, which index the live
-  // array - indexing the temporary that GetRumors returns hands back a handle into a copy
-  // that is destroyed at the end of the statement (crash safety).
+  // GetRumors returns the array *by value*, so callers must bind it to a local before reading it.
   public func GetRumors() -> array<ref<CBRumor>> {
     return this.m_rumors;
   }
@@ -4392,32 +4120,16 @@ public class CyberbaneSystem extends ScriptableSystem {
   // First run in this save line gets a random Playthrough ID (spec §10.8).
   private func EnsurePlaythroughId() -> Void {
     if Equals(this.m_playthroughId, n"") {
-      // One nobody has (1.8.3). The birth is put on record at session start, once the save's own
-      // state is certainly back (VerifyPlaythroughOwner): this can run before it is restored.
+      // One nobody has. The birth is put on record at session start, once the save's own state is certainly back
+      // (VerifyPlaythroughOwner): this can run before it is restored.
       this.m_playthroughId = CBMintPlaythroughId(CyberbaneService.Get());
       this.m_mintedId = this.m_playthroughId;
       // Say what this actually means, because the old wording read like routine housekeeping.
-      //
-      // This only fires when the saved state came back empty, and the usual reason is not a new
-      // game: the game drops a persisted class's data whenever its field layout changes, so any
-      // build that adds or removes a persistent field wipes everybody's reputation, rivals and
-      // gang standing. Six of these in one afternoon of rebuilding is what sent me hunting a
-      // spawn bug that did not exist - the Rival lane had nothing to send because the Rival
-      // list had just been erased.
-      // Said when the playthrough is put on record with V there (VerifyPlaythroughOwner, 2.7.7): the main menu's world
-      // drew one of these at every game start, for nobody.
       CBLog.Verbose(n"Core", s"No saved Cyberbane state yet: playthrough id \(NameToString(this.m_playthroughId)) drawn.");
     }
   }
 
-  // Load-time validation (spec §19.1). Runs on every attach and restore, and is
-  // idempotent. Two jobs: keep the stored numbers inside their ranges, and make sure
-  // every stored collection holds only entries the rest of the mod can safely walk.
-  //
-  // The second job is the important one. Everything below this line reads these arrays
-  // without re-checking them, so a hole left by a save that did not come back intact
-  // would be dereferenced somewhere deep in a tick. Dropping bad entries once, here, is
-  // what keeps that from ever reaching the engine.
+  // Load-time validation (spec §19.1). Runs on every attach and restore, and is idempotent.
   private func Validate() -> Void {
     this.m_renownPoints = MaxF(this.m_renownPoints, 0.0);
     this.m_killDreadPoints = MaxF(this.m_killDreadPoints, 0.0);
@@ -4480,9 +4192,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
   }
 
-  // Rumors carry the districts they have reached as a bit set (schema 2), which is what the slow
-  // tick walks. A rumor can never have reached a district that does not exist, so any bit past the
-  // last district is dropped rather than trusted.
+  // Rumors carry the districts they have reached as a bit set (schema 2), which is what the slow tick walks.
   private func ValidateRumors() -> Void {
     let maxReached = CBDistrictCount();
     let i = 0;
@@ -4521,7 +4231,7 @@ public class CyberbaneSystem extends ScriptableSystem {
         ArrayErase(this.m_rivals, i);
       } else {
         r.rank = Clamp(r.rank, 1, 4);
-        // Betrayer (2.5.0) is the top value now: a save that has one keeps it.
+        // Betrayer is the top value now: a save that has one keeps it.
         if r.source < 0 || r.source > EnumInt(ECBRivalSource.Betrayer) {
           r.source = EnumInt(ECBRivalSource.Survivor);
         }
@@ -4592,17 +4302,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBLog.Verbose(n"Core", "Initialising fresh Cyberbane state.");
     }
     if fromSchema > 0 && fromSchema < 2 {
-      // Schema 2 moved the rumor "districts reached" list and the Rival trait lists off
-      // nested CName arrays and onto Int32 bit sets. The old arrays no longer exist on
-      // these classes, so there is nothing to read across - and reading a stored array
-      // that may not have survived its save/load round trip is exactly the crash this
-      // change removes.
-      //
-      // Rumors are short-lived by design (they expire after three in-game days and only
-      // feed district renown, which is already banked), so the safe upgrade is to drop
-      // the carried-over ones and let play rebuild them. Rivals keep everything that
-      // identifies them - name, rank, faction, history - and start the new schema with a
-      // clean trait set, which fills back in the next time each one is promoted.
+      // Schema 2 moved the rumor "districts reached" list and the Rival trait lists off nested CName arrays and onto
+      // Int32 bit sets.
       ArrayClear(this.m_rumors);
       for r in this.m_rivals {
         if IsDefined(r) {
@@ -4613,10 +4314,8 @@ public class CyberbaneSystem extends ScriptableSystem {
       CBLog.Info(n"Core", "Migrated Cyberbane state to schema 2 (bit-set rumor and trait storage).");
     }
     if fromSchema > 0 && fromSchema < 4 {
-      // 2.5.1: until now most kills in a gunfight were scored as unseen, a ghost's work, so a V who always went in
-      // shooting read as a Ghost and could not stop. The Ghost tally is brought down to the highest of the others (or
-      // to the least a style needs to show at all), once: a real ghost keeps the style and goes on earning it, and
-      // anybody else's next fights decide what they are.
+      // until now most kills in a gunfight were scored as unseen, a ghost's work, so a V who always went in shooting
+      // read as a Ghost and could not stop.
       if ArraySize(this.m_archetype) == CBArchetypeCount() {
         let ghost = EnumInt(ECBArchetype.Ghost);
         let others = 0.0;
@@ -4658,8 +4357,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     this.m_disguiseFaction = faction;
     this.m_disguiseStrength = strength;
   }
-  // One of theirs (Reactions/Allies.reds, [66], 2.4.5) counts as wearing their colours everywhere, as well as the
-  // colours V wears would; whichever is the stronger.
+  // One of theirs (Reactions/Allies.reds, [66]) counts as wearing their colours everywhere, as well as the colours V
+  // wears would; whichever is the stronger.
   public func GetDisguiseFaction() -> CName {
     let mine = CBOneOfTheirsGang(this.GetGameInstance());
     if NotEquals(mine, n"") && this.m_disguiseStrength < CBConfig.OneOfTheirsColours() {
@@ -4676,7 +4375,7 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   // Faction of the hit squad currently deployed (for a Hunter Rival if it loses V, §9.9).
   public func SetActiveSquadFaction(faction: CName) -> Void {
-    // A new crew, or none: its losses are counted afresh (2.7.7, Spawn/Regroup.reds).
+    // A new crew, or none: its losses are counted afresh (Spawn/Regroup.reds).
     if NotEquals(faction, this.m_activeSquadFaction) {
       this.squadDown = 0;
       this.squadRegrouped = false;
@@ -4700,10 +4399,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     return this.m_activeRivalId;
   }
 
-  // Wounded runaways pending resolution (spec §10.2).
-  // They have started running. The clock for getting away starts now, not when they were first hurt:
-  // somebody who fought on at a quarter of their health for a minute used to break with only seconds
-  // left to get clear.
+  // Wounded runaways pending resolution (spec §10.2). They have started running.
   public func MarkEscapeeFleeing(id: EntityID) -> Void {
     for e in this.m_escapees {
       if IsDefined(e) && Equals(e.entityId, id) && !e.spared {
@@ -4722,12 +4418,6 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     // One record per person: an NPC streamed out and back in has lost its flags, and two records of
     // one person are two chances at a Rival from somebody who only went down once.
-    //
-    // But which record is kept matters. Everybody V knocks out was badly hurt first, so they were
-    // already being watched as somebody who might run. 1.7.8 kept that first record and threw the
-    // knockout away, which cost every knockout its Spared Rival and its credit with the street. Being
-    // down is the later and surer fact: it replaces the runner record, and a runner record never
-    // replaces it.
     let k = 0;
     while k < ArraySize(this.m_escapees) {
       let known = this.m_escapees[k];
@@ -4741,10 +4431,8 @@ public class CyberbaneSystem extends ScriptableSystem {
     }
     ArrayPush(this.m_escapees, e);
     while ArraySize(this.m_escapees) > CBConfig.EscapeeCap() {
-      // The oldest runaway goes first: a runaway is only a maybe-Rival, while a spared one is
-      // also takedown credit V has not been given yet (CBSettleMercy). A Rival put down alive goes
-      // last of all: settling theirs is what ends their encounter (CBHandleSpared), and pushed out
-      // here it was only scored, so a Rival waiting at their place was waited on for good.
+      // The oldest runaway goes first: a runaway is only a maybe-Rival, while a spared one is also takedown credit V
+      // has not been given yet (CBSettleMercy).
       let victim = -1;
       let k = 0;
       while k < ArraySize(this.m_escapees) && victim < 0 {
@@ -4801,9 +4489,8 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func RemoveEscapee(e: ref<CBEscapee>) -> Void {
     ArrayRemove(this.m_escapees, e);
   }
-  // Drop a pending escapee when V catches and kills it (by entity id). This is what stops
-  // someone you knocked out and then finished from still coming back as a Spared Rival.
-  // Bind the element and check it before reading a field off it (crash safety).
+  // Drop a pending escapee when V catches and kills it (by entity id). This is what stops someone you knocked out and
+  // then finished from still coming back as a Spared Rival.
   public func DropEscapeeByEntity(id: EntityID) -> Void {
     let i = 0;
     while i < ArraySize(this.m_escapees) {
@@ -4846,13 +4533,11 @@ public class CyberbaneSystem extends ScriptableSystem {
   public func GetLastHeatStage() -> Int32 { return this.m_lastHeatStage; }
   public func SetLastHeatStage(value: Int32) -> Void { this.m_lastHeatStage = value; }
 
-  // Code axis (spec §8.11): how the Street reads V's conduct, from Cyberpsycho (-100,
-  // reckless, civilian-killing, edging toward cyberpsychosis) to Professional
-  // (+100, keeps a code, clean work, mercy). Fixers, crews and vendors read it.
-  // Separate from Dread (feared) and Renown (known).
+  // Code axis (spec §8.11): how the Street reads V's conduct, from Cyberpsycho (-100, reckless, civilian-killing,
+  // edging toward cyberpsychosis) to Professional (+100, keeps a code, clean work, mercy).
   public func GetCode() -> Float { return this.m_code; }
-  // Like the other scores, still with reputation frozen (2.4.2): "Stops your reputation changing", and Conduct is
-  // one of the four on the Hub. Kills already stopped short of it; talk, the street's events and surrenders did not.
+  // Like the other scores, still with reputation frozen: "Stops your reputation changing", and Conduct is one of the
+  // four on the Hub. Kills already stopped short of it; talk, the street's events and surrenders did not.
   public func AddCode(delta: Float) -> Void {
     if CBReputationFrozen() {
       return;
@@ -4872,9 +4557,9 @@ public class CyberbaneSystem extends ScriptableSystem {
   // ---- Accumulator mutators (clamped at zero; called by the model layer) -
   public func AddRenownPoints(delta: Float) -> Void {
     if CBReputationFrozen() {
-      return;   // either way (2.4.2): frozen means nothing moves, as kills and decay already had it
+      return;   // either way: frozen means nothing moves, as kills and decay already had it
     }
-    // Before V is known (2.7.0): what V does carries less far, all of it, until Street Cred puts a name to it.
+    // Before V is known: what V does carries less far, all of it, until Street Cred puts a name to it.
     let gain = delta;
     if gain > 0.0 {
       gain *= CBStandingScale(this.GetGameInstance(), CBConfig.EarlyRenownShare());
@@ -4884,21 +4569,21 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
   public func AddKillDreadPoints(delta: Float) -> Void {
     if CBReputationFrozen() {
-      return;   // either way (2.4.2): frozen means nothing moves, as kills and decay already had it
+      return;   // either way: frozen means nothing moves, as kills and decay already had it
     }
     this.m_killDreadPoints = MaxF(0.0, this.m_killDreadPoints + delta);
     this.GetScore().MarkDirty();
   }
   public func AddDeedDreadPoints(delta: Float) -> Void {
     if CBReputationFrozen() {
-      return;   // either way (2.4.2): frozen means nothing moves, as kills and decay already had it
+      return;   // either way: frozen means nothing moves, as kills and decay already had it
     }
     this.m_deedDreadPoints = MaxF(0.0, this.m_deedDreadPoints + delta);
     this.GetScore().MarkDirty();
   }
   public func AddHeatPoints(delta: Float) -> Void {
     if CBReputationFrozen() {
-      return;   // either way (2.4.2): frozen means nothing moves, as kills and decay already had it
+      return;   // either way: frozen means nothing moves, as kills and decay already had it
     }
     this.m_heatPoints = MaxF(0.0, this.m_heatPoints + delta);
     this.GetScore().MarkDirty();
@@ -4981,13 +4666,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   }
 }
 
-// A playthrough id nobody has (1.8.3).
-//
-// The id alone was what kept two characters' records apart, and a fresh one was never checked
-// against the ones already in use: it is drawn on the first moment of a load, from a random source
-// nothing says is seeded differently on each launch. So every draw now asks the service, which
-// holds every id that has left a record anywhere, and draws again when it is taken. With no
-// service to ask, the draw stands, and session start asks again (VerifyPlaythroughOwner).
+// A playthrough id nobody has.
 public func CBMintPlaythroughId(svc: ref<CyberbaneService>) -> CName {
   let id = CBGeneratePlaythroughId();
   if !IsDefined(svc) {

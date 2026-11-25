@@ -1,16 +1,6 @@
-// Cyberbane - The crew as a crew (2.6.0)
+// Cyberbane - The crew as a crew
 //
-// What V's crew is to the city, apart from any one of them:
-//   - Its colours, picked on the Hub from eight. Its texts, its cards and its card among the gangs wear them.
-//   - Its own standing with each gang, apart from V's: a war one of them started, won or lost, a soldier a gang lent
-//     it, a ganger scared into joining it, gangers its people killed, one of its own killed by a gang's people. It eases
-//     back a little every game day, and a gang that hates the crew is ready for the next war it starts.
-//   - Its fallen: who they were, how and where they died, and what they carried, for the Hub's memorial.
-//   - Its recruiter: one member put to recruiting brings the broker's solos more often, cheaper, and with fights
-//     already behind them.
-//
-// Kept in a save book of its own (a new class, so no saved class changes shape). The Hub asks; the tick acts
-// (CBCrewBannerTick, from CBCrewKitService).
+// The crew's colours, its own standing with each gang and its name, apart from any one member.
 
 // One of the crew who died, as the memorial keeps them: everything their name and story need, so a memorial outlives
 // the roster's own past (CBCrewBook keeps MyCrewPastKept).
@@ -475,7 +465,7 @@ public func CBCrewIsRecruiter(game: GameInstance, id: Int32) -> Bool {
   return IsDefined(bb) && id > 0 && bb.Recruiter() == id;
 }
 
-// What a member's work is: 0 none, 1 earning, 2 recruiting, 3 watching the house (2.7.2).
+// What a member's work is: 0 none, 1 earning, 2 recruiting, 3 watching the house.
 public func CBCrewWorkOf(game: GameInstance, id: Int32) -> Int32 {
   let gb = CBGuardBook.Get(game);
   if IsDefined(gb) && gb.IsGuard(id) {
@@ -512,7 +502,7 @@ public func CBCrewNextWork(game: GameInstance, id: Int32) -> Int32 {
       return CBCrewWorkGuard();
     }
   }
-  // Then running the money to V (2.7.2).
+  // Then running the money to V.
   if now != CBCrewWorkRunner() && CBCrewJobsOn() {
     return CBCrewWorkRunner();
   }

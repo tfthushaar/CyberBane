@@ -1,14 +1,8 @@
 // Cyberbane - Combat morale (spec §9.4)
 //
-// When V kills an NPC, nearby surviving squad-mates take a morale hit. If a survivor's
-// morale falls below the break threshold it panics: a Terror stim broadcast from that
-// NPC drives the game's own flee behaviour (and the game cowers it in place when it has
-// nowhere to run). At most a configurable fraction of any knot of enemies breaks, so
-// someone always stands and fights. A broken enemy that gets away can resurface later
-// as a Survivor Rival (spec §10.2).
-//
-// This only reads positions and broadcasts a stock game stimulus, so it is fully
-// reversible and adds no state the game does not already clean up on despawn.
+// When V kills an NPC, nearby surviving squad-mates take a morale hit. If a survivor's morale falls below the break
+// threshold it panics: a Terror stim broadcast from that NPC drives the game's flee behaviour (and the game cowers it
+// in place when it has nowhere to run).
 
 // Per-puppet morale, per spawn. 0.0 is the "not yet initialised" sentinel.
 @addField(ScriptedPuppet)
@@ -53,7 +47,7 @@ public func CBMoraleOnKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: 
   // Losing the group's officer or boss is a far harder blow than a rank-and-file death.
   let bossOrOfficer = info.victimClass == EnumInt(ECBVictimClass.Boss)
     || info.victimClass == EnumInt(ECBVictimClass.Officer)
-    || info.sergeant;   // a crew's sergeant ([U2], 2.3.2)
+    || info.sergeant;   // a crew's sergeant ([U2])
   let shock = bossOrOfficer ? 0.35 : 0.10;
 
   let brutal = CBIsBrutalKill(info.mFinisher, info.mBlade, info.mFists);
@@ -69,11 +63,8 @@ public func CBMoraleOnKill(sys: ref<CyberbaneSystem>, game: GameInstance, info: 
   while i < ArraySize(npcs) {
     let npc = npcs[i];
     i += 1;
-    // Cheap distance gate before the heavier eligibility check (Safety Gate workspot query);
-    // CBNpcSafe keeps us off streaming-out / not-yet-ready NPCs (crash safety).
-    // Their own side only (1.9.3). Everybody within reach was shaken, whoever they were with, and
-    // one who broke was filed under the dead one's gang: a cop standing by could come back as a
-    // Tyger Claw Rival.
+    // Cheap distance gate before the heavier eligibility check (Safety Gate workspot query); CBNpcSafe keeps us off
+    // streaming-out / not-yet-ready NPCs (crash safety). Their own side only.
     if CBNpcSafe(sys, npc) && Vector4.Distance(deadPos, npc.GetWorldPosition()) <= CBConfig.MoraleShockRadius() {
       if Equals(CBClassifyFaction(npc), info.faction) && CBMoraleEligible(npc) {
         ArrayPush(nearby, npc);
@@ -179,8 +170,8 @@ public func CBBreakChance(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, 
   }
   // Rank and file are 0.5, so they take this as it stands; an elite takes half of it.
   chance *= (1.0 - nerve) * 2.0;
-  // A gang V has broken does not hold together for a vendetta (1.9.5). Sworn people stand firmer, until
-  // there are hardly any of them left: then the oath is what they break first.
+  // A gang V has broken does not hold together for a vendetta. Sworn people stand firmer, until there are hardly any of
+  // them left: then the oath is what they break first.
   let broken = CBGangBroken(sys, faction);
   if sworn && !broken {
     chance *= CBConfig.MoraleSwornMult();
@@ -192,7 +183,7 @@ public func CBBreakChance(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, 
       chance *= CBConfig.MoraleLostGroundMult();
     }
   }
-  // On streets V's crew holds (Model/CrewTurf.reds, 2.7.6), any gang's people are on borrowed ground, and know whose.
+  // On streets V's crew holds (Model/CrewTurf.reds), any gang's people are on borrowed ground, and know whose.
   if NotEquals(faction, n"") && CBCrewHoldsHere(sys, npc.GetGame()) {
     chance += CBConfig.CrewHeldBreakBonus();
   }
@@ -201,9 +192,7 @@ public func CBBreakChance(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, 
   return ClampF(chance * intensity * sys.WornPerk().breakMult * CBCodeNerve(faction), 0.0, CBConfig.MoraleBreakMaxChance());
 }
 
-// May one more of this group run? The kill path counts this as it goes; somebody hit down to a quarter
-// of their health arrives here on their own, and without asking, a grenade through a whole crew could
-// send past the "Most of a group" setting.
+// May one more of this group run?
 public func CBRoomToBreak(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>) -> Bool {
   let reg = IsDefined(sys) ? sys.GetRegistry() : null;
   if !IsDefined(reg) || !IsDefined(npc) {
@@ -287,12 +276,8 @@ func CBFleeSpot(game: GameInstance, npc: wref<ScriptedPuppet>, player: ref<GameO
   return false;
 }
 
-// Run. A stim cannot do this: the game drops one whose source is its own target, and one from V
-// tells a ganger to panic at V, which is not leaving. A move order can, because with `ignoreInCombat`
-// left false the game keeps it running during a fight (tweakAIConditionChecks, IsCommandActive).
-// They stay hostile on purpose: made neutral, shooting one in the back would be an assault to the
-// police. True when they have somewhere to go and have been told to go there.
-// `walk`: the same order at a walk, for somebody V simply let go of (Reactions/StreetTalk.reds, 2.5.0).
+// Run. A stim cannot do this: the game drops one whose source is its own target, and one from V tells a ganger to panic
+// at V, which is not leaving.
 public func CBOrderFlee(game: GameInstance, npc: wref<ScriptedPuppet>, opt walk: Bool) -> Bool {
   let player = GetPlayer(game);
   if !IsDefined(npc) || !IsDefined(player) || !npc.IsAttached() {
@@ -323,12 +308,7 @@ public func CBOrderFlee(game: GameInstance, npc: wref<ScriptedPuppet>, opt walk:
   return true;
 }
 
-// Nobody breaks at a job (2.5.6): "the surgeon in Big in Japan came out of his box", "Haze doesn't work". A break is an
-// order to run and a Terror stim to everybody within FearStimRadius, and a stim reaches whoever is in range: no Safety
-// Gate stands between a broadcast and a story's own people, waiting in a box or a workspot for their scene. A gig's guards
-// and fights are exactly where V kills people and somebody breaks. The rule is the Director's own: nothing at the job V
-// is tracking, in a scene or while the story has the stage, and nobody standing near any active objective's pin
-// (QuestSpawnClearance, Reactions/Director.reds). Held here, they fight on, as when they have nowhere to run.
+// Nobody breaks at a job: "the surgeon in Big in Japan came out of his box", "Haze doesn't work".
 func CBMoraleHeldAtJob(sys: ref<CyberbaneSystem>, game: GameInstance, npc: wref<ScriptedPuppet>) -> Bool {
   if !IsDefined(sys) || !IsDefined(npc) || !npc.IsAttached() {
     return true;
@@ -387,7 +367,7 @@ public func CBHoldsGround(npc: wref<ScriptedPuppet>) -> Bool {
   if des.IsTagged(id, n"CB_Apex") || CBIsMeetApex(des, id) {
     return true;
   }
-  // Nobody of Arasaka runs with Adam Smasher in the fight (2.6.7, Compat/SmasherEncounters.reds).
+  // Nobody of Arasaka runs with Adam Smasher in the fight (Compat/SmasherEncounters.reds).
   if npc.IsAttached() && CBSmasherEventOn(npc.GetGame()) && Equals(CBClassifyFaction(npc), n"Arasaka") {
     return true;
   }
@@ -395,27 +375,16 @@ public func CBHoldsGround(npc: wref<ScriptedPuppet>) -> Bool {
     let sys = CyberbaneSystem.Get(npc.GetGame());
     if IsDefined(sys) {
       let r = CBFindRivalByBody(sys, id);
-      // A cyberpsycho does not run either (1.9.0).
+      // A cyberpsycho does not run either.
       return IsDefined(r) && (CBRivalHasTrait(r, n"HardToScare") || CBRivalHasTrait(r, n"Broken"));
     }
   }
   return false;
 }
 
-// ---- Holding back on the street (1.9.5) ---------------------------------------------------------------
+// ---- Holding back on the street ---------------------------------------------------------------
 //
-// Fear and hatred are two different things, and a gang V has been killing has plenty of both. Until
-// 1.9.5 hatred decided alone: once a gang's standing reached vendetta, every one of its people V walked
-// past was turned on V, however frightened of V they were. So the more of a gang V had killed - the very
-// thing that makes a gang afraid - the less V could do with it but fight, and a gang V had broken kept
-// throwing its last few people at V one at a time.
-//
-// Each of them decides for themselves now, once, the first time it matters: how much their gang fears V
-// (CBScoreEngine.GetFactionFear, the same number crews, tribute and morale read), how much more if V has
-// broken the gang or taken its ground, against their own nerve (CBNerve: rank, and the gang's own
-// courage) and the friends standing near them. Somebody who holds back does not draw on V. Somebody who
-// does not is coming for V, exactly as before. Bosses, apex squads and anybody who never runs never hold
-// back. Nothing here touches the NPC: it is a number, cached on them.
+// Fear and hatred are two different things, and a gang V has been killing has plenty of both.
 
 public func CBHoldBackChance(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, faction: CName) -> Float {
   if !IsDefined(sys) || !IsDefined(npc) || Equals(faction, n"") || npc.IsBoss() || CBHoldsGround(npc) {
@@ -440,13 +409,13 @@ public func CBHoldBackOdds(sys: ref<CyberbaneSystem>, faction: CName, nerve: Flo
       fear += CBConfig.LostGroundFear();
     }
   }
-  // Where their people died, they are jumpier (Model/StreetBook.reds, 2.3.1).
+  // Where their people died, they are jumpier (Model/StreetBook.reds).
   let atGame = IsDefined(sys) ? sys.GetGameInstance() : GetGameInstance();
   let vNow = GetPlayer(atGame);
   if IsDefined(vNow) && CBGangLostHere(atGame, faction, vNow.GetWorldPosition()) {
     fear += CBConfig.PlaceFear();
   }
-  // V bleeding is a chance, to somebody who was afraid of V (Model/Moment.reds, 2.3.1).
+  // V bleeding is a chance, to somebody who was afraid of V (Model/Moment.reds).
   if IsDefined(sys) && CBVWounded(sys.GetGameInstance()) {
     fear -= CBConfig.WoundedEmbolden();
   }

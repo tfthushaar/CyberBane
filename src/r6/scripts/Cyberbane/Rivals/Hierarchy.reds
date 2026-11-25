@@ -4,13 +4,6 @@
 // lieutenants, and your Rivals occupy those slots. Kill the leader and the strongest of the
 // rest steps up, which means a gang can be fought but not decapitated: there is always
 // somebody next in line.
-//
-// The slots live on CBFactionState as four plain Int32 Rival ids, 0 meaning empty. Flat
-// scalars rather than an array, because an array nested inside a persisted class is the exact
-// shape that crashed the game before schema 3.
-//
-// Crash safety: pure state. No engine calls, no entity handles, no allocation beyond what the
-// Rival store already does. Every lookup is id based and returns null rather than guessing.
 
 public func CBRoleNone() -> Int32 = 0
 public func CBRoleLieutenant() -> Int32 = 1
@@ -43,10 +36,8 @@ public func CBRivalRole(sys: ref<CyberbaneSystem>, rival: ref<CBRival>) -> Int32
   if !IsDefined(sys) || !IsDefined(rival) || rival.id <= 0 {
     return CBRoleNone();
   }
-  // A cyberpsycho is nobody's lieutenant. Keeping them out of the hierarchy keeps the leader
-  // and lieutenant health multipliers off them as well, which is the other half of giving them
-  // wits instead of padding. Nor is anybody no longer around (2.4.2): a Debtor or somebody run out of the city
-  // still named in a chair read as LEADER on the Hub until the gang next changed shape.
+  // A cyberpsycho is nobody's lieutenant. Keeping them out of the hierarchy keeps the leader and lieutenant health
+  // multipliers off them as well, which is the other half of giving them wits instead of padding.
   if !CBSlotEligible(rival) {
     return CBRoleNone();
   }
@@ -63,10 +54,8 @@ public func CBRivalRole(sys: ref<CyberbaneSystem>, rival: ref<CBRival>) -> Int32
   return CBRoleNone();
 }
 
-// Can this Rival hold a chair at all: still around, and not a cyberpsycho (CBRivalRole). The one rule every
-// slot answers to (2.4.2). CBRivalRole kept psychos out of the hierarchy but filling the slots never did, so a
-// psycho could take the leader's chair: given the leader's rank, named in "runs us now", calling open season,
-// while the Hub, asking CBRivalRole, showed that gang with nobody at the top.
+// Can this Rival hold a chair at all: still around, and not a cyberpsycho (CBRivalRole). The one rule every slot
+// answers to.
 func CBSlotEligible(r: ref<CBRival>) -> Bool {
   return IsDefined(r) && r.id > 0
       && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting))
@@ -148,10 +137,7 @@ func CBBestLieutenant(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> ref
   return best;
 }
 
-// Every gang with a Rival still after V, or owing V, on the books and its chairs filled (2.5.3). A Rival made before 2.5.3
-// for a gang V had never killed one of or paid off belonged to a gang with no record, so they held no chair and the Rivals
-// page's cards left them out. Run once a session, on its first settled tick: the record is a gang's ordinary one, at its
-// baseline standing, which is the standing everything already read for a gang with none, so nobody's posture moves.
+// Every gang with a Rival still after V, or owing V, on the books and its chairs filled.
 public func CBFileRivalGangs(sys: ref<CyberbaneSystem>) -> Void {
   if !IsDefined(sys) {
     return;
@@ -181,9 +167,7 @@ public func CBHierarchyFill(sys: ref<CyberbaneSystem>, faction: CName) -> Void {
   CBHierarchyPrune(sys, fs);
 
   if fs.leaderRivalId <= 0 {
-    // The strongest of the rest takes the crew, and "the rest" includes the lieutenants. This
-    // only ever looked at Rivals holding no chair, so a gang whose survivors were all
-    // lieutenants was left with nobody at the top however many of them there were.
+    // The strongest of the rest takes the crew, and "the rest" includes the lieutenants.
     let promoted = CBBestCandidate(sys, fs);
     let lt = CBBestLieutenant(sys, fs);
     if IsDefined(lt) && (!IsDefined(promoted) || CBHierarchyScore(lt) >= CBHierarchyScore(promoted)) {
@@ -235,7 +219,7 @@ public func CBHierarchyOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance, ri
   CBHierarchyFill(sys, rival.faction);
   // A fight for the chair, or the end of one (Spawn/StreetEvents.reds, [31]).
   CBPowerStruggleOnSlain(sys, game, rival, wasLeader);
-  CBOpenSeasonLeaderDown(sys, game, rival, wasLeader);   // the one who called open season (2.4.2)
+  CBOpenSeasonLeaderDown(sys, game, rival, wasLeader);   // the one who called open season
 
   // Taking the top off a crew is worth hearing about.
   if wasLeader && fs.leaderRivalId > 0 {
@@ -250,13 +234,6 @@ public func CBHierarchyOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance, ri
 // Running a crew should be felt, not just labelled. Reuses the apex buff pattern at a much
 // gentler scale, applied on attach to a spawned Rival.
 // Gone, deliberately, and this note is here so it is not reintroduced.
-//
-// A Rival running a crew used to get their health multiplier from a second function applied
-// straight after the apex-grade buff. Two appliers meant nothing knew the product, and the
-// product is what players met: a leader Rival at the top of the ladder came out at roughly
-// eleven times health. The bonus still exists and is still worth the same thing relative to
-// everything else, but it is now one term inside CBApplyApexBuild, where the ceiling can see
-// it. CBRivalRole is passed to CBApplyRivalApexBuff instead.
 
 // ---- Scars -----------------------------------------------------------------
 

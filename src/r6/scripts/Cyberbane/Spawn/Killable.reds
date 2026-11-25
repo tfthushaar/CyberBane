@@ -1,16 +1,8 @@
-// Cyberbane - nobody we send is beyond V's reach (2.7.2)
+// Cyberbane - nobody we send is beyond V's reach
 //
 // Every body Cyberbane builds for a fight against V gets a ceiling on how long V's own damage takes to put it down,
-// counted the way the game counts it: health, and armour, which the game turns into health (each point divides a hit
-// by 1 + armour x the game's armour effectiveness, DamageSystem's mitigation). The build's terms are each sensible on
-// their own; what made a Scavs Rival shrug off 3k crits was them stacking on a body that already carried the game's
-// own subdermal armour, so the ceiling is taken on the finished body, after every term, implant and ability, and again
-// the first time V's damage reaches it, when anything the game or another mod added since is on it too.
-//
-// And nothing heals them out of V's reach: while V is landing hits, the damage the game itself decided to deal is
-// compared with what stays off their health. When most of it keeps coming back (regeneration, god mode, anything), the
-// cause is taken off and the damage that should have stuck is put back on, never as the killing blow, so the kill is
-// still V's own hit.
+// counted the way the game counts it: health, and armour, which the game turns into health (each point divides a hit by
+// 1 + armour x the game's armour effectiveness, DamageSystem's mitigation).
 
 @addField(ScriptedPuppet)
 public let cbKillLimit: Float;          // the most effective health this body may carry; 0 = not one of our fighters
@@ -40,7 +32,7 @@ public func CBKillableSecondsRival(grade: Float) -> Float {
          + (CBConfig.KillableRivalSecondsTop() - CBConfig.KillableRivalSecondsLow()) * ClampF(grade, 0.0, 1.0);
 }
 
-// The game's own armour effectiveness for an NPC (StatsDataSystem, as DamageSystem uses it).
+// The game's armour effectiveness for an NPC (StatsDataSystem, as DamageSystem uses it).
 public func CBArmourPerPoint(game: GameInstance) -> Float {
   let sds = GameInstance.GetStatsDataSystem(game);
   return IsDefined(sds) ? MaxF(sds.GetArmorEffectivenessValue(false), 0.0) : 0.0;

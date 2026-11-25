@@ -1,20 +1,7 @@
-// Cyberbane - What the street remembers (2.3.1)
+// Cyberbane - What the street remembers
 //
-// Two things the street keeps that nothing else did:
-//
-//   Places that remember ([7]). Where something big happened (a room full of bodies, a boss put down, a
-//   MaxTac operative dropped, a gang's apex squad wiped out) is kept for a few in-game days, as long as
-//   the district's temper remembers (Data/Districts.reds). People near it talk about it, the gang that
-//   lost people there is jumpier (Reactions/Morale.reds), and it waits before sending anybody back there
-//   (Spawn/Queue.reds).
-//
-//   What V is known by ([73], [74]). The car V keeps turning up to fights in, and the gun V keeps using,
-//   counted each time somebody saw V fight with them. Once either is known, a mask does not hide V while
-//   in that car or with that gun out (CBRecognizes, Reactions/Director.reds), and the Hub says so.
-//
-// Its own system for the reason CBTurfBook is: a new persistent field on a class a save already holds would
-// change that class's saved shape, and a new class starts empty on a save that never had it. Parallel lists,
-// trimmed to the shortest on the first read after a load, bounds-checked on every read.
+// Places where something big happened, kept for a few days. People nearby talk about it, and the gang that lost people
+// there is jumpier and slower to send more.
 
 public class CBStreetBook extends ScriptableSystem {
   // Places, oldest first.
@@ -179,9 +166,8 @@ public class CBStreetBook extends ScriptableSystem {
 
   // ---- Cars and guns ----------------------------------------------------------------------------------
 
-  // One more sighting of this car (kind 0) or gun (1): counted up, or added, the least seen of its kind making
-  // room. One not seen for KnownForDays starts again from one, the way the street forgets a car V stopped
-  // driving. Returns the count.
+  // One more sighting of this car (kind 0) or gun (1): counted up, or added, the least seen of its kind making room.
+  // One not seen for KnownForDays starts again from one, the way the street forgets a car V stopped driving.
   public func Note(kind: Int32, record: TweakDBID, now: Float) -> Int32 {
     this.Trim();
     if !TDBID.IsValid(record) {
@@ -514,8 +500,8 @@ public func CBKnownByLine(game: GameInstance) -> String {
   return "";
 }
 
-// What the game calls a car or an item, from its record, the way the game's own screens do (the scanner's
-// vehicle line, the backpack's item names). "" when the record has no name.
+// What the game calls a car or an item, from its record, the way the game's screens do (the scanner's vehicle line, the
+// backpack's item names). "" when the record has no name.
 public func CBVehicleName(id: TweakDBID) -> String {
   if !TDBID.IsValid(id) {
     return "";

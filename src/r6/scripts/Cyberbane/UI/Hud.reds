@@ -1,29 +1,12 @@
-import Codeware.UI.*   // HubTextInput, the crew's name box (2.6.0)
+import Codeware.UI.*   // HubTextInput, the crew's name box
 
 // Cyberbane - The Hub (spec §12.1)
 //
-// A page of the pause menu: Escape, then Cyberbane. It opens over the menu's own list, the game
-// stays paused underneath it, and everything on it is driven with the menu's own cursor. Click a
-// screen name to change screen (or use the previous/next tab keys, Q and E or LB and RB), click a
-// row to see more about it, click a title to go by it. Escape goes back to the pause menu's list.
-// The hooks that put it there, and the reasons it is built this way, are in UI/PauseMenuEntry.reds.
-//
-// The look is the game's settings menu: the same font (Rajdhani), a centred row of tabs, a line
-// saying what the screen is, a rule, then the content, with hints along the bottom. Every colour is
-// flat, nothing above 1.0, because HDR colours above white bloom and read as glow, not as a menu.
-//
-// ---- Paused, and what that means for the numbers --------------------------------------------------
-//
-// The pause menu stops the game clock, and Cyberbane's own tick stops with it, so every countdown
-// on this page is the time as it stood when the menu was opened. That is the honest reading of a
-// paused game and it is what was asked for. It also settles the rule for anything the page can
-// *do*: choosing a title is a value in a field and happens at once, but paying a gang off moves
-// eddies and sends texts, and forgetting the Rivals deletes people from the world. Neither of
-// those is done from inside a paused menu. The page records the request and the first settled
-// tick after you resume carries it out (CyberbaneSystem.ServiceHubActions), the same way every
-// other piece of world work in this mod is kept off UI callbacks.
+// A page of the pause menu: Escape, then Cyberbane. It opens over the menu's own list, the game stays paused underneath
+// it, and everything on it is driven with the menu's own cursor. Click a screen name to change screen (or use the
+// previous/next tab keys, Q and E or LB and RB), click a row to see more about it, click a title to go by it.
 
-// Eight screens (2.5.0: the crew joined them). Messages are not one of them: they live in V's phone (UI/RealPhone.reds).
+// Eight screens (the crew joined them). Messages are not one of them: they live in V's phone (UI/RealPhone.reds).
 public func CBHudTabCount() -> Int32 = 8
 public func CBHudStandingTab() -> Int32 = 1
 public func CBHudFactionsTab() -> Int32 = 2
@@ -31,15 +14,12 @@ public func CBHudFactionsTab() -> Int32 = 2
 public func CBHudTurfTab() -> Int32 = 3
 public func CBHudCityTab() -> Int32 = 4
 public func CBHudRivalsTab() -> Int32 = 5
-// Next to the Rivals: the people against V, then the people with V (Reactions/Crew.reds, 2.5.0).
+// Next to the Rivals: the people against V, then the people with V (Reactions/Crew.reds).
 public func CBHudCrewTab() -> Int32 = 6
 public func CBHudTitlesTab() -> Int32 = 7
 public func CBHudHistoryTab() -> Int32 = 8
 
 // Lines of prose each screen has room for under its own content, before the footer rule at 934.
-// Every screen draws its own content first and the prose goes underneath or beside it; these are
-// measured against the positions below and the 26 px line height of the body font, with a line of
-// slack, because text running into the footer is the one failure a player actually sees.
 public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
   if tab == CBHudStandingTab() {
     return 11;   // under four meters
@@ -59,25 +39,10 @@ public func CBHudMaxLinesFor(tab: Int32) -> Int32 {
 
 // ---- Layout ----------------------------------------------------------------------------------------
 //
-// Everything is written against a fixed 1920x1080 design, centred and scaled as one piece to the
-// space it is drawn in. Fixed rather than stretched because every row is positioned by hand, and a
-// design that is centred reads correctly at any resolution while one that is stretched does not.
-// 1640 x 1020, not 1860.
-//
-// The page is the widest thing in the game's interface by a long way, and width is what exposes
-// the distortion the whole UI is drawn with: a 1540 px horizontal run bows visibly where a 300 px
-// one does not. The game's own screens keep content in a narrower column for exactly that reason,
-// and Engram - the mod on this machine that does read as native - wraps its text at 1180.
-//
-// Narrowed by 14% rather than to 1180, because every row column is positioned by hand and
-// budgeted in characters: at 1180 a Rival's full name no longer fits. 14% takes the widest run
-// from 1540 to 1320 and still leaves 28 characters for a name. The margin stays 160, so the
-// content is still centred (1640 - 1320 = 320, 160 a side).
+// Everything is written against a fixed 1920x1080 design, centred and scaled as one piece to the space it is drawn in.
 public func CBHudPanelW() -> Float = 1640.0
 public func CBHudPanelH() -> Float = 1020.0
-// The page as a tab of the game's menu (UI/HubTab.reds), which has the game's own row above it and
-// its button hints below. How much smaller it is drawn so it fits between them, where in the screen's
-// 3840x2160 its tabs start (level with the game's own content), and the y on the page they are at.
+// The page as a tab of the game's menu (UI/HubTab.reds), which has the game's row above it and its button hints below.
 public func CBHudTabFit() -> Float = 0.94
 public func CBHudTabMaxScale() -> Float = 1.88
 public func CBHudTabTop() -> Float = 280.0
@@ -87,16 +52,6 @@ public func CBHudDesignH() -> Float = 1080.0
 
 // How much to shrink Cyberbane's HUD widgets (the threat bars and the message cards) so they fit
 // the screen they are on.
-//
-// The ink coordinate space is not a fixed 1920x1080. The game's own code states the relationship
-// in `cyberpunk/UI/widgets/cpo/targetHitIndicator.script`: the usable space is the window size times
-// the inverse UI scale. Raise the game's UI scale, or play below 1080p, and the space shrinks below
-// the layout - the "UI is so big I can barely see the text" report.
-//
-// Measured two ways and the smaller wins, because which side of that conversion the HUD layer is
-// already in could not be settled from the source, and the cost of being wrong is a widget drawn
-// somewhat smaller than it needed to be rather than one running off the screen. Never above 1.0 on
-// its own; anything larger is the player's business, through the slider below.
 public func CBUiFitScale(game: GameInstance) -> Float {
   let ui = GameInstance.GetUISystem(game);
   if !IsDefined(ui) {
@@ -128,18 +83,6 @@ public func CBHudScale(game: GameInstance) -> Float {
 }
 
 // How much to scale the Hub page so the 1920x1080 design fills the pause menu.
-//
-// The page is drawn in the pause menu's own units, which are not the HUD's. The game converts
-// between menu units and screen pixels with the inverse UI scale: on the perks screen a menu-space
-// height times 1 / GetInverseUIScale is compared against the cursor in pixels
-// (NewPerksCategoriesGameController.script:530-536), so the whole screen is window size times the
-// inverse scale in menu units. The game's menus are authored at 3840x2160, which at 1080p is an
-// inverse scale of 2, so this normally comes out at about 2.
-//
-// The size the pause menu's root reports is taken as a second opinion, and the smaller of the two
-// wins, for the same reason as the HUD fit: a page drawn a little small is a cosmetic problem and a
-// page running off the screen is one the player cannot work around. The figures are logged, so a
-// report of a wrongly sized Hub comes with the numbers that explain it.
 public func CBHubPageScale(game: GameInstance, root: wref<inkCompoundWidget>) -> Float {
   let s = 0.0;
   let ui = GameInstance.GetUISystem(game);
@@ -172,10 +115,9 @@ public func CBHubPageScale(game: GameInstance, root: wref<inkCompoundWidget>) ->
   if s <= 0.0 {
     s = 2.0;   // nothing to measure: the menus are authored at twice the design
   }
-  // Interface size can shrink the page but never push it off the screen. `s` fits the 1920x1080
-  // design to the space; the panel is a little smaller than the design, so the most it may be
-  // enlarged is until the panel itself meets the edge. Above that, 150% Interface size ran the
-  // page's top, bottom and sides off the screen, footer and tabs included.
+  // Interface size can shrink the page but never push it off the screen. `s` fits the 1920x1080 design to the space;
+  // the panel is a little smaller than the design, so the most it may be enlarged is until the panel itself meets the
+  // edge.
   let fullFit = s * MinF(CBHudDesignW() / CBHudPanelW(), CBHudDesignH() / CBHudPanelH());
   let scaled = ClampF(s * CBHudUserScale(), 0.4, MaxF(fullFit, 0.4));
   CBLog.Info(n"UI", s"Hub page: window \(RoundF(winX))x\(RoundF(winY)), inverse scale \(inv), menu root \(rootKind) \(RoundF(rootX))x\(RoundF(rootY)), drawn at \(RoundF(scaled * 100.0))%.");
@@ -185,18 +127,6 @@ public func CBHubPageScale(game: GameInstance, root: wref<inkCompoundWidget>) ->
 public func CBHudMarginX() -> Float = 160.0
 public func CBHudContentW() -> Float = 1320.0
 // Tabs: narrower, so the row spans about 1000 px instead of 1500.
-//
-// Reported twice: the Hub looks curved while the game's own menus and Mod Settings look flat, and
-// it stayed curved after being moved onto the menu layer and again after being moved inside the
-// pause menu's own widget tree. Nothing in this file warps anything - the only transform on the
-// page is a uniform scale, and a uniform scale cannot bow a straight line.
-//
-// What the page did have, and no menu in the game has, is 1540 px-wide one-pixel horizontal rules
-// and a tab row almost as wide. A long thin horizontal line is the shape that shows the UI's
-// distortion most; the game's own screens keep their content in a narrower column and divide it
-// with panels rather than hairlines, which is why the same distortion is invisible on them. So
-// the fix for "it looks curved" is the same as the fix for "it does not look like the game":
-// stop drawing the shapes that reveal it.
 public func CBHudChipWidth() -> Float = 156.0
 public func CBHudBarCount() -> Int32 = 4
 public func CBHudBarWidth() -> Float = 1320.0
@@ -223,14 +153,13 @@ public func CBHudActionH() -> Float = 56.0
 // was wider than the button. At 20, with that one reworded, every label the page uses fits, and
 // CBHudFit guards anything added later.
 public func CBHudActionFont() -> Int32 = 20
-// Two more buttons stacked under it, for a screen with more than one thing to do (the Rivals: find
-// one, forget one, forget them all). Three of them end at 844, well clear of the footer at 952, and
-// they stand in the column the prose beside them already leaves free (CBHudActionW).
+// Two more buttons stacked under it, for a screen with more than one thing to do (the Rivals: find one, forget one,
+// forget them all).
 public func CBHudExtraActions() -> Int32 = 3
-// The Crew page's orders list: the row that lets one go, after the kit's asks (CBCrewAskGive .. CBCrewAskWork).
+// The Crew page's orders list: the row that lets one go, after the kit's asks (CBCrewAskGive.. CBCrewAskWork).
 public func CBHudCrewOrderLetGo() -> Int32 = 8
-// A name of V's choosing (2.7.6). After the asks (1-7), letting go (8) and a job and a duel (9, 10); 11 was a row to call
-// just them, which is the crew page's first button now.
+// A name of V's choosing. After the asks (1-7), letting go (8) and a job and a duel (9, 10); 11 was a row to call just
+// them, which is the crew page's first button now.
 public func CBHudCrewOrderRename() -> Int32 = 12
 public func CBHudActionGap() -> Float = 8.0
 
@@ -238,10 +167,10 @@ public func CBHudActionGap() -> Float = 8.0
 public func CBHudLayoutGangs() -> Int32 = 0
 public func CBHudLayoutWide() -> Int32 = 1
 public func CBHudLayoutTitles() -> Int32 = 2
-public func CBHudLayoutCrew() -> Int32 = 3    // the crew (2.5.0)
-public func CBHudLayoutLanes() -> Int32 = 4   // what is on its way, on Standing (2.5.0)
-public func CBHudLayoutMember() -> Int32 = 5  // one member's numbers and slots, in the right-hand column (2.7.7)
-// The Member view's column of rows (2.7.7): right of the story, clear of the buttons below it.
+public func CBHudLayoutCrew() -> Int32 = 3    // the crew
+public func CBHudLayoutLanes() -> Int32 = 4   // what is on its way, on Standing
+public func CBHudLayoutMember() -> Int32 = 5  // one member's numbers and slots, in the right-hand column
+// The Member view's column of rows: right of the story, clear of the buttons below it.
 public func CBHudMemberColX() -> Float = 690.0
 public func CBHudMemberColW() -> Float = 630.0
 public func CBHudCrewMemberMode() -> Int32 = 13
@@ -251,9 +180,8 @@ public func CBHudCrewViewName(i: Int32) -> CName {
   return CBHudWidgetName("cbHubCrewView", i + 1);
 }
 
-// A bar drawn in a row (2.5.0): where it sits on each screen, so no column's text runs under it. Gangs: standing, from
-// the middle. The city and turf: renown and share, where the text meters were. Rivals: rank, and a gang's strength.
-// The crew: loyalty.
+// A bar drawn in a row: where it sits on each screen, so no column's text runs under it. Gangs: standing, from the
+// middle. The city and turf: renown and share, where the text meters were. Rivals: rank, and a gang's strength.
 public func CBHudRowBarH() -> Float = 10.0
 public func CBHudGangBarX() -> Float = 384.0
 public func CBHudGangBarW() -> Float = 88.0
@@ -266,16 +194,11 @@ public func CBHudCrewBarW() -> Float = 120.0
 // The smallest a cell's text is drawn when it is too long for its column: smaller than this, it is shortened at a word.
 public func CBHudMinCellFont() -> Int32 = 16
 public func CBHudBarTrack() -> HDRColor = new HDRColor(0.26, 0.08, 0.10, 0.90)
-// A bar is ten segments, the way the game draws its own meters (2.5.0); and the gap between them.
+// A bar is ten segments, the way the game draws its own meters; and the gap between them.
 public func CBHudBarSegs() -> Int32 = 10
 public func CBHudBarGap() -> Float = 2.0
 
 // Colours.
-//
-// The first five are the settings menu's: salmon labels, white values, a brighter white for
-// anything selected, and a dim red rule. The next five are Cyberbane's own, for meters and status
-// pips, where a reputation screen needs to say good, bad or dangerous and the settings menu has
-// nothing to borrow. Nothing here goes above 1.0.
 public func CBHudLabel() -> HDRColor = new HDRColor(0.85, 0.28, 0.30, 1.0)
 public func CBHudValue() -> HDRColor = new HDRColor(0.92, 0.93, 0.95, 1.0)
 public func CBHudHead() -> HDRColor = new HDRColor(1.00, 1.00, 1.00, 1.0)
@@ -306,10 +229,6 @@ public func CBHudGameCellEdge() -> HDRColor = new HDRColor(0.40, 0.13, 0.15, 1.0
 public func CBHudClear() -> HDRColor = new HDRColor(0.0, 0.0, 0.0, 0.0)
 
 // Cut a column's text to what its box can actually show.
-//
-// The row columns are fixed widths, and inkText does not clip, so an over-long string runs straight
-// into the next column. Budgets are per column and enforced in SetRow, so this cannot be forgotten
-// at a call site.
 public func CBHudTrim(text: String, maxChars: Int32) -> String {
   if StrLen(text) <= maxChars {
     return text;
@@ -321,7 +240,7 @@ public func CBHudTrim(text: String, maxChars: Int32) -> String {
 }
 
 // The same, but at a word: what is left ends on a whole word and says there was more. Only a single word longer than
-// the whole column is ever cut inside itself (2.5.0).
+// the whole column is ever cut inside itself.
 public func CBHudTrimWords(text: String, maxChars: Int32) -> String {
   if StrLen(text) <= maxChars {
     return text;
@@ -344,16 +263,10 @@ public func CBHudTrimWords(text: String, maxChars: Int32) -> String {
 }
 
 // Row columns.
-//
-// Six fields per row, one field per column, positioned per screen, so the fields line up down the
-// list and each one is trimmed against its own width. Column 5 is right-aligned to the row's right
-// edge, because it is the "what is coming" column and the settings menu puts its values there too.
 public func CBHudRowCols() -> Int32 = 6
 
-// What each column is tinted: the name brightest, the two middle facts in the value colour, the one
-// that says what V has done to them warm, and the status on the right dimmed.
-// The same columns on the game's own screens: a list's name is cyan there, in capitals, and what is
-// said about it sits back.
+// What each column is tinted: the name brightest, the two middle facts in the value colour, the one that says what V
+// has done to them warm, and the status on the right dimmed.
 public func CBHudGameRowTint(col: Int32) -> HDRColor {
   if col == 0 { return CBHudCyan(); }
   if col == 1 { return new HDRColor(0.78, 0.80, 0.84, 1.0); }
@@ -497,8 +410,6 @@ public func CBHudCountdown(ticks: Int32) -> String {
   return CBTf(n"Cyberbane-Hud-MS", [s"\(mins)", s"\(secs)"]);
 }
 
-// Plain words: a player opening the Hub for the first time should be able to guess what each
-// screen holds from its name, which is the whole job of a tab label.
 public func CBHudTabName(tab: Int32) -> String {
   switch tab {
     case 1: return CBT(n"Cyberbane-Hud-STANDING");
@@ -539,9 +450,7 @@ public func CBHudClampTab(tab: Int32) -> Int32 {
   return tab;
 }
 
-// A widget name for a clickable thing, made once at build time. The click handler is told which
-// widget it is running for (inkEvent.GetCurrentTarget, core/ui/events.script:7) and matches the
-// name against these, so one handler serves every tab, row and button.
+// A widget name for a clickable thing, made once at build time.
 func CBHudWidgetName(prefix: String, index: Int32) -> CName {
   let text = prefix + IntToString(index);
   return StringToName(text);
@@ -595,7 +504,7 @@ public class CBHud {
   private let m_tabBg: array<wref<inkRectangle>>;
   private let m_tabUnder: array<wref<inkRectangle>>;
   private let m_tabText: array<wref<inkText>>;
-  // The same tabs as the game's own widgets, when the page is a tab of the game's menu.
+  // The same tabs as the game's widgets, when the page is a tab of the game's menu.
   private let m_gameTabRoot: array<wref<inkWidget>>;
   private let m_gameTabLabel: array<wref<HubMenuLabelContentContainer>>;
   private let m_gameRow: wref<inkHorizontalPanel>;
@@ -611,45 +520,45 @@ public class CBHud {
   private let m_barTrack: array<wref<inkRectangle>>;
   private let m_barFill: array<wref<inkRectangle>>;
   private let m_barCap: array<wref<inkText>>;
-  // List rows: a clickable box per row holding a band, a colour pip and six cells. Cells are flat:
-  // row r column c is at r * CBHudRowCols() + c.
+  // List rows: a clickable box per row holding a band, a colour pip and six cells. Cells are flat: row r column c is at
+  // r * CBHudRowCols + c.
   private let m_rowBox: array<wref<inkCanvas>>;
   private let m_rowBg: array<wref<inkWidget>>;
   private let m_rowPip: array<wref<inkRectangle>>;
   private let m_rowCell: array<wref<inkText>>;
   private let m_rowSeg: array<wref<inkRectangle>>;     // a bar in each row, ten segments (row r at r * CBHudBarSegs())
   private let m_rowTop: Float;                          // where the first row sits on this screen
-  private let m_rowCrew: array<Int32>;                  // the crew member a row stands for (2.5.0); -1 the solo on offer
+  private let m_rowCrew: array<Int32>;                  // the crew member a row stands for; -1 the solo on offer
   private let m_pickCrew: Int32;
   private let m_letGoArmed: Int32;
-  // The Crew page's three views (2.7.7): Roster, Member and Crew, as chips across the top the way the main tabs work.
+  // The Crew page's three views: Roster, Member and Crew, as chips across the top the way the main tabs work.
   private let m_viewBox: array<wref<inkCanvas>>;
   private let m_viewBg: array<wref<inkRectangle>>;
   private let m_viewText: array<wref<inkText>>;
   private let m_viewShown: Bool;
   private let m_ordersFrom: Int32;      // the view a member's orders were opened from, for Back
-  private let m_logFilter: Int32;       // the History page's filter (2.7.7): 0 everything
-  // One line saying what the button under the cursor does (2.7.7), in the footer's place.
+  private let m_logFilter: Int32;       // the History page's filter: 0 everything
+  // One line saying what the button under the cursor does, in the footer's place.
   private let m_footer: wref<inkText>;
   private let m_footerText: String;
   private let m_actionHelp: String;
   private let m_extraHelp: array<String>;
   private let m_rowHelp: array<String>;
-  // The Crew page's screens (2.6.0): 0 the roster, 1 picking a weapon, 2 picking chrome, 3 picking a gang for a war,
-  // 4 naming the crew, 5 the memorial, 6 the picked one's orders, 7 the crew itself; what is on offer in the list, the
-  // name box, the memorial's pick (one up), and whether the Gangs page drew the crew's card.
+  // The Crew page's screens: 0 the roster, 1 picking a weapon, 2 picking chrome, 3 picking a gang for a war, 4 naming
+  // the crew, 5 the memorial, 6 the picked one's orders, 7 the crew itself; what is on offer in the list, the name box,
+  // the memorial's pick (one up), and whether the Gangs page drew the crew's card.
   private let m_crewMode: Int32;
   private let m_pickFallen: Int32;
   private let m_crewCardShown: Bool;
   private let m_pickItems: array<ItemID>;
   private let m_pickGangs: array<CName>;
-  // A job's targets (screen 8, 2.7.2): a Rival's id for a hit, else the gang whose bag; and who can answer a challenge
-  // (screen 9).
+  // A job's targets (screen 8): a Rival's id for a hit, else the gang whose bag; and who can answer a challenge (screen
+  // 9).
   private let m_pickJobRival: array<Int32>;
   private let m_pickJobGang: array<CName>;
   private let m_pickDuel: array<Int32>;
   private let m_nameInput: ref<HubTextInput>;
-  // What the name box starts with and says when empty, for the crew or one of them (2.7.6, SeedNameInput).
+  // What the name box starts with and says when empty, for the crew or one of them (SeedNameInput).
   private let m_nameSeed: String;
   private let m_nameHint: String;
   private let m_rowNames: array<CName>;
@@ -676,8 +585,8 @@ public class CBHud {
   private let m_extraOn: array<Bool>;
   private let m_settingsBox: wref<inkCanvas>;
   private let m_settingsBg: wref<inkRectangle>;
-  // Q and E, at the two ends of the tab bar, where the game's own menus put the keys that move
-  // between their tabs. Clicking them does what pressing them does.
+  // Q and E, at the two ends of the tab bar, where the game's menus put the keys that move between their tabs. Clicking
+  // them does what pressing them does.
   private let m_prevBox: wref<inkCanvas>;
   private let m_prevBg: wref<inkRectangle>;
   private let m_nextBox: wref<inkCanvas>;
@@ -707,29 +616,19 @@ public class CBHud {
   private let m_listScrolled: Bool;        // said so in the log once this page was opened
   private let m_stickLatched: Bool;
   private let m_resetArmed: Bool;          // "start over" asks twice as well
-  private let m_undoArmed: Bool;           // and so does undoing it (2.6.3)
-  private let m_bountyArmed: Bool;         // and so does paying off the price on V's head (2.4.3)
-  private let m_legendShown: Bool;         // the History page tells V's story instead of the ledger (2.4.6)
+  private let m_undoArmed: Bool;           // and so does undoing it
+  private let m_bountyArmed: Bool;         // and so does paying off the price on V's head
+  private let m_legendShown: Bool;         // the History page tells V's story instead of the ledger
   private let m_hover: CName;              // the clickable thing under the cursor, by name
   private let m_inputBound: Bool;          // the tab keys are registered with the pause menu
   // Why no Rival can arrive right now, or "". Resolved once per render, not once per row.
   private let m_holdLabel: String;
   // How many of the pause menu's units one unit of the 1920x1080 design is (CBHubPageScale).
-  //
-  // The page used to be laid out at design size and then blown up with SetScale on the panel.
-  // SetScale is a render transform: it changes how the panel is drawn and nothing about where
-  // its widgets are. Pointer events are hit-tested against where the widgets are - their layout
-  // - so at the usual scale of about 2 every row, tab and button was drawn at twice the size,
-  // half-way out from the centre, while the place that answered the mouse was the small,
-  // unscaled one underneath. Clicking a row landed on whatever box sat there at design size, or
-  // on nothing; hover lit up a different row from the one under the cursor; and the visible
-  // page did not line up with anything it responded to. Now the page is laid out at its real
-  // size and nothing is scaled at draw time, so what you see is exactly what you click.
   private let m_scale: Float;
-  // Another mod's overlay this page has put out of sight while it is up (CBForeignOverlays, 2.4.2).
+  // Another mod's overlay this page has put out of sight while it is up (CBForeignOverlays).
   private let m_overlaysOff: Bool;
-  // The web of gangs ([H1], UI/HubWeb.reds, 2.4.3): the Factions page as a picture. A pool built once with the page and
-  // hidden until used: the lines first so they sit under the boxes, then the words, then a box per place.
+  // The web of gangs ([H1], UI/HubWeb.reds): the Factions page as a picture. A pool built once with the page and hidden
+  // until used: the lines first so they sit under the boxes, then the words, then a box per place.
   private let m_webRoot: wref<inkCanvas>;
   private let m_webLine: array<wref<inkRectangle>>;
   private let m_webWord: array<wref<inkText>>;
@@ -746,25 +645,24 @@ public class CBHud {
   private let m_webToggleBg: wref<inkRectangle>;
   private let m_webToggleText: wref<inkText>;
   private let m_webShown: Bool;
-  // The Rivals tree ([H2], 2.4.4) draws with the same pool: which gang it shows, whether it is up, and the Rival in
-  // each place (0 for none).
+  // The Rivals tree ([H2]) draws with the same pool: which gang it shows, whether it is up, and the Rival in each place
+  // (0 for none).
   private let m_treeShown: Bool;
   private let m_treeGang: CName;
-  private let m_treeGrudge: Int32;   // the Rival of the gang drawn V has met most, for their box (2.5.0)
-  private let m_webOrder: array<Int32>; // the gangs' cards, slot by slot, in the order they are shown (2.5.0)
-  private let m_hereSlot: Int32;        // the district card V is in, framed white on the maps (2.5.0)
+  private let m_treeGrudge: Int32;   // the Rival of the gang drawn V has met most, for their box
+  private let m_webOrder: array<Int32>; // the gangs' cards, slot by slot, in the order they are shown
+  private let m_hereSlot: Int32;        // the district card V is in, framed white on the maps
   private let m_actionTop: Float;     // where the buttons start on this page (PlaceActions)
   private let m_treeSlotRival: array<Int32>;
-  // The pictures' look (2.5.0): every box a card of the game's own art, a frame tinted by what it is and cyan when
-  // picked; two segmented bars a box (box s, bar b, segment k at (s * 2 + b) * CBHudBarSegs() + k); a soft glow under
-  // every line. And the four Standing tiles drawn as cards.
+  // The pictures' look: every box a card of the game's art, a frame tinted by what it is and cyan when picked; two
+  // segmented bars a box (box s, bar b, segment k at (s * 2 + b) * CBHudBarSegs + k); a soft glow under every line.
   private let m_webBoxArt: array<wref<inkImage>>;
   private let m_webBoxFrame: array<wref<inkImage>>;
   private let m_webSeg: array<wref<inkRectangle>>;
   private let m_webGlow: array<wref<inkRectangle>>;
   private let m_tileArt: array<wref<inkImage>>;
   private let m_tileFrame: array<wref<inkImage>>;
-  // The same pool draws two pictures more (2.5.0): Night City as a map on the Turf and City pages, and V's crew round V.
+  // The same pool draws two pictures more: Night City as a map on the Turf and City pages, and V's crew round V.
   private let m_mapShown: Bool;
   private let m_crewPicShown: Bool;
   private let m_pickDistrict: CName;
@@ -808,8 +706,7 @@ public class CBHud {
     return true;
   }
 
-  // Out of sight. Nothing is removed: the widgets stay in the menu's tree until the menu goes,
-  // because taking widgets out by hand is what the 1.4.7 phone crash was made of.
+  // Out of sight.
   public func Hide() -> Void {
     this.m_open = false;
     this.m_purgeArmed = false;
@@ -826,14 +723,8 @@ public class CBHud {
     this.ForeignOverlaysBack();
   }
 
-  // Another mod's text drawn over the menu as a whole, where this page sits, goes out of sight while the
-  // page is up and comes back when it goes (2.4.2). They Will Remember writes its disguise scores on the
-  // menu layer whenever V's paperdoll is set up, at a place fixed for the inventory screens, and on this
-  // page it landed across the title and the first lines. It hides that text itself while a weapon tooltip
-  // covers the spot, by its name (DisguiseScoresUI.reds, Journal.SetTooltipOpen); this does the same for a
-  // page it does not know about. Nothing of theirs is removed or changed but whether it shows, and what it
-  // says is on this page instead, under the chrome bar (CBHudWornLine). Asked at every draw and as the page
-  // comes up, since the paperdoll can be set up after the page is.
+  // Another mod's text drawn over the menu as a whole, where this page sits, goes out of sight while the page is up and
+  // comes back when it goes.
   private func ForeignOverlaysOff() -> Void {
     if CBForeignOverlays(false) {
       this.m_overlaysOff = true;
@@ -944,7 +835,7 @@ public class CBHud {
     }
   }
 
-  // Changing screen sounds like the game's own tabs, on its own screen.
+  // Changing screen sounds like the game's tabs, on its own screen.
   private func ClickTab() -> Void {
     if this.m_inTab && IsDefined(this.m_owner) {
       this.m_owner.PlaySound(n"TabButton", n"OnPress");
@@ -956,24 +847,6 @@ public class CBHud {
   // ---- Building --------------------------------------------------------------------------------
 
   // Take a colour from the game instead of naming one here.
-  //
-  // `main_colors.inkstyle` is the palette the whole interface is drawn from, and its names carry
-  // a system: plain (`Red`, `Blue`, `Grey`) for foreground, `Panel*` for backgrounds, `Active*`
-  // for the selected thing, `Mild*` and `Faint*` for what should sit back. Binding to it is what
-  // makes a code-built page read as part of the game rather than as something drawn on top of it,
-  // and it is how Engram - the other mod on this machine, which does look native - gets its look.
-  // There is no borrowed artwork in this: the native feel is the palette, the type scale and the
-  // spacing, not an atlas.
-  //
-  // Two rules learned the hard way:
-  //
-  //   1. **Tint first, bind second.** `BindProperty` returns a Bool and a name that does not
-  //      resolve simply does not bind, leaving whatever tint the widget already had. Every caller
-  //      therefore passes a real colour as well, so the failure mode is the old palette rather
-  //      than an untinted white box.
-  //   2. **Only bind what does not change.** A bound property wins over a later `SetTintColor`,
-  //      so anything whose colour is a state - a picked tab, a hovered row, a meter fill - keeps
-  //      its explicit tint and is not bound at all. Static text is bound; state is not.
   private func Paint(w: ref<inkWidget>, colour: CName) -> Void {
     if !IsDefined(w) || Equals(colour, n"") {
       return;
@@ -1029,23 +902,14 @@ public class CBHud {
     return bg;
   }
 
-  // ---- The game's own parts, for the page as a tab of the game's menu (UI/HubTab.reds) ----------
+  // ---- The game's parts, for the page as a tab of the game's menu (UI/HubTab.reds) ----------
   //
-  // On that page everything that is furniture rather than information is the game's: the row of
-  // screens is the label the game spawns for its own top row, at either end of it is the widget the
-  // game draws a key with, and the button is the game's button art. Spawned by name, so a part a patch
-  // has moved comes back as nothing, and then the page falls back on what it draws for the pause menu.
+  // On that page everything that is furniture rather than information is the game's: the row of screens is the label
+  // the game spawns for its own top row, at either end of it is the widget the game draws a key with, and the button is
+  // the game's button art.
 
   // The screens, in a row: the game's key for "previous", its labels, its key for "next", which is how
   // the game lays out its own row.
-  //
-  // Loaded rather than spawned on the spot. A screen can only spawn at once from the libraries its own
-  // file already names, and the Stats screen names the button hints and nothing else, so the game
-  // quietly gave back nothing. They are all asked for together, each with its place, and the page stays
-  // out of sight until the last has landed, then comes up once. The first version put the page's own
-  // boxes up while it waited and swapped them, and the swap could be seen.
-  //
-  // The boxes are still built, hidden, for a game that never delivers (CBOnGameTabsLate).
   private func StartGameTabs(panel: ref<inkCanvas>) -> Void {
     let row = new inkHorizontalPanel();
     row.SetName(n"cbHubGameTabs");
@@ -1206,7 +1070,7 @@ public class CBHud {
     return true;
   }
 
-  // Once, eased in like the game's own screens.
+  // Once, eased in like the game's screens.
   private func RevealPage() -> Void {
     if IsDefined(this.m_gameTimer) {
       this.m_gameTimer.UnregisterFromCallback(inkanimEventType.OnFinish, this, n"CBOnGameTabsLate");
@@ -1274,7 +1138,7 @@ public class CBHud {
     return false;
   }
 
-  // What the page's buttons are drawn with: the game's own button on its own screen, a band elsewhere.
+  // What the page's buttons are drawn with: the game's button on its own screen, a band elsewhere.
   private func NewListButtonBack(box: ref<inkCanvas>) -> ref<inkWidget> {
     if this.m_inTab {
       let back: ref<inkWidget> = this.NewGameArt(box, n"cell_bg", CBHudGameButtonBack());
@@ -1295,7 +1159,7 @@ public class CBHud {
     return t;
   }
 
-  // The same art as a free piece of the page, placed and sized by whoever uses it (the Standing tiles, 2.5.0).
+  // The same art as a free piece of the page, placed and sized by whoever uses it (the Standing tiles).
   private func NewPanelArt(panel: ref<inkCanvas>, part: CName, tint: HDRColor) -> ref<inkImage> {
     let art = new inkImage();
     art.SetAtlasResource(r"base\\gameplay\\gui\\common\\shapes\\atlas_shapes_sync.inkatlas");
@@ -1349,14 +1213,14 @@ public class CBHud {
     backdrop.SetAnchor(inkEAnchor.Fill);
     backdrop.SetTintColor(new HDRColor(0.055, 0.012, 0.022, 0.97));
     backdrop.SetInteractive(true);
-    // As a tab the game's own background is the page's, and its button hints have to show. Nothing is
-    // underneath to be clicked by accident: the screen's own content is hidden (UI/HubTab.reds).
+    // As a tab the game's background is the page's, and its button hints have to show. Nothing is underneath to be
+    // clicked by accident: the screen's own content is hidden (UI/HubTab.reds).
     if this.m_inTab {
       backdrop.SetVisible(false);
       backdrop.SetInteractive(false);
     }
     backdrop.Reparent(root, -1);
-    // The game's own vignette over it, faintly red, as its full-screen pages darken their edges (2.5.0).
+    // The game's vignette over it, faintly red, as its full-screen pages darken their edges.
     if !this.m_inTab {
       let vignette = new inkImage();
       vignette.SetAtlasResource(r"base\\gameplay\\gui\\widgets\\notifications\\vignette.inkatlas");
@@ -1418,14 +1282,8 @@ public class CBHud {
 
     // ---- The keys that change screen, at the ends of the row they change ----------
     //
-    // These were only ever named in the footer, a line of small print at the other end of the
-    // page from the tabs they move between. The game's menus draw them at the two ends of the tab
-    // bar, level with it, so that is where they go: one just before the first tab, one just after
-    // the last, centred on the tabs' own height.
-    //
-    // What they say has to be what they do. They read Q and E from 1.6 to 1.7.2, and neither key has
-    // ever been on these actions: on a keyboard prior_menu and next_menu are 1 and 3
-    // (r6/config/inputUserMappings.xml). Q and E are lean, and nothing here listens for them.
+    // These were only ever named in the footer, a line of small print at the other end of the page from the tabs they
+    // move between.
     let keyW = CBHudKeyW();
     let keyY = 48.0 + (52.0 - keyW) / 2.0;
     let prev = this.NewBox(panel, CBHudPrevName(), tabsX - keyW - 8.0, keyY, keyW, keyW);
@@ -1489,7 +1347,7 @@ public class CBHud {
     this.m_listUpBox = up;
     this.m_listDownBox = down;
 
-    // The switch between the gangs as a list and as a web (2.4.3), at the top left of the list.
+    // The switch between the gangs as a list and as a web, at the top left of the list.
     let toggle = this.NewBox(panel, CBHudWebToggleName(), x, CBHudContentTop() - 36.0, 230.0, 32.0);
     this.m_webToggleBg = this.NewBand(toggle, CBHudButtonIdle());
     let toggleText = this.NewText(toggle, 18, n"Semibold", CBHudHead());
@@ -1551,8 +1409,8 @@ public class CBHud {
       let rname = CBHudWidgetName("cbHubRow", r);
       let rbox = this.NewBox(panel, rname, x, CBHudContentTop() + Cast<Float>(r) * CBHudRowHeight(),
                              w, CBHudRowHeight() - 4.0);
-      // As a tab, a row is the game's own framed cell, the way the journal draws its list. No stripes:
-      // the game does not stripe its lists.
+      // As a tab, a row is the game's framed cell, the way the journal draws its list. No stripes: the game does not
+      // stripe its lists.
       let band: ref<inkWidget>;
       if this.m_inTab {
         band = this.NewGameArt(rbox, n"cell_bg", CBHudGameCell());
@@ -1603,7 +1461,7 @@ public class CBHud {
       r += 1;
     }
 
-    // ---- The Crew page's views (2.7.7): Roster, Member, Crew, beside the picture switch ----
+    // ---- The Crew page's views: Roster, Member, Crew, beside the picture switch ----
     ArrayClear(this.m_viewBox);
     ArrayClear(this.m_viewBg);
     ArrayClear(this.m_viewText);
@@ -1708,7 +1566,7 @@ public class CBHud {
     // on the tab bar now, where they are used.
     this.m_footerText = CBHudFit(CBT(n"Cyberbane-Hud-ClickAScreenOrARow"), w - 260.0 - 40.0, 19, 1);
     footer.SetText(this.m_footerText);
-    footer.SetVisible(!this.m_inTab);   // as a tab, the game's own button hints say all of this
+    footer.SetVisible(!this.m_inTab);   // as a tab, the game's button hints say all of this
     this.m_footer = footer;
 
     let settings = this.NewBox(panel, CBHudSettingsName(), x + w - 260.0, CBHudFooterY() - 8.0, 260.0, 40.0);
@@ -1771,8 +1629,8 @@ public class CBHud {
     // every show and hide, so nothing is ever registered or unregistered in the middle of the very
     // input event that is being delivered.
     owner.RegisterToGlobalInputCallback(n"OnPostOnRelease", this, n"CBOnGlobalRelease");
-    // The wheel comes as relative input and the stick as an axis, as in the game's own gallery and
-    // map, so each has its own handler and one notch can never move a list twice.
+    // The wheel comes as relative input and the stick as an axis, as in the game's gallery and map, so each has its own
+    // handler and one notch can never move a list twice.
     owner.RegisterToGlobalInputCallback(n"OnPostOnRelative", this, n"CBOnWheel");
     owner.RegisterToGlobalInputCallback(n"OnPostOnAxis", this, n"CBOnStick");
     this.m_inputBound = true;
@@ -1792,13 +1650,9 @@ public class CBHud {
     if !this.IsOpen() || !IsDefined(e) {
       return false;
     }
-    // `click` only. A release arrives once for every action bound to the button, and the left mouse
-    // button and A are bound to `click` (UIMenuShared) and to `select` (UIMenu) at once
-    // (r6/config/inputContexts.xml, inputUserMappings.xml). Taking either ran every press here twice:
-    // the log has every title chosen on the Hub written two times. That opened a gang and closed it
-    // again in one press, so clicking a gang showed nothing, and it armed and confirmed Forget every
-    // rival and Start over in one press as well. `click` also carries Enter, F and a touch tap, and it
-    // is the one the game's own pause menu takes (pauseMenu.script, OnGogPressed).
+    // `click` only. A release arrives once for every action bound to the button, and the left mouse button and A are
+    // bound to `click` (UIMenuShared) and to `select` (UIMenu) at once (r6/config/inputContexts.xml,
+    // inputUserMappings.xml).
     if !e.IsAction(n"click") {
       return false;
     }
@@ -1865,7 +1719,7 @@ public class CBHud {
       }
       return true;
     }
-    // The web of gangs (2.4.3): the switch, and a gang's box picked.
+    // The web of gangs: the switch, and a gang's box picked.
     if Equals(name, CBHudWebToggleName()) {
       e.Handle();
       if this.m_tab == CBHudHistoryTab() {
@@ -1967,9 +1821,6 @@ public class CBHud {
   }
 
   // The previous/next tab keys, the same actions the settings menu uses (settingsMain.script:1311).
-  // As a tab of the game's menu those belong to the game's own row, which moves between its tabs on
-  // them, so the page takes the keys the game's screens use for their inner pages (the perk trees,
-  // the journal, the ripperdoc's categories).
   protected cb func CBOnGlobalRelease(e: ref<inkPointerEvent>) -> Bool {
     if !this.IsOpen() || !IsDefined(e) || e.IsHandled() || this.CrewNaming() {
       return false;
@@ -2006,10 +1857,6 @@ public class CBHud {
   }
 
   // The mouse wheel moves a long list a row a notch. Up is a positive notch, as the gallery reads it.
-  //
-  // Not refused when something else has already marked the event handled: on its own screen the
-  // page sits over the game's, and a scroll area of the game's hidden underneath could take the wheel
-  // first. Nothing of the game's is in view to have wanted it.
   protected cb func CBOnWheel(e: ref<inkPointerEvent>) -> Bool {
     if !this.IsOpen() || !IsDefined(e) || !e.IsAction(n"mouse_wheel") {
       return false;
@@ -2054,7 +1901,7 @@ public class CBHud {
 
   // Move the window on the list being shown. False when it is already as far as it goes that way.
   private func ScrollBy(sys: ref<CyberbaneSystem>, game: GameInstance, step: Int32) -> Bool {
-    // On the web of gangs the keys and the pad go round the ring instead (2.4.3).
+    // On the web of gangs the keys and the pad go round the ring instead.
     if this.m_webShown && step != 0 && ArraySize(this.m_webOrder) > 0 {
       let at = ArrayFindFirst(this.m_webOrder, CBWebSlotOf(this.m_pickFaction));
       let n = ArraySize(this.m_webOrder);
@@ -2083,9 +1930,8 @@ public class CBHud {
     return true;
   }
 
-  // The window onto a list: which entry goes in the top row, kept inside the list as it grows and
-  // shrinks, and the line over it that says there is more. Every list screen asks this before it
-  // draws, so none of them can have entries nobody can reach again.
+  // The window onto a list: which entry goes in the top row, kept inside the list as it grows and shrinks, and the line
+  // over it that says there is more.
   private func ListWindow(total: Int32, rows: Int32) -> Int32 {
     this.m_listTotal = total;
     this.m_listRows = rows;
@@ -2141,7 +1987,7 @@ public class CBHud {
 
   private func RowClicked(sys: ref<CyberbaneSystem>, game: GameInstance, row: Int32) -> Void {
     if this.m_tab == CBHudCrewTab() && this.m_crewMode >= 1 && this.m_crewMode <= 2 {
-      // A pick from the list (2.6.0): carried out here and now (CBCrewKitDoNow: it moves only V's bag and the crew's books),
+      // A pick from the list: carried out here and now (CBCrewKitDoNow: it moves only V's bag and the crew's books),
       // its text sent once back in the game; back to their orders, where it shows.
       let pick = row < ArraySize(this.m_rowCrew) ? this.m_rowCrew[row] - 1 : -1;
       let kbPick = CBCrewKitBook.Get(game);
@@ -2160,7 +2006,7 @@ public class CBHud {
       return;
     }
     if this.m_tab == CBHudCrewTab() && (this.m_crewMode == 8 || this.m_crewMode == 9) {
-      // A job's target, or who answers a challenge (2.7.2): asked, carried out here and now like the other orders.
+      // A job's target, or who answers a challenge: asked, carried out here and now like the other orders.
       let pickJob = row < ArraySize(this.m_rowCrew) ? this.m_rowCrew[row] - 1 : -1;
       let kbJob = CBCrewKitBook.Get(game);
       let noJobItem: ItemID;
@@ -2177,7 +2023,7 @@ public class CBHud {
       this.Render(sys, game);
       return;
     }
-    // The war screens (2.7.6): a gang picked from the list, or somebody put in or taken out of the party.
+    // The war screens: a gang picked from the list, or somebody put in or taken out of the party.
     if this.m_tab == CBHudCrewTab() && (this.m_crewMode == 11 || this.m_crewMode == 12) {
       let wbRow = CBCrewWarBook.Get(game);
       let bookRow = CBCrewBook.Get(game);
@@ -2257,13 +2103,10 @@ public class CBHud {
     this.Render(sys, game);
   }
 
-  // The button beside the detail panel. Neither action is carried out from here: the game is
-  // paused, and both touch the world. They are recorded, and done on the first settled tick after
-  // the menu closes. Clicking again before then takes the request back.
+  // The button beside the detail panel. Neither action is carried out from here: the game is paused, and both touch the
+  // world. They are recorded, and done on the first settled tick after the menu closes.
   private func ActionClicked(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-    // The crew (2.5.0): "Need you. Now." is carried out on the first tick back in the game; clicked again, taken back.
-    // The war screens (2.7.6): the party sent (only words and the crew's books, so here and now, its texts once the game is
-    // back), or back out of the list of gangs.
+    // The crew: "Need you. Now." is carried out on the first tick back in the game; clicked again, taken back.
     if this.m_tab == CBHudCrewTab() && (this.m_crewMode == 11 || this.m_crewMode == 12) {
       // Back where the war was started from: one member's orders (6) or the crew's own page (7).
       let wbA = CBCrewWarBook.Get(game);
@@ -2283,8 +2126,8 @@ public class CBHud {
       return;
     }
     if this.m_tab == CBHudCrewTab() && this.m_crewMode != 0 && this.m_crewMode != CBHudCrewMemberMode() {
-      // "Back" out of a screen, "Save the name" when naming (2.6.0): a pick list goes back to the orders it came from,
-      // the name and the memorial to the crew's own screen, the rest to the roster.
+      // "Back" out of a screen, "Save the name" when naming: a pick list goes back to the orders it came from, the name
+      // and the memorial to the crew's own screen, the rest to the roster.
       let mode = this.m_crewMode;
       // The name is only words: it touches nothing in the world, so it is saved here and now and the crew's screen
       // shows it at once. Waiting for the next tick, as the orders do, it read as not saved until the menu closed.
@@ -2295,7 +2138,7 @@ public class CBHud {
           CBLog.Info(n"Crew", s"V named the crew: \(kbName.Name()).");
         }
       }
-      // One of them, renamed (2.7.6): only words as well, saved here and now. Empty gives them back their own.
+      // One of them, renamed: only words as well, saved here and now. Empty gives them back their own.
       if mode == 10 {
         let nbName = CBCrewNameBook.Get(game);
         if IsDefined(nbName) && IsDefined(this.m_nameInput) && this.m_pickCrew > 0 {
@@ -2305,7 +2148,7 @@ public class CBHud {
       }
       this.m_crewMode = (mode >= 1 && mode <= 2) || mode == 8 || mode == 10 ? 6 : (mode == 4 || mode == 5 || mode == 9 ? 7 : 0);
       if mode == 6 && this.m_ordersFrom == CBHudCrewMemberMode() {
-        this.m_crewMode = CBHudCrewMemberMode();   // back to the file they were opened from (2.7.7)
+        this.m_crewMode = CBHudCrewMemberMode();   // back to the file they were opened from
       }
       this.m_pickFallen = 0;
       this.Render(sys, game);
@@ -2314,10 +2157,8 @@ public class CBHud {
     if this.m_tab == CBHudCrewTab() {
       let crew = CBCrewBook.Get(game);
       if IsDefined(crew) {
-        // The first button is the picked one's (2.7.6): the solo on offer hired, or one of the crew called on their own, or
-        // sent home on their own while the rest stay. Asked here, carried out on the first settled tick back in the game
-        // (CBCrewServiceHub); clicked again before then, taken back. The menu leaves the world's readiness out of its
-        // question (fromMenu): every menu makes the world read as not ready, and the button could never be pressed.
+        // The first button is the picked one's: the solo on offer hired, or one of the crew called on their own, or
+        // sent home on their own while the rest stay.
         let id = this.m_pickCrew;
         if id == -1 {
           crew.reqHire = !crew.reqHire;
@@ -2338,7 +2179,7 @@ public class CBHud {
       this.Render(sys, game);
       return;
     }
-    // The price on V's head (Spawn/Bounty.reds, 2.4.3): paid on the next tick back in the game, never from here.
+    // The price on V's head (Spawn/Bounty.reds): paid on the next tick back in the game, never from here.
     if this.m_tab == CBHudStandingTab() {
       if CBBountyPayPending(game) {
         CBBountyRequestPay(game, false);
@@ -2389,7 +2230,7 @@ public class CBHud {
       }
     } else {
       if this.m_tab == CBHudHistoryTab() {
-        // The story or the ledger (2.7.6: the first button; Start over moved to the last).
+        // The story or the ledger (the first button; Start over moved to the last).
         this.m_legendShown = !this.m_legendShown;
         this.m_resetArmed = false;
         this.m_undoArmed = false;
@@ -2433,7 +2274,7 @@ public class CBHud {
     }
     if this.m_tab == CBHudCrewTab() && this.m_crewMode == 11 {
       if slot == 1 {
-        this.m_crewMode = 12;   // back to the gangs, the party kept (2.7.6: one screen back, wherever the war began)
+        this.m_crewMode = 12;   // back to the gangs, the party kept (one screen back, wherever the war began)
         this.m_listTop = 0;
       }
       this.Render(sys, game);
@@ -2447,7 +2288,7 @@ public class CBHud {
       return;
     }
     if this.m_tab == CBHudCrewTab() {
-      // The picked one's orders; the whole crew called or sent home, the same as the crew key; the crew's own page (2.7.6).
+      // The picked one's orders; the whole crew called or sent home, the same as the crew key; the crew's own page.
       // Calls and sending home are carried out back in the game.
       let cb = CBCrewBook.Get(game);
       if IsDefined(cb) {
@@ -2475,7 +2316,7 @@ public class CBHud {
       this.Render(sys, game);
       return;
     }
-    // Start over (2.7.6: the last button, not the first). Asks twice.
+    // Start over (the last button, not the first). Asks twice.
     if this.m_tab == CBHudHistoryTab() && slot == 2 {
       if this.m_resetArmed {
         this.m_resetArmed = false;
@@ -2491,8 +2332,8 @@ public class CBHud {
       this.Render(sys, game);
       return;
     }
-    // Undo the last Start over (2.6.3): asks twice, then acts on the click, since it only takes a note off the record
-    // kept outside the saves.
+    // Undo the last Start over: asks twice, then acts on the click, since it only takes a note off the record kept
+    // outside the saves.
     if this.m_tab == CBHudHistoryTab() && slot == 1 {
       if this.m_undoArmed {
         this.m_undoArmed = false;
@@ -2510,7 +2351,7 @@ public class CBHud {
     if this.m_tab != CBHudRivalsTab() {
       return;
     }
-    // 1 calls them out, 2 forgets them, 3 forgets everybody (2.7.6: call them out was the second).
+    // 1 calls them out, 2 forgets them, 3 forgets everybody (call them out was the second).
     if slot == 2 {
       let id = this.m_pickRival;
       let r = sys.FindRivalById(id);
@@ -2715,8 +2556,7 @@ public class CBHud {
     this.PaintWeb();
   }
 
-  // What the button under the cursor does, one line where the footer's hint is (2.7.7). "Calls just Sai. They join
-  // whoever's already out."
+  // What the button under the cursor does, one line where the footer's hint is.
   private func PaintHelp() -> Void {
     if !IsDefined(this.m_footer) {
       return;
@@ -2751,7 +2591,7 @@ public class CBHud {
     }
   }
 
-  // What a button does when its page did not say (2.7.7): by the page and the button's place on it. 0 is the first button.
+  // What a button does when its page did not say: by the page and the button's place on it. 0 is the first button.
   private func DefaultHelp(slot: Int32) -> String {
     if this.m_tab == CBHudStandingTab() && slot == 0 {
       return CBT(n"Cyberbane-Hud-HelpPayBounty");
@@ -2812,15 +2652,15 @@ public class CBHud {
   private func SetAction(label: String, enabled: Bool, opt help: String) -> Void {
     this.m_actionOn = enabled;
     this.m_actionHelp = StrLen(help) > 0 || StrLen(label) == 0 ? help : this.DefaultHelp(0);
-    // Drawn smaller until it fits, rather than cut (2.5.0).
+    // Drawn smaller until it fits, rather than cut.
     this.BoxText(this.m_actionText, label, CBHudActionW() - 24.0, CBHudActionFont(), 14, true);
     if IsDefined(this.m_actionBox) {
       this.m_actionBox.SetVisible(StrLen(label) > 0);
     }
   }
 
-  // The button and the ones under it, from `top` down (2.5.0). Every page starts them at CBHudDetailTop (Render); the
-  // web of gangs is drawn taller and puts them beside the words under it.
+  // The button and the ones under it, from `top` down. Every page starts them at CBHudDetailTop (Render); the web of
+  // gangs is drawn taller and puts them beside the words under it.
   private func PlaceActions(top: Float) -> Void {
     this.m_actionTop = top;
     let x = CBHudMarginX() + CBHudContentW() - CBHudActionW();
@@ -2836,9 +2676,8 @@ public class CBHud {
     }
   }
 
-  // The buttons showing, one under another from the top with no gap where a hidden one is (2.5.0): a page that
-  // showed its first and fourth buttons left two buttons' worth of empty space between them. Each keeps its own name,
-  // so a click still reaches the same action.
+  // The buttons showing, one under another from the top with no gap where a hidden one is: a page that showed its first
+  // and fourth buttons left two buttons' worth of empty space between them.
   private func PackActions() -> Void {
     let x = CBHudMarginX() + CBHudContentW() - CBHudActionW();
     let y = this.m_actionTop > 0.0 ? this.m_actionTop : CBHudDetailTop() - 4.0;
@@ -3029,8 +2868,8 @@ public class CBHud {
     this.m_rowPlaced = true;
   }
 
-  // The four scores as tiles, two by two (2.5.0): the meters keep their full story in half the height, and what is on
-  // its way gets the room under them. Where tile `idx` sits.
+  // The four scores as tiles, two by two: the meters keep their full story in half the height, and what is on its way
+  // gets the room under them. Where tile `idx` sits.
   private func TileX(idx: Int32) -> Float {
     return CBHudMarginX() + Cast<Float>(idx % 2) * (CBHudTileW() + CBHudTileGap());
   }
@@ -3105,8 +2944,8 @@ public class CBHud {
     }
   }
 
-  // What is on its way, as rows under the tiles (2.5.0): each lane with a pip for how close it is, and V's own crew.
-  // Returns where the rows end.
+  // What is on its way, as rows under the tiles: each lane with a pip for how close it is, and V's own crew. Returns
+  // where the rows end.
   private func RenderLanes(sys: ref<CyberbaneSystem>, game: GameInstance) -> Float {
     let top = CBHudContentTop() + 2.0 * CBHudTileStride() - 4.0;
     this.PlaceRows(CBHudLayoutLanes(), top);
@@ -3117,7 +2956,7 @@ public class CBHud {
     let crew = CBCrewBook.Get(game);
     if CBMyCrewOn() && IsDefined(crew) && crew.Count() > 0 {
       let out = crew.OutCount();
-      // Into a named list first (2.6.7): ArraySize read straight off the call showed "32758 of 2 ready to call".
+      // Into a named list first: ArraySize read straight off the call showed "32758 of 2 ready to call".
       let readyList = CBCrewReadyOrder(crew, CBGameSeconds(game), 0);
       let ready = ArraySize(readyList);
       let what = out > 0 ? (crew.leaving ? CBT(n"Cyberbane-Hud-HeadingHome") : CBTf(n"Cyberbane-Hud-WithYouNow", [s"\(out)"])) : CBTf(n"Cyberbane-Hud-OfReadyToCall", [s"\(ready)", s"\(crew.Count())"]);
@@ -3176,8 +3015,8 @@ public class CBHud {
         if StrLen(text) == 0 || budget <= 0 {
           this.m_rowCell[cellIdx].SetVisible(false);
         } else {
-          // Too long for the column at its size: drawn smaller, down to CBHudMinCellFont, and only past that
-          // shortened, at a word, so nothing is ever cut through the middle of one (2.5.0).
+          // Too long for the column at its size: drawn smaller, down to CBHudMinCellFont, and only past that shortened,
+          // at a word, so nothing is ever cut through the middle of one.
           let base = col == 0 ? 23 : 22;
           let size = base;
           let len = StrLen(text);
@@ -3228,8 +3067,8 @@ public class CBHud {
     let chrome = score.GetChromeVisible();
     let code = sys.GetCode();
 
-    // While the Street Cred floor holds Renown up (2.5.2), nothing V does moves the number until what Cyberbane has
-    // counted passes it, so the tile says so and shows that count: "it never changes" was the floor, unexplained.
+    // While the Street Cred floor holds Renown up, nothing V does moves the number until what Cyberbane has counted
+    // passes it, so the tile says so and shows that count: "it never changes" was the floor, unexplained.
     let earned = score.GetEarnedRenown();
     let renownCaption = CBT(n"Cyberbane-Hud-HowWidelyNightCityKnowsYour");
     if renown >= earned + 1.0 {
@@ -3238,9 +3077,7 @@ public class CBHud {
     this.SetBar(0, CBT(n"Cyberbane-TitleEngine-Renown"), s"\(RoundF(renown))   \(CBTierName(EnumInt(score.GetTier())))",
       renown / 1000.0, CBHudCyan(), renownCaption);
 
-    // The number is Dread; the word is what the street does with it. The second figure is what
-    // the street actually reads, which is not the same number and never was - it belongs in the
-    // sentence that explains it rather than loose beside the first.
+    // The number is Dread; the word is what the street does with it.
     let civ = score.GetDreadCiv();
     this.SetBar(1, CBT(n"Cyberbane-TitleEngine-Dread"), s"\(RoundF(dread))   \(CBDreadWord(civ))",
       dread / 100.0, CBHudRed(),
@@ -3256,10 +3093,6 @@ public class CBHud {
   }
 
   // The gangs, the ones that want you dead first.
-  //
-  // The list holds ten. Taken in storage order, a hostile gang past the tenth row was simply not
-  // there, and with buying peace now done by clicking a row, a gang that is not on screen is a gang
-  // you cannot pay off. So the hostile and the sworn go in first and everybody else fills the rest.
   private func RenderFactions(sys: ref<CyberbaneSystem>) -> Void {
     this.PlaceRows(CBHudLayoutGangs());
     let score = sys.GetScore();
@@ -3271,9 +3104,8 @@ public class CBHud {
     let states = sys.GetFactionStates();
     let order: array<ref<CBFactionState>>;
     let orderTwr: array<Int32>;
-    // Hostile on sight by somebody else's hand, asked once a draw (CBForeignHostile): They Will
-    // Remember's own verdict, or their people seen hostile to V without Cyberbane having done it. A gang
-    // either says is hostile sorts and reads as hostile whatever Cyberbane's own standing says.
+    // Hostile on sight by somebody else's hand, asked once a draw (CBForeignHostile): They Will Remember's own verdict,
+    // or their people seen hostile to V without Cyberbane having done it.
     let twrHostile: array<Int32>;
     let t = 0;
     while t < ArraySize(states) {
@@ -3311,7 +3143,7 @@ public class CBHud {
       }
       k += 1;
     }
-    // An add-on's cards come after the factions (API/HubCards.reds, 2.7.4), picked by an id no faction has.
+    // An add-on's cards come after the factions (API/HubCards.reds), picked by an id no faction has.
     let hub = CBApiHub.Get(sys.GetGameInstance());
     let apiCount = IsDefined(hub) ? hub.Count() : 0;
     if !pickedOn && IsDefined(CBApiCardOfRowId(sys.GetGameInstance(), this.m_pickFaction)) {
@@ -3343,11 +3175,11 @@ public class CBHud {
     if Equals(posture, ECBPosture.Hostile) { pip = CBHudAmber(); }
     if Equals(posture, ECBPosture.Friendly) || Equals(posture, ECBPosture.Allied) { pip = CBHudGreen(); }
     let postureText = CBPostureName(posture);
-    // Set by hand under How gangs see you in Mod Settings (2.1.0).
+    // Set by hand under How gangs see you in Mod Settings.
     if CBGangViewSet(fs.id) {
       postureText = CBTf(n"Cyberbane-Hud-Set", [postureText]);
     }
-    // Switched off under Factions in Mod Settings (1.9.1): Cyberbane has no posture for them at all.
+    // Switched off under Factions in Mod Settings: Cyberbane has no posture for them at all.
     let off = !CBFactionOn(fs.id);
     if off {
       postureText = CBT(n"Cyberbane-Hud-Off");
@@ -3362,8 +3194,7 @@ public class CBHud {
         postureText = twrHostile == 2 ? CBTf(n"Cyberbane-Hud-Hostile", [CBRememberModShort()]) : CBT(n"Cyberbane-Hud-SeenHostile");
       }
     }
-    // They Will Remember decides who is hostile (1.9.4), and since 2.4.2 the posture itself follows it
-    // (CBActingStanding), so all this adds is whose word it is. A stance set by hand is the player's own.
+    // A stance set by hand is the player's own.
     if !off && !CBGangViewSet(fs.id) && CBTwrOwnsHostility(fs.id) {
       let says = CBTwrGangHostile(sys.GetGameInstance(), fs.id);
       if says >= 0 {
@@ -3387,7 +3218,7 @@ public class CBHud {
       CBTf(n"Cyberbane-Hud-Down-2", [s"\(fs.kills)"]),
       right);
     this.m_rowFaction[row] = fs.id;
-    // Where V stands with them, from the middle: red to the left, green to the right (2.5.0).
+    // Where V stands with them, from the middle: red to the left, green to the right.
     if !off {
       let standing = score.GetStanding(fs.id);
       this.SetRowBar(row, CBHudGangBarX(), CBHudGangBarW(), ClampF(standing / 100.0, -1.0, 1.0),
@@ -3395,9 +3226,8 @@ public class CBHud {
     }
   }
 
-  // The panel under the gangs: the one you clicked, and the button to buy them off.
-  // An add-on's card as a row of the Gangs list (API/HubCards.reds, 2.7.4): its title, its page and subtitle, its colour,
-  // and its pips as a bar.
+  // The panel under the gangs: the one you clicked, and the button to buy them off. An add-on's card as a row of the
+  // Gangs list (API/HubCards.reds): its title, its page and subtitle, its colour, and its pips as a bar.
   private func RenderApiCardRow(hub: ref<CBApiHub>, i: Int32, row: Int32) -> Void {
     let card = IsDefined(hub) ? hub.At(i) : null;
     if !IsDefined(card) {
@@ -3425,13 +3255,13 @@ public class CBHud {
     let width = CBHudContentW() - CBHudActionW() - 40.0;
     if Equals(this.m_pickFaction, n"") {
       this.SetAction("", false);
-      // Under the web, only what its lines mean (2.5.0); the page's own words are the list's.
+      // Under the web, only what its lines mean; the page's own words are the list's.
       this.SetBody(CBHudMarginX(), top, CBHudContentW(), this.m_webShown ? CBWebLegend() : CBHudFactions(sys),
                    CBHudMaxLinesFor(this.m_tab));
       return;
     }
     let id = this.m_pickFaction;
-    // An add-on's card: its lines, and its actions on the page's buttons (API/HubCards.reds, 2.7.4).
+    // An add-on's card: its lines, and its actions on the page's buttons (API/HubCards.reds).
     let apiCard = CBApiCardOfRowId(game, id);
     if IsDefined(apiCard) {
       let text = "";
@@ -3466,23 +3296,23 @@ public class CBHud {
     let gang = CBFactionLabel(id);
     let isOn = CBFactionOn(id);
     let out = StrUpper(gang) + "   " + (isOn ? CBPostureName(posture) : CBT(n"Cyberbane-HubWeb-OFF")) + "\n";
-    // The web says in words what its lines show for this gang (UI/HubWeb.reds, 2.4.3).
+    // The web says in words what its lines show for this gang (UI/HubWeb.reds).
     if this.m_webShown && isOn {
       let ties = CBWebRelationWords(sys, game, id);
       out += CBTf(n"Cyberbane-Hud-ToYou", [(StrLen(ties) > 0 ? ties + " " : ""), s"\(CBPostureName(posture))", s"\(RoundF(score.GetStanding(id)))"]);
     }
     let crewLine = isOn ? CBCrewStandingLine(game, id) : "";
     if StrLen(crewLine) > 0 {
-      out += crewLine + "\n";   // the crew's own standing with them (2.6.0)
+      out += crewLine + "\n";   // the crew's own standing with them
     }
     if !isOn {
       out += CBT(n"Cyberbane-Hud-SwitchedOffUnderFactionsInMod");
     } else {
-      // Set by hand (2.1.0): what they do, and what V has earned with them underneath.
+      // Set by hand: what they do, and what V has earned with them underneath.
       if CBGangViewSet(id) {
         out += CBTf(n"Cyberbane-Hud-SetToUnderHowGangsSee", [CBPostureName(posture), CBPostureName(CBPostureFromStanding(fs.standing))]);
       }
-      out += CBGangBossLines(sys, id);   // their boss, and what where V stands gets V (Model/GangBosses.reds, 2.7.7)
+      out += CBGangBossLines(sys, id);   // their boss, and what where V stands gets V (Model/GangBosses.reds)
     }
     // Two records, said as two (CBForeignHostile): somebody else's is who shoots on sight, and a pay-off
     // or the switch above changes Cyberbane's alone.
@@ -3502,7 +3332,6 @@ public class CBHud {
         out += CBT(n"Cyberbane-Hud-TheirPeopleHaveBeenHostileTo");
       }
     }
-    // Who runs them, which the gang's box on the web said in small type until 2.5.0.
     let leader = CBWebLeader(sys, game, id);
     if StrLen(leader) > 0 {
       out += CBTf(n"Cyberbane-Hud-LedBy", [s"\(leader)"]);
@@ -3512,7 +3341,7 @@ public class CBHud {
       out += CBTf(n"Cyberbane-Hud-AtWarWithHurtingIsHow", [enemy, enemy]);
     }
     out += CBTf(n"Cyberbane-Hud-OfTheirsDownTheyFearYou", [s"\(fs.kills)", s"\(RoundF(score.GetFactionFear(id)))"]);
-    // Fear against hatred, on their streets (Reactions/Morale.reds, 1.9.5).
+    // Fear against hatred, on their streets (Reactions/Morale.reds).
     if isOn && CBGangBroken(sys, id) {
       out += CBT(n"Cyberbane-Hud-TheyAreBrokenTheirPeopleFear");
     } else {
@@ -3525,14 +3354,14 @@ public class CBHud {
         }
       }
     }
-    // What talking to their people has done today (Reactions/StreetTalk.reds, 1.9.6).
+    // What talking to their people has done today (Reactions/StreetTalk.reds).
     let talked = CBHudTalkToday(sys, id);
     if StrLen(talked) > 0 {
       out += talked + "\n";
     }
     let status = CBHudGangStatus(sys, fs);
-    let war = CBWarWords(game, id);   // their chest, their ranks, backed by V, a truce (Economy/War.reds, 2.4.0)
-    let heat = CBHeatWord(game, fs);  // still hot, or cooling off (Spawn/Hunted.reds, 2.4.1)
+    let war = CBWarWords(game, id);   // their chest, their ranks, backed by V, a truce (Economy/War.reds)
+    let heat = CBHeatWord(game, fs);  // still hot, or cooling off (Spawn/Hunted.reds)
     if StrLen(heat) > 0 {
       war = StrLen(war) > 0 ? heat + ", " + war : heat;
     }
@@ -3565,8 +3394,8 @@ public class CBHud {
         this.SetAction("", false);
       }
     }
-    // Below the price, so the page can only ever lose these to its line limit, never the price: what the street
-    // knows V by (Model/StreetBook.reds, 2.3.1), and their code as V has learnt it (Data/GangCodes.reds, 2.3.2).
+    // Below the price, so the page can only ever lose these to its line limit, never the price: what the street knows V
+    // by (Model/StreetBook.reds), and their code as V has learnt it (Data/GangCodes.reds).
     let knownBy = CBKnownByLine(game);
     if StrLen(knownBy) > 0 {
       out += "\n" + knownBy;
@@ -3621,9 +3450,8 @@ public class CBHud {
     }
   }
 
-  // Who holds each district (Model/Territory.reds). One row a district: the gang that holds it,
-  // a bar for how much of it they hold, and one word or two for what is going on there. Nothing on
-  // it is clickable, because there is nothing to do here but read it. Returns how many rows it drew.
+  // Who holds each district (Model/Territory.reds). One row a district: the gang that holds it, a bar for how much of
+  // it they hold, and one word or two for what is going on there.
   private func RenderTurf(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int32 {
     this.PlaceRows(CBHudLayoutWide());
     let shown = 0;
@@ -3702,9 +3530,6 @@ public class CBHud {
     let rivals = sys.GetRivals();
     // Everybody still after V, and the page shows a window onto it. It used to stop at ten, and the
     // setting goes higher: "I have 14 max rivals but can see 10".
-    //
-    // The one who is actually coming goes first, so the name the Standing screen gives as incoming
-    // is always at the top of this screen, whatever the cap is.
     let order: array<ref<CBRival>>;
     let queuedId = sys.GetLaneRivalId(CBLaneRival());
     let pinned = sys.FindRivalById(queuedId);
@@ -3714,9 +3539,8 @@ public class CBHud {
     } else {
       queuedId = 0;
     }
-    // Then whoever is out there right now, the one leading and anybody with them (1.9.0), then the
-    // rest. In roster order a team's second and third names could sit below the fold while they shot
-    // at V.
+    // Then whoever is out there right now, the one leading and anybody with them, then the rest. In roster order a
+    // team's second and third names could sit below the fold while they shot at V.
     let game = sys.GetGameInstance();
     let pass = 0;
     while pass < 2 {
@@ -3746,8 +3570,8 @@ public class CBHud {
     if !pickedOn {
       this.m_pickRival = ArraySize(order) > 0 ? order[0].id : 0;
     }
-    // Drawn as a hierarchy (1.9.4): each gang's line, then its leader, its lieutenants and the rest, in
-    // the order of `order` for the gangs, so whoever is coming or already here is at the top.
+    // Drawn as a hierarchy: each gang's line, then its leader, its lieutenants and the rest, in the order of `order`
+    // for the gangs, so whoever is coming or already here is at the top.
     let gangs: array<CName>;
     for o in order {
       if !ArrayContains(gangs, o.faction) {
@@ -3809,7 +3633,7 @@ public class CBHud {
     if Equals(posture, ECBPosture.Hostile) { pip = CBHudAmber(); }
     let label = CBBarFactionLabel(faction);
     if StrLen(label) == 0 {
-      // Rivals of no gang (2.5.3): an empty name prints as "None"; the cards call the group the same.
+      // Rivals of no gang: an empty name prints as "None"; the cards call the group the same.
       label = Equals(faction, n"") ? CBT(n"Cyberbane-Hud-NOGANG") : StrUpper(NameToString(faction));
     }
     let strength = CBTurfWarsOn() ? CBGangStrengthWord(CBGangStrength(sys, faction)) : "";
@@ -3819,9 +3643,9 @@ public class CBHud {
       "",
       strength,
       "",
-      n == 1 ? CBT(n"Cyberbane-Hud-1Rival") : CBTf(n"Cyberbane-Hud-Rivals", [s"\(n)"]));   // a count, not a claim they are all out looking (2.5.5)
+      n == 1 ? CBT(n"Cyberbane-Hud-1Rival") : CBTf(n"Cyberbane-Hud-Rivals", [s"\(n)"]));   // a count, not a claim they are all out looking
     this.m_rowRival[row] = 0;
-    // How much is left of them, where their Rivals show their rank (2.5.0).
+    // How much is left of them, where their Rivals show their rank.
     if CBTurfWarsOn() {
       this.SetRowBar(row, CBHudRankBarX(), CBHudRankBarW(), ClampF(CBGangStrength(sys, faction), 0.0, 100.0) / 100.0, CBHudGrey());
     }
@@ -3887,13 +3711,12 @@ public class CBHud {
       "",
       rightCol);
     this.m_rowRival[row] = r.id;
-    // Their rank, one to four, as a bar (2.5.0).
+    // Their rank, one to four, as a bar.
     this.SetRowBar(row, CBHudRankBarX(), CBHudRankBarW(), Cast<Float>(Clamp(r.rank, 1, 4)) / 4.0, hunting ? CBHudRed() : CBHudAmber());
   }
 
-  // The panel under the Rivals: the file on the one you clicked, and three buttons beside it - buy
-  // where they are, forget them, forget everybody. Each asks twice, and each can be taken back until
-  // the game is unpaused, when it is carried out.
+  // The panel under the Rivals: the file on the one you clicked, and three buttons beside it - buy where they are,
+  // forget them, forget everybody.
   private func RenderRivalDetail(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     let top = CBHudContentTop() + Cast<Float>(CBHudListRows()) * CBHudRowHeight() + 24.0;
     let width = CBHudContentW() - CBHudActionW() - 40.0;
@@ -3951,8 +3774,7 @@ public class CBHud {
           }
         }
       }
-      // 2. Call them out (1.9.9): beside finding them, both being ways to meet them (2.7.6: it sat between the two
-      // Forgets).
+      // 2. Call them out: next to finding them, both being ways to meet them.
       let bookH = CBIntelBook.Get(game);
       if !CBSendWordOn() || !IsDefined(r) {
         this.SetExtra(1, "", false);
@@ -3995,7 +3817,7 @@ public class CBHud {
     let onAuto = Equals(chosen, n"");
     let autoLabel = ArraySize(earned) > 0 ? CBTf(n"Cyberbane-Hud-Automatic", [CBHudActiveTitle(sys)]) : CBT(n"Cyberbane-Hud-Automatic-2");
     // Automatic, then every title V has earned, then the rest, and the page shows a window onto them. There are more
-    // titles than rows now (2.5.0), and the last of them had simply fallen off the end.
+    // titles than rows now, and the last of them had simply fallen off the end.
     let defs: array<ref<CBTitleDef>>;
     let none: ref<CBTitleDef>;
     ArrayPush(defs, none);
@@ -4037,7 +3859,7 @@ public class CBHud {
     }
   }
 
-  // ---- The web of gangs ([H1], UI/HubWeb.reds, 2.4.3) ------------------------------------------------------------
+  // ---- The web of gangs ([H1], UI/HubWeb.reds) ------------------------------------------------------------
 
   // Built once with the page. Every widget is the Hub's own kind: thin rectangles for lines, its clickable box for the
   // places. Nothing takes a click but the boxes.
@@ -4050,7 +3872,7 @@ public class CBHud {
     web.Reparent(panel, -1);
     web.SetVisible(false);
     this.m_webRoot = web;
-    // The glows first, so every one is under every line (2.5.0).
+    // The glows first, so every one is under every line.
     let g = 0;
     while g < CBWebLinePool() {
       let glow = this.NewRect(web, CBHudGrey());
@@ -4082,7 +3904,7 @@ public class CBHud {
       let h = CBWebSlotH(i);
       let box = this.NewBox(web, name, CBWebSlotX(i), CBWebSlotY(i), w, h);
       let bg = this.NewBand(box, CBHudClear());
-      // The game's own card under the words, and its frame round them (2.5.0); both coloured by PaintWeb.
+      // The game's card under the words, and its frame round them; both coloured by PaintWeb.
       ArrayPush(this.m_webBoxArt, this.NewGameArt(box, n"cell_bg", CBHudGameCell()));
       ArrayPush(this.m_webBoxFrame, this.NewGameArt(box, n"cell_fg", CBHudGameCellEdge()));
       let edge = this.NewRect(box, CBHudGrey());
@@ -4149,7 +3971,7 @@ public class CBHud {
   // A place picked by click, key or pad: its gang is the pick, as a row is on the list; V's own place, or the one
   // already picked, clears it.
   private func WebPick(sys: ref<CyberbaneSystem>, game: GameInstance, slot: Int32) -> Void {
-    // V's crew's card (2.6.0): the Crew page's screen for the crew itself.
+    // V's crew's card: the Crew page's screen for the crew itself.
     if slot == 0 && this.m_crewCardShown {
       this.m_crewMode = 7;
       this.m_pickFallen = 0;
@@ -4181,11 +4003,10 @@ public class CBHud {
     }
   }
 
-  // ---- The Rivals tree ([H2], 2.4.4) -------------------------------------------------------------------------------
+  // ---- The Rivals tree ([H2]) -------------------------------------------------------------------------------
 
-  // The gangs that have Rivals to draw, in roster order.
-  // Every gang with a Rival on the roster, and last a group of its own for Rivals of no gang (2.5.3), whom the list showed
-  // and the cards never did.
+  // The gangs that have Rivals to draw, in roster order. Every gang with a Rival on the roster, and last a group of its
+  // own for Rivals of no gang, whom the list showed and the cards never did.
   private func TreeGangs(sys: ref<CyberbaneSystem>) -> array<CName> {
     let out: array<CName>;
     let gangless = false;
@@ -4248,7 +4069,7 @@ public class CBHud {
     this.m_treeSlotRival[slot] = IsDefined(r) ? r.id : 0;
     let tint = CBHudGrey();
     let name = CBT(n"Cyberbane-Hud-EMPTYCHAIR");
-    // Who steps up, by name without the nickname so it fits whole (2.5.0); said once, in the first empty chair.
+    // Who steps up, by name without the nickname so it fits whole; said once, in the first empty chair.
     let line = StrLen(empty) > 0 ? CBTf(n"Cyberbane-Hud-NEXT", [StrUpper(CBHudNameNoNick(empty))]) : CBT(n"Cyberbane-Hud-NOBODYYET");
     let lead = "";
     let leadTint = CBHudDim();
@@ -4260,7 +4081,7 @@ public class CBHud {
         let book = CBRivalBook.Get(game);
         let how = IsDefined(book) ? book.Ending(r.id) : CBEndingNone();
         if r.state == EnumInt(ECBRivalState.Retired) {
-          // One of V's crew now (2.7.7): said so, not "left Night City".
+          // One of V's crew now: said so, not "left Night City".
           if CBRivalRunsWithV(game, r) {
             line = CBT(n"Cyberbane-Hud-RUNSWITHYOU");
             tint = CBHudCyan();
@@ -4272,9 +4093,8 @@ public class CBHud {
         }
       } else {
         line = CBTf(n"Cyberbane-Hud-RANK", [s"\(r.rank)", StrUpper(hunting ? CBT(n"Cyberbane-Hud-HuntingYou") : CBRivalStateName(r.state))]);
-        // Who they are to V or to another of theirs, in words (2.5.0): a bond and V's oldest grudge were lines across the
-        // tree from the middle of one box to the middle of another, and showed only as strokes in the air between
-        // them. Otherwise what V and they have been through, or that they have never met.
+        // Who they are to V or to another of theirs, in words: a bond and V's oldest grudge were lines across the tree
+        // from the middle of one box to the middle of another, and showed only as strokes in the air between them.
         let bookT = CBRivalBook.Get(game);
         let with = IsDefined(bookT) ? bookT.BondWith(r.id) : 0;
         let partner = with > 0 ? sys.FindRivalById(with) : null;
@@ -4311,13 +4131,13 @@ public class CBHud {
     if IsDefined(this.m_webBarChest[slot]) {
       this.m_webBarChest[slot].SetVisible(false);
     }
-    // Nothing faded (2.5.0): a faded card showed whatever was under it through its words. The picked one lights up.
+    // Nothing faded: a faded card showed whatever was under it through its words. The picked one lights up.
     this.m_webBox[slot].SetOpacity(1.0);
   }
 
   // A gang's leader, their three lieutenants, the rest of their Rivals as the bench, and the fallen, top down: the
   // hierarchy that already exists (CBFactionState leader and lieutenants), with the first empty chair naming who steps
-  // up next (the order CBHierarchyFill uses). A bond, and V's oldest grudge, are said in the box (TreeBox), not drawn.
+  // up next (the order CBHierarchyFill uses).
   private func RenderTree(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     if !IsDefined(this.m_webRoot) {
       return;
@@ -4356,15 +4176,14 @@ public class CBHud {
         this.m_webBoxLine[0].SetText(ArraySize(gangs) > 1 ? CBT(n"Cyberbane-Hud-NEXTGANG") : CBT(n"Cyberbane-Hud-YOU"));
       }
     }
-    // Drawn whether or not the gang has a record (2.5.3): this asked for one, and a gang V had never killed one of or paid
-    // off had none, so its Rival was in the list and the cards said "No Rivals yet". Without one nobody holds a chair,
-    // and every Rival of theirs is in the rest.
+    // Drawn whether or not the gang has a record: this asked for one, and a gang V had never killed one of or paid off
+    // had none, so its Rival was in the list and the cards said "No Rivals yet".
     if ArraySize(gangs) == 0 || Equals(gang, n"") {
       this.PlaceWord(words, 660.0, 200.0, CBT(n"Cyberbane-Hud-NoRivalsYet"), CBHudGrey(), 1.0);
       words += 1;
     } else {
-      // Rows, each named on the left (2.5.0): the leader, the lieutenants, the rest, the fallen. No lines between them:
-      // the chair lines and the bond lines crossed the boxes wherever they were drawn.
+      // Rows, each named on the left: the leader, the lieutenants, the rest, the fallen. No lines between them: the
+      // chair lines and the bond lines crossed the boxes wherever they were drawn.
       let gangName = Equals(gang, CBTreeNoGang()) ? CBT(n"Cyberbane-Hud-NoGang") : CBFactionLabel(gang);
       let label = StrUpper(StrLen(gangName) > 0 ? gangName : NameToString(gang));
       if ArraySize(gangs) > 1 {
@@ -4481,11 +4300,8 @@ public class CBHud {
     word.SetVisible(true);
   }
 
-  // Filled from the books as the page is drawn: nothing per frame.
-  // The gangs as cards (2.5.0): a grid, the ones that want V dead first, then the corporations and the police in a row of
-  // their own. Each card is the gang, where it stands with V in a word and a bar from red to green, and the one thing
-  // most worth knowing: what is live between them and V, or who they are at war with. No lines: the web drew a line
-  // from V to every gang and between gangs at war, and however it was laid out the lines crossed boxes and words.
+  // Filled from the books as the page is drawn: nothing per frame. The gangs as cards: a grid, the ones that want V
+  // dead first, then the corporations and the police in a row of their own.
   private func RenderWeb(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     let score = sys.GetScore();
     if !this.WebPoolReady() || !IsDefined(score) {
@@ -4521,8 +4337,8 @@ public class CBHud {
                     w, h, false);
       n += 1;
     }
-    // V's crew in the row beneath, first beside the corporations and the law (2.6.4). It had the grid's one empty place,
-    // and twelve gangs leave none: with the Scrappers it would have gone from the page.
+    // V's crew in the row beneath, first beside the corporations and the law. It had the grid's one empty place, and
+    // twelve gangs leave none: with the Scrappers it would have gone from the page.
     this.m_crewCardShown = false;
     let crew = this.CrewCardWanted(game);
     let across = crew ? 5 : 4;
@@ -4544,16 +4360,15 @@ public class CBHud {
     this.PaintWeb();
   }
 
-  // V's crew among the gangs (2.6.0), in the box the web once drew V in: its name and colours, and how the gang picked
-  // stands with it, or else the one that thinks least of it. Clicked, the Crew page's screen for the crew itself.
-  // Is there a crew to show: on, with somebody on the roster or a banner standing or fallen.
+  // V's crew among the gangs, in the box the web once drew V in: its name and colours, and how the gang picked stands
+  // with it, or else the one that thinks least of it. Clicked, the Crew page's screen for the crew itself.
   private func CrewCardWanted(game: GameInstance) -> Bool {
     let book = CBCrewBook.Get(game);
     let bb = CBCrewBannerBook.Get(game);
     return CBMyCrewOn() && IsDefined(book) && IsDefined(bb) && (book.Count() > 0 || bb.StandCount() > 0 || bb.FallenCount() > 0);
   }
 
-  // Small (2.6.4) in the row beneath the gangs: its name and roster on two lines, the bar for the gang, no third line.
+  // Small in the row beneath the gangs: its name and roster on two lines, the bar for the gang, no third line.
   private func CrewWebCard(sys: ref<CyberbaneSystem>, game: GameInstance, x: Float, y: Float, w: Float, h: Float) -> Void {
     let book = CBCrewBook.Get(game);
     let bb = CBCrewBannerBook.Get(game);
@@ -4615,7 +4430,7 @@ public class CBHud {
       return;
     }
     // What is live between them and V, else who they are at war with. With a gang picked, every other card says instead
-    // how it stands with that one, so one click reads the whole web for it (2.5.0): the lines the web drew, in words.
+    // how it stands with that one, so one click reads the whole web for it: the lines the web drew, in words.
     let tag = CBWebVWord(sys, game, gang);
     let tagTint = CBWebVWordTint(tag);
     let picked = this.m_pickFaction;
@@ -4705,7 +4520,7 @@ public class CBHud {
     }
   }
 
-  // ---- The pool's boxes, dressed for each drawing (2.5.0) --------------------------------------------------------
+  // ---- The pool's boxes, dressed for each drawing --------------------------------------------------------
 
   // The size of each of a box's three lines, whether the first two are centred, and where each sits. Every drawing
   // dresses the boxes it uses, so none inherits another drawing's sizes.
@@ -4809,7 +4624,7 @@ public class CBHud {
     if s < 0 || s >= ArraySize(this.m_webBarMen) {
       return;
     }
-    // The plain bars are the web's; a picture of these segments instead (2.5.0).
+    // The plain bars are the web's; a picture of these segments instead.
     if IsDefined(this.m_webBarMen[s]) { this.m_webBarMen[s].SetVisible(false); }
     if s < ArraySize(this.m_webBarChest) && IsDefined(this.m_webBarChest[s]) { this.m_webBarChest[s].SetVisible(false); }
     let two = b >= 0.0;
@@ -4856,14 +4671,9 @@ public class CBHud {
     }
   }
 
-  // ---- Night City as a map (2.5.0) ---------------------------------------------------------------------------------
+  // ---- Night City as a map ---------------------------------------------------------------------------------
 
-  // Each district a box where it lies, joined by its roads. On the Turf page a box is the gang holding it, coloured by
-  // how they treat V, with their hold and V's name there as two bars; on the City page it is V's renown there, coloured
-  // by how hot V's name runs. Click a district for the whole of it underneath.
-  // The districts as cards (2.5.0): two rows of four, in the order the game lists them. On Turf a card is who holds the
-  // district, coloured by how they treat V, with how firmly as its bar and what is moving there; on The City it is V's
-  // renown there. The district V is in has a white frame. No roads: lines between the boxes crossed them.
+  // Each district a box where it lies, joined by its roads.
   private func RenderMap(sys: ref<CyberbaneSystem>, game: GameInstance, turf: Bool) -> Void {
     let score = sys.GetScore();
     if !this.WebPoolReady() {
@@ -4919,7 +4729,7 @@ public class CBHud {
             barTint = Equals(posture, ECBPosture.Neutral) ? CBHudCyan() : tint;
             line = CBTf(n"Cyberbane-Hud-Hold", [s"\(CBCapFirst(CBPhoneGangSender(holder)))", s"\(RoundF(shares[top] * 100.0))"]);
             if CBIsCrewTurf(holder) {
-              tint = CBCrewColour(game);   // V's crew holds it (2.7.6), in its own colours
+              tint = CBCrewColour(game);   // V's crew holds it, in its own colours
               barTint = tint;
             }
             lead = CBHudTurfStatus(game, content, d, holder, ids, shares, second);
@@ -4964,8 +4774,8 @@ public class CBHud {
   // Under the map: what it shows, or everything about the district picked.
   private func MapDetail(sys: ref<CyberbaneSystem>, game: GameInstance, turf: Bool) -> String {
     let d = this.m_pickDistrict;
-    // Nothing picked: only what the map shows (2.5.0). The page's own words, the gangs you have broken and every
-    // district's story, are the list's, where there is room for them.
+    // Nothing picked: only what the map shows. The page's own words, the gangs you have broken and every district's
+    // story, are the list's, where there is room for them.
     if Equals(d, n"") {
       return turf ? CBT(n"Cyberbane-Hud-EachCardIsADistrictAnd")
                   : CBT(n"Cyberbane-Hud-EachCardIsADistrictAnd-2");
@@ -5041,7 +4851,7 @@ public class CBHud {
     } else {
       out += CBT(n"Cyberbane-Hud-YouHaveNotMadeAnyTrouble");
     }
-    out += CBCrewMapLines(sys, game, d);   // the crew's people, wars and corners here (2.7.7)
+    out += CBCrewMapLines(sys, game, d);   // the crew's people, wars and corners here
     return out;
   }
 
@@ -5054,7 +4864,7 @@ public class CBHud {
     this.Render(sys, game);
   }
 
-  // ---- The crew (Reactions/Crew.reds, 2.5.0) --------------------------------------------------------------------------
+  // ---- The crew (Reactions/Crew.reds) --------------------------------------------------------------------------
 
   // V's crew: as a picture with V in the middle, or as a list, then the picked one's file and what can be done.
   private func RenderCrew(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
@@ -5094,11 +4904,7 @@ public class CBHud {
       let rows = this.RenderCrewRows(sys, game, book, offer);
       top += Cast<Float>(Max(rows, 1)) * CBHudRowHeight() + 24.0;
     }
-    // What can be done (2.7.6): the buttons follow the pick, top to bottom. The picked one first: "Need you. Now." calls
-    // just them, or sends just them home while they're with V (the solo on offer, picked, is hired there instead); then
-    // their orders; then the whole crew, called or sent home the same as the crew key in Mod Settings; then the crew's own
-    // page (war, money, name, the fallen). The cut is paid on that page now: five buttons do not fit above the footer.
-    // "Clicking on a crew member and choosing Need you. Now. should call only them; keep a Call your crew button."
+    // What can be done: the buttons follow the pick, top to bottom. The picked one first: "Need you.
     let m = this.m_pickCrew > 0 ? book.Find(this.m_pickCrew) : null;
     let why = "";
     let oneWhy = "";
@@ -5176,12 +4982,12 @@ public class CBHud {
     if book.Count() > 0 || (IsDefined(bbPage) && bbPage.FallenCount() > 0) {
       this.SetExtra(3, CBT(n"Cyberbane-Hud-WarMoneyNameFallen"), true, CBT(n"Cyberbane-Hud-HelpCrewPage"));
     }
-    // The picked one in a line or two; everything about them is on the Member view (2.7.7). Written out whole here, it ran
-    // past its lines and stopped at "Rookie, rank 1 of ...".
+    // The picked one in a line or two; everything about them is on the Member view. Written out whole here, it ran past
+    // its lines and stopped at "Rookie, rank 1 of...".
     let file = this.m_pickCrew == -1 ? CBCrewFile(sys, game, book, m, true) : CBCrewRosterLine(sys, game, book, m);
     let crewName = CBCrewNameOf(game);
     let named = StrLen(crewName) > 0 ? StrUpper(crewName) + "\n" : "";
-    named += CBCrewPowerLine(sys, game);   // what the crew counts for, and the streets it holds (2.7.6)
+    named += CBCrewPowerLine(sys, game);   // what the crew counts for, and the streets it holds
     let kbWars = CBCrewKitBook.Get(game);
     if IsDefined(kbWars) && kbWars.WarsWon() > 0 {
       named += CBTf(n"Cyberbane-Hud-WarsYourCrewStartedAndWon", [s"\(kbWars.WarsWon())"]);
@@ -5191,8 +4997,8 @@ public class CBHud {
     this.SetBody(x, top, anything ? w - CBHudActionW() - 40.0 : w, text, CBHudMaxLinesFor(this.m_tab));
   }
 
-  // The Crew page's other screens (2.6.0): a member's orders and the lists they pick from, the crew's own record,
-  // naming it, and the memorial. False when there is nobody to show it for.
+  // The Crew page's other screens: a member's orders and the lists they pick from, the crew's own record, naming it,
+  // and the memorial. False when there is nobody to show it for.
   private func RenderCrewMode(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>) -> Bool {
     let x = CBHudMarginX();
     let w = CBHudContentW();
@@ -5273,7 +5079,7 @@ public class CBHud {
           ArrayPush(this.m_pickItems, c);
         }
       }
-      // Through the list window (2.7.4), so a bag of more than one screen scrolls like every other list: it stopped at the
+      // Through the list window, so a bag of more than one screen scrolls like every other list: it stopped at the
       // first ten.
       let i = this.ListWindow(ArraySize(this.m_pickItems), CBHudListRows());
       while i < ArraySize(this.m_pickItems) && row < CBHudListRows() {
@@ -5286,7 +5092,7 @@ public class CBHud {
           tier = CBCrewTierWord(CBCrewTierOf(RPGManager.GetItemQuality(data)));
           kind = this.m_crewMode == 1 ? CBCrewSeatWord(CBCrewSeatForWeapon(data.GetItemType()))
                                       : CBCrewChromeNumbers(CBCrewChromeRead(ItemID.GetTDBID(id)), 2);
-          // Before it goes in (2.7.7): "Armour x1.30 -> x1.48".
+          // Before it goes in: "Armour x1.30 -> x1.48".
           if this.m_crewMode == 2 && IsDefined(m) {
             change = CBCrewChromeChange(game, m, ItemID.GetTDBID(id));
           }
@@ -5307,7 +5113,7 @@ public class CBHud {
       }
     }
     this.SetAction(CBT(n"Cyberbane-Hud-Back"), true, CBT(n"Cyberbane-Hud-HelpBack"));
-    // Why some of V's chrome is not in the list (2.7.7): it only works for V.
+    // Why some of V's chrome is not in the list: it only works for V.
     if this.m_crewMode == 2 {
       let left = CBCrewChromeLeftOut(game);
       if left > 0 {
@@ -5319,9 +5125,9 @@ public class CBHud {
     return true;
   }
 
-  // Everything about one of them on one screen (2.7.7, the Member view): their story on the left; on the right their
-  // numbers as the game gets them when they are called, the weapon slot and each chrome slot (a click puts something in),
-  // and their rank with how far it is to the next. The buttons are the roster's.
+  // Everything about one of them on one screen (the Member view): their story on the left; on the right their numbers
+  // as the game gets them when they are called, the weapon slot and each chrome slot (a click puts something in), and
+  // their rank with how far it is to the next.
   private func RenderCrewMember(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, m: ref<CBCrewMember>) -> Void {
     this.PlaceRows(CBHudLayoutMember());
     let now = CBGameSeconds(game);
@@ -5395,8 +5201,8 @@ public class CBHud {
     this.SetExtra(3, CBT(n"Cyberbane-Hud-WarMoneyNameFallen"), true, CBT(n"Cyberbane-Hud-HelpCrewPage"));
   }
 
-  // One member's orders (2.6.0), a row each, carried out back in the game. One asked for says so, and clicked again
-  // before then is taken back.
+  // One member's orders, a row each, carried out back in the game. One asked for says so, and clicked again before then
+  // is taken back.
   private func RenderCrewOrders(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, m: ref<CBCrewMember>) -> Void {
     let now = CBGameSeconds(game);
     let kb = CBCrewKitBook.Get(game);
@@ -5462,7 +5268,7 @@ public class CBHud {
     if next == 4 { workLabel = CBT(n"Cyberbane-CrewJobs-PutThemOnTheMoney"); }
     this.CrewOrderRow(5, CBCrewAskWork(), asked ? CBT(n"Cyberbane-Hud-TellingThem") : workLabel, free || asked, asked,
                       CBTf(n"Cyberbane-Hud-Now", [s"\(CBCrewWorkWord(work))"]), work == 1 ? CBTf(n"Cyberbane-Hud-EBADAY", [s"\(CBConfig.CrewEarnPerRank() * rank)"]) : "");
-    // A job (2.7.2): a Rival's hit or a gang's bag, from Soldier up.
+    // A job: a Rival's hit or a gang's bag, from Soldier up.
     let onJob = CBCrewJobAway(game, m.id, now);
     if !CBCrewJobsOn() {
       this.CrewOrderRow(6, CBCrewAskJob(), CBT(n"Cyberbane-CrewJobs-SendThemOnAJob"), false, false, CBT(n"Cyberbane-CrewJobs-JobsOff"), "");
@@ -5487,12 +5293,12 @@ public class CBHud {
       this.CrewOrderRow(7, CBHudCrewOrderLetGo(), this.m_letGoArmed == m.id ? CBT(n"Cyberbane-Hud-ClickAgainToLetGo") : CBT(n"Cyberbane-Hud-LetThemGo"), !out, false,
                         out ? CBT(n"Cyberbane-Hud-WithYouWait") : "", "");
     }
-    // Called or sent home on their own: the crew page's first button with them picked (2.7.6), so not a row here as well.
-    // A name of V's choosing (2.7.6).
+    // Called or sent home on their own: the crew page's first button with them picked, so not a row here as well. A
+    // name of V's choosing.
     let given = CBCrewGivenNameOf(m.id);
     this.CrewOrderRow(8, CBHudCrewOrderRename(), CBT(n"Cyberbane-Hud-RenameThem"), true, false,
                       StrLen(given) > 0 ? given : CBT(n"Cyberbane-Hud-TheNameTheyCameWith"), "");
-    // Their ask, answered here when it is one the Hub answers (a day off, a cut); else V's second (2.7.7).
+    // Their ask, answered here when it is one the Hub answers (a day off, a cut); else V's second.
     let lbOrd = CBCrewLifeBook.Get(game);
     let askHere = IsDefined(lbOrd) && lbOrd.AskId() == m.id && (lbOrd.AskKind() == CBAskDayOff() || lbOrd.AskKind() == CBAskCut());
     if askHere {
@@ -5524,15 +5330,15 @@ public class CBHud {
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, text, CBHudMaxLinesFor(this.m_tab));
   }
 
-  // A job's targets (2.7.2): the Rivals V knows that the crew can go after, from Veteran up, then the gangs whose bags they
-  // can take, with the odds each.
+  // A job's targets: the Rivals V knows that the crew can go after, from Veteran up, then the gangs whose bags they can
+  // take, with the odds each.
   private func RenderCrewJobs(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, m: ref<CBCrewMember>) -> Void {
     this.PlaceRows(CBHudLayoutCrew());
     ArrayClear(this.m_pickJobRival);
     ArrayClear(this.m_pickJobGang);
     let now = CBGameSeconds(game);
     let rank = CBCrewRankOf(game, m);
-    // Every target first, then a window of them (2.7.4): the list stopped at the first ten rows.
+    // Every target first, then a window of them: the list stopped at the first ten rows.
     if rank >= CBConfig.CrewHitMinRank() {
       for r in sys.GetRivals() {
         if CBCrewHitTarget(sys, game, r) {
@@ -5574,7 +5380,7 @@ public class CBHud {
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, intro, CBHudMaxLinesFor(this.m_tab));
   }
 
-  // Who answers a challenge (2.7.2): anybody here and not hurt, with the odds each.
+  // Who answers a challenge: anybody here and not hurt, with the odds each.
   private func RenderCrewDuel(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>) -> Void {
     this.PlaceRows(CBHudLayoutCrew());
     ArrayClear(this.m_pickDuel);
@@ -5632,8 +5438,8 @@ public class CBHud {
     if code == CBCrewAskGive() { this.m_crewMode = 1; }
     if code == CBCrewAskChrome() { this.m_crewMode = 2; }
     if code == CBCrewAskJob() { this.m_crewMode = 8; }
-    // A war (2.7.6): the same two screens as the crew page's Go to war, with them already in the party. It had a list of
-    // gangs of its own, with other columns, that went to the same party screen.
+    // A war: the same two screens as the crew page's Go to war, with them already in the party. It had a list of gangs
+    // of its own, with other columns, that went to the same party screen.
     if code == CBCrewAskWar() {
       let wbGo = CBCrewWarBook.Get(game);
       if IsDefined(wbGo) {
@@ -5649,7 +5455,7 @@ public class CBHud {
       kb.Ask(id, code, noItem, n"");
       CBCrewKitDoNow(CyberbaneSystem.Get(game), game);   // all but a spar, here and now
     }
-    // Only words and books (2.7.7): V's second named or stood down, an ask answered, here and now.
+    // Only words and books: V's second named or stood down, an ask answered, here and now.
     if code == CBHudCrewOrderSecond() || code == CBHudCrewOrderAsk() {
       let sysO = CyberbaneSystem.Get(game);
       let mo = cb.Find(id);
@@ -5692,8 +5498,8 @@ public class CBHud {
     }
   }
 
-  // The crew itself (2.6.0): its name, its colours, the memorial, and its own standing with each gang, worst first.
-  // Going to war, first (2.7.6): the gangs the crew can go to war on, each with what it weighs.
+  // The crew itself: its name, its colours, the memorial, and its own standing with each gang, worst first. Going to
+  // war, first: the gangs the crew can go to war on, each with what it weighs.
   private func RenderWarTargets(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     this.PlaceRows(CBHudLayoutCrew());
     this.m_pickGangs = CBCrewWarTargets(sys);
@@ -5713,7 +5519,7 @@ public class CBHud {
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, intro, CBHudMaxLinesFor(this.m_tab));
   }
 
-  // Then who goes (2.7.6): the roster, each with what they weigh and why anybody cannot go; the two sides weighed, and the
+  // Then who goes: the roster, each with what they weigh and why anybody cannot go; the two sides weighed, and the
   // odds, before anybody leaves.
   private func RenderWarParty(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>) -> Void {
     let wb = CBCrewWarBook.Get(game);
@@ -5777,12 +5583,12 @@ public class CBHud {
     this.PlaceRows(CBHudLayoutCrew());
     let name = CBCrewNameOf(game);
     let row = 0;
-    // What the page is for, first (2.7.6): war and money, then the name, the colours and the fallen, then the gangs' view.
-    // Go to war (Reactions/CrewWar.reds): which gang, then who goes.
+    // What the page is for, first: war and money, then the name, the colours and the fallen, then the gangs' view. Go
+    // to war (Reactions/CrewWar.reds): which gang, then who goes.
     this.SetRow(row, CBHudLayoutCrew(), CBHudLabel(), true, false, CBT(n"Cyberbane-CrewWar-GoToWar"), "", "", CBCrewWarsOnWord(game), "", "");
     this.m_rowCrew[row] = 7;
     row += 1;
-    // The cut, paid here (2.7.6): it was a button on the roster, which has the calls now. Carried out back in the game.
+    // The cut, paid here: it was a button on the roster, which has the calls now. Carried out back in the game.
     let owed = book.CutOwed();
     if owed > 0 || book.reqPay {
       let canPay = book.reqPay || CBHudEddies(game) >= owed;
@@ -5792,7 +5598,7 @@ public class CBHud {
       this.m_rowCrew[row] = 8;
       row += 1;
     }
-    // The kitty (2.7.2): taken at home.
+    // The kitty: taken at home.
     let jbRec = CBCrewJobBook.Get(game);
     if IsDefined(jbRec) && CBCrewJobsOn() {
       let kitty = jbRec.Kitty();
@@ -5826,7 +5632,7 @@ public class CBHud {
                 CBT(n"Cyberbane-Hud-ClickForTheNext"), "", "");
     this.m_rowCrew[row] = 2;
     row += 1;
-    // The crew's home (2.7.7): one of V's places, made theirs while V stands in it.
+    // The crew's home: one of V's places, made theirs while V stands in it.
     let lbHome = CBCrewLifeBook.Get(game);
     let atHome = CBOnHomeGround(game);
     if IsDefined(lbHome) && (atHome || lbHome.HomeSet()) && row < CBHudListRows() - 2 {
@@ -5877,14 +5683,14 @@ public class CBHud {
     }
     text += CBT(n"Cyberbane-Hud-YourCrewHasItsOwnStanding");
     text += CBCrewPowerLine(sys, game);
-    text += CBCrewPageLines(sys, game);   // V's second, a funeral owed, the wars, the home (2.7.7)
+    text += CBCrewPageLines(sys, game);   // V's second, a funeral owed, the wars, the home
     this.SetAction(CBT(n"Cyberbane-Hud-Back"), true, CBT(n"Cyberbane-Hud-HelpBack"));
     let bodyTop = CBHudContentTop() + Cast<Float>(Max(row, 1)) * CBHudRowHeight() + 24.0;
     this.SetBody(CBHudMarginX(), bodyTop, CBHudContentW() - CBHudActionW() - 40.0, text, CBHudMaxLinesFor(this.m_tab));
   }
 
   private func CrewRecordClicked(game: GameInstance, code: Int32) -> Void {
-    // The crew's home, here (2.7.7): only words and books, so at once.
+    // The crew's home, here: only words and books, so at once.
     if code == 9 {
       let lbSet = CBCrewLifeBook.Get(game);
       let player = GetPlayer(game);
@@ -5895,7 +5701,7 @@ public class CBHud {
       }
       return;
     }
-    // The cut (2.7.6, from the roster): asked here, paid on the first settled tick back in the game; again, taken back.
+    // The cut (from the roster): asked here, paid on the first settled tick back in the game; again, taken back.
     if code == 8 {
       let cbPay = CBCrewBook.Get(game);
       if IsDefined(cbPay) && (cbPay.reqPay || (cbPay.CutOwed() > 0 && CBHudEddies(game) >= cbPay.CutOwed())) {
@@ -5903,7 +5709,7 @@ public class CBHud {
       }
       return;
     }
-    // Go to war (2.7.6): the gangs first, then who goes.
+    // Go to war: the gangs first, then who goes.
     if code == 7 {
       let wbGo = CBCrewWarBook.Get(game);
       if IsDefined(wbGo) {
@@ -5915,7 +5721,7 @@ public class CBHud {
       this.m_crewMode = 12;
       return;
     }
-    // The kitty, a challenge answered or turned down (2.7.2).
+    // The kitty, a challenge answered or turned down.
     if code == 4 {
       let took = CBKittyTake(game);
       if took > 0 {
@@ -5950,7 +5756,7 @@ public class CBHud {
     }
   }
 
-  // The memorial (2.6.0): the fallen, the last first; one picked, what is remembered of them.
+  // The memorial: the fallen, the last first; one picked, what is remembered of them.
   private func RenderCrewFallen(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     let bb = CBCrewBannerBook.Get(game);
     this.PlaceRows(CBHudLayoutCrew());
@@ -5988,7 +5794,7 @@ public class CBHud {
     return this.m_crewMode == 4 || this.m_crewMode == 10;
   }
 
-  // What the name box holds when it opens, and says when empty (2.7.6): one box serves the crew's name and theirs, so it is
+  // What the name box holds when it opens, and says when empty: one box serves the crew's name and theirs, so it is
   // filled each time a naming screen opens, never on each draw, which would throw away what is being typed.
   private func SeedNameInput(text: String, hint: String) -> Void {
     this.m_nameSeed = text;
@@ -6051,9 +5857,6 @@ public class CBHud {
 
   // V in the middle and the crew round V, each line as strong and as warm as their loyalty; the solo on offer to one
   // side, and the last few who left along the bottom, with how they left.
-  // V's crew as cards (2.5.0): the crew in a row, a solo on offer under it, and the ones who are gone under that, each row
-  // named. Each card is who they are, their seat and rank, how they are and where they came from, and their loyalty as
-  // the bar. No lines from a V in the middle: they crossed the cards and their words.
   private func RenderCrewPicture(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, offer: Bool) -> Void {
     if !this.WebPoolReady() {
       return;
@@ -6097,10 +5900,10 @@ public class CBHud {
           this.m_webBoxLead[slot].SetTintColor(CBCrewStateTint(state));
         }
         if IsDefined(this.m_webBoxEdge[slot]) {
-          this.m_webBoxEdge[slot].SetTintColor(CBCrewColour(game));   // the crew's colours (2.6.0)
+          this.m_webBoxEdge[slot].SetTintColor(CBCrewColour(game));   // the crew's colours
           this.m_webBoxEdge[slot].SetVisible(true);
         }
-        // Loyalty, and the climb to their next rank (2.7.7): fights won towards it.
+        // Loyalty, and the climb to their next rank: fights won towards it.
         this.BoxBars(slot, mw, mh, Cast<Float>(m.loyalty) / 100.0, tint, CBCrewRankProgress(GetGameInstance(), m), CBHudCyan());
         this.m_boxCrew[slot] = m.id;
       }
@@ -6204,7 +6007,7 @@ public class CBHud {
     this.HideWeb();
     this.ShowCrewViews(false);
     this.m_treeShown = false;
-    // Every page that has a picture can be read as a list instead (2.5.0): the web, the map, the tree, the crew.
+    // Every page that has a picture can be read as a list instead: the web, the map, the tree, the crew.
     let pictured = CBHudHasPicture(this.m_tab) && !(this.m_tab == CBHudTurfTab() && !CBTurfWarsOn());
     if IsDefined(this.m_webToggle) {
       this.m_webToggle.SetVisible(pictured);
@@ -6212,7 +6015,7 @@ public class CBHud {
     if IsDefined(this.m_webToggleText) && pictured {
       this.m_webToggleText.SetText(sys.HubVisual(this.m_tab) ? CBT(n"Cyberbane-Hud-ShowAsAList") : CBHudPictureWord(this.m_tab));
     }
-    // The History page's filter, in the same box (2.7.7).
+    // The History page's filter, in the same box.
     if this.m_tab == CBHudHistoryTab() && !this.m_legendShown {
       if IsDefined(this.m_webToggle) {
         this.m_webToggle.SetVisible(true);
@@ -6242,7 +6045,7 @@ public class CBHud {
     let w = CBHudContentW();
     let maxLines = CBHudMaxLinesFor(this.m_tab);
     let listBottom = CBHudContentTop() + Cast<Float>(CBHudListRows()) * CBHudRowHeight() + 24.0;
-    // The crew (Reactions/Crew.reds, 2.5.0): a page of its own, drawn whole by RenderCrew.
+    // The crew (Reactions/Crew.reds): a page of its own, drawn whole by RenderCrew.
     if this.m_tab == CBHudCrewTab() {
       this.RenderCrew(sys, game);
       this.Paint();
@@ -6251,10 +6054,10 @@ public class CBHud {
       return;
     }
     if this.m_tab == CBHudStandingTab() {
-      // Four tiles, what is on its way as rows, and two or three lines of why (2.5.0).
+      // Four tiles, what is on its way as rows, and two or three lines of why.
       this.RenderScores(sys);
       let lanesEnd = this.RenderLanes(sys, game);
-      // A price on V's head can be paid off here (Spawn/Bounty.reds, 2.4.3); asks twice, like every payment.
+      // A price on V's head can be paid off here (Spawn/Bounty.reds); asks twice, like every payment.
       let payOff = CBBountyPayOff(sys, game);
       let proseW = w;
       if payOff > 0 {
@@ -6269,12 +6072,12 @@ public class CBHud {
         }
         proseW = w - CBHudActionW() - 40.0;
       }
-      // Right now (2.7.7): who is coming and why, a counterattack, a funeral, an ask, first; then the legend.
+      // Right now: who is coming and why, a counterattack, a funeral, an ask, first; then the legend.
       let nowLine = CBHudRightNow(sys, game);
       this.SetBody(x, lanesEnd + 16.0, proseW, StrLen(nowLine) > 0 ? nowLine + "\n" + CBHudLegend(sys, game) : CBHudLegend(sys, game), maxLines);
     } else {
       if this.m_tab == CBHudFactionsTab() {
-        // The gangs as a list, or as the web of gangs (UI/HubWeb.reds, 2.4.3); the panel below is the same either way.
+        // The gangs as a list, or as the web of gangs (UI/HubWeb.reds); the panel below is the same either way.
         if sys.HubWeb() {
           this.RenderWeb(sys, game);
         } else {
@@ -6283,7 +6086,7 @@ public class CBHud {
         this.RenderFactionDetail(sys, game);
       } else {
         if this.m_tab == CBHudTurfTab() {
-          // Night City as a map (2.5.0), or the list.
+          // Night City as a map, or the list.
           if sys.HubVisual(CBHudTurfTab()) && CBTurfWarsOn() {
             this.RenderMap(sys, game, true);
             this.SetBody(x, CBHudContentTop() + CBGridMapH() + 20.0, w, this.MapDetail(sys, game, true), maxLines);
@@ -6310,7 +6113,7 @@ public class CBHud {
               if StrLen(blocked) > 0 && sys.GetHuntHoldReason() == CBHoldNoRoom() {
                 this.m_holdLabel = blocked;
               }
-              // The Rivals as a list, or as each gang's tree ([H2], 2.4.4); the file below is the same either way.
+              // The Rivals as a list, or as each gang's tree ([H2]); the file below is the same either way.
               if sys.HubTree() {
                 this.RenderTree(sys, game);
               } else {
@@ -6324,23 +6127,8 @@ public class CBHud {
                 this.SetBody(colX, CBHudContentTop(), w - CBHudTitleListW() - 60.0,
                              CBHudTitles(sys, this.m_titlePicked ? this.m_titlePick : sys.GetChosenTitle()), maxLines);
               } else {
-                // History is the ledger - everything V has accumulated - so starting over belongs
-                // on it, rather than buried in Mod Settings where a player looking at what they
-                // have built is not looking.
-                //
-                // The work is the switch that already exists: RequestHardReset, taken by the fast
-                // tick (CyberbaneSystem, TakeHardResetRequest). That matters twice over - it
-                // happens out of the paused menu like every other Hub action, and it is one code
-                // path rather than a second wipe that could drift from the first.
-                //
-                // It clears what playing earned: reputation, gangs, districts, rumours, Rivals,
-                // titles, deeds, the log. It deliberately leaves chrome, look, menace and aura,
-                // because those are not stored progress - they are read back off V's cyberware,
-                // clothes and build on every sample, so wiping them would mean nothing and they
-                // would be back within the second.
-                // The page's own button first (2.7.6): the legend, told (2.4.6, [82]), or the ledger with the day's
-                // headlines (the screamsheet, [81]). Then undoing the last Start over, when there is one, and Start over
-                // itself last: the one that erases everything was the first and brightest button on the page.
+                // The work is the switch that already exists: RequestHardReset, taken by the fast tick
+                // (CyberbaneSystem, TakeHardResetRequest).
                 this.SetAction(this.m_legendShown ? CBT(n"Cyberbane-Hud-ShowTheLedger") : CBT(n"Cyberbane-Hud-TellMyStory"), true);
                 if sys.HasStartOverToUndo() {
                   this.SetExtra(1, this.m_undoArmed ? CBT(n"Cyberbane-Hud-ClickAgainUndoIt") : CBT(n"Cyberbane-Hud-UndoTheLastStartOver"), true);
@@ -6482,21 +6270,11 @@ func CBHudActiveTitle(sys: ref<CyberbaneSystem>) -> String {
   return CBTitleDisplayById(sys, sys.GetContent(), id);
 }
 
-// inkText does not clip to its box: hand it more than fits and it renders straight over the
-// footer, the button beside it, or off the panel. So nothing reaches the page without being fitted
-// to the box it goes in first. Truncation, at a word, is the failure mode - never overlap.
-//
-// This used to count lines by the line breaks in the text, which is not what the screen does: a
-// sentence with no break in it wraps onto two or three lines and counted as one, so a long Rival
-// file or a long gang note ran on down into the footer. Wrapping is now worked out the way the
-// text box does it - word by word against the width - from a deliberately generous estimate of
-// how wide a character is, so the estimate can only ever err towards cutting a line short.
+// inkText does not clip to its box: hand it more than fits and it renders straight over the footer, the button beside
+// it, or off the panel. So nothing reaches the page without being fitted to the box it goes in first.
 
-// Average width of a character as a fraction of the font size, for the menu font. Generous on
-// purpose; capitals are wider, so text drawn upper case gets its own figure.
-// A name for a box (CBHud.BoxText): whole when it fits at a comfortable size (four under its own), else a name with a
-// nickname in it, First "Nick" Last, gives up a part before anything is cut: the nickname and surname, then the first
-// name and surname, then the nickname alone (2.5.0). The whole name is in the file under the picture.
+// Average width of a character as a fraction of the font size, for the menu font. Generous on purpose; capitals are
+// wider, so text drawn upper case gets its own figure.
 public func CBHudBoxName(text: String, width: Float, base: Int32, least: Int32) -> String {
   let comfy = Cast<Int32>(width / (Cast<Float>(Max(least, base - 4)) * CBHudCapsEm()));
   if StrLen(text) <= comfy {
@@ -6521,7 +6299,7 @@ public func CBHudBoxName(text: String, width: Float, base: Int32, least: Int32) 
   return firstLast;
 }
 
-// First "Nick" Last as First Last, for a line that names somebody in passing (2.5.0). Anything else as it is.
+// First "Nick" Last as First Last, for a line that names somebody in passing. Anything else as it is.
 public func CBHudNameNoNick(text: String) -> String {
   let a = StrFindFirst(text, "\"");
   let b = StrFindLast(text, "\"");
@@ -6580,8 +6358,8 @@ public func CBHudWrapCount(line: String, cpl: Int32) -> Int32 {
   return lines;
 }
 
-// The words of one paragraph that fit in `room` lines, with " ..." on the end to say there was
-// more. Empty if there is no room at all.
+// The words of one paragraph that fit in `room` lines, with "..." on the end to say there was more. Empty if there is
+// no room at all.
 public func CBHudCutToLines(line: String, cpl: Int32, room: Int32) -> String {
   if room <= 0 {
     return "";
@@ -6655,9 +6433,7 @@ func CBHudClamp(text: String, maxLines: Int32) -> String {
 func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, label: String) -> String {
   let who = "";
   if lane == CBLaneRival() {
-    // Only name a Rival the Rivals screen would also list. This read the lane's id and printed
-    // whoever it found, with no check on their state, so a Rival who had been spared or retired
-    // after being queued was announced as incoming on one screen and absent from the other.
+    // Only name a Rival the Rivals screen would also list.
     let r = sys.FindRivalById(sys.GetLaneRivalId(lane));
     if IsDefined(r) && !CBRivalQueueable(sys, r.id) {
       r = null;
@@ -6671,7 +6447,7 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
   // Already here. Their lane is held until that encounter is over, which is the honest thing
   // to say rather than counting down to a turn that cannot start.
   if CBLaneBusy(sys, game, lane) {
-    // Rivals who came together say so (1.9.0).
+    // Rivals who came together say so.
     if lane == CBLaneRival() {
       let together = CBRivalsOutTogether(sys, game);
       if together > 1 {
@@ -6690,13 +6466,13 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
     if CBLaneDailyCap(lane) <= 0 {
       return CBTf(n"Cyberbane-Hud-Off-2", [label]);
     }
-    // Nobody who could come at all (2.5.3): said instead of the next window's time, which on a new game read as a
-    // Rival, a crew and an apex squad on their way with nobody against V.
+    // Nobody who could come at all: said instead of the next window's time, which on a new game read as a Rival, a crew
+    // and an apex squad on their way with nobody against V.
     let nobody = CBLaneNobodyWhy(sys, lane);
     if StrLen(nobody) > 0 {
       return label + "   " + nobody;
     }
-    // Whose grudge runs out first, and when (2.6.5, Spawn/Grudge.reds), in the player's own minutes.
+    // Whose grudge runs out first, and when (Spawn/Grudge.reds), in the player's own minutes.
     if StrLen(held) > 0 {
       return CBTf(n"Cyberbane-Hud-Waiting", [label, held]);
     }
@@ -6729,7 +6505,7 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
   if StrLen(held) > 0 {
     return CBTf(n"Cyberbane-Hud-Waiting-2", [label, who, held, CBHudBudgetTail(sys, game, lane)]);
   }
-  // Lined up, and waiting out everybody's rest after another fight (2.7.1, CBLaneRestLeft): their clock stands still, so say
+  // Lined up, and waiting out everybody's rest after another fight (CBLaneRestLeft): their clock stands still, so say
   // why instead of showing it. A Rival who has already said they are coming is not held by it.
   let warnedQ = lane == CBLaneRival() && sys.GetRivalWarned() > 0 && sys.GetRivalWarned() == sys.GetLaneRivalId(lane);
   let restQ = CBRestTogether() && !warnedQ ? CBLaneRestLeft(sys, lane) : 0;
@@ -6746,8 +6522,8 @@ func CBHudLaneLine(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, l
   return label + "   " + who + "  " + CBTimeText(ticks) + CBHudBudgetTail(sys, game, lane);
 }
 
-// The Rivals page's cards group Rivals by gang; Rivals of no gang are a group of their own, under this name (2.5.3). No
-// gang is called this, and nothing but the cards' own choice of group ever holds it.
+// The Rivals page's cards group Rivals by gang; Rivals of no gang are a group of their own, under this name. No gang is
+// called this, and nothing but the cards' own choice of group ever holds it.
 func CBTreeNoGang() -> CName = n"CB_NoGang"
 
 func CBTreeGangOf(r: ref<CBRival>) -> CName {
@@ -6767,9 +6543,7 @@ func CBRivalsAllLyingLow(sys: ref<CyberbaneSystem>) -> Bool {
   return true;
 }
 
-// In-game hours as the real time they will actually take, using the clock rate measured at the
-// start of the session. About 8.1 by default, so eight in-game hours is roughly an hour of
-// play; a mod that slows the world clock brings the two closer together.
+// In-game hours as the real time they will actually take, using the clock rate measured at the start of the session.
 func CBHudRealFromGameHours(hrs: Float) -> String {
   let ratio = 1.0;
   let rt = CyberbaneRuntime.Get();
@@ -6786,54 +6560,17 @@ func CBHudRealFromGameHours(hrs: Float) -> String {
   return CBTf(n"Cyberbane-Hud-S", [s"\(RoundF(secs))"]);
 }
 
-// "  (2 of 3 today)". Shown so the pacing is something the player can see rather than guess
-// at: each kind has its own daily allowance and this is what is left of it.
-// No day's allowance since 2.6.5 (Spawn/Grudge.reds): nothing to count.
+// " (2 of 3 today)". Shown so the pacing is something the player can see rather than guess at: each kind has its own
+// daily allowance and this is what is left of it.
 func CBHudBudgetTail(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> String {
   return CBLaneDailyCap(lane) <= 0 ? CBT(n"Cyberbane-Hud-Off-3") : "";
 }
 
 func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
-  // The four scores are meters now, so this screen's text only carries what a meter cannot:
-  // where you are, what the city has already sent, and what it is doing about you right now.
-  // Two sentences rather than two rows of shouted key-value pairs.
-  //
-  // "STREET CRED 34      STYLE Blades      HERE Watson" is six words of label for three
-  // values, in capitals, with no indication of what any of it means or why they are on the
-  // same line. A player called the Hub cluttered and hard to understand, and lines like that
-  // one are most of why: everything on screen had the same weight and none of it was a
-  // sentence. The numbers have not changed; what they sit in has.
-  // "fighting mostly with Butcher" was read by a player as fighting the Butchers - a gang.
-  //
-  // It never meant that: `style` is V's archetype, and Butcher is one of six (CBArchetypeName
-  // below). "Fighting with" takes an opponent in English, so a style put there reads as a gang
-  // on a screen whose other lines really are about gangs, and the title block overhead saying
-  // "Butcher of City Center" makes it worse. This is the third time this collision has been
-  // fixed in this file - see the notes on Operator and Disciplined below - and the lesson each
-  // time is the same: do not put a style where a name is expected.
-  //
-  // Its own sentence now, with no preposition that can take an object, and no article to get
-  // wrong ("a Butcher" against "an Operator").
-  // What is left on this screen, and what went.
-  //
-  // Asked for directly: keep only what a player needs. The four meters above already say who V
-  // is; under them belongs the one thing they cannot say, which is what is on its way. Everything
-  // else here was either already on screen somewhere better or was a number with nothing to do:
-  //
-  //   - "You are in Heywood, street cred 50" - the district is on the HUD line during play now
-  //     (CBDistrictStatusLine) and street cred is the game's own readout, two inches away in the
-  //     same pause menu. Repeating both at the top of a reputation screen said nothing new.
-  //   - "Your style is Butcher" - interesting once, not every time, and it is what the archetype
-  //     meters and the titles already express. Gone from here; the archetype still drives titles.
-  //   - "So far: 4 rivals put down, 8 apex enforcers killed, 833 jobs nobody could pin on you" -
-  //     a lifetime ledger, which is what the History screen is for. Moved there rather than
-  //     dropped, so nothing stops being counted.
-  //
-  // What stays: what is coming, why people are frightened, and what that does right now. Three
-  // things a player can act on.
-  // What is coming is drawn as rows under the tiles now (2.5.0, RenderLanes), each with a pip for how close it is.
+  // The four scores are meters now, so this screen's text only carries what a meter cannot: where you are, what the
+  // city has already sent, and what it is doing about you right now.
   let out = "";
-  // The price on V's head and the ladder (Spawn/Bounty.reds, 2.4.3), when there is one.
+  // The price on V's head and the ladder (Spawn/Bounty.reds), when there is one.
   let bounty = CBBountyHubLine(sys, game);
   if StrLen(bounty) > 0 {
     out += bounty + "\n";
@@ -6849,10 +6586,8 @@ func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
   if !IsDefined(score) {
     return "";
   }
-  // Say why nothing is happening, rather than reporting a threshold the player is already
-  // past while the whole system is standing down for a reason they cannot see. Every one of
-  // these gates silently disables crowd reactions, and all of them looked identical from the
-  // outside: a city that ignores you.
+  // Say why nothing is happening, rather than reporting a threshold the player is already past while the whole system
+  // is standing down for a reason they cannot see.
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && !rt.IsEnabled() {
     return CBT(n"Cyberbane-Hud-RightNowCyberbaneIsSwitchedOff");
@@ -6898,19 +6633,11 @@ func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
 }
 
 // What V is wearing, read again as the Hub opens and on every change of screen.
-//
-// "It tells me to cover up my chrome, but the number does not change whatever I wear." Visible chrome
-// and the look are sampled every ten seconds of settled play (CyberbaneSystem fast tick), and never
-// inside a menu, which is where clothes are changed. The Hub is a tab of that same menu, so a player who
-// put a coat on in the inventory and went straight to the Hub was shown the reading from before the
-// coat, every time; it only moved ten seconds after they closed the menu, and later still on a busy
-// street, when the sample waits for the streaming to settle. Both reads are equipment and stat data
-// only, the same data the inventory screen reads while it is open.
 func CBHudResampleWorn(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) || !IsDefined(GetPlayer(game)) {
     return;
   }
-  // And They Will Remember's word on who is hostile, which the gangs' standing now follows (2.4.2).
+  // And They Will Remember's word on who is hostile, which the gangs' standing now follows.
   CBTwrRefreshHostility(game);
   CBUpdateChrome(sys, game);
   CBUpdateLook(sys, game);
@@ -6923,15 +6650,7 @@ func CBHudResampleWorn(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
 // Plain-language line: what is driving V's Dread the most (spec §12.1).
 func CBHudDreadReason(sys: ref<CyberbaneSystem>) -> String {
   let score = sys.GetScore();
-  // Weighted by what each one actually contributes to Dread, not the raw score. Comparing
-  // the raw numbers meant chrome (capped at 100, weighted 0.20) beat a body count (weighted
-  // 0.35) whenever its number was bigger, so the Hub kept telling players they were feared
-  // for their chrome after hundreds of kills. Dread is
-  // 0.35K + 0.20C + 0.15L + 0.20X + 0.10H, so the comparison has to use the same weights.
-  //
-  // Visible chrome, the same figure Dread is built from (Model/ScoreEngine.reds). This read the
-  // chrome V has installed, so a player who had put a coat on over it was still told they were
-  // feared for their chrome - and covering it up is exactly what they would have tried.
+  // Weighted by what each one actually contributes to Dread, not the raw score.
   let k = CBKillDreadComponent(sys.GetKillDreadPoints()) * CBConfig.DreadWeightK();
   let x = CBDeedDreadComponent(sys.GetDeedDreadPoints()) * CBConfig.DreadWeightX();
   let h = CBHeatDreadComponent(sys.GetHeatPoints()) * CBConfig.DreadWeightH();
@@ -6950,8 +6669,7 @@ func CBHudDreadReason(sys: ref<CyberbaneSystem>) -> String {
   if best <= 0.0 {
     return CBT(n"Cyberbane-Hud-PeopleBarelyKnowYouMakeSome");
   }
-  // What it is, then the one thing that brings it down: the question a player looking at this
-  // line is asking. One line, so the screen stays as quiet as it was.
+  // One line, so the screen stays as quiet as it was.
   return CBTf(n"Cyberbane-Hud-PeopleFearYouMostlyFor", [bestLabel, bestHint]);
 }
 
@@ -7014,8 +6732,7 @@ func CBHudTurfStatus(game: GameInstance, content: ref<CyberbaneContent>, distric
   return CBT(n"Cyberbane-Hud-HELD-2");
 }
 
-// The few lines under the districts: which gangs V has hurt, and how badly. Only those, so a
-// player who has hurt nobody reads one sentence instead of a table of full bars.
+// The few lines under the districts: which gangs V has hurt, and how badly.
 func CBHudTurfBody(sys: ref<CyberbaneSystem>) -> String {
   if !CBTurfWarsOn() {
     return CBT(n"Cyberbane-Hud-TurfWarsAreOffInMod");
@@ -7070,9 +6787,8 @@ public func CBHudMeter(value: Float, full: Float, cells: Int32) -> String {
   return out;
 }
 
-// Why this Rival has it in for you, in plain words.
-// Whole sentences (2.5.5): the file opened on a fragment in lower case ("got away from you bleeding, at large"),
-// two subjects run together ("you beat them down and left them alive, quiet").
+// Why this Rival has it in for you, in plain words. Whole sentences: the file opened on a fragment in lower case ("got
+// away from you bleeding, at large"), two subjects run together ("you beat them down and left them alive, quiet").
 func CBRivalSourceLine(source: Int32) -> String {
   if source == EnumInt(ECBRivalSource.Survivor) {
     return CBT(n"Cyberbane-Hud-TheyGotAwayFromYouBleeding");
@@ -7095,9 +6811,8 @@ func CBRivalSourceLine(source: Int32) -> String {
   return CBT(n"Cyberbane-Hud-TheyRememberYou");
 }
 
-// How many times V and they have met (2.7.7): every meeting since they became a Rival (encounters, what their file counts
-// "since"), and the one they were made in, for one who got away from V, was spared by V, killed V or turned on V. Their row
-// said "Never met you" over a Rival V had spared, because only the meetings since were counted.
+// How many times V and they have met: every meeting since they became a Rival (encounters, what their file counts
+// "since"), and the one they were made in, for one who got away from V, was spared by V, killed V or turned on V.
 func CBRivalTimesMet(r: ref<CBRival>) -> Int32 {
   if !IsDefined(r) {
     return 0;
@@ -7108,9 +6823,8 @@ func CBRivalTimesMet(r: ref<CBRival>) -> Int32 {
   return r.encounters + (born ? 1 : 0);
 }
 
-// Where they stand now, as a sentence for the file, by the same test as their row in the tree (2.5.5): the file
-// went by the state alone, so the one coming for V read "at large" under a row that said HUNTING YOU, and a dead
-// one read "quiet".
+// Where they stand now, as a sentence for the file, by the same test as their row in the tree: the file went by the
+// state alone, so the one coming for V read "at large" under a row that said HUNTING YOU, and a dead one read "quiet".
 func CBRivalStateLine(sys: ref<CyberbaneSystem>, r: ref<CBRival>) -> String {
   if r.state == EnumInt(ECBRivalState.Slain) {
     return CBT(n"Cyberbane-Hud-TheyAreDead");
@@ -7148,10 +6862,6 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
   let cap = CBRivalCap();
   let out = "";
   // The file on whoever was clicked, or on whoever is next when nobody was.
-  //
-  // The rows carry name, gang, rank, scars and a clock, and never once say what any of this is
-  // about. CBRivalSourceLine is the single most interesting fact about a Rival - that you spared
-  // them, or that they put you down once - so it is the first line of the file.
   let r = sys.FindRivalById(pickedId);
   if IsDefined(r) {
     let content = sys.GetContent();
@@ -7179,12 +6889,12 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
         out += CBT(n"Cyberbane-Hud-TheirPeopleMayKnowAFatal");
       }
     }
-    // What the street says about them, their line, and their family (1.9.9).
+    // What the street says about them, their line, and their family.
     out += CBTf(n"Cyberbane-Hud-OnTheStreet", [CBRivalStreetStatus(sys, game, r)]);
     out += CBTf(n"Cyberbane-Hud-Says", [CBRivalCatchphrase(r)]);
-    // Their story, from what is known of them (Narrative/Telling.reds, [84], 2.4.6).
+    // Their story, from what is known of them (Narrative/Telling.reds, [84]).
     out += CBTf(n"Cyberbane-Hud-TheirStory", [CBRivalStory(sys, game, r)]);
-    out += CBRivalTimelineLine(game, r);   // every time you crossed (2.7.7)
+    out += CBRivalTimelineLine(game, r);   // every time you crossed
     let kinBook = CBIntelBook.Get(game);
     let kinOf = IsDefined(kinBook) ? kinBook.KinOf(r.id) : 0;
     let kinDead = kinOf > 0 ? sys.FindRivalById(kinOf) : null;
@@ -7195,7 +6905,7 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
     if StrLen(scars) > 0 {
       out += CBTf(n"Cyberbane-Hud-CarriesYourMark", [scars]);
     }
-    // Their chrome and their bond (Rivals/RivalMoments.reds, 2.4.4).
+    // Their chrome and their bond (Rivals/RivalMoments.reds).
     let chrome = CBRivalChromeWords(r);
     if StrLen(chrome) > 0 {
       out += CBTf(n"Cyberbane-Hud-Chrome", [chrome]);
@@ -7223,7 +6933,7 @@ func CBHudRivals(sys: ref<CyberbaneSystem>, game: GameInstance, pickedId: Int32,
   if NotEquals(held, "") {
     out += held + "\n";
   }
-  // Who owes V (Reactions/Allies.reds, [U12], 2.4.5).
+  // Who owes V (Reactions/Allies.reds, [U12]).
   let owed = CBInformantsLine(sys, game);
   if StrLen(owed) > 0 {
     out += owed + "\n";
@@ -7330,15 +7040,6 @@ func CBHudTitles(sys: ref<CyberbaneSystem>, id: CName) -> String {
 // "3d", "5h", "20m" - how long since something happened, for the screens that track it.
 // Returns "" when it never has.
 // How long since, in the player's seconds rather than the game's.
-//
-// These timestamps come off the world clock, which by default runs about eight times faster
-// than real time, so "quiet 43m" meant roughly five minutes of actually playing. Every other
-// number on this screen is a real-time countdown, and one game-clock figure sitting among them
-// is worse than useless. The ratio is measured once a session rather than assumed, because a
-// mod that changes the day length changes it: CP Chronology brings it to about 1.
-//
-// An earlier version dropped anything past a day because "quiet 3d" looked wrong. That hid the
-// reading instead of converting it, which is the actual answer.
 public func CBHudSince(now: Float, then: Float) -> String {
   if then <= 0.0 || now <= then {
     return "";
@@ -7398,7 +7099,7 @@ func CBHudLog(sys: ref<CyberbaneSystem>, opt filter: Int32) -> String {
   while i >= 0 && shown < 18 {
     let e = log[i];
     i -= 1;
-    // Filtered (2.7.7): fights, the crew, money, Rivals.
+    // Filtered: fights, the crew, money, Rivals.
     if IsDefined(e) && (filter <= 0 || CBHudLogGroup(e.kind) == filter) {
       out += CBHudLogLine(sys, e, now) + "\n";
       shown += 1;
@@ -7407,7 +7108,7 @@ func CBHudLog(sys: ref<CyberbaneSystem>, opt filter: Int32) -> String {
   return out;
 }
 
-// Which filter an entry falls under: 1 fights, 2 the crew, 3 money, 4 Rivals (2.7.7).
+// Which filter an entry falls under: 1 fights, 2 the crew, 3 money, 4 Rivals.
 public func CBHudLogGroup(kind: CName) -> Int32 {
   let k = NameToString(kind);
   if StrBeginsWith(k, "Crew") || Equals(kind, n"SpokeAtSitDown") {
@@ -7473,8 +7174,8 @@ func CBHudTalkToday(sys: ref<CyberbaneSystem>, faction: CName) -> String {
   return line + ".";
 }
 
-// What street talk put in the file (Reactions/StreetTalk.reds, 1.9.5), and the entry's own name for
-// anything this file does not know how to say.
+// What street talk put in the file (Reactions/StreetTalk.reds), and the entry's own name for anything this file does
+// not know how to say.
 func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: String) -> String {
   let who = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-OneOf", [gang]) : CBT(n"Cyberbane-TalkTopics-Somebody");
   if Equals(e.kind, n"Informant") {
@@ -7551,7 +7252,7 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"TalkCallOff") {
     return CBTf(n"Cyberbane-Hud-YouPaidEbToCallOff", [s"\(who)", s"\(RoundF(e.value))"]);
   }
-  // 2.3.1: the street.
+  // the street.
   if Equals(e.kind, n"WitnessHushed") {
     return CBT(n"Cyberbane-Hud-YouPaidAWitnessToForget");
   }
@@ -7570,14 +7271,14 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"WannabeShot") {
     return CBT(n"Cyberbane-Hud-YouShotAKidWhoCame");
   }
-  // 2.3.2: the codes.
+  // the codes.
   if Equals(e.kind, n"GuardedHurt") {
     return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouHurtPeopleLookAfter", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouHurtPeopleSomebodyLooksAfter");
   }
   if Equals(e.kind, n"LetGo") {
     return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouLetOneOfWalkWith", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouLetSomebodyWalkWithTheir");
   }
-  // 2.4.3: the price on V's head, the ladder and the corporations.
+  // the price on V's head, the ladder and the corporations.
   if Equals(e.kind, n"BountyPosted") {
     return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-PutAPriceOnYourHead", [s"\(CBCapFirst(gang))", s"\(RoundF(e.value))"]) : CBTf(n"Cyberbane-Hud-SomebodyPutAPriceOnYour", [s"\(RoundF(e.value))"]);
   }
@@ -7605,7 +7306,7 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"CorpOffer") {
     return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-ACorporationOfferedYouEbTo", [s"\(RoundF(e.value))", s"\(gang)"]) : CBT(n"Cyberbane-Hud-ACorporationOfferedYouAContract");
   }
-  // 2.4.5: talk and allies.
+  // talk and allies.
   if Equals(e.kind, n"CrewLent") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-SentPeopleToWatchYourBack", [s"\(CBCapFirst(gang))"]) : CBT(n"Cyberbane-Hud-AGangSentPeopleToWatch"); }
   if Equals(e.kind, n"OneOfTheirs") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouBecameOneOf", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouJoinedAGang"); }
   if Equals(e.kind, n"LeftGang") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouStoppedBeingOneOf", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouLeftAGang"); }
@@ -7620,15 +7321,14 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"InformantLost") { return CBT(n"Cyberbane-Hud-AnInformantOfYoursWasRun"); }
   if Equals(e.kind, n"ParleyPaid") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouPaidACrewOfTo", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouPaidOffACrew"); }
   if Equals(e.kind, n"ParleyScared") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouTalkedACrewOfInto", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouTalkedACrewDown"); }
-  // Answers by text (UI/RealPhone.reds, 2.4.6): written to the file and, until 2.6.0, read out as their own names.
   if Equals(e.kind, n"PhoneThreatWorked") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouThreatenedByTextAndThey", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-AThreatByTextMadeA"); }
   if Equals(e.kind, n"PhoneInsult") { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouToldToComeAndTry", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-YouDaredAGangToCome"); }
-  // 2.5.0: a crew of V's own (Reactions/Crew.reds).
+  // a crew of V's own (Reactions/Crew.reds).
   let crewLine = CBCrewHistoryLine(sys, e);
   if StrLen(crewLine) > 0 {
     return crewLine;
   }
-  // 2.4.4: the Rivals' moments.
+  // the Rivals' moments.
   if Equals(e.kind, n"StaredDown") || Equals(e.kind, n"FacedownWalked") || Equals(e.kind, n"DuelWon")
      || Equals(e.kind, n"CalledEven") || Equals(e.kind, n"Humiliated") || Equals(e.kind, n"Trophy")
      || Equals(e.kind, n"RivalReturned") || Equals(e.kind, n"BondVengeance") || Equals(e.kind, n"RivalEndedUp")
@@ -7657,7 +7357,7 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"CorpContractDone") {
     return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-PaidYouEbForAJob", [s"\(CBCapFirst(gang))", s"\(RoundF(e.value))"]) : CBTf(n"Cyberbane-Hud-ACorporationPaidYouEbFor", [s"\(RoundF(e.value))"]);
   }
-  // 2.4.2: the hunt grows.
+  // the hunt grows.
   if Equals(e.kind, n"Tracked") {
     return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-PlantedATrackerOnYou", [s"\(CBCapFirst(gang))"]) : CBT(n"Cyberbane-Hud-SomebodyPlantedATrackerOnYou");
   }
@@ -7673,11 +7373,11 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"AmbushBeaten") {
     return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouWalkedThroughAmbushOnThe", [s"\(CBPossessive(gang))"]) : CBT(n"Cyberbane-Hud-YouWalkedThroughAnAmbush");
   }
-  // 2.4.1: being hunted.
+  // being hunted.
   if Equals(e.kind, n"ScoutBribed") {
     return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouPaidScoutToSayThey", [s"\(CBPossessive(gang))"]) : CBT(n"Cyberbane-Hud-YouPaidAScoutToSay");
   }
-  // 2.4.0: the war.
+  // the war.
   if Equals(e.kind, n"WeeklyCut") {
     return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-PaidYouYourCutEb", [s"\(CBCapFirst(gang))", s"\(RoundF(e.value))"]) : CBTf(n"Cyberbane-Hud-YouWerePaidYourCutEb", [s"\(RoundF(e.value))"]);
   }
@@ -7705,7 +7405,7 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"ProtectionRefused") {
     return CBT(n"Cyberbane-Hud-YouDidnTPayTheClaws");
   }
-  // 2.3.4: the fights.
+  // the fights.
   if Equals(e.kind, n"Executed") {
     return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-ExecutedSomebodyAndNobodyStoppedThem", [s"\(CBCapFirst(gang))"]) : CBT(n"Cyberbane-Hud-SomebodyWasExecutedAndNobodyStopped");
   }
@@ -7733,7 +7433,7 @@ func CBHudTalkLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, gang: Strin
   if Equals(e.kind, n"StruggleBoth") {
     return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouKilledBothOfWouldBe", [s"\(CBPossessive(gang))"]) : CBT(n"Cyberbane-Hud-YouKilledBothWouldBeLeaders");
   }
-  // 2.3.3: gang life.
+  // gang life.
   if Equals(e.kind, n"FuneralCrashed") {
     return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-YouShotUpFuneral", [s"\(CBPossessive(gang))"]) : CBT(n"Cyberbane-Hud-YouShotUpAFuneral");
   }
@@ -7826,27 +7526,27 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float, opt
       }
     }
   }
-  // A war one of V's crew started (2.6.0).
+  // A war one of V's crew started.
   if Equals(e.kind, n"CrewWarWon") {
     line = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-OneOfYourCrewStartedA", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-OneOfYourCrewStartedA-2");
   }
   if Equals(e.kind, n"CrewWarLost") {
     line = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-OneOfYourCrewWentTo", [s"\(gang)"]) : CBT(n"Cyberbane-Hud-OneOfYourCrewWentTo-2");
   }
-  // A Rival somebody else killed (2.5.6, CBRivalSlain): before, every Rival's death was written as V's.
+  // A Rival somebody else killed (CBRivalSlain): before, every Rival's death was written as V's.
   if Equals(e.kind, n"RivalDied") {
     line = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Hud-ARankRivalFromDiedAnd", [s"\(RoundF(e.value))", s"\(gang)"])
                             : CBTf(n"Cyberbane-Hud-ARankRivalDiedAndNot", [s"\(RoundF(e.value))"]);
   }
-  // An add-on's reason (CyberbaneAPI.AdjustStanding, 2.7.4): its key is the entry's kind, and reads as its own text.
+  // An add-on's reason (CyberbaneAPI.AdjustStanding): its key is the entry's kind, and reads as its own text.
   // Cyberbane's own kinds never carry a dash.
   if StrLen(line) == 0 && StrContains(NameToString(e.kind), "-") {
     line = CBT(e.kind);
   }
   let place = CBDistrictLabel(e.district);
   let ago = CBHudSince(now, e.at);
-  // In a text (2.7.7, the morning brief): "... from the Tyger Claws (Heywood, 58m ago)." The row's form, "  Heywood, 58m
-  // ago" with no stop, read as a sentence left hanging, with the next one glued on.
+  // In a text (the morning brief): The row's form, " Heywood, 58m ago" with no stop, read as a sentence left hanging,
+  // with the next one glued on.
   if asSentence {
     let tail = place;
     if StrLen(ago) > 0 {
@@ -7886,13 +7586,6 @@ func CBHudPeaceSpend(sys: ref<CyberbaneSystem>) -> Int32 {
 // ---- Small label helpers ---------------------------------------------------
 
 // What the street actually does at this much Dread, in a word.
-//
-// The four meters are read as a column and three of them said "number, then a word" - 700
-// Infamous, -99 Cyberpsycho, and chrome with no word at all. Dread said "70   the street reads
-// 84": two numbers side by side with nothing to say which was which, on the one meter whose own
-// caption promises to explain what it does to people. The bands are the same thresholds the
-// crowd itself uses (Config.CivTier*), so the word is not a new idea invented for the readout -
-// it is the behaviour the number already drives.
 func CBDreadWord(civ: Float) -> String {
   if civ >= CBConfig.CivTierTerror() {
     return CBT(n"Cyberbane-Hud-PeopleRun");
@@ -7924,11 +7617,6 @@ func CBArchetypeName(idx: Int32) -> String {
     case 0: return CBT(n"Cyberbane-Hud-Butcher");
     case 1: return CBT(n"Cyberbane-Crew-Ghost");
     // "Operator", not "Professional".
-    //
-    // Conduct's top band was renamed Disciplined in 1.3.2 to break this collision, which only
-    // half worked: the mod still told players that sparing people gets them treated like a
-    // professional while a readout on the same screen said STYLE Professional and moved on
-    // finished gigs instead. Renaming both halves is what actually fixes it.
     case 2: return CBT(n"Cyberbane-Hud-Operator");
     case 3: return CBT(n"Cyberbane-Hud-Chromed");
     case 4: return CBT(n"Cyberbane-Hud-Netrunner");
@@ -7938,12 +7626,6 @@ func CBArchetypeName(idx: Int32) -> String {
 }
 
 // "Disciplined", not "Professional".
-//
-// Conduct's top band and the STYLE archetype at CBArchetypeName(2) were both called
-// Professional, and they measure different things and move on different events: the archetype
-// goes up for finishing gigs and hustles, the bar only moves on how you treat people in a
-// fight. Two meters reading "Professional" for unrelated reasons is the kind of thing a player
-// reasonably reads as a bug in one of them.
 func CBCodeLabel(code: Float) -> String {
   if code >= 40.0 {
     return CBT(n"Cyberbane-Hud-Disciplined");
@@ -7972,8 +7654,8 @@ func CBRivalStateName(state: Int32) -> String {
   if state == EnumInt(ECBRivalState.Active) {
     return CBT(n"Cyberbane-Hud-AtLarge");
   }
-  // Said as what they are (2.5.5): one who owes V their life read "quiet", the word for one keeping their head down.
-  // Their life, in full: "owes you" alone reads as money.
+  // Said as what they are: one who owes V their life read "quiet", the word for one keeping their head down. Their
+  // life, in full: "owes you" alone reads as money.
   if state == EnumInt(ECBRivalState.Debtor) {
     return CBT(n"Cyberbane-Hud-OwesYouTheirLife");
   }
@@ -7996,8 +7678,7 @@ func CBRivalTraitList(content: ref<CyberbaneContent>, r: ref<CBRival>, weaknesse
   return out;
 }
 
-// What V's clothes are doing, under the chrome bar (1.9.4): what they cover, a mask, and whose gear
-// fools whom. "Is there a way to know which clothes affect the gangs?" This is it.
+// What V's clothes are doing, under the chrome bar: what they cover, a mask, and whose gear fools whom. This is it.
 func CBHudWornLine(sys: ref<CyberbaneSystem>) -> String {
   if !CBClothingCounts() {
     return CBT(n"Cyberbane-Hud-ClothesAreNotReadModSettings");
@@ -8022,7 +7703,7 @@ func CBHudWornLine(sys: ref<CyberbaneSystem>) -> String {
   if StrLen(gang) > 0 {
     line += worn.twrRead ? CBTf(n"Cyberbane-Hud-PassingFor", [s"\(gang)", s"\(RoundF(sys.GetDisguiseStrength() * 100.0))"]) : CBTf(n"Cyberbane-Standing-Colours", [gang]);
   }
-  // Whose reading this is, when it is not Cyberbane's own (2.4.2).
+  // Whose reading this is, when it is not Cyberbane's own.
   if worn.twrRead {
     line += CBT(n"Cyberbane-Hud-TheyWillRememberSReading");
   } else {
@@ -8047,7 +7728,7 @@ func CBHudRivalStanding(sys: ref<CyberbaneSystem>, r: ref<CBRival>) -> Int32 {
   return place + r.rank * 100 + Min(r.encounters, 99);
 }
 
-// ---- The Hub's pictures and tiles (2.5.0) --------------------------------------------------------------------------
+// ---- The Hub's pictures and tiles --------------------------------------------------------------------------
 
 // The four scores, two by two.
 public func CBHudTileW() -> Float = 640.0
@@ -8078,8 +7759,8 @@ public func CBCrewStateTint(state: String) -> HDRColor {
 // Watson at the top, City Center under it and Westbrook to its east, Heywood below with Santo Domingo to its east,
 // Pacifica to the south-west with Dogtown at its foot, and the Badlands out east. The roads join neighbours.
 
-// The cards (2.5.0): four to a row across the page, the gangs' grid three rows and the corporations' small row, the
-// districts two rows.
+// The cards: four to a row across the page, the gangs' grid three rows and the corporations' small row, the districts
+// two rows.
 public func CBCardW() -> Float = 315.0
 public func CBCardH() -> Float = 104.0
 public func CBCardSmallH() -> Float = 56.0

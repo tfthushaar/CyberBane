@@ -1,20 +1,7 @@
-// Cyberbane - Its own box on the map, and the map remembering ([85], 2.5.0)
+// Cyberbane - Cyberbane's map pins
 //
-//   Its own box   with TweakXL, Cyberbane's place pins (where a Rival was last seen, a gathering on the way, and the
-//                 places remembered below) use a pin definition and a filter group of their own
-//                 (r6/tweaks/Cyberbane/map.yaml), and the map's custom filters gain a CYBERBANE box that shows and
-//                 hides them all, by the game's own rules. It is ticked the first time the map is opened in a
-//                 playthrough. Without TweakXL the pins sit under Your Property, as before 2.5.0.
-//   Remembering   for a day after something big, a pin marks where it happened: a Rival who fell, a gathering V
-//                 crashed, a district that changed hands, one of V's crew lost. Hovered, it says who and when.
-//
-// The technique (a group of one's own on a filter type nobody uses, a pin variant nothing draws, the controllers
-// told what it looks like) is the one Gang Retaliation uses for its strongholds; credit to its author for showing
-// it. Nothing of theirs is used here, and the two can be installed together: different filter type, different
-// variant.
-//
-// Crash rules: no widget is made or removed; pins are registered and unregistered through the MappinSystem from the
-// tick, never from a UI callback; the map's hooks call the game's code first and change only what is ours.
+// With TweakXL, Cyberbane's place pins get their own pin type and a CYBERBANE filter box on the map. Places where
+// something big happened stay pinned for a day.
 
 public func CBMapRemembersOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -31,7 +18,7 @@ public func CBMapFilterReady() -> Bool {
 public func CBMapFilterType() -> gamedataWorldMapFilter = gamedataWorldMapFilter.Courier
 
 // Every place pin Cyberbane puts down: our own definition and variant with TweakXL, the variant the game files under
-// Your Property without. Both can be tracked for a route (worldMap.script, CanPlayerTrackMappin: neither is a quest's).
+// Your Property without.
 public func CBPlacePinData(caption: String) -> MappinData {
   let data: MappinData;
   if CBMapFilterReady() {
@@ -62,7 +49,7 @@ public func CreateMappinUIProfile(mappin: wref<IMappin>, mappinVariant: gamedata
 // having to find the box first. Never on the fast travel map, which keeps its own filters.
 @wrapMethod(WorldMapMenuGameController)
 protected cb func OnInitialize() -> Bool {
-  wrappedMethod();   // as a statement (2.6.8): never typed off what the game's event returns
+  wrappedMethod();   // as a statement: never typed off what the game's event returns
   let book = CBMapBook.Get(GetGameInstance());
   if IsDefined(book) && !book.FilterSeeded() && CBMapFilterReady() && !this.IsFastTravelEnabled() {
     this.SetCustomFilter(CBMapFilterType());
@@ -74,8 +61,8 @@ protected cb func OnInitialize() -> Bool {
 
 // ---- The map remembering ([85]) -------------------------------------------------------------------------------------
 
-// Kept until what they mark is done with, never faded by time or pushed out by newer ones: a gang's home, a stronghold, and
-// the spoils of a war (2.7.6: a war chest to collect, a hidden stash the crew marked).
+// Kept until what they mark is done with, never faded by time or pushed out by newer ones: a gang's home, a stronghold,
+// and the spoils of a war (a war chest to collect, a hidden stash the crew marked).
 public func CBMemoryStays(kind: Int32) -> Bool {
   return kind == CBMemGangHome() || kind == CBMemStronghold() || CBMemoryIsSpoils(kind);
 }
@@ -177,7 +164,7 @@ public class CBMapBook extends ScriptableSystem {
     let i = ArraySize(this.m_memories) - 1;
     while i >= 0 {
       let old = this.m_memories[i];
-      // Two of a war's spoils a few metres apart are two things to find (2.7.6), never one taking the other's place.
+      // Two of a war's spoils a few metres apart are two things to find, never one taking the other's place.
       if IsDefined(old) && old.kind == kind && !CBMemoryIsSpoils(kind)
          && Vector4.Distance(at, new Vector4(old.x, old.y, old.z, 1.0)) < CBConfig.MapMemoryMerge() {
         this.Forget(old);
@@ -186,9 +173,6 @@ public class CBMapBook extends ScriptableSystem {
     }
     // The oldest goes by its place in the list. Check above has already let go of any empty entry, and erasing by place
     // means this loop cannot spin whatever the list holds.
-    // Only what fades counts towards the cap, and only it goes (2.7.6): a gang's home, a stronghold and a war's spoils stay
-    // until they are done with. Counted as it stood, the oldest of the rest went, or, with the rest all of those, the
-    // newest of the kept ones.
     if !CBMemoryStays(kind) {
       let fading = 0;
       for f in this.m_memories {
@@ -298,9 +282,8 @@ public class CBMapBook extends ScriptableSystem {
     return Min(ArraySize(this.m_pinFor), ArraySize(this.m_pinId));
   }
 
-  // Start over (Core/CyberbaneSystem.reds, HardReset). The tick takes the pins down.
-  // Start over (Core/CyberbaneSystem.reds, HardReset, from the settled tick). The pins go with the memories, here:
-  // left for the tick, a new memory numbered 1 found the old pin for 1 and was shown where the old one had been (2.5.0).
+  // Start over (Core/CyberbaneSystem.reds, HardReset). The tick takes the pins down. Start over
+  // (Core/CyberbaneSystem.reds, HardReset, from the settled tick).
   public func Clear() -> Void {
     this.UnpinAll(GameInstance.GetMappinSystem(this.GetGameInstance()));
     ArrayClear(this.m_memories);
@@ -352,7 +335,7 @@ public func CBMapMemoryTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   if !IsDefined(book) || !IsDefined(ms) {
     return;
   }
-  // What happened fades and goes; a gang's home (2.7.2) stays, shown or hidden by its own switch and that gang's standing.
+  // What happened fades and goes; a gang's home stays, shown or hidden by its own switch and that gang's standing.
   let remember = CBMapRemembersOn();
   let now = CBGameSeconds(game);
   let life = CBConfig.MapMemoryHours() * CBConfig.SecondsPerHour();
@@ -421,7 +404,7 @@ public func CBMapMemoryTitle(sys: ref<CyberbaneSystem>, id: Int32) -> String {
   if m.kind == CBMemTakeover() {
     return CBTf(n"Cyberbane-MapPins-Took", [s"\(CBCapFirst(CBFactionLabel(m.a)))", s"\(CBDistrictLabel(m.district))"]);
   }
-  // A beaten gang's war chest, and a hidden stash the crew found out about (Reactions/CrewWar.reds, 2.7.6).
+  // A beaten gang's war chest, and a hidden stash the crew found out about (Reactions/CrewWar.reds).
   if m.kind == CBMemWarChest() {
     return CBTf(n"Cyberbane-CrewWar-ChestPinTitle", [CBCapFirst(CBPossessive(CBFactionName(m.a)))]);
   }
@@ -473,16 +456,15 @@ public func CBMapMemoryDesc(sys: ref<CyberbaneSystem>, id: Int32) -> String {
   return CBTf(n"Cyberbane-MapPins-DiedHereFightingForYou", [s"\(ago)"]);
 }
 
-// What a remembered place is drawn with: a part of the game's own map atlas, and a colour.
-// n"" for a Rival or one of the crew, who keep Cyberbane's own mark (map_bounty, the obvious part, is the game's NCPD
-// hustle).
+// What a remembered place is drawn with: a part of the game's map atlas, and a colour. n"" for a Rival or one of the
+// crew, who keep Cyberbane's own mark (map_bounty, the obvious part, is the game's NCPD hustle).
 public func CBMapMemoryPart(sys: ref<CyberbaneSystem>, id: Int32) -> CName {
   let book = IsDefined(sys) ? CBMapBook.Get(sys.GetGameInstance()) : null;
   let m = IsDefined(book) ? book.Find(id) : null;
   if IsDefined(m) && m.kind == CBMemEventCrashed() { return n"dynamic_event"; }
   if IsDefined(m) && m.kind == CBMemTakeover() { return n"outpost"; }
   if IsDefined(m) && m.kind == CBMemStronghold() { return n"outpost"; }
-  if IsDefined(m) && m.kind == CBMemSecretStash() { return n"map_bounty"; }   // the mark the game's own map gives a hidden stash
+  if IsDefined(m) && m.kind == CBMemSecretStash() { return n"map_bounty"; }   // the mark the game's map gives a hidden stash
   return n"";
 }
 

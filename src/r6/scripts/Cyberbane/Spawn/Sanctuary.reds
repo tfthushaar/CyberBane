@@ -1,40 +1,9 @@
-// Cyberbane - Nobody follows V through their own front door (1.7.3)
+// Cyberbane - Nobody follows V through their own front door
 //
-// "They don't spawn in the safe area, however unlock the door and walk in." Keeping arrivals out of
-// a safe area only ever spoke for where somebody is placed. Once they exist they are after V, and
-// nothing told them where to stop: the search ring follows V inside, a hunter who has found V is
-// handed V to walk to, and somebody already fighting V simply carries on. A door does not stand in
-// the way of any of that. The game lets an NPC through any door that is closed, powered and
-// unlocked (Door.EvaluateOffMeshLinksTask), and opens it for them when they get there.
-//
-// So the rule is about V rather than about a spawn point. While V is somewhere the game protects,
-// unless the player has asked to be hunted there:
-//
-//   nobody is given a move order, and any they had is taken back     CBOrderPursue, CBSanctuaryHold
-//   nobody is handed V as a target                                   CBHuntTick
-//   somebody fighting V who has lost sight of V stops fighting V     CBSanctuaryHold
-//   and a door will not open for anybody of ours                     Door, below
-//
-// They stay where they are, outside, for as long as the hunt lasts, which runs out twice as fast
-// while V is safe. Step back out while they are still there and it starts again, because the only
-// thing they lost was V: they are as hostile as they ever were. That is the point of it being a
-// door and not a teleport.
-//
-// The door itself is not changed. Locking it, or switching off its route for NPCs, would be a change
-// to a device the story uses, and Judy or Panam walking into V's apartment is the story. It is one
-// refusal, to one person, for as long as it takes them to stop trying.
+// While V is somewhere the game protects, nobody is given a move order or handed V as a target, and anyone already
+// fighting V stops at the door.
 
 // Is V somewhere the people after them must not follow? Worked out once a tick (CyberbaneSystem).
-//
-// Two questions because the game has two answers. The safe area manager is asked about a point, and
-// the SAFE AREA the HUD shows is a zone on the player's state, and an apartment can be one without
-// the other: that is the H10 report from 1.1.1. The player's opt-in opens all of this at once.
-//
-// The zone only counts while its weapon lock is on. The zone is written when V goes in and is not
-// written again if V walks out into somewhere the game calls undefined (Player.OnZoneFactChanged:
-// OnEnterUndefinedZone is empty), so on its own it can still say Safe long after V has left, and this
-// answer holds every hunt and every arrival in the game. The lock is lifted on the way out by every
-// path, so the two together cannot go stale. 1.1.5 broke the whole mod on a zone read that lied.
 public func CBComputeSanctuary(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
   if !IsDefined(sys) || CBAllowSafeZoneSpawns() {
     return false;
@@ -70,15 +39,7 @@ func CBForgetV(npc: ref<ScriptedPuppet>, player: ref<PlayerPuppet>) -> Void {
   tracker.ResetRecentlyDroppedThreat();
 }
 
-// Once a tick while V is safe, for everybody of ours. Also while V is on a job (Spawn/Hunt.reds,
-// 1.8.4), more gently: `onJob`.
-//
-// A job is not a front door. It is any active objective within the quest-area radius, which on a
-// busy journal covers a good part of the street, and V is often fighting right there. So on a job
-// nobody is sent anywhere and nobody is handed V, as at home, but somebody already fighting V close by
-// keeps fighting when V ducks behind cover: only somebody further off than the combat-release distance
-// who has lost sight of V lets V go. Applied the sanctuary's way, every hunter in a street fight forgot
-// V every time V broke line of sight, because some gig's marker was within eighty metres.
+// Once a tick while V is safe, for everybody of ours. Also while V is on a job (Spawn/Hunt.reds), more gently: `onJob`.
 public func CBSanctuaryHold(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
                             player: ref<PlayerPuppet>, opt onJob: Bool) -> Void {
   CBSanctuaryHoldTag(sys, game, des, player, n"CB_Rival", onJob);
@@ -89,8 +50,8 @@ public func CBSanctuaryHold(sys: ref<CyberbaneSystem>, game: GameInstance, des: 
   CBSanctuaryHoldTag(sys, game, des, player, n"CB_Orphan", onJob);
 }
 
-// `fightersOnly` is for the street's own people (2.0.0, CBStreetLife.Tick): nobody sent them after V, so
-// a bagman walking his round is left to walk it, and only somebody already fighting V is held.
+// `fightersOnly` is for the street's own people (CBStreetLife.Tick): nobody sent them after V, so a bagman walking his
+// round is left to walk it, and only somebody already fighting V is held.
 func CBSanctuaryHoldTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
                         player: ref<PlayerPuppet>, tag: CName, onJob: Bool, opt fightersOnly: Bool) -> Void {
   let ppos = player.GetWorldPosition();
@@ -99,10 +60,8 @@ func CBSanctuaryHoldTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<
   while i < ArraySize(ids) {
     let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
-    // Somebody still in a car is the car's, and it lets them out when it stops (CBOrderPursue then
-    // gives them nothing to do). Somebody who broke and is running is running away from V, not
-    // after V: their order is the flee (CBOrderFlee), and taking it back left them standing in the
-    // open, never far enough away to count as got away, until the rally turned them round.
+    // Somebody still in a car is the car's, and it lets them out when it stops (CBOrderPursue then gives them nothing
+    // to do).
     if CBStillStanding(p) && CBNpcSafe(sys, p) && !p.cbMoraleBroken && (!fightersOnly || CBNpcInCombat(p))
        && !VehicleComponent.IsMountedToVehicle(game, p.GetEntityID()) {
       CBCancelMove(p);
@@ -118,10 +77,7 @@ func CBSanctuaryHoldTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<
 
 // ---- The door ---------------------------------------------------------------------------------
 //
-// The last line, for whoever is already on their way when V gets inside. When somebody walks up to
-// a closed door the game asks them whether they mean to go through it, and this is the answer
-// arriving: the one moment an NPC opens a door. It only runs for that, so every other door in Night
-// City, and every other person at this one, costs one test and goes straight to the game's own code.
+// The last line, for whoever is already on their way when V gets inside.
 @wrapMethod(Door)
 protected cb func OnApproachingAreaResponseEvent(evt: ref<AIApproachingAreaResponseEvent>) -> Bool {
   if IsDefined(evt) && evt.isPassingThrough && CBDoorTurnsAway(this, evt.sender as ScriptedPuppet) {
@@ -144,9 +100,8 @@ func CBDoorTurnsAway(door: ref<GameObject>, npc: ref<ScriptedPuppet>) -> Bool {
   if !CBSentByUs(des, npc) && !npc.cbHostileByCyberbane {
     return false;
   }
-  // V's own side comes in with V: V's crew (one who has not turned), a friendly gang's people riding with V, and the help
-  // V called. Every one of ours was turned away at the door, so V's crew stood outside the apartment, the bar or the
-  // clinic V had just walked into, and forgot V was theirs to follow.
+  // V's own side comes in with V: V's crew (one who has not turned), a friendly gang's people riding with V, and the
+  // help V called.
   let id = npc.GetEntityID();
   if IsDefined(des) && (des.IsTagged(id, n"CB_Ally") || des.IsTagged(id, n"CB_Follower")
                         || (des.IsTagged(id, n"CB_Own") && !des.IsTagged(id, n"CB_Turned"))) {

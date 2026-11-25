@@ -1,21 +1,20 @@
 // Cyberbane - Settings (spec §13), via Mod Settings.
 //
-// Mod Settings discovers this class by reflection (any field carrying the
-// "ModSettings.mod" runtimeProperty). An instance is created and registered each
-// session by CyberbaneSystem; other modules read the live values through
-// CyberbaneRuntime.Get().GetSettings().
+// Mod Settings discovers this class by reflection (any field carrying the "ModSettings.mod" runtimeProperty). An
+// instance is created and registered each session by CyberbaneSystem; other modules read the live values through
+// CyberbaneRuntime.Get.GetSettings.
 
 enum ECBPreset {
   Subtle = 0,
   Default = 1,
   Dramatic = 2,
   Custom = 3,
-  BloodFeud = 4,   // 2.4.6, [90]: Rivals first (2.7.7: renamed)
+  BloodFeud = 4,   // [90]: Rivals first (renamed)
   TurfWar = 5,     // gangs and districts first
   QuietLife = 6,   // the street and talk, hardly anybody hunting
 }
 
-// How hard the crew's life is (2.7.7): how fast they climb, how hard their wars are, how often a fall is a death.
+// How hard the crew's life is: how fast they climb, how hard their wars are, how often a fall is a death.
 enum ECBCrewPace {
   Easy = 0,
   Standard = 1,
@@ -36,31 +35,22 @@ enum ECBTwrCompat {
 }
 
 // How much Cyberbane marks on the map (spec 12.3).
-//
-// This was a plain on/off and both answers were wrong. Off, and a player hunting for whoever
-// the mod had just announced finds nothing. On, and every crew member wears a quest marker -
-// which a player called "the obnoxious yellow markers", and they were right: fifteen of them,
-// through walls, in the colour the game reserves for the thing you are supposed to be doing.
-//
-// Everyone is the default: if Cyberbane sent them, the player can see where they are. NamedOnly is
-// the people who are somebody: a Rival and an apex squad (UI/Tracking.reds).
 enum ECBMarkerScope {
   Off = 0,
   NamedOnly = 1,
   Everyone = 2,
 }
 
-// Where V's crew comes when called (2.6.3, Reactions/Crew.reds CBCrewHeldWhy). They were held by every arrival rule, so
-// never at a gig or in a gang's compound. The story, a scene and a safe place keep them out whatever this says.
+// Where V's crew comes when called (Reactions/Crew.reds CBCrewHeldWhy). They were held by every arrival rule, so never
+// at a gig or in a gang's compound. The story, a scene and a safe place keep them out whatever this says.
 enum ECBCrewOnJobs {
   Never = 0,
   GigsAndSideJobs = 1,
   EverywhereButStory = 2,
 }
 
-// The building around V's apartments (2.7.1, Spawn/HomeGround.reds): "M10 is no longer a safe place for my V other than the
-// apartment itself." Open is how it was. Quiet keeps everybody Cyberbane sends, and the street's own life, off it. Quiet
-// except a vendetta lets a gang at Vendetta come for V there now and then; nobody else.
+// The building around V's apartments (Spawn/HomeGround.reds): Open is how it was. Quiet keeps everybody Cyberbane
+// sends, and the street's own life, off it.
 enum ECBHomeGround {
   Open = 0,
   Quiet = 1,
@@ -68,25 +58,6 @@ enum ECBHomeGround {
 }
 
 // Where Cyberbane's messages go (spec 12.2).
-//
-// Phone is the default: each sender is a contact in V's own phone, a new message arrives as the
-// game's incoming-SMS notification, and the thread opens in the phone's messenger. Cards is
-// Cyberbane drawing the message on the left of the screen itself, and nothing of Cyberbane's
-// enters the phone. It exists so that a player whose phone misbehaves has a way out that does
-// not go through the phone. Notices is the old line across the middle of the screen.
-//
-// Off is silence, and it is here rather than only on the Toasts switch because this is the
-// setting a player looking to turn messages off actually opens. A player asked for it: they
-// liked the mechanics and did not want to be told their Rival had climbed a rank or that
-// somebody was tracking them - they would rather be surprised. Off files nothing, draws nothing
-// and keeps Cyberbane out of the phone, and the gameplay is untouched: they still come, the
-// Hub still brokers peace, and the HUD line is its own setting (ECBHudLine) for anyone who
-// wants the warning without the texts.
-// How much of the street's chatter reaches V (2.6.5): "there is too much message spam because of all the notifications and
-// messages you get". Chatter is word going round (who is calling V what, who went under the knife, what people saw) and lines
-// overheard in passing. Never touched: a hunt's warnings, a gang's demands and offers, replies to what V just did, V's
-// crew, and a line said by somebody in front of V as it happens. Chatter is only ever spaced out, never silenced: the player
-// wants it, less often.
 enum ECBMessageAmount {
   Everything = 0,
   LessChatter = 1,
@@ -100,10 +71,8 @@ enum ECBMessageDelivery {
   Off = 3,
 }
 
-// How the city decides when to come for V. Timetable is the day split into windows (Spawn/
-// Schedule.reds). Unpredictable has no windows at all: every minute carries a small chance that
-// rises at night for crews and Rivals. Reactive sends crews only when V gives a gang a reason, apex
-// squads only when a gang has earned one, and Rivals unpredictably.
+// How the city decides when to come for V. Timetable is the day split into windows (Spawn/ Schedule.reds).
+// Unpredictable has no windows at all: every minute carries a small chance that rises at night for crews and Rivals.
 enum ECBPacing {
   Timetable = 0,
   Unpredictable = 1,
@@ -113,20 +82,14 @@ enum ECBPacing {
 // What the HUD line at the top of the screen shows. Everything is the full story: tracked, on
 // their way, searching, spotted, found, and how it ended. Hunts only drops TRACKED and the ending.
 // Off hides the line.
-//
-// (A Hub style setting sat here in the 1.6 work in progress, choosing between drawing the Hub on
-// the menu layer and on the HUD layer. Neither is how the Hub is drawn any more - it is a page of
-// the pause menu (UI/PauseMenuEntry.reds) - so the choice it offered no longer exists.)
 enum ECBHudLine {
   Everything = 0,
   HuntsOnly = 1,
   Off = 2,
 }
 
-// How long the district half of that line stays up. Always is what 1.6.0 shipped and what the
-// first report about it was: "the text just stays there on top of the screen". Briefly puts it up
-// when V arrives somewhere and again when their standing there crosses into the next word, then
-// clears it. Off never draws it and leaves the hunt warnings alone.
+// How long the district half of that line stays up. Briefly puts it up when V arrives somewhere and again when their
+// standing there crosses into the next word, then clears it. Off never draws it and leaves the hunt warnings alone.
 enum ECBDistrictLine {
   Always = 0,
   Briefly = 1,
@@ -139,11 +102,8 @@ enum ECBLogLevel {
   Verbose = 2,
 }
 
-// How a gang treats V (2.1.0, "How gangs see you"). A player asked for it, for a group playing Arasaka
-// corpos: every gang with a vendetta against them, set by hand. Earned is what V earned in play; any other
-// value is the stance the gang takes whatever V does (Data/Factions.reds, CBActingStanding). Each gang's
-// own setting can follow the page's first one (AllGangs) or say for itself. The values read as their
-// names in the menu, so they are single words; those that are not get a label (displayValues).
+// How a gang treats V ("How gangs see you"). Earned is what V earned in play; any other value is the stance the gang
+// takes whatever V does (Data/Factions.reds, CBActingStanding).
 enum ECBGangViewAll {
   Earned = 0,
   Allied = 1,
@@ -215,7 +175,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayValues.Everything", "Cyberbane-Settings-Value-HudLine-Everything")
   @runtimeProperty("ModSettings.displayValues.HuntsOnly", "Cyberbane-Settings-Value-HudLine-HuntsOnly")
   @runtimeProperty("ModSettings.displayValues.Off", "Cyberbane-Settings-Value-HudLine-Off")
-  public let hudLine: ECBHudLine = ECBHudLine.HuntsOnly;   // 2.6.1: less on screen while nothing is after V
+  public let hudLine: ECBHudLine = ECBHudLine.HuntsOnly;   // less on screen while nothing is after V
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-General")
@@ -246,8 +206,8 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "1")
   public let encounterGapMinutes: Int32 = 10;
 
-  // One rest for every lane (2.7.1): "I set it to max and they still hunt me one after another (rival, apex) without rest."
-  // The gap above was a rest per lane, so a Rival, a crew and an apex squad could each come off their own clock in a row.
+  // One rest for every lane: The gap above was a rest per lane, so a Rival, a crew and an apex squad could each come
+  // off their own clock in a row.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
   @runtimeProperty("ModSettings.category.order", "2")
@@ -255,7 +215,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RestTogether-Desc")
   public let restTogether: Bool = true;
 
-  // A night in V's own bed buys some quiet (2.7.1, Spawn/HomeGround.reds), in game hours. 0 is off.
+  // A night in V's own bed buys some quiet (Spawn/HomeGround.reds), in game hours. 0 is off.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
   @runtimeProperty("ModSettings.category.order", "2")
@@ -266,7 +226,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "1")
   public let sleepPeaceHours: Int32 = 6;
 
-  // The building around V's apartments (2.7.1, Spawn/HomeGround.reds).
+  // The building around V's apartments (Spawn/HomeGround.reds).
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
   @runtimeProperty("ModSettings.category.order", "2")
@@ -277,7 +237,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayValues.QuietButVendetta", "Cyberbane-Settings-Value-HomeGround-QuietButVendetta")
   public let homeGround: ECBHomeGround = ECBHomeGround.Quiet;
 
-  // Before V is known (2.7.0, CBMercStanding): until Street Cred 20, about the Heist, V's name carries less far.
+  // Before V is known (CBMercStanding): until Street Cred 20, about the Heist, V's name carries less far.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
   @runtimeProperty("ModSettings.category.order", "2")
@@ -285,7 +245,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-EarlyGrace-Desc")
   public let earlyGrace: Bool = true;
 
-  // Apex squads at all (2.6.5): the per-day slider at 0 used to be the only way to stop them.
+  // Apex squads at all: the per-day slider at 0 used to be the only way to stop them.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
   @runtimeProperty("ModSettings.category.order", "2")
@@ -332,8 +292,8 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "1")
   public let maxRivals: Int32 = 8;
 
-  // How strong a Rival is (1.9.2, Spawn/FactionApex.reds, CBRivalStrengthFraction). Rivals are built with
-  // the apex build, and the apex slider used to set both. Same scale and default as Apex strength.
+  // How strong a Rival is (Spawn/FactionApex.reds, CBRivalStrengthFraction). Rivals are built with the apex build, and
+  // the apex slider used to set both. Same scale and default as Apex strength.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
   @runtimeProperty("ModSettings.category.order", "3")
@@ -344,10 +304,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "5")
   public let rivalStrength: Int32 = 55;
 
-  // Two or three Rivals of one gang coming for V together (1.9.0, Spawn/RivalEncounter.reds). On by
-  // default. Named `rivalTeams`, not the `rivalTeamUps` the first 1.9.0 build had while it was an
-  // experiment that shipped off: Mod Settings keeps a value by its field's name, so under the old name
-  // anybody who had launched that build would have stayed off and never seen the new default.
+  // Two or three Rivals of one gang coming for V together (Spawn/RivalEncounter.reds). On by default.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
   @runtimeProperty("ModSettings.category.order", "3")
@@ -408,7 +365,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalFlaws-Desc")
   public let rivalFlaws: Bool = true;
 
-  // A Rival pushed far enough may come back a cyberpsycho (1.9.0, Rivals/RivalSystem.reds).
+  // A Rival pushed far enough may come back a cyberpsycho (Rivals/RivalSystem.reds).
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
   @runtimeProperty("ModSettings.category.order", "3")
@@ -431,7 +388,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.dependency", "rivals")
   public let rivalChrome: Bool = true;
 
-  // ---- Rivals and you (2.4.4): what happens between V and a Rival, and what a Rival does with their life ----
+  // ---- Rivals and you: what happens between V and a Rival, and what a Rival does with their life ----
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-RivalsYou")
   @runtimeProperty("ModSettings.category.order", "4")
@@ -540,7 +497,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-PanicInDark-Desc")
   public let panicInDark: Bool = true;
 
-  // A crew of V's own (Reactions/Crew.reds, 2.5.0).
+  // A crew of V's own (Reactions/Crew.reds).
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
   @runtimeProperty("ModSettings.category.order", "5")
@@ -556,7 +513,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.dependency", "myCrew")
   public let crewComeOnOwn: Bool = false;
 
-  // Chippin' In (Reactions/ChippinIn.reds, 2.7.6): the chance in each apex squad fight. 0 is off.
+  // Chippin' In (Reactions/ChippinIn.reds): the chance in each apex squad fight. 0 is off.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
   @runtimeProperty("ModSettings.category.order", "5")
@@ -568,7 +525,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "5")
   public let chippinInChance: Int32 = 25;
 
-  // The crew as a power on the street (Model/CrewTurf.reds, 2.7.6).
+  // The crew as a power on the street (Model/CrewTurf.reds).
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
   @runtimeProperty("ModSettings.category.order", "5")
@@ -586,7 +543,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayValues.Never", "Cyberbane-Settings-Value-CrewOnJobs-Never")
   @runtimeProperty("ModSettings.displayValues.GigsAndSideJobs", "Cyberbane-Settings-Value-CrewOnJobs-GigsAndSideJobs")
   @runtimeProperty("ModSettings.displayValues.EverywhereButStory", "Cyberbane-Settings-Value-CrewOnJobs-EverywhereButStory")
-  public let crewOnJobs: ECBCrewOnJobs = ECBCrewOnJobs.GigsAndSideJobs;   // 2.6.3
+  public let crewOnJobs: ECBCrewOnJobs = ECBCrewOnJobs.GigsAndSideJobs;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
@@ -594,7 +551,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewCallKey")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewCallKey-Desc")
   @runtimeProperty("ModSettings.dependency", "myCrew")
-  public let crewCallKey: EInputKey = EInputKey.IK_None;   // 2.6.3, unset: the player picks one
+  public let crewCallKey: EInputKey = EInputKey.IK_None;   // unset: the player picks one
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
@@ -602,7 +559,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewCanDie")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewCanDie-Desc")
   @runtimeProperty("ModSettings.dependency", "myCrew")
-  public let crewCanDie: Bool = true;   // 2.6.3: the game's companion knock-down is where they die
+  public let crewCanDie: Bool = true;   // the game's companion knock-down is where they die
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
@@ -613,7 +570,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayValues.Standard", "Cyberbane-Settings-Value-CrewPace-Standard")
   @runtimeProperty("ModSettings.displayValues.Hard", "Cyberbane-Settings-Value-CrewPace-Hard")
   @runtimeProperty("ModSettings.dependency", "myCrew")
-  public let crewPace: ECBCrewPace = ECBCrewPace.Standard;   // 2.7.7
+  public let crewPace: ECBCrewPace = ECBCrewPace.Standard;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
@@ -621,7 +578,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewWeaponInHand")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewWeaponInHand-Desc")
   @runtimeProperty("ModSettings.dependency", "myCrew")
-  public let crewWeaponInHand: Bool = false;   // 2.7.7, experimental
+  public let crewWeaponInHand: Bool = false;   // experimental
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
@@ -640,7 +597,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.min", "0")
   @runtimeProperty("ModSettings.max", "3")
   @runtimeProperty("ModSettings.step", "1")
-  public let crewGuards: Int32 = 2;   // 2.7.2
+  public let crewGuards: Int32 = 2;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
@@ -648,7 +605,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewJobs")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewJobs-Desc")
   @runtimeProperty("ModSettings.dependency", "myCrew")
-  public let crewJobs: Bool = true;   // 2.7.2
+  public let crewJobs: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
@@ -656,7 +613,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewDuels")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewDuels-Desc")
   @runtimeProperty("ModSettings.dependency", "myCrew")
-  public let crewDuels: Bool = true;   // 2.7.2
+  public let crewDuels: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
@@ -687,15 +644,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-VehicleArrivals-Desc")
   public let vehicleArrivals: Bool = true;
 
-  // On by default since 1.6.6. 1.5.2 had stopped cars arriving around a player on foot after a
-  // crash that was reported but never traced. 1.6.6 found the convoy choosing its car without
-  // regard to the crew and mounting people by a fixed list of four seat names, so a two-seater
-  // was handed back-seat passengers it has no slots for, and reading every car's seats from a
-  // field the traffic records leave empty (Spawn/Arrival.reds, CBVehicleSeatNames). Those are
-  // fixed at the source, and the switch is kept so anybody can still turn it off.
-  //
-  // Renamed from carArrivalsOnFoot so the new default reaches installs that never touched it:
-  // Mod Settings keeps values by field name, and the old one was stored as off for everybody.
+  // Those are fixed at the source, and the switch is kept so anybody can still turn it off.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Hunted")
   @runtimeProperty("ModSettings.category.order", "7")
@@ -722,7 +671,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "7")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CarAmbushes")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CarAmbushes-Desc")
-  // A new name (2.4.2) so the new default, on, reaches everybody: the old carAmbushes was stored off on every install.
+  // A new name so the new default, on, reaches everybody: the old carAmbushes was stored off on every install.
   public let gangsLieInWait: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -867,8 +816,8 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "8")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Surrender")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Surrender-Desc")
-  // A new name (2.3.2) so the new default, on, reaches everybody: Mod Settings keeps values by field name, and the
-  // old `surrender` was stored as off on every install from when it was experimental.
+  // A new name so the new default, on, reaches everybody: Mod Settings keeps values by field name, and the old
+  // `surrender` was stored as off on every install from when it was experimental.
   public let gangsSurrender: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
@@ -906,7 +855,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "0.05")
   public let enemyOfEnemyShare: Float = 0.5;
 
-  // ---- Turf (2.3.1: off the Gangs heading) ------------------------------------------------------
+  // ---- Turf (off the Gangs heading) ------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Turf")
   @runtimeProperty("ModSettings.category.order", "9")
@@ -914,8 +863,8 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TurfWars-Desc")
   public let turfWars: Bool = true;
 
-  // Whether the game's own map lists a district's new holder (UI/TurfMap.reds). For players whose
-  // other mods draw their own territory on the map (1.9.3).
+  // Whether the game's map lists a district's new holder (UI/TurfMap.reds). For players whose other mods draw their own
+  // territory on the map.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Turf")
   @runtimeProperty("ModSettings.category.order", "9")
@@ -973,9 +922,7 @@ public class CyberbaneSettings {
 
 
   // ---- Crowds and morale -------------------------------------------------------------------------
-  // bootstrapFromHistory was removed in 1.0 along with its settings entry. Nothing ever read
-  // it, and the thing it promised - your existing Street Cred counting as reputation you had
-  // already earned - is what the Street Cred floor setting above actually does.
+  // bootstrapFromHistory was removed in 1.0 along with its settings entry.
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Civilians")
@@ -1072,7 +1019,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.dependency", "morale")
   public let maxFleeFraction: Float = 0.35;
 
-  // ---- Word on the street (2.3.1) -----------------------------------------------------------------
+  // ---- Word on the street -----------------------------------------------------------------
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Word")
   @runtimeProperty("ModSettings.category.order", "11")
@@ -1242,7 +1189,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Favours-Desc")
   public let favours: Bool = true;
 
-  // Work for the corporations (2.7.7, Spawn/LivingStreet.reds): contracts offered to V.
+  // Work for the corporations (Spawn/LivingStreet.reds): contracts offered to V.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
   @runtimeProperty("ModSettings.category.order", "13")
@@ -1302,21 +1249,21 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.category.order", "3")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-RivalSignature")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-RivalSignature-Desc")
-  public let rivalSignature: Bool = true;   // 2.7.2
+  public let rivalSignature: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Rivals")
   @runtimeProperty("ModSettings.category.order", "3")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-Strongholds")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Strongholds-Desc")
-  public let strongholds: Bool = true;   // 2.7.2
+  public let strongholds: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
   @runtimeProperty("ModSettings.category.order", "13")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-BagGoods")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-BagGoods-Desc")
-  public let bagGoods: Bool = true;   // 2.7.2
+  public let bagGoods: Bool = true;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Street")
@@ -1349,8 +1296,6 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "0.25")
   public let gangLifeOften: Float = 1.0;
 
-  // "Nobody kills you but me" moved to Rivals and you in 2.4.4 as nobodyButMe, on: a new field so the new default
-  // reaches everybody (claimHelp was stored off on every install). claimHelp is no longer read.
 
 
 
@@ -1402,7 +1347,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-BrutalConduct-Desc")
   public let brutalConduct: Bool = true;
 
-  // Whether anything V wears is read at all (Signals/Concealment.reds, CBClothingCounts, 1.9.3).
+  // Whether anything V wears is read at all (Signals/Concealment.reds, CBClothingCounts).
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
   @runtimeProperty("ModSettings.category.order", "14")
@@ -1475,9 +1420,6 @@ public class CyberbaneSettings {
   public let streetCredFollows: Bool = true;
 
 
-  // ---- Messages and HUD --------------------------------------------------------------------------
-  // First on the page (2.6.3): "I was hoping there was a setting for it but I didn't see one." Same field, so the value a
-  // player set is kept; it now reaches conversations and the street's intel too (CBTalkReadSeconds).
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.category.order", "15")
@@ -1488,7 +1430,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "25")
   public let messageHold: Int32 = 175;
 
-  // How big the message cards under the health bar and Cyberbane's own subtitle line are drawn (2.6.5), in percent.
+  // How big the message cards under the health bar and Cyberbane's own subtitle line are drawn, in percent.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.category.order", "15")
@@ -1506,9 +1448,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Toasts-Desc")
   public let toasts: Bool = true;
 
-  // How long word of what V did takes to reach V's phone, in in-game minutes (UI/PhoneMessages.reds,
-  // CBPhone.Hearsay). Somebody passing on a body, a dead Rival, a payout or a crew changing hands
-  // has to have heard about it first. 0 is the old behaviour: as it happens.
+  // How long word of what V did takes to reach V's phone, in in-game minutes (UI/PhoneMessages.reds, CBPhone.Hearsay).
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.category.order", "15")
@@ -1544,9 +1484,8 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ShowCountdowns-Desc")
   public let showCountdowns: Bool = true;
 
-  // The district line borrows the hunt line's widget (Spawn/Hunt.reds), so the setting above
-  // still hides the whole line; this governs the district half of it. Briefly by default rather
-  // than Always, because a line that never changes is one a player stops reading.
+  // The district line borrows the hunt line's widget (Spawn/Hunt.reds), so the setting above still hides the whole
+  // line; this governs the district half of it.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.category.order", "15")
@@ -1567,11 +1506,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "1")
   public let districtLineSeconds: Int32 = 10;
 
-  // The name-and-health bars at the top of the screen (UI/ThreatBar.reds). Kept beside the hunt
-  // line because the two sit one above the other, and a player looking to clear the top of the
-  // screen looked here for both and found only one. The field keeps its old name, because Mod
-  // Settings stores values by class and field and a rename would reset everybody's choice; only
-  // where it is listed and what it is called have changed.
+  // The name-and-health bars at the top of the screen (UI/ThreatBar.reds).
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.category.order", "15")
@@ -1596,13 +1531,6 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "5")
   public let hudScale: Int32 = 100;
 
-  // The Hub is a tab of the game's menu (UI/HubTab.reds) unless the player would rather have it in
-  // the pause menu, where it lived until 1.7.3.
-  //
-  // Its field straight under its own annotations (2.5.6). 2.4.6 put Voices and the morning brief between the two, and
-  // redscript gives a field every annotation above it since the last field, so these went to `voices`: one option with
-  // two names, one of which moved nothing, and this switch out of the menu altogether. tools/audit_settings.py now fails
-  // a field with more than one label, or none.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.category.order", "15")
@@ -1617,7 +1545,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-Voices-Desc")
   public let voices: Bool = true;
 
-  // Sounds (2.7.7, UI/Sounds.reds): typing, pins, loot, the crew's promotions, the apex warning, horns.
+  // Sounds (UI/Sounds.reds): typing, pins, loot, the crew's promotions, the apex warning, horns.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-UI")
   @runtimeProperty("ModSettings.category.order", "15")
@@ -1651,10 +1579,8 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "10")
   public let questAreaRadius: Int32 = 80;
 
-  // Off by default, and they should stay that way for most players. A Rival arriving inside
-  // an apartment is a fight you cannot have: the game forces your hands empty in there, so
-  // you get attacked and cannot draw. These two exist for people who have decided they want
-  // that fight anyway, and they are only sensible together.
+  // Off by default, and they should stay that way for most players. A Rival arriving inside an apartment is a fight you
+  // cannot have: the game forces your hands empty in there, so you get attacked and cannot draw.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-SafeAreas")
   @runtimeProperty("ModSettings.category.order", "16")
@@ -1670,12 +1596,8 @@ public class CyberbaneSettings {
   public let allowSafeZoneCombat: Bool = false;
 
 
-  // ---- Factions ----------------------------------------------------------------------------------
-  // One switch per faction Cyberbane keeps a book on. Off and Cyberbane leaves that faction alone
-  // entirely: its people never turn on V on sight because of Cyberbane, it sends nobody, makes no
-  // Rivals, pays no tribute or bounties and never texts. What V does to them still counts towards
-  // V's reputation, and their standing is still kept, so switching them back on picks up where it
-  // was. Read through CBFactionOn (Data/Factions.reds).
+  // ---- Factions ---------------------------------------------------------------------------------- One switch per
+  // faction Cyberbane keeps a book on.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Factions")
   @runtimeProperty("ModSettings.category.order", "17")
@@ -1789,12 +1711,8 @@ public class CyberbaneSettings {
   public let factionNCPD: Bool = true;
 
 
-  // ---- How gangs see you (2.1.0) -----------------------------------------------------------------
-  // Set by hand how the gangs treat V. The first one sets every gang; each gang below it can follow that
-  // or say for itself. Read through CBGangView (Data/Factions.reds); acted on in one place,
-  // CBActingStanding, so everything a gang does about V goes by it. The standing V earns in play keeps
-  // counting underneath and is what comes back on Earned in play. Mod Settings keeps one set of values for
-  // every save, like every other setting here.
+  // ---- How gangs see you ----------------------------------------------------------------- Set by hand how the gangs
+  // treat V. The first one sets every gang; each gang below it can follow that or say for itself.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-GangView")
   @runtimeProperty("ModSettings.category.order", "18")
@@ -2007,13 +1925,6 @@ public class CyberbaneSettings {
 
   // Start over. Turn it on, hit Apply, and everything Cyberbane has recorded on this save is
   // cleared.
-  //
-  // Mod Settings has no button control - the readme's options are bools, numbers, enums and
-  // key bindings - so a switch is how an action is offered. The Apply step is the confirmation,
-  // which is why this is not asked twice. It acts when it goes from off to on, never because it is
-  // on (SwitchFlipped): Mod Settings keeps the value the player accepted, saves it, and hands it back
-  // on every launch and with every later change to any setting, so this used to ask for a reset
-  // again each time. It stays on in the menu once used; off and on again is another reset.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Advanced")
   @runtimeProperty("ModSettings.category.order", "19")
@@ -2021,10 +1932,8 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ResetAll-Desc")
   public let resetAllData: Bool = false;
 
-  // This save is another character (1.8.3). For two characters whose records ended up under one
-  // playthrough id and could not be told apart when they loaded (same lifepath, both from before
-  // 1.8.3). Gives the loaded save a playthrough of its own and keeps everything it earned. Acts on
-  // the way from off to on, like the reset switch.
+  // This save is another character. Gives the loaded save a playthrough of its own and keeps everything it earned. Acts
+  // on the way from off to on, like the reset switch.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Advanced")
   @runtimeProperty("ModSettings.category.order", "19")
@@ -2038,7 +1947,7 @@ public class CyberbaneSettings {
 
   // ---- Registration & lifecycle ----------------------------------------
   public func Register() -> Void {
-    CBModSettingsListen(this);   // only when Mod Settings is installed (Settings/ModSettingsBridge.reds, 2.6.5)
+    CBModSettingsListen(this);   // only when Mod Settings is installed (Settings/ModSettingsBridge.reds)
     // What was just read back is the choice already made, along with whatever was tuned after it.
     // m_appliedPreset is not saved, so on every launch a saved Subtle or Dramatic looked newly
     // picked and wrote its numbers over the sliders the note above says are kept.
@@ -2078,11 +1987,8 @@ public class CyberbaneSettings {
     }
   }
 
-  // Did this switch just go from off to on (1.8.3)? What it was last seen doing is kept in the
-  // service (CyberbaneService.m_resetSwitch), because the switch's own value comes back on every
-  // launch. A switch found on with nothing on record was turned on before 1.8.3, when it was
-  // already acted on: it is taken as done, never carried out blind. With no service to remember it
-  // in, nothing happens: an action that wipes a save is never taken without knowing it is new.
+  // Did this switch just go from off to on? What it was last seen doing is kept in the service
+  // (CyberbaneService.m_resetSwitch), because the switch's own value comes back on every launch.
   private func SwitchFlipped(svc: ref<CyberbaneService>, on: Bool, isReset: Bool) -> Bool {
     if !IsDefined(svc) {
       return false;
@@ -2120,8 +2026,8 @@ public class CyberbaneSettings {
         this.hitSquadFrequencyMult = 0.5;
         this.rivalFrequencyMult = 0.6;
         this.tributeMult = 0.75;
-        // Every preset sets gang life (2.6.0): only Turf war and Quiet life did, so leaving Turf war for any other kept
-        // its 1.5 for good.
+        // Every preset sets gang life: only Turf war and Quiet life did, so leaving Turf war for any other kept its 1.5
+        // for good.
         this.gangLifeOften = 0.75;
         break;
       case ECBPreset.BloodFeud:
@@ -2185,8 +2091,8 @@ public class CyberbaneSettings {
     return EnumInt(this.logLevel);
   }
 
-  // The Factions switches (1.9.1). MaxTac and anybody filed as Police go with the NCPD's. A faction
-  // with no switch of its own is on.
+  // The Factions switches. MaxTac and anybody filed as Police go with the NCPD's. A faction with no switch of its own
+  // is on.
   public func FactionOn(id: CName) -> Bool {
     if Equals(id, n"TygerClaws") { return this.factionTygerClaws; }
     if Equals(id, n"Maelstrom") { return this.factionMaelstrom; }

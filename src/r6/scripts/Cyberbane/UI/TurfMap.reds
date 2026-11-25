@@ -1,9 +1,6 @@
-// Cyberbane - The game's own map, telling the truth about who runs a district
+// Cyberbane - Who runs a district, on the game's map
 //
-// The world map lists a district's gangs from its fixed record, so it would say Barghest over Dogtown
-// for ever. Each entry is handed to its row as a record once the row exists, and that is the only
-// thing changed here: when the listed gang has lost the district to somebody the record has never
-// heard of, the row is given the new owners instead. No widget is touched.
+// The world map lists a district's gangs from a fixed record. This swaps in who actually holds it now.
 
 @wrapMethod(WorldMapMenuGameController)
 protected cb func OnGangListItemSpawned(gangWidget: ref<inkWidget>, userData: ref<IScriptable>) -> Bool {
@@ -22,7 +19,7 @@ func CBMapGangInstead(game: GameInstance, hovered: gamedataDistrict, listed: ref
   }
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().turfOnMap {
-    return null;   // another mod has the map (1.9.3)
+    return null;   // another mod has the map
   }
   let sys = CyberbaneSystem.Get(game);
   let book = CBTurfBook.Get(game);

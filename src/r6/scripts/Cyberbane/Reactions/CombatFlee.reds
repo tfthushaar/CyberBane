@@ -1,11 +1,7 @@
 // Cyberbane - Combat flee and escape -> Rival (spec §10.2)
 //
-// A wounded enemy can lose its nerve and run. If it gets away it becomes a Survivor Rival
-// that will come for you later; if it was already the Rival hunting you, it climbs a rank
-// and returns harder (and gains the Scarred trait). Detection: a fleeing enemy is logged
-// as a pending escapee; any death cancels it (the death handler drops it), and anything
-// left that despawns alive or outruns V counts as escaped. Uses the game's own fear path
-// (a Terror stim), so it is reversible and needs no custom audio.
+// A wounded enemy can lose its nerve and run. If it gets away it becomes a Survivor Rival that will come for you later;
+// if it was already the Rival hunting you, it climbs a rank and returns harder (and gains the Scarred trait).
 
 @addField(ScriptedPuppet)
 public let cbLowHealthFled: Bool;
@@ -25,11 +21,8 @@ public let cbMercyInfo: ref<CBKillInfo>;
 @addField(ScriptedPuppet)
 public let cbMercyPsycho: Bool;
 
-// Called from OnHit when V has just damaged this puppet. If that blow put them down without
-// killing them - a knockout, a non-lethal takedown, a defeat - log it. If V then walks away and
-// leaves them breathing, CBProcessEscapees turns them into a Spared Rival who remembers being
-// beaten and left there. Killing them afterwards drops the entry (the death handler clears it),
-// so this only ever fires for someone you genuinely spared.
+// Called from OnHit when V has just damaged this puppet. If that blow put them down without killing them - a knockout,
+// a non-lethal takedown, a defeat - log it.
 public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(sys) || !IsDefined(puppet) || puppet.cbSparedLogged {
     return;
@@ -39,10 +32,6 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
     return;
   }
   // The Rivals setting used to bail out right here, which quietly took Conduct with it.
-  // Putting somebody down alive is how Conduct is earned, and it is also how a Spared Rival
-  // is created, but only the second of those is what that setting is about. A player who
-  // turned Rivals off lost every point of Conduct they earned and had no way to know. The
-  // check now sits on the Rival itself, at the bottom, and nothing else answers to it.
   let rivalsOn = true;
   if IsDefined(rt) && rt.HasSettings() {
     rivalsOn = rt.GetSettings().rivals;
@@ -50,10 +39,7 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   if sys.IsInSafeZone() {
     return;   // not in a safe area (spec §16)
   }
-  // Down, but still breathing - that is what makes it mercy rather than a kill. Asked before the
-  // Safety Gate, which queries the workspot and safe-area systems: this runs for every hit on every
-  // enemy, and from the sweep every second for everyone V has hurt, and almost nobody it is asked
-  // about is down. In a dense fight those queries, twice a hit, were frames' worth of work for nothing.
+  // Down, but still breathing - that is what makes it mercy rather than a kill.
   if !ScriptedPuppet.IsDefeated(puppet) && !puppet.IsIncapacitated() {
     return;
   }
@@ -68,25 +54,11 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
 
   puppet.cbSparedLogged = true;
   // Classified now, scored later.
-  //
-  // This used to be scored the moment they dropped: +Conduct, the nonLethal tally, fs.spared,
-  // the mercy credit with their rivals, the quiet-takedown count, all of it. Being down is not
-  // being spared, though. Put a room to sleep with Pax, walk round scanning them and put a round
-  // through each head, and every one of them had already been booked as mercy - the kill path
-  // tried to take it back with CBRevokeMercy, which only knew about three of those axes, and the
-  // escapee resolve below could settle the mercy while V was still standing over the body, so
-  // the Spared Rival and the message were out before the shot was fired.
-  //
-  // So the incident is classified here, while who saw it and how it was done are still true,
-  // and held on the escapee. CBSettleMercy scores it once V has really left them breathing; if
-  // V finishes them first, the death handler drops the escapee and the mercy never existed.
-  // Only V's own work counts, the same rule the kill path uses.
   let mercy: ref<CBKillInfo>;
   if puppet.cbDamagedByPlayer {
     mercy = CBBuildKillInfo(sys, game, puppet, false);
-    // The fight you are in does count it now: somebody down is out of the fight either way, and
-    // a non-lethal playthrough has to be able to end an encounter. If V finishes them, the death
-    // handler turns this down into a body instead of counting them twice.
+    // The fight you are in does count it now: somebody down is out of the fight either way, and a non-lethal
+    // playthrough has to be able to end an encounter.
     CBEncounterRecordKill(sys, mercy);
   }
   if !rivalsOn && !IsDefined(mercy) {
@@ -112,10 +84,6 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
 }
 
 // V left them breathing: score the takedown that put them down.
-//
-// `alive` is the caller's answer to whether they still are; a body V or anything else finished
-// in the meantime is not mercy. The Rival setting has no say here - Conduct is earned whether or
-// not Rivals are on (see CBSparedCheck).
 public func CBSettleMercy(sys: ref<CyberbaneSystem>, e: ref<CBEscapee>, alive: Bool) -> Void {
   if !IsDefined(sys) || !IsDefined(e) || !IsDefined(e.mercy) || !alive {
     return;
@@ -141,13 +109,8 @@ public func CBSettleMercy(sys: ref<CyberbaneSystem>, e: ref<CBEscapee>, alive: B
   }
 }
 
-// Called from OnHit when V has just damaged this puppet.
-// How steady this one is under fire: the chance it holds its ground rather than breaking.
-// A flat coin flip made every enemy behave the same, which read as random rather than as
-// character. Rank decides it, so bosses never run and rank and file break often.
-//
-// The idea of giving each NPC a temperament instead of one global flee chance comes from
-// Much Better AI (Nexus 31402) by cshiai. The implementation here is our own.
+// Called from OnHit when V has just damaged this puppet. How steady this one is under fire: the chance it holds its
+// ground rather than breaking.
 public func CBNerve(puppet: ref<ScriptedPuppet>) -> Float {
   let base = 1.0 - CBConfig.FleeChance();   // rank and file
   let rec = puppet.GetRecord();
@@ -198,16 +161,12 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   if sys.IsInSafeZone() {
     return;   // not in a safe area (spec §16)
   }
-  // How hurt, first: one stat read, and it turns away nearly every hit. The Safety Gate below queries
-  // the workspot and safe-area systems, and asked first it ran for every hit on every enemy in the
-  // fight, which a dense one makes many a frame.
+  // How hurt, first: one stat read, and it turns away nearly every hit.
   let sps = GameInstance.GetStatPoolsSystem(game);
   if !IsDefined(sps) {
     return;
   }
-  // A percentage, which is what the threshold is. The last argument is `perc`: false is hit points
-  // (the game compares it with GetStatPoolMaxPointValue, damageSystem.script:2938), so this read
-  // "25 hit points left" and nearly nobody survived to that, which is why wounded enemies never ran.
+  // A percentage, which is what the threshold is.
   let hp = sps.GetStatPoolValue(Cast<StatsObjectID>(puppet.GetEntityID()), gamedataStatPoolType.Health, true);
   if hp > CBConfig.FleeHealthThreshold() {
     return;
@@ -230,16 +189,11 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   // Decided once, at low health.
   puppet.cbLowHealthFled = true;
 
-  // Track them whether or not they run. Leaving a wounded enemy standing is the player
-  // sparing them just as much as letting one escape is, and tying this record to the flee
-  // roll meant half of everyone you wounded and walked away from was never even considered
-  // for a Rival. Tracking costs nothing: the escapee list is session-only and self-pruning.
+  // Track them whether or not they run.
   CBAddEscapee(sys, game, puppet, faction);
 
-  // Whether they actually break and run. Steadier ranks hold their ground (CBNerve), and an
-  // apex squad member or a Rival who is Hard to Scare never does.
-  // When a mod like Much Better AI owns morale, it decides who breaks and runs. Cyberbane still
-  // recorded that this one is hurt, above, so Rivals keep coming from people who got away.
+  // Whether they actually break and run. Steadier ranks hold their ground (CBNerve), and an apex squad member or a
+  // Rival who is Hard to Scare never does. When a mod like Much Better AI owns morale, it decides who breaks and runs.
   if intensity <= 0.0 || CBHoldsGround(puppet) || CBExternalMoraleOwner() {
     return;
   }
@@ -251,7 +205,7 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
     }
     if CBRoomToBreak(sys, puppet) {
       CBMoraleBreak(sys, game, puppet, faction, chance);
-      // A Rival V knows, breaking: they beg as they go, in their own voice (2.7.7).
+      // A Rival V knows, breaking: they beg as they go, in their own voice.
       let desBreak = GameInstance.GetDynamicEntitySystem();
       if IsDefined(desBreak) && desBreak.IsTagged(puppet.GetEntityID(), n"CB_Rival") {
         CBVoice(sys, game, puppet, n"fear_beg", n"RivalFlees", 20.0);
@@ -260,11 +214,9 @@ public func CBCombatFleeCheck(sys: ref<CyberbaneSystem>, game: GameInstance, pup
   }
 }
 
-// A Rival at the end of their rope, who breaks, may give up where they stand instead of running (2.5.7): down, in the
-// game's own defeated state (NPCPuppet.script, OnPotentialDeath: Defeated, and the moment of invulnerability after it),
-// with V as the one who put them there. From there it is the mercy every downed Rival gets (CBSparedSweep): finish
-// them, walk off, or talk to them. A badly hurt Rival could only fight on or run, and neither could be spoken to.
-// Only when the mercy is V's choice, and V's own hand brought them low.
+// A Rival at the end of their rope, who breaks, may give up where they stand instead of running: down, in the game's
+// defeated state (NPCPuppet.script, OnPotentialDeath: Defeated, and the moment of invulnerability after it), with V as
+// the one who put them there.
 func CBRivalYields(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Bool {
   if !CBMercyChoiceOn() || !puppet.cbDamagedByPlayer || puppet.cbLastHitByOther
      || RandF() >= CBConfig.RivalYieldShare() {
@@ -291,16 +243,6 @@ func CBRivalYields(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<Sc
 // Resolve pending escapees on the fast tick. Deaths already dropped the ones V caught, so
 // anything left that despawned alive or outran V counts as having gotten away.
 // Catch a mercy the hit hook missed.
-//
-// CBSparedCheck runs from OnHit, so it only ever sees an enemy that goes down on a blow V
-// landed that raised a hit event we are hooked to. Anyone who drops to a burn, a quickhack
-// tick, an explosion, or another mod's damage can end up defeated and breathing with nothing
-// logged, and a player who walked away believing they showed mercy gets no Rival out of it.
-// This sweeps the live NPC registry so the mercy is noticed however they went down.
-//
-// Crash safety: no new engine API. Same registry and same CBNpcSafe gate the Director uses,
-// bounded per tick, and CBSparedCheck re-runs every one of its own guards (enabled, the rivals
-// setting, safe zones, CanAffect, defeated-and-alive, faction), so this is only another way in.
 public func CBSparedSweep(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
     return;
@@ -321,18 +263,12 @@ public func CBSparedSweep(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
   while i < ArraySize(npcs) && looked < CBConfig.SparedSweepPerTick() {
     let npc = npcs[i];
     i += 1;
-    // cbSparedLogged keeps this to one look per enemy; CBSparedCheck sets it when it logs. Only the
-    // ones actually down count against the budget: it was spent on everybody V had hurt who was still
-    // on their feet and fighting, the first ten of them every second, so in a big fight the sweep
-    // never reached anybody lying further down the list, who is who it is for.
-    // Our own two fields first (1.9.1): they rule out nearly everybody on a street, and asking the
-    // engine whether each passer-by was still attached, every second, was most of what this cost.
+    // cbSparedLogged keeps this to one look per enemy; CBSparedCheck sets it when it logs.
     if IsDefined(npc) && npc.cbDamagedByPlayer && !npc.cbSparedLogged && CBNpcSafe(sys, npc)
        && (ScriptedPuppet.IsDefeated(npc) || npc.IsIncapacitated()) {
       looked += 1;
-      // Put down by somebody else after V had hurt them (2.5.6): not V's mercy to give, as their death would not be V's
-      // kill (Signals/CombatSignals.reds, the killing blow): no Conduct, no standing for sparing them, no Spared Rival.
-      // Somebody on V's side putting them down is V's (CBOnVsSide). Marked looked-at so the sweep asks once.
+      // Put down by somebody else after V had hurt them: not V's mercy to give, as their death would not be V's kill
+      // (Signals/CombatSignals.reds, the killing blow): no Conduct, no standing for sparing them, no Spared Rival.
       if CBLastHitWasOthers(game, npc) {
         npc.cbSparedLogged = true;
       } else {
@@ -373,31 +309,21 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
       if e.spared {
         // Someone V put down and did not finish. They do not run, so "left alive" means either
         // they streamed away still breathing, or V walked away from them.
-        //
-        // It used to also be enough for V to be out of combat for twenty-five seconds, with a
-        // three-minute backstop. After a quiet takedown V is out of combat the whole time, so
-        // walking round a sleeping room with a scanner settled every one of them as spared
-        // while V stood there, and the headshots that followed a minute later were kills of
-        // people already booked as mercy. Being near them is the question now: V has to have
-        // actually gone. The escapee cap still settles the oldest if a long stay fills it.
         let distance = !gone ? Vector4.Distance(ppos, e.puppet.GetWorldPosition()) : 0.0;
-        // While V is still fighting, walking off from them is following the fight, not leaving them (2.7.6): V has left
-        // them only beyond the reach they are kept in until then (CBRemainsInReach), so nobody is booked as spared, or a
+        // While V is still fighting, walking off from them is following the fight, not leaving them: V has left them
+        // only beyond the reach they are kept in until then (CBRemainsInReach), so nobody is booked as spared, or a
         // Rival's encounter closed, for V chasing the rest of the crew forty-five metres down the street.
         let fighting = IsDefined(player) && player.IsInCombat();
         let leftThem = !IsDefined(player)
                     || (!gone && distance > (fighting ? CBConfig.RemainsFightDistance() : CBConfig.SparedLeftDistance()));
-        // A Rival's encounter is closed by this resolution, and holding it open for as long as V
-        // stays near the body would leave the Rival lane reading as free (CBLiveRivalPresent asks
-        // for somebody standing) - the re-queued, "teleporting" Rival. They keep the old timing.
+        // A Rival's encounter is closed by this resolution, and holding it open for as long as V stays near the body
+        // would leave the Rival lane reading as free (CBLiveRivalPresent asks for somebody standing) - the re-queued,
+        // "teleporting" Rival.
         let ready = age >= CBConfig.SparedResolveTicks();
         if e.wasRival {
           if CBMercyChoiceOn() {
-            // V's choice (1.9.9): told once; spared when V stands with empty hands for a moment out of
-            // the fight, walks away, or says so where they lie. Killing them is the other answer, and
-            // the death handler has that. Being out of combat alone no longer spares anybody.
-            // As soon as they are down (2.5.7). It waited for V to be out of combat, so a Rival who went down while their
-            // people were still shooting could not be spoken to, or spared in words, until the whole fight was over.
+            // V's choice: told once; spared when V stands with empty hands for a moment out of the fight, walks away,
+            // or says so where they lie. Killing them is the other answer, and the death handler has that.
             if !gone && !e.announced && IsDefined(player) {
               e.announced = true;
               e.puppet.cbMercyOpen = true;
@@ -406,10 +332,7 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
                 CBSystemNote(game, CBTf(n"Cyberbane-CombatFlee-IsDownFinishThemWalkOff", [s"\(CBRivalDisplayName(sys.GetContent(), fallen))"]), 8.0);
               }
             }
-            // Empty hands spare them only from a distance (2.5.1). Talking needs empty hands too, and "put your weapon
-            // away to spare them, or talk to them" settled it as spared three seconds after V holstered to walk up and
-            // talk, which closed the conversation before it could open ("I holstered and all I got was Carry body").
-            // Standing over them, or in a conversation with them, V is still deciding.
+            // Empty hands spare them only from a distance.
             let deciding = !gone && (e.puppet.cbTalkPartner || distance <= CBConfig.MercyTalkRadius());
             let empty = IsDefined(player) && !player.IsInCombat() && !IsDefined(GameObject.GetActiveWeapon(player)) && !deciding;
             e.holsterTicks = empty ? e.holsterTicks + 1 : 0;
@@ -421,9 +344,7 @@ public func CBProcessEscapees(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
             leftThem = leftThem || !fighting;
           }
         }
-        // The backstop for V staying near them without choosing, never while V is still fighting (2.7.6). Three minutes into
-        // a fight with their crew, a Rival V had put down was settled as spared where they lay, told as "you let them walk",
-        // and their encounter closed, while V was still shooting their people with every intention of coming back to them.
+        // The backstop for V staying near them without choosing, never while V is still fighting.
         let backstop = e.wasRival && age >= CBConfig.SparedResolveMaxTicks() && !fighting;
         if gone || (ready && leftThem) || backstop {
           if !gone && IsDefined(e.puppet) {
@@ -477,10 +398,8 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   if Equals(e.faction, n"") || !TDBID.IsValid(e.record) {
     return;
   }
-  // They were down and breathing when this was logged. If they are still here and dead now,
-  // something finished them afterwards - a bleed-out, a stray round, another mod's damage -
-  // and a corpse does not come back as a Rival. A puppet that simply streamed out is gone
-  // rather than dead, and still counts as left alive.
+  // They were down and breathing when this was logged. If they are still here and dead now, something finished them
+  // afterwards - a bleed-out, a stray round, another mod's damage - and a corpse does not come back as a Rival.
   if IsDefined(e.puppet) && e.puppet.IsDead() {
     return;
   }
@@ -488,17 +407,6 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   let district = CBEventDistrict(sys, game);
 
   // Was this somebody who is already a Rival?
-  //
-  // This path did not exist: every mercy created a brand new Rival, so sparing the same person
-  // twice was never recorded. CBRivalSparedByV - the function that counts it, can turn them
-  // into a Debtor and promotes them - was never called from anywhere in the mod. That also
-  // left the mercy term of the Rivals' ladder permanently zero, so a Rival only ever got
-  // harder from escaping, never from being let go.
-  //
-  // Asked of the entity id the escapee was logged with, not of the puppet. The puppet is only a
-  // weak reference, and it is gone by the time this runs whenever the body streamed out or was
-  // cleared away first - which is one of the two ways this resolves at all. Asking the puppet
-  // took every such Rival for a stranger and made a second Rival of the same person.
   if EntityID.IsDefined(e.entityId) {
     let already = CBFindRivalByBody(sys, e.entityId);
     if IsDefined(already) {
@@ -506,21 +414,21 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       if IsDefined(st) {
         st.rivalsSpared += 1;   // the counter existed and nothing ever incremented it
       }
-      // Asked to work for V where they lay, and said yes (Reactions/Crew.reds, [C1], 2.5.0): off the board, on the crew.
+      // Asked to work for V where they lay, and said yes (Reactions/Crew.reds, [C1]): off the board, on the crew.
       if e.recruited {
         CBCrewTakeRival(sys, game, already, e);
         CBCreditMercy(sys, already.faction, CBConfig.MercyRivalCredit());
         return;
       }
-      // Told to leave Night City where they lay, and they went (Rivals/RivalLife.reds, 1.9.9).
+      // Told to leave Night City where they lay, and they went (Rivals/RivalLife.reds).
       if e.exiled {
         already.state = EnumInt(ECBRivalState.Retired);
-        CBHierarchyFill(sys, already.faction);   // their chair is somebody else's now (2.4.2)
+        CBHierarchyFill(sys, already.faction);   // their chair is somebody else's now
         CBCloseRivalEncounter(sys, game, already, e.puppet);
         CBFileLog(sys, n"RivalExiled", now, district, already.faction, Cast<Float>(already.id));
         let exiledBook = CBRivalBook.Get(game);
         if IsDefined(exiledBook) {
-          exiledBook.SetEnding(already.id, CBEndingRetired(), now);   // for where they end up (2.4.4, [61])
+          exiledBook.SetEnding(already.id, CBEndingRetired(), now);   // for where they end up ([61])
         }
         if CBMessagesOn() {
           CBHearsayFromStreet(game, CBTf(n"Cyberbane-CombatFlee-LeftNightCityInTheBack", [s"\(CBRivalDisplayName(content, already))"]), n"");
@@ -529,14 +437,14 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
         return;
       }
       let indebted = CBRivalSparedByV(already, content, now, district);
-      // Where V first beat them, and a bond's debt (Rivals/RivalMoments.reds, 2.4.4).
+      // Where V first beat them, and a bond's debt (Rivals/RivalMoments.reds).
       CBRivalSparedMoment(sys, game, already, e.puppet);
-      // Spared once too often at the top of the ladder, and not grateful for it (1.9.0).
+      // Spared once too often at the top of the ladder, and not grateful for it.
       if !indebted {
         CBRivalMaybeBreak(sys, game, already);
       } else {
-        // Grateful instead: they owe V, and pay it back in tips (Reactions/StreetIntel.reds, 1.9.8). Out of the
-        // fight for good, so out of their chair too (2.4.2).
+        // Grateful instead: they owe V, and pay it back in tips (Reactions/StreetIntel.reds). Out of the fight for
+        // good, so out of their chair too.
         CBIntelDebtor(sys, game, already);
         CBHierarchyFill(sys, already.faction);
       }
@@ -547,20 +455,6 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
       // Left lying here, alive. Somebody will have seen it (Rivals/Whereabouts.reds).
       CBNoteEscapeeSeen(sys, game, already, e);
       // The encounter is over, so close it the way every other ending does.
-      //
-      // This was the one way out of a Rival fight that tidied nothing up. Beating one to death
-      // goes through OnDeath, and outrunning one goes through CBHandleEscape, and both clear
-      // the marker, the active id and the body. Leaving one breathing did none of it, which
-      // produced two bugs that looked unrelated and were the same omission:
-      //
-      //   - The map pin is registered against the puppet and only ever removed on death, so a
-      //     Rival put down alive kept their marker for the rest of the save. Anyone raising
-      //     Conduct by going non-lethal collected one per Rival and had no way to clear them.
-      //   - CBLiveRivalPresent asks CBStillStanding, which is false for somebody
-      //     unconscious, so the "one Rival encounter at a time" gate read as clear while the
-      //     body was still lying there. The same Rival was then queued again and given a
-      //     fresh body behind V - on a rooftop if V had climbed one. That is the Rival who
-      //     "teleported": it was never the same body moving, it was a second one.
       CBCloseRivalEncounter(sys, game, already, e.puppet);
       if CBMessagesOn() {
         let name = CBRivalDisplayName(content, already);
@@ -580,7 +474,7 @@ func CBHandleSpared(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
      && !CBRivalRoll(sys, "spared", CBConfig.RivalChanceSpared(), e.record, true, e.faction) {
     return;   // not everyone you spare makes it personal (Rivals/RivalSystem.reds, CBRivalOdds)
   }
-  // Made once the fight is over, not with them still lying at V's feet (Rivals/Births.reds, 1.9.1).
+  // Made once the fight is over, not with them still lying at V's feet (Rivals/Births.reds).
   CBRivalAfterFight(sys, game, e.faction, e.record, n"", ECBRivalSource.Spared, district, now, e, 0, "");
 }
 
@@ -594,8 +488,6 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
   let toasts = CBMessagesOn();
 
   // The Rival that was hunting you got away again: it ranks up and comes back meaner.
-  // Whose body it was, first: with Rivals out together, the one who ran is not always the active one
-  // (1.9.0), and a Rival who ran from their own place was nobody's active encounter at all.
   let fled: ref<CBRival>;
   if e.wasRival {
     fled = CBFindRivalByBody(sys, e.entityId);
@@ -627,15 +519,12 @@ func CBHandleEscape(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEsca
     return;
   }
 
-  // A regular enemy got away: it may become a Survivor Rival already on your trail. The same chance
-  // a morale break has. There was no roll here because this door was all but shut (see the health
-  // check in CBCombatFleeCheck), and now that it opens at a quarter health, everybody V walked away
-  // from wounded would otherwise come back with a name.
+  // A regular enemy got away: it may become a Survivor Rival already on your trail. The same chance a morale break has.
   if Equals(e.faction, n"") || !TDBID.IsValid(e.record)
      || !CBRivalRoll(sys, "got away", CBConfig.RivalChanceSurvivor(), e.record, true, e.faction) {
     return;
   }
-  // Made once the fight is over (Rivals/Births.reds, 1.9.1).
+  // Made once the fight is over (Rivals/Births.reds).
   CBRivalAfterFight(sys, game, e.faction, e.record, n"", ECBRivalSource.Survivor, district, now, e, 0, "");
 }
 
@@ -656,9 +545,8 @@ func CBAddEscapee(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<Scr
   sys.AddEscapee(e);
 }
 
-// One of a crew has run for it and is gone. They count as out of the fight: a crew with one survivor
-// halfway across the district used to be a crew V could never finish, so no "crew beaten", no bounty,
-// and the lane stayed busy. Removed out of sight, or handed to the orphan sweep if V is looking.
+// One of a crew has run for it and is gone. They count as out of the fight: a crew with one survivor halfway across the
+// district used to be a crew V could never finish, so no "crew beaten", no bounty, and the lane stayed busy.
 func CBRunnerGotAway(sys: ref<CyberbaneSystem>, game: GameInstance, e: ref<CBEscapee>) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) || !IsDefined(e) {
@@ -689,9 +577,7 @@ func CBCrewBeatenIfLast(sys: ref<CyberbaneSystem>, game: GameInstance, gone: Ent
   }
 }
 
-// Ran, and could not get clear. They turn and fight again. Left broken, nothing would ever give them
-// an order (the hunt skips anybody broken), so one of a crew stood about for good: the crew could not
-// be beaten, its lane stayed busy, and the hunt ended by telling V that V had run.
+// Ran, and could not get clear. They turn and fight again.
 func CBRally(npc: wref<ScriptedPuppet>) -> Void {
   if !IsDefined(npc) || !npc.cbMoraleBroken {
     return;

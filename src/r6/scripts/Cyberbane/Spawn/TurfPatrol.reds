@@ -3,10 +3,6 @@
 // The gangs on the street are placed by the game's world data and a script cannot swap them, so a
 // gang that has taken a district shows up alongside the old one, which reads as streets in dispute.
 // A few of the holders, on foot, out of V's sight and walking the block while V is around.
-//
-// Built from what already exists: placement is CBSpawnGroup, orders go through CBIssueMove so nobody
-// has more than one, and removal is CBDeleteTaggedSafe, never where V can see. They are not hunters,
-// so nothing that counts hunters, sends crews or draws markers knows they are there.
 
 public func CBTurfPatrolsOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -42,7 +38,7 @@ public func CBTurfPatrolTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
     if busy || NotEquals(here, book.patrolDistrict) || lived
        || CBHuntersOut(sys, game) || CBHuntPending(sys)
        || !CBPatrolNear(game, des, player.GetWorldPosition()) {
-      // A beat walked without trouble tightens their hold on the street (2.4.0).
+      // A beat walked without trouble tightens their hold on the street.
       if lived && !book.patrolTurned {
         CBBolsterGang(sys, game, CBTurfHolder(sys, game, book.patrolDistrict), CBConfig.PatrolGrip());
       }
@@ -79,7 +75,7 @@ public func CBTurfPatrolTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
     return;
   }
   book.patrolNext = now + CBJitter(CBConfig.TurfPatrolGapTicks(), CBConfig.QueueJitterFraction());
-  // Mixed people, the way a crew is (2.4.0, [U1]); and the patrol is paid for out of their chest.
+  // Mixed people, the way a crew is ([U1]); and the patrol is paid for out of their chest.
   let body: EntityID;
   if CBSpawnMixedCrew(game, fs, size, CBConfig.TurfPatrolDistance(), body, n"CB_Patrol") > 0 {
     book.patrolDistrict = here;
@@ -117,10 +113,10 @@ public func CBSetUpPatrol(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   let score = sys.GetScore();
   let faction = CBClassifyFaction(puppet);
   let posture = IsDefined(score) ? score.GetPosture(faction) : ECBPosture.Neutral;
-  // At odds with V, and they place V: a mask or their colours walks past them, as it does past anybody (2.4.0).
+  // At odds with V, and they place V: a mask or their colours walks past them, as it does past anybody.
   let knows = IsDefined(score) && CBRecognizes(sys, score, puppet, faction, sys.GetCurrentDistrict());
   if (Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta)) && knows {
-    // The flag the game's own attitude change checks for; a ganger made from a crowd record has none.
+    // The flag the game's attitude change checks for; a ganger made from a crowd record has none.
     CBGrantAbility(puppet as NPCPuppet, t"Ability.IsAggressive");
     CBMakeHostileToPlayer(game, puppet);
     return;
@@ -143,7 +139,7 @@ public func CBSetUpPatrol(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
 func CBPatrolWalk(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>, opt tag: CName,
                   opt around: Vector4) -> Void {
   let walkers = IsNameValid(tag) ? tag : n"CB_Patrol";
-  // Round their own corner when they have one (a patrol, 2.4.0), rather than wherever V happens to be.
+  // Round their own corner when they have one (a patrol), rather than wherever V happens to be.
   let anchored = around.W > 0.0;
   let ppos = anchored ? around : player.GetWorldPosition();
   let fwd = anchored ? new Vector4(CosF(RandRangeF(0.0, 6.28318)), SinF(RandRangeF(0.0, 6.28318)), 0.0, 0.0) : player.GetWorldForward();
@@ -162,8 +158,8 @@ func CBPatrolWalk(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
   while i < ArraySize(ids) {
     let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
-    // Nobody V is talking to, nobody holding their hands up, and nobody V's words sent off (2.1.0, when the
-    // street's people and patrols became people V can talk to): a walk order would take the place of each.
+    // Nobody V is talking to, nobody holding their hands up, and nobody V's words sent off (when the street's people
+    // and patrols became people V can talk to): a walk order would take the place of each.
     if CBStillStanding(p) && CBNpcSafe(sys, p) && !p.cbMoraleBroken && !CBNpcInCombat(p)
        && !p.cbTalkPartner && !p.cbSurrendered && !p.cbTalkSent
        && !VehicleComponent.IsMountedToVehicle(game, p.GetEntityID())
@@ -189,7 +185,7 @@ func CBPatrolWalk(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
 }
 
 // Before they go, the ones still on their feet walk off, away from V; whoever V can still see is left to the orphan
-// sweep by CBDeleteTaggedSafe, already walking (2.4.0).
+// sweep by CBDeleteTaggedSafe, already walking.
 func CBPatrolWalkOff(game: GameInstance, des: ref<DynamicEntitySystem>) -> Void {
   for id in des.GetTaggedIDs(n"CB_Patrol") {
     let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
@@ -199,7 +195,7 @@ func CBPatrolWalkOff(game: GameInstance, des: ref<DynamicEntitySystem>) -> Void 
   }
 }
 
-// V hurt one of them: they all turn on V together (2.4.0). From the hit follow-up, a frame after the hit, never in it.
+// V hurt one of them: they all turn on V together. From the hit follow-up, a frame after the hit, never in it.
 public func CBPatrolTurn(sys: ref<CyberbaneSystem>, game: GameInstance, hurt: ref<ScriptedPuppet>) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   let book = CBTurfBook.Get(game);

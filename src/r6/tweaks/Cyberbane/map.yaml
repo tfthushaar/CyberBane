@@ -1,4 +1,4 @@
-# Cyberbane - its own box in the world map's filters, and the pin its places use (2.5.0)
+# Cyberbane - its own box in the world map's filters, and the pin its places use
 #
 # Read by TweakXL. It is optional: without TweakXL none of these records exist, Cyberbane sees that
 # (UI/MapPins.reds, CBMapFilterReady) and puts its pins under Your Property as it always has.

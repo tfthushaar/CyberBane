@@ -1,26 +1,7 @@
-// Cyberbane - The crew as a power on the street (2.7.6)
+// Cyberbane - The crew as a power on the street
 //
-// "Growing our crew should actually have an effect on the world, like taking over districts, different reactions from
-// NPCs." V's crew grew, trained, went to war and changed nothing a player could see out on the street.
-//
-// Weight. How much V's crew counts for, 0 to 100: every member by their rank, and every war won (CBCrewWeight). Shown on
-// the Crew page, and everything below reads it.
-//
-// Footholds. Where the crew has a hold on a district's streets, 0 to 1, kept by district (CBCrewTurfBook): a war won
-// against a gang gives one on that gang's home streets (Reactions/CrewWar.reds), a war lost takes some back, and day by
-// day a member who lives in a district or keeps watch on V's home there firms it up. Left alone it fades.
-//
-// On the turf map. With a foothold, V's crew is a contender for the district in the turf model like any gang
-// (Model/Territory.reds, CB_Crew): its push is its weight on those streets, squared as every gang's strength is, so it
-// takes a district only from a gang it has bled. When it leads long enough the district changes hands the way any does,
-// and the gang that lost it comes back at it (the counterattack, which costs the crew on those streets). The crew is no
-// gang that fields people: nothing that spawns a gang's people (a bagman, a patrol, a clash, an event) is ever asked for
-// the crew's (CBFactionFieldsSquads).
-//
-// What holding does. The kitty takes a street tax every day from every district the crew holds. The gang that lost it
-// breaks and runs there sooner (Reactions/Morale.reds). The street says so: "who runs these streets" names V's crew, and
-// the street's whispers know it. And everywhere, people take a V with a big crew more seriously (V's menace,
-// Signals/PlayerBuild.reds, counts the crew's weight).
+// Crew weight (0-100, from members' ranks and wars won), footholds in districts, the districts the crew holds and the
+// street tax they pay.
 
 public func CBCrewTurfId() -> CName = n"CB_Crew"
 
@@ -264,7 +245,7 @@ public func CBCrewTurfTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   let jb = CBCrewJobBook.Get(game);
   if ArraySize(held) > 0 && IsDefined(jb) {
     let per = RoundF(CBConfig.CrewTurfTaxPerDistrict() * (0.5 + CBCrewWeight(game) / 200.0));
-    // Half through the crew, half kept by the shops for V to collect in person (2.7.7, CBCrewTaxCollectTick).
+    // Half through the crew, half kept by the shops for V to collect in person (CBCrewTaxCollectTick).
     let inPerson = per / 2;
     for dOwe in held {
       CBCrewTaxOwe(game, dOwe, inPerson);

@@ -3,18 +3,6 @@
 // Reputation travels because somebody lived to carry it. A kill counts as witnessed when at
 // least one living NPC who is not the victim, and not one of V's own companions, was close
 // enough to see it happen.
-//
-// Everything downstream of this was already built and was being handed a hardcoded `true`:
-// the unwitnessed Renown / Dread / standing multipliers in CBApplyKill, the Ghost archetype
-// accrual, and the rumor spread multiplier in CBCreateRumor. Wiring the real count turns one
-// constant into two playstyles - leave people alive and word travels fast and far, or leave
-// nobody and the street gets a reputation it cannot put a name to.
-//
-// Crash safety: this walks CBNpcRegistry, the same list the reaction Director already walks
-// every tick, and every entry goes through CBNpcSafe before anything is read off it, so a
-// detaching or not-yet-initialized puppet is never touched. The scan is bounded by
-// WitnessScanCap and runs once per kill, never per tick. It adds no new engine API: the
-// registry, CBNpcSafe, GetWorldPosition and IsDead are all already on the reaction hot path.
 
 // Can this NPC actually see V, or is there a wall in the way? Falls back to "yes" when the
 // reaction component is missing, so a missing component never silently hands out free stealth.
@@ -36,7 +24,7 @@ func CBWitnessCanSee(npc: wref<ScriptedPuppet>, player: wref<GameObject>) -> Boo
 // sense of "a crowd", not an exact tally.
 public func CBCountWitnesses(sys: ref<CyberbaneSystem>, at: Vector4, victim: EntityID) -> Int32 {
   if !IsDefined(sys) {
-    return 1;   // cannot tell: treat as seen, which is the pre-0.1.16 behaviour
+    return 1;   // cannot tell: treat as seen
   }
   let reg = sys.GetRegistry();
   if !IsDefined(reg) {
@@ -44,7 +32,7 @@ public func CBCountWitnesses(sys: ref<CyberbaneSystem>, at: Vector4, victim: Ent
   }
   let npcs = reg.GetAll();
   let player = GetPlayer(sys.GetGameInstance());
-  // Fewer eyes reach as far at night and in the rain (Model/Moment.reds, 2.3.1).
+  // Fewer eyes reach as far at night and in the rain (Model/Moment.reds).
   let radius = CBConfig.WitnessRadius() * CBSightMult(sys.GetGameInstance());
   let seen = 0;
   let scanned = 0;
@@ -52,15 +40,11 @@ public func CBCountWitnesses(sys: ref<CyberbaneSystem>, at: Vector4, victim: Ent
   while i < ArraySize(npcs) && scanned < CBConfig.WitnessScanCap() && seen < CBConfig.WitnessCountCap() {
     let npc = npcs[i];
     i += 1;
-    // CBNpcSafe is the same gate the Director uses: attached, and past its warm-up ticks.
-    // Only somebody in range counts against the scan cap (1.9.3). Everybody did, in the registry's
-    // own order, so on a crowded street the first forty could all be a block away and the people
-    // standing beside V were never asked. And somebody lying unconscious saw nothing.
+    // CBNpcSafe is the same gate the Director uses: attached, and past its warm-up ticks. Only somebody in range counts
+    // against the scan cap.
     if CBNpcSafe(sys, npc) && Vector4.Distance(at, npc.GetWorldPosition()) <= radius {
       scanned += 1;
-      // Anybody in the fight saw it (2.5.1): somebody shooting at V knows where V is. The reaction component's sight
-      // test is the street's, for people going about their day, and is not something to lean on mid-fight; a gunfight
-      // whose kills it turned down was scored as nobody's to tell, and as a ghost's work.
+      // Anybody in the fight saw it: somebody shooting at V knows where V is.
       if NotEquals(npc.GetEntityID(), victim)
          && CBStillStanding(npc)
          && !ScriptedPuppet.IsPlayerCompanion(npc)

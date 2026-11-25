@@ -1,14 +1,8 @@
-// Cyberbane - The gangs' bosses, sit-down invitations, and what crashing gang business leads to (2.7.7)
+// Cyberbane - The gangs' bosses, sit-down invitations, and what crashing gang business leads to
 //
-// Every gang has a boss with a name. When the gang has a Rival at the top of its ladder (rank 4), that Rival is the boss
-// and can be met as any Rival can; otherwise the boss is a name from the gang's own pool, the same for the whole
-// playthrough. The boss is named on the Gangs page, and signs the gang's biggest texts: a vendetta sworn, a price to call
-// one off, an invitation to a sit-down.
-//
-// A gang that respects V (friendly or allied) invites V to its sit-down. V standing there while it is settled is V
-// speaking for them: they think better of V for it, the other side less. Crashing a sit-down or a deal leads somewhere:
-// the side V helped says thank you, the side V hurt may make a Rival of it, and on a deal's own streets the hurt gang loses
-// ground.
+// Every gang has a boss with a name. When the gang has a Rival at the top of its ladder (rank 4), that Rival is the
+// boss and can be met as any Rival can; otherwise the boss is a name from the gang's own pool, the same for the whole
+// playthrough.
 
 // The boss's name, by their gang.
 public func CBGangBossName(sys: ref<CyberbaneSystem>, gang: CName) -> String {
@@ -57,8 +51,8 @@ func CBGangBossSeed(sys: ref<CyberbaneSystem>, gang: CName) -> Int32 {
   return at * 7919 + StrLen(NameToString(sys.GetPlaythroughId())) * 131;
 }
 
-// A text from the gang, signed by its boss when the gang has one: "Mama Welles: ..." style, the way the crew's group chat
-// signs its lines. The text's own tone is its sound (no ring: the game's ring plays until a call stops it, UI/Sounds.reds).
+// A text from the gang, signed by its boss when the gang has one: "Mama Welles:..." style, the way the crew's group
+// chat signs its lines.
 public func CBGangBossSigned(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName, body: String) -> String {
   let boss = CBGangBossName(sys, gang);
   if StrLen(boss) == 0 {

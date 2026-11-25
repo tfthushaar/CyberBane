@@ -1,42 +1,7 @@
-// Cyberbane - The pin on a Rival's place (1.7.1)
+// Cyberbane - The pin on a Rival's place
 //
-// "I want a proper custom pin, which can be identified easily and can't be confused with anything
-// else." Every mappin variant in the game already means something, and the pin wears whatever its
-// variant looks like: up to 1.6.4 an NCPD hustle, then the player's own waypoint, which the game
-// owns and moved off the Rival's place. There is no variant that means "Cyberbane's".
-//
-// So the look is not left to the variant. The pin is registered on a variant nothing in the game
-// claims, and every controller that draws it is told to draw Cyberbane's mark instead:
-//
-//   the glyph   `bounty_hunt` in the game's own mappin atlas (ChoiceIcons.BountyHuntIcon,
-//               choice_ui_icon.tweak). On 2.31 and 2.5 nothing on any map draws that part - it is
-//               only ever a dialogue choice icon - so on the map it can mean nothing but this. It is
-//               the same mark Cyberbane puts on a Rival on the minimap (UI/Tracking.reds), so the
-//               person and their place are visibly the same thing;
-//   the colour  Cyberbane's Rival gold, the colour the Hub gives a Rival's row;
-//   the words   the Rival's name, and "Cyberbane Rival" under it, where the map's tooltip and the
-//               pin in the world would print the variant's own text.
-//
-// The base variant is ApartmentVariant (Rivals/Whereabouts.reds, CBLeadPinTick). The world map draws
-// it, no 2.31 or 2.5 script reads it, it is not quest-grouped so the player can track it, and its
-// filter group is Your Property (world_map.tweak, CommonFilterGroup) - the group the player's own
-// waypoint and vehicles are in, on by default. It is never seen as an apartment: every surface that
-// draws it is overridden below.
-//
-// The technique - a tag in debugCaption, which IMappin.GetDisplayName() returns, and the icon set on
-// the controllers rather than in the mappin data - is the one Spuddeh's NC Zoning District Guide
-// (MIT) uses for its own marker and documented from play, along with the two ways it can go wrong,
-// both kept out of here:
-//   - the mappin is only asked who it is where it is certainly alive: UpdateIcon, the container
-//     building its profile, the tooltip being filled. Never from UpdateTrackedState, which also
-//     runs while mappins are being destroyed; a wref to a dead one is not null, and reading it there
-//     crashed their game on every map open;
-//   - the tint is unbound and set directly. A style-bound tint is re-read on every state change and
-//     the controllers change state on every update, so a bound colour does not stay.
-//
-// Crash rules: nothing here creates a widget, removes a mappin or touches an entity. Every hook calls
-// the game's own code first and unconditionally, then changes only text, texture and tint on our own
-// pin; every other pin on screen costs one name read and a prefix test.
+// Registered on a mappin variant nothing in the game uses, and drawn with the bounty_hunt glyph, so it can't be
+// mistaken for anything else on the map.
 
 public func CBRivalPinTag() -> String = "CB_RIVAL|"
 
@@ -44,20 +9,15 @@ public func CBRivalPinCaption(name: String) -> String {
   return CBRivalPinTag() + name;
 }
 
-// The marker on somebody out looking for V, as opposed to the pin on a place (UI/Tracking.reds). It
-// goes through the world map's hooks below and no others: on the minimap and in the world it is an
-// ordinary role pin, with the colour and the fight rules it has always had.
+// The marker on somebody out looking for V, as opposed to the pin on a place (UI/Tracking.reds).
 public func CBHunterPinMark() -> String = "+"
 
 public func CBHunterPinCaption(name: String) -> String {
   return CBRivalPinTag() + CBHunterPinMark() + name;
 }
 
-// The marker on somebody of Cyberbane's who is not out looking for V (2.5.4): a bagman, a gang's people at a sit-down
-// or a gathering, a wannabe, a favour's lookout, a Rival waiting at their place, a passer-by a favour is about. Every
-// one of them wore the hunter's caption, so the map called them "Hunting you", and a passer-by with no gang, the one a
-// favour asks V to lean on, read "Crew - Hunting you". The caption carries what they are and a line about them,
-// split by CBMarkedPinSplit.
+// The marker on somebody of Cyberbane's who is not out looking for V: a bagman, a gang's people at a sit-down or a
+// gathering, a wannabe, a favour's lookout, a Rival waiting at their place, a passer-by a favour is about.
 public func CBMarkedPinMark() -> String = "~"
 public func CBMarkedPinSplit() -> String = "^"
 
@@ -82,8 +42,8 @@ func CBMarkedPinPart(mappin: wref<IMappin>, note: Bool) -> String {
   return note ? line : name;
 }
 
-// A gathering on the way (Spawn/StreetEvents.reds) and a place the map remembers (UI/MapPins.reds, 2.5.0): marks of
-// their own after the tag, so each says what it is.
+// A gathering on the way (Spawn/StreetEvents.reds) and a place the map remembers (UI/MapPins.reds): marks of their own
+// after the tag, so each says what it is.
 public func CBEventPinMark() -> String = "#"
 
 public func CBEventPinCaption(text: String) -> String {
@@ -157,7 +117,7 @@ public func CBRivalPinSubtitle(mappin: wref<IMappin>) -> String {
     let sys = CyberbaneSystem.Get(GetGameInstance());
     return IsDefined(sys) ? CBMapMemoryDesc(sys, CBMemoryPinId(mappin)) : "";
   }
-  // A gathering's pin said "Cyberbane Rival. Last seen here." up to 2.5.0.
+  // A gathering's pin said "Cyberbane Rival.
   if CBIsEventPin(mappin) {
     return CBT(n"Cyberbane-RivalPin-GangBusinessItStartsAroundThe");
   }
@@ -167,14 +127,14 @@ public func CBRivalPinSubtitle(mappin: wref<IMappin>) -> String {
   return CBIsHunterPin(mappin) ? CBT(n"Cyberbane-RivalPin-HuntingYou") : CBT(n"Cyberbane-RivalPin-CyberbaneRivalLastSeenHere");
 }
 
-// Draw Cyberbane's mark on this controller's icon, if the pin is ours. Safe on any controller: the
-// glyph comes from a record checked at runtime, and with no record the game's own icon is left alone.
+// Draw Cyberbane's mark on this controller's icon, if the pin is ours. Safe on any controller: the glyph comes from a
+// record checked at runtime, and with no record the game's icon is left alone.
 @addMethod(BaseMappinBaseController)
 protected final func CBBrandRivalPin() -> Bool {
   if !CBIsRivalPin(this.GetMappin()) {
     return false;
   }
-  // A gathering, a district taken, a place a fight was crashed: the game's own map glyph for it, in our colour.
+  // A gathering, a district taken, a place a fight was crashed: the game's map glyph for it, in our colour.
   let part = n"";
   let tint = CBRivalPinColor(this.GetMappin());
   if CBIsEventPin(this.GetMappin()) {
@@ -233,9 +193,8 @@ public func SetData(const data: script_ref<WorldMapTooltipData>, menu: ref<World
 
 // ---- The minimap ------------------------------------------------------------------------------
 
-// The minimap has no entry for this variant on a plain position pin and would draw it only once
-// tracked (minimap.script, CreateMappinUIProfile). Ours gets the profile the game gives the player's
-// own waypoint: the POI widget, always spawned.
+// The minimap has no entry for this variant on a plain position pin and would draw it only once tracked
+// (minimap.script, CreateMappinUIProfile).
 @wrapMethod(MinimapContainerController)
 public func CreateMappinUIProfile(mappin: wref<IMappin>, mappinVariant: gamedataMappinVariant,
                                   customData: ref<MappinControllerCustomData>) -> MappinUIProfile {
@@ -255,10 +214,8 @@ protected final func UpdateIcon() -> Void {
 
 // ---- In the world -----------------------------------------------------------------------------
 
-// The floating pin, within range or once tracked. It prints the mappin's display name when V is
-// close (MappinUIRuntimeProfile.showNameMinRange), and that is the tagged caption, so the Rival's
-// name goes there instead. UpdateDisplayName runs just before UpdateIcon in OnUpdate
-// (questMappins.script), so this is the text that stays.
+// The floating pin, within range or once tracked. It prints the mappin's display name when V is close
+// (MappinUIRuntimeProfile.showNameMinRange), and that is the tagged caption, so the Rival's name goes there instead.
 @wrapMethod(QuestMappinController)
 protected func UpdateIcon() -> Void {
   wrappedMethod();

@@ -8,16 +8,14 @@ public func CBRefreshLiveInputs(sys: ref<CyberbaneSystem>, game: GameInstance) -
   if !IsDefined(sys) {
     return;
   }
-  // Street Cred is no longer read here (2.5.2): this waits for a tick without heavy streaming, which on a busy street
-  // can be minutes, and Renown went without its floor all that time. CBRefreshStreetCred, on every tenth tick.
+  // Street Cred is no longer read here: this waits for a tick without heavy streaming, which on a busy street can be
+  // minutes, and Renown went without its floor all that time. CBRefreshStreetCred, on every tenth tick.
   CBUpdateHeat(sys, game);
   // Not the aura: the fast tick reads it every other tick on its own (CyberbaneSystem), and this runs on
   // one of those same ticks, so it was being worked out twice in a row.
 }
 
-// V's Street Cred into the score engine, the floor under Renown (Model/ScoreMath.reds, CBComputeRenown). V's own stat
-// and nothing in the world (2.5.2): read on the session's first settled tick and on every tenth one after, streaming or
-// not, so Renown never goes without its floor for the first minutes after a load.
+// V's Street Cred into the score engine, the floor under Renown (Model/ScoreMath.reds, CBComputeRenown).
 public func CBRefreshStreetCred(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
     return;
@@ -26,15 +24,6 @@ public func CBRefreshStreetCred(sys: ref<CyberbaneSystem>, game: GameInstance) -
 }
 
 // Aura (spec 8.6): how dangerous V looks at this moment.
-//
-// This was specified and never wired: CBComputeAura and AuraCap both existed and nothing called
-// either, so walking around armed, mid-fight, standing over fresh bodies with chrome running
-// read exactly the same to the street as walking around clean. Reputation was the only thing
-// that frightened anybody.
-//
-// Every input is read from something already verified present, including the weapon: the
-// "heavy or blade" term inspects what V actually has out rather than using visible chrome as
-// its stand-in, which is what it did until the kill scoring proved the lookup was free.
 public func CBUpdateAura(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
     return;
@@ -47,16 +36,10 @@ public func CBUpdateAura(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   let weapon = GameObject.GetActiveWeapon(player);
   let drawn = IsDefined(weapon);
   // "Heavy or blade" means it now.
-  //
-  // This term used visible chrome as its stand-in and said so, on the grounds that a
-  // weapon-type lookup was not worth four points. The lookup turned out to be free: the game
-  // classifies its own weapons, and the kill scoring already uses the same two calls. So
-  // someone walking around with a katana out reads as dangerous whether or not they are
-  // chromed, which is what the term was always supposed to mean.
   let bladed = IsDefined(weapon) && (weapon.IsBlade() || weapon.IsBlunt());
   let obvious = score.GetChromeVisible() >= CBConfig.AuraObviousChrome() || bladed;
-  // The game's own tags, as its AI conditions read them (commonconditionchecks.tweak). The bare
-  // n"Sandevistan" is no gameplay tag, so a Sandevistan running never counted here.
+  // The game's tags, as its AI conditions read them (commonconditionchecks.tweak). The bare n"Sandevistan" is no
+  // gameplay tag, so a Sandevistan running never counted here.
   let running: array<CName> = [n"SandevistanPlayerBuff", n"BerserkBuff", n"Berserk"];
   let chromeRunning = CBHasAnyTag(player, running);
   score.SetAura(CBComputeAura(drawn, obvious, chromeRunning, player.IsInCombat(),

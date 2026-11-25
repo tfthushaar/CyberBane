@@ -1,15 +1,7 @@
-// Cyberbane - A Rival's history with V, their calling cards, and the ones who turn (2.7.7)
+// Cyberbane - A Rival's history with V, their calling cards, and the ones who turn
 //
-// Every time V and a Rival cross (they are made, they get away, V lets them go, they put V down, they climb, they hurt one
-// of V's crew, they die) is written in their timeline, for the Rivals page: where it was and how it went. The one place
-// that hears every one of those moments is CBApiRivalEvent, which every one of them already calls, so it is noted there.
-//
-// A Rival who hurts one of V's crew, or gets away from V, leaves a calling card: a text with a place, a pin, and at the
-// place their mark and something left for V. A Rival their own gang threw away (humiliated by V) may turn: they text V,
-// owing V now, and can be taken onto the crew the way any Rival who owes V can. A Rival who put one of V's crew on the
-// ground is after them: a job that member is sent on may meet them.
-//
-// Its own book (CBRivalTimelineBook), flat arrays, nothing on CBRival: a new field on a saved class wipes it.
+// Every time V and a Rival cross (they are made, they get away, V lets them go, they put V down, they climb, they hurt
+// one of V's crew, they die) is written in their timeline, for the Rivals page: where it was and how it went.
 
 public func CBTlMade() -> Int32 = 1
 public func CBTlEscaped() -> Int32 = 2
@@ -155,7 +147,7 @@ func CBTlWord(kind: Int32) -> String {
   return "";
 }
 
-// Their history with V, oldest first, on one line for the Rivals page: "Heywood: made. Westbrook: got away. ...". The
+// Their history with V, oldest first, on one line for the Rivals page: "Heywood: made. Westbrook: got away....". The
 // climbs are left out when there are more than a few moments, as they follow every escape anyway.
 public func CBRivalTimelineLine(game: GameInstance, r: ref<CBRival>) -> String {
   let book = CBRivalTimelineBook.Get(game);

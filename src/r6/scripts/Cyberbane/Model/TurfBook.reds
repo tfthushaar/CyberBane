@@ -1,14 +1,6 @@
-// Cyberbane - Who holds what, and how long they have held it
+// Cyberbane - Who holds what, and since when
 //
-// Who a district belonged to used to be worked out fresh from how strong each gang was that day, so
-// a gang that took a district lost it again the moment its enemy had rebuilt, and four equal gangs
-// in Watson swapped places with the daily drift. A takeover has to be something that happened, so the
-// result is written down here: who holds each district, who they took it from, who is trying to take
-// it now, and how much damage each gang has taken on those particular streets.
-//
-// This is its own system on purpose. A new persistent field on CyberbaneSystem would change that
-// class's saved shape and lose every player's progress; a new class changes nothing already saved,
-// and simply starts empty on a save that has never had it.
+// Who owns each district and for how long, so a gang that takes a district keeps it until someone takes it back.
 
 public class CBTurfBook extends ScriptableSystem {
   // One entry per district, in CBDistrictAt order.
@@ -27,9 +19,9 @@ public class CBTurfBook extends ScriptableSystem {
   public let patrolDistrict: CName;
   public let patrolTick: Int32;
   public let patrolNext: Int32;
-  public let patrolAnchor: Vector4;    // the corner they hold, which their beat goes round (2.4.0)
-  public let patrolTurned: Bool;       // V hurt one of them and they all turned (2.4.0)
-  public let lookoutId: EntityID;      // the turf watch's eyes in the crowd (Spawn/Hunted.reds, 2.4.1)
+  public let patrolAnchor: Vector4;    // the corner they hold, which their beat goes round
+  public let patrolTurned: Bool;       // V hurt one of them and they all turned
+  public let lookoutId: EntityID;      // the turf watch's eyes in the crowd (Spawn/Hunted.reds)
   // Padded since the lists last came back from a save or were cleared. Every read goes through
   // InRange, many of them a tick, and the lists only ever change length on a load or a start over.
   private let m_padded: Bool;

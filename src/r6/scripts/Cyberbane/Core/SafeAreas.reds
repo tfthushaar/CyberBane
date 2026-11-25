@@ -1,19 +1,7 @@
 // Cyberbane - Safe areas (spec §16)
 //
-// Night City marks apartments, clinics, bars and memorials as safe areas, and that marking
-// does two separate things. The first is the zone itself: the SAFE AREA label, the minimap
-// tint, and who reacts to what. The second is a restriction layer that forces V's hands empty
-// so no weapon can be drawn, which is why "Action Blocked" appears if you try.
-//
-// That second part is what made a Rival arriving in an apartment a problem rather than a
-// surprise: the fight starts, and V cannot draw. So Cyberbane keeps its spawns out of safe
-// areas by default, and offers the two settings that let a player opt into that fight.
-//
-// The gates here deliberately mirror what the game's own reaction component does, rather than
-// inventing a rule:
-//   per NPC  - in a safe area AND indoors. An outdoor safe area, a memorial plaza say, does
-//              not silence the people standing in it.
-//   per V    - a NoCombat status tag, or the Safe zone state, or standing in a safe area.
+// Night City marks apartments, clinics, bars and memorials as safe areas, and that marking does two separate things.
+// The first is the zone itself: the SAFE AREA label, the minimap tint, and who reacts to what.
 
 // ---- Why an arrival was refused ----------------------------------------------
 //
@@ -37,9 +25,9 @@ public func CBBlockTalking() -> Int32 = 13
 public func CBBlockNoPath() -> Int32 = 14
 public func CBBlockCount() -> Int32 = 15
 
-// Every refusal is counted for the placement under way (2.7.7), so the log and the Hub name the reason that refused the
-// most spots, never only the last one tried: the last-resort spot used to write "out of your sight" whatever stopped it,
-// 237 times, which hid a conversation's lock and the safe areas behind one wrong word.
+// Every refusal is counted for the placement under way, so the log and the Hub name the reason that refused the most
+// spots, never only the last one tried: the last-resort spot used to write "out of your sight" whatever stopped it, 237
+// times, which hid a conversation's lock and the safe areas behind one wrong word.
 public func CBNoteSpawnBlock(reason: Int32) -> Void {
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) {
@@ -109,23 +97,11 @@ public func CBAllowSafeZoneSpawns() -> Bool {
 }
 
 // Can V actually fight where they are standing?
-//
-// This is the question that matters before sending anyone, and it is NOT the same question as
-// "is this a security area". V's apartment is the case that proved it: the SAFE AREA system
-// governs the label, the minimap tint and who reacts, while a separate restriction layer is
-// what empties V's hands. An apartment can fail the first test and still pass the second, so
-// checking only the safe area let Rivals walk into H10 even with safe area spawns turned off.
-//
-// `ForceEmptyHands` on the player's upper body is the restriction itself, and it is true for
-// as long as V is somewhere weapons are not allowed. If V cannot draw, nobody should arrive.
 public func CBPlayerCannotFight(game: GameInstance) -> Bool {
   if CBPlayerNoCombatTag(game) {
     return true;
   }
-  // A conversation's own lock (2.7.7) is not a place where V cannot fight. Street talk keeps V's hands empty with the
-  // safe area's lock while its lines are up, so the wheel picks a line instead of drawing a gun, and lets go the moment
-  // the lines go or a fight starts. Read as "V cannot fight here", it refused every spot for anybody placed from inside a
-  // conversation: "Watch my back" never brought anybody. Inside a game safe area the lock is the place's too, and holds.
+  // A conversation's own lock is not a place where V cannot fight.
   if CBTalkHandLockOnly(game) {
     return false;
   }
@@ -138,14 +114,7 @@ public func CBPlayerCannotFight(game: GameInstance) -> Bool {
     return false;
   }
   let upper = psm.GetInt(GetAllBlackboardDefs().PlayerStateMachine.UpperBody);
-  // Bounded against the same mistake that broke the zone check in 1.1.5.
-  //
-  // An unread or freshly reset blackboard int is 0. If `ForceEmptyHands` happened to be the
-  // zero member of its enum, this would read true before the game had said anything at all,
-  // and every arrival in the mod would be refused everywhere - exactly the failure the zone
-  // ordinal produced. Requiring the state to differ from Default makes that impossible to
-  // happen silently: if the two ever coincided, the test simply never fires, which costs one
-  // apartment check rather than the whole mod.
+  // An unread or freshly reset blackboard int is 0.
   let emptyHands = EnumInt(gamePSMUpperBodyStates.ForceEmptyHands);
   if emptyHands == EnumInt(gamePSMUpperBodyStates.Default) {
     return false;
@@ -153,8 +122,8 @@ public func CBPlayerCannotFight(game: GameInstance) -> Bool {
   return upper == emptyHands;
 }
 
-// Is V's empty-hands lock only street talk's own (2.7.7)? True while a conversation holds V's hands outside any game safe
-// area. The one question for telling the talk's lock apart from the place's or the story's.
+// Is V's empty-hands lock only street talk's own? True while a conversation holds V's hands outside any game safe area.
+// The one question for telling the talk's lock apart from the place's or the story's.
 public func CBTalkHandLockOnly(game: GameInstance) -> Bool {
   if !CBTalkHoldsHandsNow(game) {
     return false;
@@ -182,45 +151,12 @@ public func CBPlayerIndoors(game: GameInstance) -> Bool {
 }
 
 // Is V inside a quest or gig area?
-//
-// This is the gate behind the worst report the mod has had: "I was attacked by rivals during
-// I WALK THE LINE, they appeared in the middle of the Animals' nest, and it forced me to
-// restart several times." The gate existed, was switched on, and did not fire.
-//
-// `PreventionSystem.IsPlayerInQuestArea` is not what its name suggests. Reading it
-// (`core/systems/preventionSystem.script:352`):
-//
-//     return ( Int32 )m_playerHLS > ( Int32 )gamePSMHighLevel.SceneTier1
-//         && ( Int32 )m_playerHLS <= ( Int32 )gamePSMHighLevel.SceneTier5;
-//
-// It is a scene test. It is true during a cutscene or a locked conversation and false for
-// every other second of a quest, so walking a gang compound with a gun out was, as far as this
-// gate was concerned, an ordinary afternoon in Night City.
-//
-// What the game does track is the zone, on `PlayerStateMachine.Zones` as a `gamePSMZones`:
-// Default, Public, Safe, Restricted, Dangerous. `Player.OnEnterRestrictedZone` and
-// `OnEnterDangerousZone` set it, and `GetCurrentZoneType` shows a quest can set it too, by
-// fact, overriding the security area. So a gang nest, a corpo floor, a compound a quest has
-// marked hostile - all of them report Restricted or Dangerous, and the open street reports
-// Public. That is exactly the question this gate was trying to ask.
-//
-// It is also safe in a way the previous attempt was not. 1.1.5 compared `ESecurityAreaType`
-// ordinals, which redscript cannot see by name, guessed wrong, and blocked every spawn in the
-// game for three releases. `gamePSMZones` is a named enum we can compile against, so there is
-// nothing left to guess.
 public func CBPlayerInQuestArea(game: GameInstance) -> Bool {
   let sys = CyberbaneSystem.Get(game);
   return IsDefined(sys) && sys.IsInQuestArea();
 }
 
 // What "Stay out of quest areas" means, worked out every few ticks (CyberbaneSystem fast tick).
-//
-// Until 1.5.3 nothing called the quest-area test at all, so the switch only ever kept arrivals out
-// of restricted and dangerous zones, and a gig in an ordinary street had no protection. A job is
-// now recognised the way the game's own world map places it: the tracked objective's map pins
-// (MappinSystem.GetQuestMappinPositionsByObjective, worldMap.script). Within QuestAreaRadius of
-// any of them, V is on a job. A scene or a conversation, and a restricted or dangerous zone,
-// count too.
 public func CBComputeQuestArea(game: GameInstance) -> Bool {
   let rtQ = CyberbaneRuntime.Get();
   if IsDefined(rtQ) && rtQ.HasSettings() && !rtQ.GetSettings().respectQuestAreas {
@@ -237,7 +173,7 @@ public func CBComputeQuestArea(game: GameInstance) -> Bool {
       && sys.NearTrackedPins(player.GetWorldPosition(), CBQuestAreaRadius());
 }
 
-// V at the job V is tracking (2.6.8), as "Stay out of quest areas" reads it: its own pins only, and not the gangs' ground,
+// V at the job V is tracking, as "Stay out of quest areas" reads it: its own pins only, and not the gangs' ground,
 // which CBComputeQuestArea also counts.
 public func CBAtTrackedJob(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
   let rtQ = CyberbaneRuntime.Get();
@@ -257,10 +193,9 @@ public func CBQuestAreaRadius() -> Float {
   return ClampF(Cast<Float>(rt.GetSettings().questAreaRadius), 40.0, 150.0);
 }
 
-// The tracked objective's map pins, read the way the game's own world map reads them
-// (MappinSystem.GetQuestMappinPositionsByObjective, worldMap.script), and kept on the system so
-// every check that needs them (V's position, spawn points, NPCs, search points) uses one copy.
-// Empty when "Stay out of quest areas" is off or nothing is tracked.
+// The tracked objective's map pins, read the way the game's world map reads them
+// (MappinSystem.GetQuestMappinPositionsByObjective, worldMap.script), and kept on the system so every check that needs
+// them (V's position, spawn points, NPCs, search points) uses one copy.
 public func CBRefreshQuestPins(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let pins: array<Vector4>;
   let trackedPins: array<Vector4>;
@@ -279,10 +214,8 @@ public func CBRefreshQuestPins(sys: ref<CyberbaneSystem>, game: GameInstance) ->
         }
       }
     }
-    // And every other active objective's, gathered less often (CBRefreshJobPins). The tracked one
-    // alone left a gig V was doing without tracking it - "Rite of Passage" - open to a Valentino
-    // walking in on it. These keep everybody of ours off the job sites; whether V is at the tracked
-    // job is asked of the tracked pins alone (CBComputeQuestArea).
+    // And every other active objective's, gathered less often (CBRefreshJobPins). The tracked one alone left a gig V
+    // was doing without tracking it - "Rite of Passage" - open to a Valentino walking in on it.
     for jp in sys.GetJobPins() {
       ArrayPush(pins, jp);
     }
@@ -293,10 +226,8 @@ public func CBRefreshQuestPins(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   }
 }
 
-// The pins of every active quest and gig objective (1.8.4): active quests, their active phases,
-// their active objectives, and where each objective's pins are. Read-only journal and mappin calls,
-// both on 2.31 and 2.5. Every thirty settled ticks, because a list of every quest is not a thing to
-// walk every three seconds, and capped so a long journal cannot grow it without end.
+// The pins of every active quest and gig objective: active quests, their active phases, their active objectives, and
+// where each objective's pins are. Read-only journal and mappin calls, both on 2.31 and 2.5.
 public func CBRefreshJobPins(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let pins: array<Vector4>;
   let rtQ = CyberbaneRuntime.Get();
@@ -334,8 +265,8 @@ public func CBRefreshJobPins(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
   }
 }
 
-// On a job (1.8.4): in a scene, or near one of the pins above. The quest area without its hostile
-// zones: a gang's territory is not a job, and a fight that moves into one carries on as it always has.
+// On a job: in a scene, or near one of the pins above. The quest area without its hostile zones: a gang's territory is
+// not a job, and a fight that moves into one carries on as it always has.
 public func CBComputeOnJob(game: GameInstance) -> Bool {
   let rtQ = CyberbaneRuntime.Get();
   if IsDefined(rtQ) && rtQ.HasSettings() && !rtQ.GetSettings().respectQuestAreas {
@@ -350,14 +281,8 @@ public func CBComputeOnJob(game: GameInstance) -> Bool {
       && sys.NearQuestPins(player.GetWorldPosition(), CBQuestAreaRadius());
 }
 
-// Can anybody arrive right now? Not in a safe area (unless allowed), not on a job, not in a scene,
-// and never while the story has the stage (Core/StoryHold.reds). While this is false the lanes do
-// not count down and the HUD does not say TRACKED: counting down to an arrival that will only be
-// refused is what kept TRACKED coming back at home.
-// Words already being had (2.6.5): a Rival's facedown, under way. Only what makes talk itself impossible ends one: the
-// story, a scene, somewhere safe. "A Rival offered to talk, but his bodyguards got hostile so I could never talk": the
-// facedown opened at their place and was let go four seconds later, everybody hostile, because V was "on a job" there
-// (CBArrivalsHeld), which is a rule about sending people after V, not about people already standing in front of V.
+// Can anybody arrive right now? Not in a safe area (unless allowed), not on a job, not in a scene, and never while the
+// story has the stage (Core/StoryHold.reds).
 public func CBWordsHeld(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
   return !IsDefined(sys) || sys.GetStoryHold() != CBStoryNone() || CBPlayerInScene(game) || sys.IsInSanctuary();
 }
@@ -366,7 +291,7 @@ public func CBArrivalsHeld(sys: ref<CyberbaneSystem>, game: GameInstance) -> Boo
   if !IsDefined(sys) {
     return true;
   }
-  // Home ground under Quiet, and the quiet a night at home bought (2.7.1, Spawn/HomeGround.reds): the lanes, bounty hunters
+  // Home ground under Quiet, and the quiet a night at home bought (Spawn/HomeGround.reds): the lanes, bounty hunters
   // and street fights wait. V's own crew does not ask this (CBArrivalsHeldBase): a spar at home is V's choice.
   return CBArrivalsHeldBase(sys, game) || CBHomeHoldsAll(sys) || CBSleepPeace(game);
 }
@@ -379,14 +304,10 @@ public func CBArrivalsHeldBase(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   }
   return sys.IsInSanctuary() || sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game)
       || sys.GetStoryHold() != CBStoryNone() || CBPoliceOnV(sys) || CBSmasherEventOn(game) || CBMbcContractFight(game)
-      || CBFenixCaptured(game);   // Fenix Rebirth's capture (Compat/FenixRebirth.reds, 2.7.6)
+      || CBFenixCaptured(game);   // Fenix Rebirth's capture (Compat/FenixRebirth.reds)
 }
 
-// The NCPD after V: any wanted level (2.6.5). The gangs lie low while the cops swarm. "When hiding from the NCPD, if a
-// gang member spots you, the pursuit triggers all over again, as if an NCPD officer had seen you": a ganger Cyberbane turned
-// on V at sight, or a crew arriving, started a fight, and the game's own crowd reports a fight to the police, which moves the
-// search to wherever V is (PreventionSystem.OnCrimeWitnessRequest). Nobody is turned and nobody new is sent while V has
-// stars; whoever Cyberbane turned and is not already fighting stands down until the stars are gone.
+// The NCPD after V: any wanted level. The gangs lie low while the cops swarm.
 public func CBPoliceOnV(sys: ref<CyberbaneSystem>) -> Bool {
   let score = IsDefined(sys) ? sys.GetScore() : null;
   return IsDefined(score) && score.GetHeatStage() > 0;
@@ -451,12 +372,6 @@ public func CBPlayerInScene(game: GameInstance) -> Bool {
 
 // Standing in a restricted or dangerous zone: somebody else's turf, marked as such by the
 // security system or by a quest.
-//
-// This is also the answer to the stealth complaint. A player slipping through a compound is
-// inside one of these the whole time, whether or not the game has decided a stealth situation
-// is live, so an arrival now holds off for the duration rather than only while V is crouched
-// and already spotted-but-not-seen.
-// Hostile ground alone (2.6.7): where the game turns its people on V on sight. Restricted ground warns first.
 public func CBPlayerInDangerZone(game: GameInstance) -> Bool {
   return CBPlayerZone(game) == EnumInt(gamePSMZones.Dangerous);
 }
@@ -499,38 +414,11 @@ public func CBPlayerZoneLabel(game: GameInstance) -> String {
   return "";
 }
 
-// Gone with 1.4.7: the ESecurityAreaType cache, the OnZoneChange wrapper that filled it, and
-// the CBInProtectedZone test that read it.
-//
-// It was tracking the right thing through the wrong door. `ESecurityAreaType` does not expose
-// its members to redscript by name, so the test compared ordinals, and the guess about which
-// low ordinals meant "protected" was wrong: the open street reports a low one too. That
-// blocked every spawn in the city for three releases, and the eventual patch - only apply it
-// when V is also indoors - is what let a Rival appear in the middle of a gang compound during
-// a quest, because a courtyard is not an interior.
-//
-// `PlayerStateMachine.Zones` carries the same information as a named `gamePSMZones`, which the
-// compiler can check. See CBPlayerZone above. Nothing guesses any more, so there is nothing
-// left for this to cache.
+// It was tracking the right thing through the wrong door. `ESecurityAreaType` does not expose its members to redscript
+// by name, so the test compared ordinals, and the guess about which low ordinals meant "protected" was wrong: the open
+// street reports a low one too.
 
 // Should Cyberbane refuse to put anyone down here?
-//
-// Checks the spawn point itself, not just where V is standing. V can be on the pavement with
-// the point behind them inside a bar, or the reverse, and only the point matters for whether
-// the arrival lands somewhere the player cannot fight.
-//
-// In three groups, strongest first, and the order is the fix for a gate that let a Rival into a
-// VR fight. The safe-area opt-in used to return straight away from the top of this, which switched
-// off not only the safe-area tests it is about but the scene test, the quest-area test and the
-// no-combat restriction under it. A player who asked to be found in their apartment had, without
-// knowing it, asked to be found in the middle of every quest too. Each group now answers only to
-// its own switch.
-// `onVsSide` (2.6.5): somebody coming to fight beside V, V's crew or a gang's people lent to V. They skip the job and
-// hostile-zone rules (3 below), which are the arrivals' rules for the people sent against V and the "Stay out of quest
-// areas" switch's. The crew's own gate already decides where they come (CBCrewHeldWhy: Your crew on jobs, the main story,
-// scenes, safe places), and 2.6.3 opened gigs, side jobs and gang turf to them there, while every point on the way was still
-// refused here on a job or in a gang's zone: "my crew member refused again", each time "nowhere to put them". The story,
-// V's hands forced empty and the game's own no-spawn areas still hold.
 public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4, opt onVsSide: Bool) -> Bool {
   // 1. The story has the stage: V is not V, a scene is playing, the story is directing what V
   //    can do, or somebody from the story is walking with V. No setting opens this up.
@@ -548,8 +436,8 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4, opt onVsSide:
     CBNoteSpawnBlock(CBBlockCannotFight());
     return true;
   }
-  // Mid-conversation (2.7.7): people sent against V wait for the talk to end, as they always did; somebody V asked for in
-  // the conversation (lent gangers, V's crew) comes now.
+  // Mid-conversation: people sent against V wait for the talk to end, as they always did; somebody V asked for in the
+  // conversation (lent gangers, V's crew) comes now.
   if !onVsSide && CBTalkHoldsHandsNow(game) {
     CBNoteSpawnBlock(CBBlockTalking());
     return true;
@@ -571,8 +459,8 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4, opt onVsSide:
     CBNoteSpawnBlock(CBBlockQuestArea());
     return true;
   }
-  // Home ground under Quiet (2.7.1, Spawn/HomeGround.reds): the building round V's apartment, whatever the safe-area
-  // settings say, for anybody against V. V's own crew and people lent to V come there as anywhere.
+  // Home ground under Quiet (Spawn/HomeGround.reds): the building round V's apartment, whatever the safe-area settings
+  // say, for anybody against V. V's own crew and people lent to V come there as anywhere.
   if !onVsSide && CBHomePointQuiet(game, at) {
     CBNoteSpawnBlock(CBBlockHomeGround());
     return true;
@@ -581,10 +469,7 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4, opt onVsSide:
   if optIn {
     return false;   // the player has asked for this fight
   }
-  // The game's own no-spawn areas, which is how the NCPD know not to materialise inside a
-  // megabuilding lobby. Reusing the police answer rather than keeping a second opinion: this
-  // is a plain point test with no side effects, and it can only ever refuse a point, never
-  // allow one the checks above would have rejected.
+  // The game's no-spawn areas, which is how the NCPD know not to materialise inside a megabuilding lobby.
   let pss = GameInstance.GetPreventionSpawnSystem(game);
   if IsDefined(pss) && pss.IsPointInPreventionFreeArea(at) {
     CBNoteSpawnBlock(CBBlockProtectedZone());
@@ -602,10 +487,6 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4, opt onVsSide:
 }
 
 // Is this NPC somewhere it should be left alone, whatever V has done?
-//
-// Mirrors the game's own check: a safe area on its own is not enough, it has to be an indoor
-// one. That is what keeps people inside a bar out of it while the crowd on the street outside
-// still reacts normally, which the old single global flag could not express.
 public func CBNpcInSafeInterior(npc: wref<ScriptedPuppet>) -> Bool {
   if !IsDefined(npc) {
     return false;
@@ -618,11 +499,6 @@ public func CBNpcInSafeInterior(npc: wref<ScriptedPuppet>) -> Bool {
 }
 
 // Is V under a scripted no-combat restriction right now?
-//
-// Separate from the zone: scenes and story beats apply this tag without the player being in a
-// safe area at all. The game's reaction component checks it before anything else, and
-// Cyberbane was missing it, so reactions could fire during moments the game had explicitly
-// put a lid on.
 public func CBPlayerNoCombatTag(game: GameInstance) -> Bool {
   let player = GetPlayer(game);
   if !IsDefined(player) {
@@ -632,15 +508,6 @@ public func CBPlayerNoCombatTag(game: GameInstance) -> Bool {
 }
 
 // Undo the disarm the game applies on entering a safe area, when the player has asked for it.
-//
-// Wrapped rather than replaced on purpose. OnEnterSafeZone queues the ForceEmptyHandsByZone
-// parameter, sets the Safe zone state and plays a tone; replacing it would mean owning all
-// three forever and fighting any other mod that touches the same method. Letting it run and
-// then queueing the one parameter back to false leaves the zone semantics completely intact -
-// Cyberbane's own safe-area logic, the minimap, the label and every other mod still see a
-// normal safe area - and only the weapon lock is lifted.
-//
-// If the setting is off this does nothing at all, which is the default.
 @wrapMethod(PlayerPuppet)
 private final func OnEnterSafeZone() -> Void {
   wrappedMethod();
@@ -666,16 +533,6 @@ private final func OnEnterSafeZone() -> Void {
 }
 
 // Keep the safe-area weapon lock lifted for as long as V is in a safe area with the setting on.
-//
-// The wrap on OnEnterSafeZone above lifts it once, at the moment of entry. That was the whole of
-// the fix before 1.5.3, and it did nothing for most players: the game re-sends the lock every
-// time the zone fact changes, the settings are often not loaded yet when a save starts inside a
-// safe area, and turning the setting on while already inside never reached the lock at all. This
-// re-asserts the lift every few seconds while it applies, and puts the lock back if the setting is
-// turned off inside. It is the same parameter the game itself sets, and nothing else.
-//
-// Some interiors (the Afterlife, some apartments) also apply a quest restriction that forbids
-// combat outright. That is the story's, and Cyberbane leaves it alone.
 public func CBSafeZoneArmsTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let player = GetPlayer(game);
   if !IsDefined(sys) || !IsDefined(player) {
@@ -687,8 +544,8 @@ public func CBSafeZoneArmsTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   let inArea = (setting || sys.IsSafeArmsApplied()) && CBPlayerInGameSafeArea(game);
   let want = setting && inArea && !CBPlayerInScene(game);
   if want {
-    // Not while street talk is holding V's hands (1.9.5): talk now works in safe areas, and lifting
-    // the lock under an open prompt would let the wheel draw a gun instead of picking a line.
+    // Not while street talk is holding V's hands: talk now works in safe areas, and lifting the lock under an open
+    // prompt would let the wheel draw a gun instead of picking a line.
     let talk = sys.GetStreetTalk();
     if IsDefined(talk) && talk.HoldsHands() {
       return;
@@ -700,7 +557,7 @@ public func CBSafeZoneArmsTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
     return;
   }
   if sys.IsSafeArmsApplied() {
-    // Lifted by us and no longer wanted: put the game's own lock back if V is still inside.
+    // Lifted by us and no longer wanted: put the game's lock back if V is still inside.
     if inArea {
       CBQueueZoneArmsLock(player, true);
     }
@@ -708,11 +565,7 @@ public func CBSafeZoneArmsTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   }
 }
 
-// Is V in a safe area the game itself locks V's hands in: the place, not a NoCombat tag a scene has put on
-// V. The lock (ForceEmptyHandsByZone) is set on entering a safe zone and cleared on leaving one
-// (player.script, OnEnterSafeZone and OnExitSafeZone), so only the place may say when it is lifted or put
-// back. IsInSafeZone also says yes for the tag, and putting the lock back on that answer locked V's hands
-// outside any safe area, with no zone to leave that would ever lift it.
+// Is V in a safe area the game itself locks V's hands in: the place, not a NoCombat tag a scene has put on V.
 public func CBPlayerInGameSafeArea(game: GameInstance) -> Bool {
   let sam = GameInstance.GetSafeAreaManager(game);
   let player = GetPlayer(game);

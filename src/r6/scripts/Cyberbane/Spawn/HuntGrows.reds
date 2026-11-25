@@ -1,18 +1,6 @@
-// Cyberbane - The hunt grows (2.4.2)
+// Cyberbane - The hunt grows
 //
-//   [49] tracked        a quickhack on V from one of Cyberbane's people plants a tracker: for half a game day, or until
-//                       V has spent a minute somewhere safe (a ripperdoc's chair, home, a clinic), that gang knows
-//                       where V is: no scout, a hunt that starts on V, always a reason to send. The HUD says so.
-//   [48] open season    the top of a gang's anger: sworn against V, many of theirs dead, a leader to declare it. For a
-//                       game day every one of theirs knows V's face and a crew comes every game hour. Survive it, kill
-//                       their leader, or pay a crippling price; surviving leaves them afraid.
-//   [E2] lying in wait  on by default now: a crew parks up the road from a driving V; the Wraiths do it on Badlands
-//                       roads whatever their grudge; more often where V is known to go; and a watcher V paid warns V.
-//   [47] V's road       on foot with a job tracked far away, a vendetta crew may wait near it instead, outside the
-//                       job's own ground, and spring when V arrives (the event engine, kind Ambush).
-//   [11] the assassin   at night, the Tyger Claws sometimes send one killer with a blade instead of a crew.
-//
-// The tracker is kept in the hunt book (CBHuntBook) and open season in the war book (CBWarBook), both laid out for it.
+// Trackers planted by quickhacks, open season, crews lying in wait on V's road, and the Tyger Claws' assassin.
 
 public func CBTrackersOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -68,7 +56,7 @@ func CBOpenSeasonEnd(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
       mult = rt.GetSettings().renownGainMult;
     }
     sys.AddRenownPoints(CBConfig.OpenSeasonRenown() * mult);
-    CBGiveStreetCred(game, CBConfig.CredOpenSeason());   // [87], 2.4.6
+    CBGiveStreetCred(game, CBConfig.CredOpenSeason());   // [87]
     CBFileLog(sys, n"OpenSeasonSurvived", now, CBEventDistrict(sys, game), gang, 0.0);
     CBEventSay(game, CBTf(n"Cyberbane-HuntGrows-YouSurvivedOpenSeasonAWhole", [s"\(CBPossessive(CBFactionLabel(gang)))"]));
     return;

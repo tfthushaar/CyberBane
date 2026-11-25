@@ -1,28 +1,6 @@
 // Cyberbane - What they leave behind (spec §9.12)
 //
-// "Hard to kill mobs that eat ammo like no tomorrow, with little reward for actually defeating
-// them." The reward was reputation and a counter in the Hub. Beating somebody the city sent after
-// you should be worth something you can hold.
-//
-// Everyone Cyberbane sends who goes down by V's hand leaves something for V, scaled to who they
-// were:
-//   - crew and escorts: sometimes ammo and a few common parts;
-//   - Rivals: better parts the higher they ranked, more for a leader;
-//   - apex squad members: rare and epic parts, a chance of legendary ones, and a small chance of
-//     an iconic weapon.
-// Putting down a Rival, or wiping out an apex squad, also pays a bounty in eddies, from one of
-// the gangs at war with theirs (Model/GangRivalries.reds), who text V to say so.
-//
-// Iconic weapons are only ever ones a player could come across exploring the city. Anything the
-// game tags as a quest item is refused at runtime, and the list itself (CBLootIconics) leaves out
-// weapons that come from missions, gigs, story beats and companions, so nothing is spoiled and
-// nobody's personal weapon turns up on a ganger. Each iconic drops at most once per session.
-//
-// Every item is checked against TweakDB before it is used, so an id that does not exist on
-// somebody's patch is skipped rather than handed to the inventory system.
-//
-// It goes straight into V's inventory, scheduled a moment after death and never from inside the
-// death handler.
+// Loot on the bodies of the people Cyberbane sends, with a chance of an iconic from top Rivals and gang leaders.
 
 // Iconic weapons found exploring the city. Edit this list to taste; each entry is still checked
 // at runtime (it must exist, carry the IconicWeapon tag, and not carry the Quest tag).
@@ -115,8 +93,8 @@ public func CBLootRoll(tier: Int32, out ids: array<TweakDBID>, out counts: array
   }
 }
 
-// The iconics of the list V carries now (2.7.0), each remembered in the save, so one V has had never drops again even once
-// it is in the stash, sold or given away. The stash itself can only be read while V's apartment is loaded.
+// The iconics of the list V carries now, each remembered in the save, so one V has had never drops again even once it
+// is in the stash, sold or given away. The stash itself can only be read while V's apartment is loaded.
 public func CBLootNoteCarriedIconics(sys: ref<CyberbaneSystem>, pool: array<TweakDBID>) -> Void {
   let game = sys.GetGameInstance();
   let player = GetPlayer(game);
@@ -136,8 +114,8 @@ public func CBLootNoteCarriedIconics(sys: ref<CyberbaneSystem>, pool: array<Twea
   }
 }
 
-// One iconic, if the dice say so: one that exists, is an iconic, is not a quest item, and V has never had, from Cyberbane
-// or anywhere else V was seen carrying it (2.7.0). TDBID.None() otherwise.
+// One iconic, if the dice say so: one that exists, is an iconic, is not a quest item, and V has never had, from
+// Cyberbane or anywhere else V was seen carrying it. TDBID.None otherwise.
 public func CBLootIconicRoll(sys: ref<CyberbaneSystem>, chance: Float) -> TweakDBID {
   if !IsDefined(sys) || chance <= 0.0 || RandF() >= chance {
     return TDBID.None();
@@ -222,10 +200,7 @@ public class CBLootDropCallback extends DelayCallback {
     if ArraySize(ids) == 0 {
       return;
     }
-    // Straight into V's inventory, with the game's own "item received" notices. 1.4.8 handed the
-    // items to the corpse and dropped a bag from it, which is not something the game ever does:
-    // every bag it drops comes from the player, a vendor or a device. The pickup is the one part
-    // worth giving up for a loot system that cannot take the game down with it.
+    // The pickup is the one part worth giving up for a loot system that cannot take the game down with it.
     let i = 0;
     let best = 0;
     while i < ArraySize(ids) {
@@ -236,7 +211,7 @@ public class CBLootDropCallback extends DelayCallback {
       }
       i += 1;
     }
-    // Something worth having (2.7.7): the game's own sting for an epic or legendary find.
+    // Something worth having: the game's sting for an epic or legendary find.
     if best >= 4 || TDBID.IsValid(iconic) {
       CBUiSound(game, n"ui_loot_rarity_legendary", n"LootRare", 6.0);
     } else {
@@ -309,7 +284,7 @@ func CBPayBounty(sys: ref<CyberbaneSystem>, game: GameInstance, victimFaction: C
   }
   ts.GiveItem(player, ItemID.FromTDBID(t"Items.money"), amount);
   let payer = CBBountyPayer(sys, game, victimFaction);
-  CBWarSpend(game, payer, Cast<Float>(amount));   // out of whoever pays (Economy/War.reds, 2.4.0)
+  CBWarSpend(game, payer, Cast<Float>(amount));   // out of whoever pays (Economy/War.reds)
   if CBToastsOn() {
     if NotEquals(payer, n"") {
       CBPhoneFromAlly(game, payer, CBTf(n"Cyberbane-Loot-EbFromUs", [line, s"\(amount)"]));

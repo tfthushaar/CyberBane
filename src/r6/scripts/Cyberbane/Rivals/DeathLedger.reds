@@ -5,14 +5,8 @@
 // death is recorded immediately and re-applied on every later load of the same
 // playthrough: the killer becomes (or is promoted to) a Rival.
 
-// Called from V's death event (Signals/CombatSignals.reds), so it does only what has to happen there: the
-// death goes into the ledger, which lives in the global service and which nothing else writes during play.
-// That has to be at once, because a reload throws this session away and the ledger is how the killer is
-// made a Rival on the next load. Everything that changes this save's own state (the death count, V's file,
-// the killer promoted) waits for the next frame (CBPlayerDeathCallback), the way every NPC death does: the
-// game delivers these events on its worker threads, and the promotion writes the Rival list the tick may be
-// changing at that moment (the 1.8.1 rule). Until 2.1.0 all of it ran inside the event. The entry is
-// returned so the callback can finish it; null when deaths are not remembered.
+// Called from V's death event (Signals/CombatSignals.reds), so it does only what has to happen there: the death goes
+// into the ledger, which lives in the global service and which nothing else writes during play.
 public func CBWriteDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>) -> ref<CBLedgerEntry> {
   if !IsDefined(sys) {
     return null;
@@ -39,20 +33,13 @@ public func CBWriteDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance, pl
     killer = player.cbLastAttacker;
   }
   let killerBody: EntityID;
-  // Still in the world before their record is read (2.3.0). A weak reference stays defined after its puppet
-  // streams out, which a killer who shot V from range or left V bleeding can do before V's death lands; reading
-  // the record of one that has gone is how the talk bubbles took the game down in 2.2. A killer who is gone
-  // leaves a death with nobody named, as one with no attacker always has.
+  // Still in the world before their record is read.
   if IsDefined(killer) && killer.IsAttached() {
     entry.killerRecordID = killer.GetRecordID();
     entry.killerFaction = CBClassifyFaction(killer);
     entry.killerAppearance = killer.GetCurrentAppearanceName();
     killerBody = killer.GetEntityID();
-    // Was it one of V's Rivals? Asked of the body, never the record: Rivals are built from the
-    // gang's ordinary records, which dozens of their people share, so matching on the record
-    // credited any ganger who happened to share one with a Rival. Writing the Rival's id into
-    // the entry also means a reload of an older save promotes that Rival instead of minting a
-    // duplicate of them.
+    // Was it one of V's Rivals?
     let known = CBFindRivalByBody(sys, killerBody);
     if IsDefined(known) {
       entry.killerRivalId = known.id;
@@ -87,24 +74,6 @@ public class CBPlayerDeathCallback extends DelayCallback {
     CBFileLog(sys, n"Death", e.at, e.district, e.killerFaction, 0.0);
 
     // And promote them right now, rather than only on the next load.
-    //
-    // The ledger is applied at session start, which is the only moment that exists when dying
-    // means reloading a save. It is not the only moment any more. Death alternatives such as
-    // Fenix Rebirth put V back on their feet and the session carries on, so the killer was never
-    // promoted at all for anybody running one, and the part of the Rivals that makes them Rivals was
-    // missing for them.
-    //
-    // Who did it is Cyberbane's own knowledge: `cbLastAttacker` is set by the hit hook in
-    // CombatSignals.reds. That V died is too, from the game's death event, except where a death
-    // alternative never lets the game kill V at all: Fenix Rebirth catches the killing hit inside
-    // the damage, so for it the death comes from its own rebirth count, read by reflection
-    // (Compat/FenixRebirth.reds, 2.7.6). Never by name: a bridge that wrapped one of its events
-    // (removed in 1.4.6) broke redscript compilation for everyone on a version without it.
-    //
-    // If the player does reload instead, none of this survives, because it is save state and the
-    // save is about to be replaced by an older one; the ledger entry written in the event does it
-    // on the next load. Marking the entry applied stops the ledger promoting the same death a second
-    // time on a later load of a session that carried on.
     if TDBID.IsValid(e.killerRecordID)
        && CBPromoteKiller(game, e.killerFaction, e.killerRecordID, n"", this.killerBody, e.killerAppearance) {
       sys.MarkAppliedLedgerId(e.id);
@@ -112,16 +81,8 @@ public class CBPlayerDeathCallback extends DelayCallback {
   }
 }
 
-// The Killer Rivals this save got from deaths in `oldId`'s ledger that were another character's
-// (1.8.3), for a save that turns out not to be the character its id is on record for
-// (CyberbaneSystem.MoveToOwnPlaythrough).
-//
-// Matched exactly to the death that made each one: CBApplyDeathLedger hands CBCreateRival the
-// death's record, place and time, and those stay as they were. Only deaths further ahead of this
-// save's clock than ForeignDeathMarginSeconds count, because this V's own deaths under the shared
-// id look exactly the same, and a V who died and reloaded is behind their death only by however
-// long it was since the last save. A death that made nobody new (it promoted a Rival that already
-// existed) is left alone: nothing in this save was made from it.
+// The Killer Rivals this save got from deaths in `oldId`'s ledger that were another character's, for a save that turns
+// out not to be the character its id is on record for (CyberbaneSystem.MoveToOwnPlaythrough).
 public func CBForeignKillers(sys: ref<CyberbaneSystem>, svc: ref<CyberbaneService>, oldId: CName, now: Float) -> array<Int32> {
   let ids: array<Int32>;
   if !IsDefined(sys) || !IsDefined(svc) || !IsNameValid(oldId) {
@@ -143,10 +104,7 @@ public func CBForeignKillers(sys: ref<CyberbaneSystem>, svc: ref<CyberbaneServic
   return ids;
 }
 
-// A Killer Rival still out after V who looks exactly like this: the same gang, the same record and the
-// same appearance (1.9.1). Two of them would wear the same face, which nobody could tell apart, so a
-// second death by that face is the same person getting better at it. An appearance nobody wrote down
-// only matches another nobody wrote down.
+// A Killer Rival still out after V who looks exactly like this: the same gang, the same record and the same appearance.
 public func CBKillerRivalLike(sys: ref<CyberbaneSystem>, faction: CName, record: TweakDBID,
                               look: CName) -> ref<CBRival> {
   if !IsDefined(sys) || Equals(faction, n"") || !TDBID.IsValid(record) {
@@ -192,8 +150,8 @@ public func CBApplyDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance) ->
       sys.MarkAppliedLedgerId(entry.id);
     }
     if IsDefined(entry) && Equals(entry.playthroughId, myId) && !sys.HasAppliedLedgerId(entry.id) {
-      // Said in the log, so a Rival that seems to come from nowhere can be traced to the death that
-      // made it, and to the playthrough it was recorded in (1.8.3).
+      // Said in the log, so a Rival that seems to come from nowhere can be traced to the death that made it, and to the
+      // playthrough it was recorded in.
       CBLog.Info(n"Ledger", s"Applying death id=\(entry.id) of \(NameToString(myId)) from game time \(RoundF(entry.at)) in \(NameToString(entry.district)), killer \(NameToString(entry.killerFaction)).");
       if entry.killerRivalId >= 0 {
         let existing = sys.FindRivalById(entry.killerRivalId);
@@ -202,14 +160,7 @@ public func CBApplyDeathLedger(sys: ref<CyberbaneSystem>, game: GameInstance) ->
         }
       } else {
         if NotEquals(entry.killerFaction, n"") && entry.killerRecordID != TDBID.None() {
-          // The same face as a Killer Rival this save already has: the same person, again (1.9.1).
-          //
-          // Dying to one fight and reloading the save before it, over and over, leaves a death in
-          // the ledger for every try, and none of them is in that save's applied list, so each load
-          // applied every one: the second load made the killer a Rival, the third made two Rivals of
-          // them with two names, and every one of them texted "has your name now". The body that
-          // killed V each time was the game's own NPC, never the Rival's, so the ledger had no id to
-          // match them by. What it does have is how they looked.
+          // The same face as a Killer Rival this save already has: the same person, again.
           let again = CBKillerRivalLike(sys, entry.killerFaction, entry.killerRecordID, entry.killerAppearance);
           if IsDefined(again) {
             CBRivalKilledV(again, content, entry.at, entry.district);

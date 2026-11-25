@@ -3,9 +3,6 @@
 // Codeware ScriptableService. Holds session-only runtime state that must be
 // reachable without a GameInstance (the service container accessor is static),
 // so low-level helpers such as CBLog can read it. It stores nothing in saves.
-//
-// Settings pushes updates here; the kill switch (spec §16.3) and per-module
-// error counters (spec §16.5) also live here.
 
 public class CyberbaneRuntime extends ScriptableService {
   private let m_enabled: Bool = true;
@@ -21,78 +18,65 @@ public class CyberbaneRuntime extends ScriptableService {
   // bodies are set up after the seed has moved on, and read their names from here (Spawn/ApexSquad.reds, CBApexMemberName).
   public let lastApexFaction: CName;
   public let lastApexSeed: Int32;
-  // Street talk's list, held on screen through the game's own clears (2.6.7, Reactions/StreetTalk.reds, CBTalkHeldList):
-  // what it is, the line picked, and until when it holds (sim seconds), renewed by talk's own tick while it is up.
+  // Street talk's list, held on screen through the game's clears (Reactions/StreetTalk.reds, CBTalkHeldList): what it
+  // is, the line picked, and until when it holds (sim seconds), renewed by talk's own tick while it is up.
   public let talkList: DialogChoiceHubs;
   public let talkListIndex: Int32;
   public let talkListHeld: Bool;
   public let talkListUntil: Float;
-  // Which playthrough that reset is for, and which one is loaded now. This service outlives every
-  // save, so a request parked here used to survive a Load Game from the pause menu and wipe
-  // whichever save was loaded next, even one from another playthrough. n"" means none is loaded:
-  // the switch was flipped from the main menu, and it is for the next save to load.
+  // Which playthrough that reset is for, and which one is loaded now.
   private let m_resetFor: CName;
   private let m_sessionPlaythrough: CName;
-  // "This save is another character" (1.8.3), parked the same way as a reset and for the same
-  // playthrough rules: it belongs to the playthrough loaded when it was chosen, or with nothing
-  // loaded, to the next save to load.
+  // "This save is another character", parked the same way as a reset and for the same playthrough rules: it belongs to
+  // the playthrough loaded when it was chosen, or with nothing loaded, to the next save to load.
   private let m_separateRequested: Bool;
   private let m_separateFor: CName;
   private let m_ngpDetected: Int32;    // same three states, for New Game Plus
   // Why the last arrival was refused (CBBlock*). Diagnostic only, session-only.
-  //
-  // This exists because three releases in a row shipped with a different gate silently
-  // refusing every spawn, and each one was found by reading code rather than by the mod
-  // saying anything. A refusal that names itself turns a week of guessing into one sentence
-  // from whoever is playing.
   private let m_lastSpawnBlock: Int32;
-  private let m_spawnBlockTally: array<Int32>;   // refusals per reason for the placement under way (2.7.7)
-  public let lastBrokerDistrict: CName;          // the broker who last passed word on, for word from between districts (2.7.7)
-  public let soundKey: array<CName>;             // each sound's last play, for its cooldown (2.7.7, UI/Sounds.reds)
+  private let m_spawnBlockTally: array<Int32>;   // refusals per reason for the placement under way
+  public let lastBrokerDistrict: CName;          // the broker who last passed word on, for word from between districts
+  public let soundKey: array<CName>;             // each sound's last play, for its cooldown (UI/Sounds.reds)
   public let soundAt: array<Float>;
-  // What the street has said lately (Narrative/Lines.reds, 2.3.1): the last LineMemory lines that reached
-  // the screen, oldest overwritten first. Session only: it is about what V just heard.
+  // What the street has said lately (Narrative/Lines.reds): the last LineMemory lines that reached the screen, oldest
+  // overwritten first. Session only: it is about what V just heard.
   private let m_said: array<String>;
   private let m_saidNext: Int32;
-  // Where a search began, to tell when V has changed clothes or district since (Spawn/Hunted.reds, 2.4.1).
+  // Where a search began, to tell when V has changed clothes or district since (Spawn/Hunted.reds).
   private let m_trailSet: Bool;
   private let m_trailLook: Float;
   private let m_trailDistrict: CName;
-  // What the last overheard line was about, so the next one is about something else (1.9.5).
+  // What the last overheard line was about, so the next one is about something else.
   private let m_lastWhisperTopic: CName;
-  // How many game seconds pass per real second, measured once a session. About 8.1 by default;
-  // a mod like CP Chronology that slows the world clock brings it near 1. Measured rather than
-  // assumed precisely because it is not a constant across setups.
+  // How many game seconds pass per real second, measured once a session. About 8.1 by default; a mod like CP Chronology
+  // that slows the world clock brings it near 1.
   private let m_clockRatio: Float = 1.0;
   // Sim time of the last on-screen message, so two never land on top of each other.
   private let m_lastMessageAt: Float;
-  // Equipment-EX's outfit functions, looked up once a launch (Signals/Concealment.reds, 1.9.5).
+  // Equipment-EX's outfit functions, looked up once a launch (Signals/Concealment.reds).
   private let m_eqexProbe: ref<CBEqExProbe>;
-  // Whether WEAVE's auto-tagger is installed, looked up once a launch (Signals/Concealment.reds, 2.7.8).
+  // Whether WEAVE's auto-tagger is installed, looked up once a launch (Signals/Concealment.reds).
   private let m_weaveProbe: ref<CBWeaveProbe>;
-  // The conversation's answer being voiced (Reactions/TalkVoice.reds, 2.7.8).
+  // The conversation's answer being voiced (Reactions/TalkVoice.reds).
   private let m_talkVoice: ref<CBTalkVoiceNow>;
-  // Whether AudioXL is installed to play V's lines from the story, looked up once a launch (Reactions/TalkVoice.reds, 2.7.8).
+  // Whether AudioXL is installed to play V's lines from the story, looked up once a launch (Reactions/TalkVoice.reds).
   private let m_audioXLProbe: ref<CBAudioXLProbe>;
-  // They Will Remember's disguise functions, looked up once a launch (Signals/Concealment.reds, 2.4.2).
+  // They Will Remember's disguise functions, looked up once a launch (Signals/Concealment.reds).
   private let m_twrDisguiseProbe: ref<CBTwrDisguiseProbe>;
-  // They Will Remember's word on who is hostile, by its own gang index, asked on the tick
-  // (CBTwrRefreshHostility, 2.4.2): 1 hostile, 0 not, -1 not asked or no answer. Cleared at each session's
-  // start, so one save's answers never stand for another's. Why it could not be asked, or "".
+  // They Will Remember's word on who is hostile, by its own gang index, asked on the tick (CBTwrRefreshHostility): 1
+  // hostile, 0 not, -1 not asked or no answer.
   private let m_twrAttitudeProbe: ref<CBTwrAttitudeProbe>;
   private let m_twrHostile: array<Int32>;
   private let m_twrHostileWhy: String;
   private let m_twrHostileAsked: Bool;
   private let m_twrDisguiseWhy: String;
-  // Whether V has been told to put a weapon away to talk to people (Reactions/StreetTalk.reds, 1.9.5).
+  // Whether V has been told to put a weapon away to talk to people (Reactions/StreetTalk.reds).
   private let m_talkHolsterHinted: Bool;
   private let m_subGen: array<Int32>;
   private let m_subUp: array<Int32>;
 
   public static func Get() -> ref<CyberbaneRuntime> {
-    // The service container is null during world transitions (sleep, fast travel, Skip Time,
-    // braindance entry). Calling GetService on a null container reads a null context and crashes,
-    // so bail out and let callers treat the runtime as not-yet-available (crash safety).
+    // The service container is null during world transitions (sleep, fast travel, Skip Time, braindance entry).
     let container = GameInstance.GetScriptableServiceContainer();
     if !IsDefined(container) {
       return null;
@@ -120,10 +104,7 @@ public class CyberbaneRuntime extends ScriptableService {
     this.m_enabled = value;
   }
 
-  // Reward-hook nesting. Granting a reward can grant another one (a job payout that pushes
-  // Street Cred over a level hands out the level reward inside the same call), so the gig
-  // bonus must only ever be worked out by the outermost call - otherwise the inner payout
-  // and its bonus are both counted again by the outer one.
+  // Reward-hook nesting.
   public func EnterReward() -> Int32 {
     this.m_rewardDepth += 1;
     return this.m_rewardDepth;
@@ -146,8 +127,8 @@ public class CyberbaneRuntime extends ScriptableService {
     this.m_twrDetected = present ? 1 : 2;
   }
 
-  // Cyberbane's subtitle lines (UI/PhoneMessages.reds, CBShowGameSubtitle, 2.1.0): which of a channel's two
-  // ids is up, and a count per id so a take-down timer only takes down the line it was set for.
+  // Cyberbane's subtitle lines (UI/PhoneMessages.reds, CBShowGameSubtitle): which of a channel's two ids is up, and a
+  // count per id so a take-down timer only takes down the line it was set for.
   public func SubtitleGenBump(id: Int32) -> Int32 {
     this.PadSubtitles();
     if id < 0 || id >= ArraySize(this.m_subGen) {
@@ -227,7 +208,7 @@ public class CyberbaneRuntime extends ScriptableService {
     return this.m_twrAttitudeProbe;
   }
 
-  // Which of the street's features last said why it did not happen, and when (2.5.7, CBStreetWhyNot).
+  // Which of the street's features last said why it did not happen, and when (CBStreetWhyNot).
   private let m_whyKeys: array<String>;
   private let m_whyAt: array<Float>;
 
@@ -252,8 +233,8 @@ public class CyberbaneRuntime extends ScriptableService {
     return true;
   }
 
-  // At each session's start. A look at They Will Remember that failed is tried again too (2.5.1): it was made once a
-  // launch, and a failure, whatever its cause, held for every save loaded until the game was restarted.
+  // At each session's start. A look at They Will Remember that failed is tried again too: it was made once a launch,
+  // and a failure, whatever its cause, held for every save loaded until the game was restarted.
   public func ClearTwrHostility() -> Void {
     ArrayClear(this.m_twrHostile);
     this.m_twrHostileAsked = false;
@@ -266,7 +247,7 @@ public class CyberbaneRuntime extends ScriptableService {
     this.m_twrDisguiseWhy = "";
   }
 
-  // Why They Will Remember's disguises could not be read on the last reading, "" when they were (2.5.1).
+  // Why They Will Remember's disguises could not be read on the last reading, "" when they were.
   public func SetTwrDisguiseWhy(why: String) -> Void {
     this.m_twrDisguiseWhy = why;
   }
@@ -295,7 +276,7 @@ public class CyberbaneRuntime extends ScriptableService {
     return this.m_twrHostileAsked ? this.m_twrHostileWhy : CBT(n"Cyberbane-CyberbaneRuntime-ItHasNotBeenAskedYet");
   }
 
-  // Smasher Encounters' word on whether Smasher is out (2.6.7, Compat/SmasherEncounters.reds).
+  // Smasher Encounters' word on whether Smasher is out (Compat/SmasherEncounters.reds).
   private let m_smasherProbe: ref<CBSmasherProbe>;
 
   private let m_mbcProbe: ref<CBMbcProbe>;
@@ -307,8 +288,8 @@ public class CyberbaneRuntime extends ScriptableService {
     return this.m_mbcProbe;
   }
 
-  // Where bodies were put in the last few seconds, and when (2.7.6, CBPointIsFree): separate groups sent together no
-  // longer land inside each other. Engine seconds; a stamp ahead of the clock is an old session's.
+  // Where bodies were put in the last few seconds, and when (CBPointIsFree): separate groups sent together no longer
+  // land inside each other. Engine seconds; a stamp ahead of the clock is an old session's.
   private let m_recentSpawnPos: array<Vector4>;
   private let m_recentSpawnAt: array<Float>;
 
@@ -348,7 +329,7 @@ public class CyberbaneRuntime extends ScriptableService {
     this.m_recentSpawnAt = keepAt;
   }
 
-  // Fenix Rebirth's word on V's rebirths (2.7.6, Compat/FenixRebirth.reds).
+  // Fenix Rebirth's word on V's rebirths (Compat/FenixRebirth.reds).
   private let m_fenixProbe: ref<CBFenixProbe>;
 
   public func GetFenixProbe() -> ref<CBFenixProbe> {
@@ -391,9 +372,8 @@ public class CyberbaneRuntime extends ScriptableService {
     this.m_lastMessageAt = v;
   }
 
-  // The cards waiting behind the one on screen (2.6.3, UI/Notify.reds): their words, their asked-for time, when they were
-  // asked for (sim time), and the sim time the card up now ends. On the service, like the stamp above, so a load can leave
-  // them behind: CBShowMessage drops anything whose clock reads from another session.
+  // The cards waiting behind the one on screen (UI/Notify.reds): their words, their asked-for time, when they were
+  // asked for (sim time), and the sim time the card up now ends.
   public let cardText: array<String>;
   public let cardSeconds: array<Float>;
   public let cardAt: array<Float>;
@@ -513,7 +493,7 @@ public class CyberbaneRuntime extends ScriptableService {
     this.m_lastSpawnBlock = reason;
   }
 
-  // A placement starts counting afresh (2.7.7, CBSpawnGroup).
+  // A placement starts counting afresh (CBSpawnGroup).
   public func ResetSpawnBlockTally() -> Void {
     ArrayClear(this.m_spawnBlockTally);
   }
@@ -547,11 +527,6 @@ public class CyberbaneRuntime extends ScriptableService {
   }
 
   // Hard reset, asked for in Mod Settings and carried out on the next settled tick.
-  //
-  // The settings callback cannot do the work itself: it has no GameInstance, and the reset
-  // sweeps spawned entities and clears live encounters, neither of which is safe while the
-  // world is mid-transition. So the request is parked here and the tick collects it, the same
-  // way the deferred entity sweep works.
   public func RequestHardReset() -> Void {
     this.m_resetRequested = true;
     this.m_resetFor = this.m_sessionPlaythrough;
@@ -564,7 +539,7 @@ public class CyberbaneRuntime extends ScriptableService {
     this.m_resetFor = playthroughId;
   }
 
-  // A reset still waiting for this playthrough, taken back (2.6.3, undoing a Start over before the game had a tick).
+  // A reset still waiting for this playthrough, taken back (undoing a Start over before the game had a tick).
   public func CancelHardResetFor(playthroughId: CName) -> Void {
     if this.m_resetRequested && Equals(this.m_resetFor, playthroughId) {
       this.m_resetRequested = false;
@@ -572,9 +547,7 @@ public class CyberbaneRuntime extends ScriptableService {
     }
   }
 
-  // Taken by the settled tick of the playthrough that is loaded. A request made for a different
-  // playthrough is dropped rather than carried out here: that playthrough is on record as started
-  // over (CyberbaneService.Retire), and it is reset the next time one of its saves loads.
+  // Taken by the settled tick of the playthrough that is loaded.
   public func TakeHardResetRequest(playthroughId: CName) -> Bool {
     if !this.m_resetRequested {
       return false;
@@ -589,7 +562,7 @@ public class CyberbaneRuntime extends ScriptableService {
     return true;
   }
 
-  // "This save is another character", chosen in Mod Settings (1.8.3). Same rules as a reset.
+  // "This save is another character", chosen in Mod Settings. Same rules as a reset.
   public func RequestSeparate() -> Void {
     this.m_separateRequested = true;
     this.m_separateFor = this.m_sessionPlaythrough;

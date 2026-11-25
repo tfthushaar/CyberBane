@@ -4,30 +4,6 @@
 // Rival shows their name, and each member of an apex squad shows their role. The point is that
 // you can tell at a glance which of the people shooting at you is a Rival, which four are the
 // apex squad, and which are ordinary crew with no bar at all.
-//
-// This is drawn by Cyberbane rather than handed to the game's own boss bar, and the reason is
-// no longer a guess. The game's own controller is at
-// `cyberpunk/UI/widgets/healthbar/bossHealthBar.script`, and `AddBoss` opens with:
-//
-//     if( !boss || ( !boss.IsBoss() && boss.GetNPCRarity() != gamedataNPCRarity.MaxTac ) )
-//         return;
-//
-// Everything Cyberbane spawns fails that test, because boss-ness lives on the character record
-// and there is no setter for it. So every `AddBoss` call Cyberbane ever made returned without
-// drawing anything, which is why no bar was ever seen. That controller also only draws one bar
-// at a time (`m_boss`, with the rest queued in `m_bossPuppets`), so it could not show a squad
-// even if it accepted them.
-//
-// For the record, so nobody spends another evening on it: NPC rarity has no setter;
-// `canHaveBossHealthbar` is a TweakDB flat and `TweakDBManager` is a RED4ext API with no
-// redscript binding; and `UI_Targeting.BossTarget`, `HighlightInstance.isBoss`,
-// `gamedataNPCType.Boss`, `Character_Record.NPCType()` and `TargetTrackerComponent.SetThreat`
-// do not exist on 2.5. Every one was probed.
-//
-// Crash safety: the rows are created once on an inkHUDLayer virtual window and only ever have
-// their size, text and visibility set afterwards. Targets are held weakly and re-checked
-// through CBNpcSafe on every update, so a dead or streamed-out one drops off the stack rather
-// than being read.
 
 // One bar: a line of text with a health track under it.
 public class CBThreatRow {
@@ -72,11 +48,7 @@ public class CBThreatBar {
   }
 
   private func Build(win: wref<inkCompoundWidget>) -> Void {
-    // The line and bars an earlier session left on the HUD layer, first (1.9.1). The layer outlives
-    // a load, and a line that was up when V died stayed up through every reload after it, with
-    // nothing left that could take it down: a hunt that "persists longer than intended", over and
-    // over, from somebody dying and reloading the same fight. Ours are not built yet, so everything
-    // of these names on the layer is a stray.
+    // The line and bars an earlier session left on the HUD layer, first.
     let strays = CBHideStrayHudWidgets(win, n"cyberbaneHuntStatus", n"cyberbaneThreatRow");
     if strays > 0 {
       CBLog.Info(n"UI", s"Took \(strays) hunt lines and bars left over from an earlier session off the screen.");
@@ -84,13 +56,12 @@ public class CBThreatBar {
     let font = "base\\gameplay\\gui\\fonts\\raj\\raj.inkfontfamily";
     let width = CBConfig.ThreatBarWidth();
     let stride = CBConfig.ThreatBarRowStride();
-    // Same fit as the Hub, for the same reason: these rows are authored in 1080p units and
-    // the ink space is not always that big. The stride and the top margin scale with the
-    // rows, or a shrunken stack would leave gaps where the spacing used to be.
+    // Same fit as the Hub, for the same reason: these rows are authored in 1080p units and the ink space is not always
+    // that big.
     let scale = CBHudScale(this.m_game);
     stride *= scale;
-    // The last session's, taken up again (2.6.3): each load built a new line and set of bars beside the hidden ones, a
-    // few more widgets on the HUD layer every reload for the rest of the game (crash rule 11: nothing builds up).
+    // The last session's, taken up again: each load built a new line and set of bars beside the hidden ones, a few more
+    // widgets on the HUD layer every reload for the rest of the game (crash rule 11: nothing builds up).
     if this.Adopt(win, scale, stride, width) {
       CBLog.Info(n"UI", "Threat bars taken up again from the HUD layer.");
       this.m_built = true;
@@ -164,9 +135,8 @@ public class CBThreatBar {
     this.m_built = true;
   }
 
-  // The line and bars of an earlier session, still on the HUD layer, made ours again: the shape Build makes (a canvas per
-  // row holding its text, track and fill, in that order), laid out again for this screen. False, and nothing kept,
-  // unless the whole set is there.
+  // The line and bars of an earlier session, still on the HUD layer, made ours again: the shape Build makes (a canvas
+  // per row holding its text, track and fill, in that order), laid out again for this screen.
   private func Adopt(win: wref<inkCompoundWidget>, scale: Float, stride: Float, width: Float) -> Bool {
     let status: ref<inkText>;
     let roots: array<ref<inkCanvas>>;
@@ -249,13 +219,6 @@ public class CBThreatBar {
       return;
     }
     // Taken on even if the rows are not up yet.
-    //
-    // This returned here instead, and the target was dropped for good. An enemy who arrived
-    // while the HUD layer was being rebuilt - right after a load, a fast travel, closing a
-    // menu - went the whole fight without a bar, and nothing afterwards would ever give them
-    // one. From the player's side that is an unnamed enemy with no bar and no way to tell
-    // whether they were meant to have one. Update retries the build every tick, so holding on
-    // to the target costs nothing and the bar appears the moment there is somewhere to draw it.
     if !this.EnsureBuilt() {
       CBLog.Info(n"UI", "Threat bar has no ink layer yet; holding the target until it does.");
     }
@@ -272,9 +235,7 @@ public class CBThreatBar {
     this.DropBars();
   }
 
-  // The line and the bars off the screen, keeping who is on the stack (1.9.1). While V is down the
-  // tick stands still, and whatever was drawn would freeze there; a death alternative standing V
-  // back up gets the bars back on the next settled tick, a load starts clean.
+  // The line and the bars off the screen, keeping who is on the stack.
   public func Conceal() -> Void {
     if IsDefined(this.m_status) {
       this.m_status.SetVisible(false);
@@ -304,21 +265,10 @@ public class CBThreatBar {
 
   // Once per fast tick, whatever the settings say. Drops anyone who is gone, then redraws the
   // rows that are left.
-  //
-  // Called unconditionally because this is the only thing that ever takes either surface down.
-  // It used to be skipped whenever the bar setting was off, and that is the "I turned it off and
-  // it is still at the top of my screen" report from both ends: switch the bars off mid-hunt and
-  // the line and the bars froze where they were, for good, since nothing else hides them; and
-  // with the bars off the hunt line could never change again, so its own setting did nothing
-  // either. Each switch now governs its own widget, here, every tick.
   public func Update(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     this.m_game = game;
     // The hunt line first, since it shows while they are still on their way and nobody is on
     // the stack yet.
-    //
-    // Nothing at all while the mod is switched off or its settings have not loaded. The bar
-    // setting used to stand in for that check by stopping this whole method, so it has to be
-    // said out loud now that the method always runs.
     let rt = CyberbaneRuntime.Get();
     let modOn = IsDefined(rt) && rt.IsEnabled() && rt.HasSettings();
     let line = modOn ? CBHuntStatusLine(sys, game) : "";
@@ -327,9 +277,8 @@ public class CBThreatBar {
     if modOn && StrLen(line) == 0 {
       line = CBDistrictStatusLine(sys, game);
     }
-    // Built on the first settled tick of a session even with nothing to show, because building is
-    // what takes a stray line from an earlier session off the screen (Build). With both lines
-    // switched off nothing here was ever built, and a stray stayed up for good.
+    // Built on the first settled tick of a session even with nothing to show, because building is what takes a stray
+    // line from an earlier session off the screen (Build).
     if !this.m_built {
       this.EnsureBuilt();
     }
@@ -356,16 +305,6 @@ public class CBThreatBar {
       return;
     }
     // Backwards, so erasing an entry does not skip the next one.
-    //
-    // Gone means gone: no longer in the world, or dead. A target that is merely still settling
-    // stays on the stack. This used to drop anyone CBNpcSafe refused, and CBNpcSafe also refuses
-    // everyone for the first NpcReadyTicks after they attach. The bar is put up 0.4 seconds
-    // after a spawn (and a Rival's at the moment of attach), so on the very next tick every
-    // one of them was erased, never to come back. That is why nobody had a bar.
-    // And over means over (2.5.0): somebody whose part is done carries none of the tags that put them on the stack.
-    // A Rival V spared or outran loses CB_Rival as the encounter closes (CBRetireRivalBody), a crew or apex squad
-    // called off loses theirs (CBCallOffGang); standing and still in the world, they kept their bar for as long as V
-    // could see them.
     let des = GameInstance.GetDynamicEntitySystem();
     let i = ArraySize(this.m_targets) - 1;
     while i >= 0 {
@@ -419,13 +358,7 @@ public class CBThreatBar {
   }
 }
 
-// Hide every visible child of the HUD layer with either name (1.9.1). Returns how many.
-//
-// Cyberbane's HUD widgets are its own, built from script straight onto the layer, and the layer
-// outlives a load while the session that built them does not. The new session builds its own set,
-// and the old one stays where it was, showing whatever it showed when the load began. Only names
-// Cyberbane gives its own widgets are touched, and only their visibility: nothing is removed, the way
-// HubTab clears the stats screen, so no widget is ever taken out from under anything still holding it.
+// Hide every visible child of the HUD layer with either name. Returns how many.
 public func CBHideStrayHudWidgets(win: wref<inkCompoundWidget>, a: CName, b: CName) -> Int32 {
   if !IsDefined(win) {
     return 0;

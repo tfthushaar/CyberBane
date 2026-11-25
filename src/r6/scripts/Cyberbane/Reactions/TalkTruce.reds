@@ -1,30 +1,7 @@
-// Cyberbane - Holding fire while V talks (2.6.7)
+// Cyberbane - Holding fire while V talks
 //
-// "Can't we make them talk inside a restricted area too, and pause the hostility while we talk so they don't start
-// shooting before we're done?" And: "that happened once when a Rival was offering to talk but his bodyguards started
-// shooting." A conversation with one of a gang is a conversation with all of them standing there: while it lasts,
-// their people nearby hold their fire, and on a gang's restricted ground the warning that ends in a fight stops
-// counting down. When it is over, everybody is as they were, except where the words changed that (a parley held, a
-// deal was struck, a toll was paid). Hurting any of them while they hold breaks it for all of them.
-//
-// Who holds. Everybody of the gang of the person V is talking to, near V and not already fighting: their crew, a
-// Rival's bodyguards, the guards of the ground V is standing on. Not the person themselves (the conversation is
-// theirs: talk's own outcomes turn them or calm them), not anybody a facedown holds already, not the crowd, nobody
-// the story owns (the Safety Gate), never the police or MaxTac. A street conversation leaves alone the people
-// Cyberbane sent after V (a crew hunting V does not stop because V chats with somebody of their gang); a Rival's
-// facedown holds those too, since they are the Rival's own people.
-//
-// How, with the game's own means. Hostile to V and not yet fighting: neutral to V, with what they had seen of V
-// forgotten, as a stand-down does (CBCalmTowardsV), and V's companions calmed toward them so nobody on V's side
-// opens fire on people standing still. Restricted ground: the game's guard fills a warning meter while V stays
-// (BaseStatPools.ReprimandEscalation) and acts when it is full; while V talks it is stopped where it is
-// (CBTruceStopMeter). Afterwards hostile again by Cyberbane's own door (CBMakeHostileToPlayer), and the meter set
-// filling again by the game's own event (ReprimandEscalationEvent).
-//
-// One hold at a time, shared by its owners: street talk (from V pressing Talk to the end of the conversation), a Rival's
-// facedown (from the Rival stopping to look at V to the end of it) and a crew sergeant's parley (from "Hold your fire!"
-// to the end of it). Each owner names its gang. Kept on the system, swept on talk's tick, and checked against its owners
-// every sweep, so it cannot outlive them.
+// While V talks to one of a gang, their people nearby hold their fire, and the warning countdown on restricted ground
+// pauses.
 
 public func CBTruceTalk() -> Int32 = 1
 public func CBTruceFacedown() -> Int32 = 2
@@ -280,11 +257,10 @@ public class CBTalkTruce {
           if wasHeld && toll && p.cbCalmedBy == 0 && p.cbHoldState != 1 {
             p.cbCalmedBy = 2;
           }
-          // With Cyberbane switched off, only the game's own hostility comes back: what Cyberbane set is its to undo.
+          // With Cyberbane switched off, only the game's hostility comes back: what Cyberbane set is its to undo.
           let ours = p.cbHostileByCyberbane || CBSentByUs(des, p);
-          // Nor, while the NCPD are after V, anybody of the street Cyberbane turned: they stand down until the stars are gone,
-          // and the Director turns them again after (CBPoliceOnV). Cyberbane's own people were sent hostile and nothing
-          // sends them again, so they go back as they were.
+          // Nor, while the NCPD are after V, anybody of the street Cyberbane turned: they stand down until the stars
+          // are gone, and the Director turns them again after (CBPoliceOnV).
           let streetTurned = p.cbHostileByCyberbane && !CBSentByUs(des, p);
           if wasHeld && !keepCalm && IsDefined(player) && !CBNpcInCombat(p) && (enabled || !ours) && !(streetTurned && CBPoliceOnV(sys)) {
             CBMakeHostileToPlayer(game, p);
@@ -320,14 +296,7 @@ public class CBTalkTruce {
   }
 }
 
-// A guard's warning meter, neither filling nor draining. The game fills it while V stays (reactionComponent.script,
-// ReprimandEscalation: regeneration on) and drains it when V backs off (DeescalateReprimand: regeneration off, decay on),
-// and its guard acts when it is full or empty. Both off, it stays where it is: the warning waits for the talking to end.
-// The same two modifiers the game sets, through the same calls; the game's own event sets it filling again (Release).
-// Held out of a fight with V by Cyberbane's word (2.6.7): a Rival's people at a facedown or standing back from a fair fight,
-// those walking up calm for one, a crew sergeant's people while he talks, anybody holding while V talks to one of theirs, and
-// the person V is talking to. Not once V has hurt them: then it is their fight.
-// Standing with V in a gang's fight (2.7.7, Spawn/StreetEvents.reds CBEventTakeSide), until it is over.
+// A guard's warning meter, neither filling nor draining.
 @addField(ScriptedPuppet)
 public let cbSidedWithV: Bool;
 
@@ -335,8 +304,7 @@ public func CBHeldOutOfFight(p: wref<ScriptedPuppet>) -> Bool {
   if !IsDefined(p) {
     return false;
   }
-  // With V: nothing V or V's crew does turns them, whatever was hit (2.7.7). "Make sure when I side with a gang my crew
-  // doesn't attack them and my hits don't turn them on me."
+  // With V: nothing V or V's crew does turns them, whatever was hit.
   if p.cbSidedWithV && p.IsAttached() && !p.IsDead() {
     return true;
   }
@@ -346,10 +314,7 @@ public func CBHeldOutOfFight(p: wref<ScriptedPuppet>) -> Bool {
   return p.cbFacedownHeld || p.cbFacedownWait || p.cbTruceHeld || (p.cbTalkPartner && p.cbTalkLinesUp) || CBSidesWithV(p);
 }
 
-// One of a gang friendly or allied with V (2.7.7): kept out of a fight somebody else started, until V hurts one of them. "I'm
-// allied with the Mox, and when a fight starts near a Mox bagman (a Rival, or the debtor the Mox told me to lean on), the
-// bagmen turn hostile and chase me": nothing held them, so the game's own reflex (a fight nearby, a squad mate in danger)
-// turned them on V. A bagman V robs is hurt by V first, and fights back as he always did.
+// One of a gang friendly or allied with V: kept out of a fight somebody else started, until V hurts one of them.
 public func CBSidesWithV(p: wref<ScriptedPuppet>) -> Bool {
   if !IsDefined(p) || !p.IsAttached() || p.IsDead() {
     return false;
@@ -392,11 +357,8 @@ func CBGangHurtByVNear(sys: ref<CyberbaneSystem>, p: wref<ScriptedPuppet>, gang:
   return false;
 }
 
-// The game turns people on V by this one door (aiActionHelper.script): somebody seeing a squad mate in danger, a hit nearby,
-// a threat on their tracker, a stim. Anybody neutral and aggressive it makes hostile to V and to V's whole group, which is
-// how a Rival's bodyguards, held neutral for a fair fight, opened fire the moment V hurt the Rival. For anybody Cyberbane has
-// held out of a fight with V, it does not change them, and they stay as they are; everybody else, and anybody the target of
-// which is not V, goes through as the game has it. Cyberbane turns its own people when the word is broken (CBFacedownHostile).
+// The game turns people on V by this one door (aiActionHelper.script): somebody seeing a squad mate in danger, a hit
+// nearby, a threat on their tracker, a stim.
 @wrapMethod(AIActionHelper)
 public static func TryChangingAttitudeToHostile(owner: ref<ScriptedPuppet>, target: ref<GameObject>) -> Bool {
   if CBKeepsOutOfFight(owner, target) {
@@ -405,10 +367,8 @@ public static func TryChangingAttitudeToHostile(owner: ref<ScriptedPuppet>, targ
   return wrappedMethod(owner, target);
 }
 
-// Both ways round (2.7.7). Somebody held out of a fight with V does not turn on V or V's companions, and V's companions do
-// not turn on them. The game turns whole groups by this door (SetAttitudeTowardsAgentGroup), from whoever was hit towards
-// whoever hit them (targetTrackingComponent.script): one of V's crew clipped by a stray bullet from a friendly gang's
-// people turned V's whole group, V and the crew, on every one of that gang, and the crew shot everybody at the sit-down.
+// Both ways round. Somebody held out of a fight with V does not turn on V or V's companions, and V's companions do not
+// turn on them.
 func CBKeepsOutOfFight(owner: wref<GameObject>, target: wref<GameObject>) -> Bool {
   if !IsDefined(owner) || !IsDefined(target) {
     return false;

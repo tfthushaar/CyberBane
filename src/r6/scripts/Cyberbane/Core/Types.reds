@@ -52,7 +52,7 @@ enum ECBRivalSource {
   Killer = 2,
   Avenger = 3,
   Hunter = 4,
-  Betrayer = 5,   // one of V's own crew who turned (Reactions/Crew.reds, 2.5.0)
+  Betrayer = 5,   // one of V's own crew who turned (Reactions/Crew.reds)
 }
 
 enum ECBRivalState {
@@ -101,13 +101,8 @@ enum ECBPosture {
 
 // ---- Small bit-set helpers -------------------------------------------------
 //
-// Persisted classes store their small fixed sets (districts a rumor reached, the traits a
-// Rival carries) as a bit per entry in an Int32 rather than as a nested array. A scalar
-// always comes back from a save intact; a nested dynamic array is not a documented-
-// supported shape and a malformed one takes the game down (see CBRumor.reachedMask).
-//
-// redscript has &, | and ~ but no shift operator, so the bit value is built by doubling.
-// Bit indices are part of the persistent schema: never renumber an existing one.
+// Persisted classes store their small fixed sets (districts a rumor reached, the traits a Rival carries) as a bit per
+// entry in an Int32 rather than as a nested array.
 public func CBBitValue(bit: Int32) -> Int32 {
   if bit < 0 || bit > 30 {
     return 0;

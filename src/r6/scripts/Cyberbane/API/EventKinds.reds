@@ -1,10 +1,8 @@
-// Cyberbane - event kinds an add-on registers (extension API level 1, 2.7.4)
+// Cyberbane - event kinds an add-on registers (extension API level 1)
 //
-// Cyberbane's gang life (Spawn/StreetEvents.reds) already does the hard parts of an event: a time to the minute and a pin,
-// the note when V comes early, holding while the story, a scene or a job has the place, placement only once V is near and
-// its time has come, one event at a time, and removal the safe way. A registered kind gets all of it. Its handler says
-// what is announced, puts its people there (CyberbaneAPI.RequestGroup at the event's place), watches them, and hears how
-// it ended; the engine does the rest. The add-on's own setting switches its kind on and off (SetEventKindOn).
+// Cyberbane's gang life (Spawn/StreetEvents.reds) already does the hard parts of an event: a time to the minute and a
+// pin, the note when V comes early, holding while the story, a scene or a job has the place, placement only once V is
+// near and its time has come, one event at a time, and removal the safe way. A registered kind gets all of it.
 
 public abstract class CBEventKindHandler extends IScriptable {
   // The text that announces it, or "" for none. ev.at is the place, ev.from when it starts (CBClockWord for the time).
@@ -97,8 +95,8 @@ public func CBApiEventOn(game: GameInstance, kind: CName) -> Bool {
   return IsDefined(reg) && reg.IsOn(kind);
 }
 
-// Starting one: the one event slot must be free, the kind registered and on, and Cyberbane on. Announced by the add-on's
-// own contact when it names one registered with RegisterSender (2.7.5, R8), else by whoever works V's district.
+// Starting one: the one event slot must be free, the kind registered and on, and Cyberbane on. Announced by the
+// add-on's own contact when it names one registered with RegisterSender, else by whoever works V's district.
 public func CBApiStartEvent(game: GameInstance, kind: CName, side: CName, at: Vector4, inGameSeconds: Float, opt sender: CName) -> Bool {
   let sys = CyberbaneSystem.Get(game);
   let life = CBStreetLifeFor(game);

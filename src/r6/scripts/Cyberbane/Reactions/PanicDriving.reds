@@ -1,11 +1,8 @@
 // Cyberbane - Panic driving (spec §9.2)
 //
-// When V is terrifying and fighting out on the street, nearby drivers should panic and
-// peel away. No direct "make this car flee" call is exposed to redscript, so this reuses the
-// game's own fear path: a Gunshot stim broadcast from V, which the traffic AI and crowds
-// react to. It only fires when V is both frightening (civilian Dread at the Terror tier)
-// and in combat, and only once every few ticks, so it never spams. Reversible (a stock
-// stim) and gated by the panicDriving setting. Driver response is tuned in-game.
+// When V is terrifying and fighting out on the street, nearby drivers should panic and peel away. No direct "make this
+// car flee" call is exposed to redscript, so this reuses the game's fear path: a Gunshot stim broadcast from V, which
+// the traffic AI and crowds react to.
 
 public func CBPanicDrivingTick(sys: ref<CyberbaneSystem>, game: GameInstance, tickCount: Int32) -> Void {
   if tickCount % 5 != 0 {
@@ -32,10 +29,7 @@ public func CBPanicDrivingTick(sys: ref<CyberbaneSystem>, game: GameInstance, ti
   if CBCrowdIgnoresPlayer(game) {
     return;
   }
-  // Not on a job, in a scene, or while the story has the stage: a gunshot stim there sets the
-  // story's own people off.
-  // Any job V is at, not only the tracked one (IsOnJob, 1.8.4): a broadcast reaches whoever is in range, Safety Gate
-  // or not, and a job's own people waiting for their scene are exactly who it would set off (CBMoraleHeldAtJob, 2.5.6).
+  // Not on a job, in a scene, or while the story has the stage: a gunshot stim there sets the story's own people off.
   if sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game) || sys.GetStoryHold() != CBStoryNone() {
     return;
   }
@@ -44,9 +38,7 @@ public func CBPanicDrivingTick(sys: ref<CyberbaneSystem>, game: GameInstance, ti
     return;
   }
   // With the radius the game gives a shot of V's own (weaponTransitions.script, vehicleComponent.script:
-  // GetGunshotRange, which the district sets). Left out, the argument is optional and the broadcast reached
-  // nobody (the note on Reactions/Morale.reds says the same of the fear stims), so no driver ever panicked.
-  // The district has not said yet straight after a load: the game's gunshot stimulus radius stands in.
+  // GetGunshotRange, which the district sets).
   let b = player.GetStimBroadcasterComponent();
   if IsDefined(b) {
     let radius = player.GetGunshotRange();

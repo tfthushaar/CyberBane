@@ -1,22 +1,8 @@
-// Cyberbane - Gangs that adapt to how V fights ([40], 2.3.2)
+// Cyberbane - Gangs that adapt to how V fights ([40])
 //
 // Every gang keeps a ledger of how V hurts its people: shot, cut or beaten, hacked, blown up, or taken quietly with
-// nobody to see. It comes from the method flags the scoring already works out for every kill and takedown
-// (CBKillInfo), counted in CBApplyKill, and fades by a fifth every in-game day. When one way dominates, the gang
-// prepares for it and says so in a text:
-//
-//   guns       their people wear more armour
-//   melee      their people can take more of a beating
-//   hacks      their people run fresh ICE (HackingResistance, the ICE level the game's own quickhack upload reads)
-//   explosives their people can take more of a blast
-//   quiet      every one of theirs keeps their eyes open: their hunters and scouts see further
-//
-// Through the existing builds only (the crew build and the apex build in Spawn/FactionApex.reds, the hunt's sense
-// in Spawn/Hunt.reds), every term bounded, and nothing about how anybody looks changes. When V changes how they
-// fight, the ledger fades and so does the preparation.
-//
-// Its own save book (not CBWarBook, which 2.4.0 brings with the war chest): parallel lists, cut to the shortest on
-// the first read after a load, bounds-checked.
+// nobody to see. It comes from the method flags the scoring already works out for every kill and takedown (CBKillInfo),
+// counted in CBApplyKill, and fades by a fifth every in-game day.
 
 public func CBGangsAdaptOn() -> Bool {
   let rt = CyberbaneRuntime.Get();

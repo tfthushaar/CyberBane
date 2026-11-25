@@ -1,29 +1,8 @@
-// Cyberbane - The crew at war (2.7.6)
-//
-// "Make sure winning a war is not pure probability but based on the general stats of the opponent gang and the crew we
-// send, and let us choose which gang to send which crew members to war on: a full, expanded war." "And winning should
-// actually gain us something."
+// Cyberbane - The crew at war
 //
 // A war party. V picks the gang and who goes (the Hub's Crew page: Go to war, or Send them to start a war on one of them):
 // anybody of Soldier rank or more who is home, unhurt and loyal enough, led by somebody of Lieutenant rank or more, up to
 // six. Before they go the Hub weighs the two sides and says the odds.
-//
-// The two sides. Each member's weight is their rank, the chrome put in them, the quality of the gun V gave them, their
-// training and a spar's edge, by how loyal they are; a party that covers more seats (heavy, shooter, blade, netrunner)
-// fights better together; and the crew's hold on those streets and how much it counts for add to it
-// (CBCrewPartyWarPower). The gang's weight is its strength on its own home streets, every district it holds, how it
-// feels about the crew (a gang that hates the crew is ready for it, one that respects it is caught out) and how afraid of
-// V it is (CBGangWarPower). The fight comes out of the ratio of the two, with a swing of a fifth either way for how the
-// nights go: a party twice the gang's weight cannot lose, a party half its weight cannot win, and an even fight is a fight.
-//
-// How it goes. They are gone for the war's hours, and the crew's group chat says how it is going twice on the way.
-// Then: a rout, a loss, a stalemate, a win or a decisive win (CBWarOutcome*). A win weakens the gang, takes a hold on
-// its home streets for the crew (Model/CrewTurf.reds: enough of that and the district is the crew's), pays the kitty,
-// leaves the gang's war chest for V to collect (a pin at a fast travel point in that district, its loot laid as V gets
-// there), loosens a tongue about where one of their Rivals was seen, and after a decisive one somebody of theirs walks
-// out and wants in. A loss puts them in the hospital, can cost the crew the weakest of them, and the gang's people are
-// emboldened on those streets. The war is its own book (CBCrewWarBook); who went is each member's own kit (warOn and
-// warUntil, the same for the whole party), so nothing already saved changes shape.
 
 public func CBMemWarChest() -> Int32 = 6
 
@@ -211,7 +190,7 @@ public func CBGangWarPower(sys: ref<CyberbaneSystem>, game: GameInstance, gang: 
   if IsDefined(score) {
     p *= 1.0 - CBConfig.GangWarFearWeight() * ClampF(score.GetFactionFear(gang) / 100.0, 0.0, 1.0);
   }
-  return MaxF(p, 20.0) * CBCrewPaceWarFactor();   // how hard the crew has it (2.7.7)
+  return MaxF(p, 20.0) * CBCrewPaceWarFactor();   // how hard the crew has it
 }
 
 // The chance a party of this weight against the gang's wins at all (a win or a decisive win): the nights swing the ratio
@@ -383,7 +362,7 @@ public func CBCrewWarPartyResolve(sys: ref<CyberbaneSystem>, game: GameInstance,
     return false;
   }
   let ours = CBCrewPartyWarPower(sys, game, ids, gang);
-  // V's second leading it, and V in it (2.7.7): each of theirs V put down while it was on.
+  // V's second leading it, and V in it: each of theirs V put down while it was on.
   if ArrayContains(ids, CBCrewSecondId(game)) {
     ours *= 1.0 + CBConfig.CrewSecondWarBonus();
   }
@@ -442,7 +421,7 @@ func CBCrewWarApply(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
       weakest.hurtUntil = now + 0.5 * CBConfig.CrewWarHurtHours() * CBConfig.SecondsPerHour();
       ArrayPush(hurtNames, weakest.id);
     }
-    // The spoils: what their corners held, the kitty's; more when V was out there with them (2.7.7).
+    // The spoils: what their corners held, the kitty's; more when V was out there with them.
     let spoils = RoundF(CBConfig.WarSpoilsPerMember() * Cast<Float>(n) * (decisive ? 1.0 : 0.6) * (0.5 + strengthBefore / 100.0)
                         * (1.0 + CBCrewWarVHelp(game, gang, false)));
     let jb = CBCrewJobBook.Get(game);
@@ -460,7 +439,7 @@ func CBCrewWarApply(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
     if stashes > 0 && CBMessagesOn() {
       CBCrewText(sys, game, null, CBTf(n"Cyberbane-CrewWar-StashesMarked", [label, s"\(stashes)", place]));
     }
-    // Who carried it, by name, and V's part when V fought on their streets (2.7.7).
+    // Who carried it, by name, and V's part when V fought on their streets.
     let best: ref<CBCrewMember>;
     for bm in party {
       if !IsDefined(best) || CBCrewMemberWarPower(game, bm) > CBCrewMemberWarPower(game, best) {
@@ -524,8 +503,8 @@ func CBCrewWarApply(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
   if ArraySize(hurtNames) > 0 && CBMessagesOn() {
     CBCrewText(sys, game, null, CBTf(n"Cyberbane-CrewWar-Hurt", [CBCrewNamesList(sys, book, hurtNames), s"\(RoundF(CBConfig.CrewWarHurtHours()))"]));
   }
-  // In each of their stories, and the phone's short chirp for a call that went well or badly (2.7.7, it ends on its own).
-  // V's part in this war is spent.
+  // In each of their stories, and the phone's short chirp for a call that went well or badly (it ends on its own). V's
+  // part in this war is spent.
   for wm in party {
     CBCrewLifeNote(game, wm.id, CBLifeWar(), gang, won ? 1 : 0);
   }
@@ -610,16 +589,13 @@ public func CBWarChestTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
 
 // ---- The district's hidden stashes ------------------------------------------------------------------------------------
 //
-// "Winning a war should gain us something, maybe the locations of the secret loot from the game in that district: not just
-// the gang's war chest, the secret loot in the vanilla game." The game's own hidden stashes are points of interest on its
-// map (the HiddenStash variant, paid from LootTables.HiddenStashMoneyReward). The gang that ran the district knew where
-// they are: every one there V has not emptied yet is marked on the map with the game's own stash mark, as many as the win
-// earned, and the mark comes off once V has been there (CBSecretStashTick). Read from the game's own map pins, never made up.
+// The game's hidden stashes are points of interest on its map (the HiddenStash variant, paid from
+// LootTables.HiddenStashMoneyReward).
 
 public func CBMemSecretStash() -> Int32 = 7
 
-// The district of the fast travel point nearest a spot: the game's own word on where a place is, for spots V is nowhere
-// near. Read the null-safe way every fast travel point is read here (CBFastTravelPlaces: the point's district link as an id).
+// The district of the fast travel point nearest a spot: the game's word on where a place is, for spots V is nowhere
+// near.
 public func CBDistrictNear(sys: ref<CyberbaneSystem>, game: GameInstance, at: Vector4) -> CName {
   if !CBWorldStable(game) {
     return n"";

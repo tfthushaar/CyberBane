@@ -1,11 +1,9 @@
-// Cyberbane - Each gang's voice ([L3], 2.3.2)
+// Cyberbane - Each gang's voice ([L3])
 //
 // The texts, warnings, refusals and surrenders a gang's people say, written for that gang, from its code
-// (Data/GangCodes.reds): the Valentinos' family and honour, the Claws' face and business, Maelstrom's chrome,
-// 6th Street's veterans, the Animals' strength, the Voodoo Boys' Net, the Mox looking after their own, the
-// Scavengers, the Wraiths' road, the Aldecaldos' family, Barghest's soldiers, the Scrappers' salvage. Every line goes through the line
-// library (Narrative/Lines.reds), so none comes twice running. A gang with nothing of its own here, or a
-// moment it has nothing for, answers "" and the caller says what it always said.
+// (Data/GangCodes.reds): the Valentinos' family and honour, the Claws' face and business, Maelstrom's chrome, 6th
+// Street's veterans, the Animals' strength, the Voodoo Boys' Net, the Mox looking after their own, the Scavengers, the
+// Wraiths' road, the Aldecaldos' family, Barghest's soldiers, the Scrappers' salvage.
 
 // A street warning from one of theirs, before they draw (the Director's warning, Narrative/Whispers.reds).
 public func CBGangWarnLine(f: CName) -> String {

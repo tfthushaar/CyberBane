@@ -1,11 +1,7 @@
-// Cyberbane - Mod Settings, when it is there (2.6.5)
+// Cyberbane - Mod Settings bridge
 //
-// "I am using Mod Configuration Menu instead of Mod Settings. It seems the mod requires Mod Settings." It did, and harder than
-// it had to: four calls named the ModSettings class directly, and a script that names a class nobody declared stops the
-// whole game's script compile, every mod's, not only this one. Those calls come through here now, compiled only when Mod
-// Settings' own module is in the build (ModuleExists, the same test Core/Compat.reds and Economy/Peace.reds make for other
-// mods). Without it, Cyberbane runs on its defaults: the settings class still exists and every value in it is its default,
-// and a settings menu that reads the same annotations (@runtimeProperty "ModSettings.*") shows and changes them.
+// Every call into Mod Settings goes through here, compiled only when its module is installed. Without it Cyberbane runs
+// on its default settings.
 
 @if(ModuleExists("ModSettingsModule"))
 public func CBModSettingsMods() -> array<CName> {

@@ -5,24 +5,7 @@
 // calls CBApplyDeedById when it detects completion; bootstrap applies past deeds
 // with `silent = true` (no messages). Generic gigs/hustles use their own helpers.
 
-// Deeds, fired from the game's own completion record (spec 7.2, spike S-02).
-//
-// This was blocked for most of the project's life and the reason recorded for it was wrong.
-// The note said `JournalManager.ChangeEntryState` is inherited from a class missing from the
-// Codeware dump; it is in fact declared on `JournalManager` itself
-// (core/systems/journalManager.script:424) and the real obstacle is that it is
-// `public import function` - a native, and redscript cannot wrap natives. So no amount of
-// work on that method was ever going to succeed.
-//
-// The game does not need to be hooked at all. It records what V has finished as quest facts
-// and reads them back the same way anywhere it cares - `GetFact( gi, 'q005_done' )` in
-// cyberpunk/managers/rpgManager.script:2465. `QuestsSystem.GetFact` is an ordinary readable
-// native (core/systems/questSystem.script:24), so the deeds just ask.
-//
-// Polling is safe here: `CBApplyDeed` already refuses a deed `sys.HasDeed` has recorded, so a
-// fact that stays set fires its deed exactly once, and a fact name that does not exist reads 0
-// for ever and simply never fires. That last part is why the unverified names below cost
-// nothing - the failure mode of a wrong guess is the behaviour this already had.
+// Deeds, fired from the game's completion record (spec 7.2, spike S-02).
 public func CBDeedFactTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   // A deed done while reputation is frozen waits, and counts when it is thawed.
   if CBReputationFrozen() {

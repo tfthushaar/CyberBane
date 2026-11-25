@@ -1,36 +1,7 @@
-// Cyberbane - Turf wars (1.6.3)
+// Cyberbane - Turf wars
 //
-// Night City's gangs already had turf here, but it was a fixed list: whatever V did, the Tyger
-// Claws held Westbrook and the Valentinos held Heywood for ever. The idea of gangs that actually
-// fight over districts, where the stronger one wins and putting a gang's people in the ground
-// weakens it, was suggested from Gang Retaliation by NovaAntonsito. The implementation is
-// Cyberbane's own and is built from what this mod already tracks.
-//
-//   Strength   Every gang stands at 100 until V starts on them. Each of their people V puts down
-//              costs them a little, an officer more, a boss, a Rival or a beaten crew a lot. They
-//              rebuild while V leaves them alone, a dozen points an in-game day, and never fall
-//              below a floor: a gang is weakened, never wiped out.
-//   Control    A district is split between the gangs whose streets it is, by strength squared, so
-//              a stronger gang holds clearly more and a broken one is pushed to the margins. The
-//              split drifts a little day to day on its own (gangs skirmish without V), the same
-//              way for everybody on the same day, so the map moves without anything random being
-//              stored.
-//   Moving in  When a district's own gang is broken, a gang at war with them from next door moves
-//              in: the weaker the owners, the harder the push. Break the Valentinos and 6th Street
-//              walks into Heywood. Let them rebuild and they take it back.
-//   Holding    Whoever holds a real share of a district (TurfPresenceShare) is on their own streets
-//              there: their lookouts watch V, their crews know where V is, their vendors know
-//              where V stands with them. A gang pushed out of a district is none of those there.
-//
-// When a district changes hands the street texts V, and the History screen keeps it. The Hub's
-// TURF screen shows who holds each district, how firmly, and who is fighting over it.
-//
-// Crash safety and saves. Nothing here touches the engine: it is arithmetic over Cyberbane's own
-// numbers, read on settled ticks and from the Hub. Strength is kept in the global play service,
-// keyed by playthrough, exactly as 1.6.2 keeps where Rivals were seen (Core/CyberbaneService.reds):
-// nothing in the save changes shape. A record from a later point in the same playthrough (an older
-// save loaded) is ignored rather than trusted, and a fresh playthrough starts everybody at full
-// strength.
+// Gang strength per district, moved by gangs fighting each other and by what V does to them. A district changes hands
+// when another gang gets strong enough there.
 
 public func CBTurfWarsOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -48,7 +19,7 @@ public func CBGangStrength(sys: ref<CyberbaneSystem>, faction: CName) -> Float {
   if !IsDefined(sys) || Equals(faction, n"") || !CBTurfWarsOn() {
     return 100.0;
   }
-  // V's crew is as strong as it counts for on the street (Model/CrewTurf.reds, 2.7.6), never a gang's record.
+  // V's crew is as strong as it counts for on the street (Model/CrewTurf.reds), never a gang's record.
   if CBIsCrewTurf(faction) {
     return CBCrewWeight(sys.GetGameInstance());
   }
@@ -70,8 +41,8 @@ public func CBGangStrength(sys: ref<CyberbaneSystem>, faction: CName) -> Float {
   return ClampF(p.strength + days * CBConfig.GangRecoverPerDay(), CBConfig.GangStrengthFloor(), 100.0);
 }
 
-// Which band it is in: 0 broken, 1 bleeding, 2 hurting, 3 strong. Code asks this; only the player reads the word (2.7.1:
-// a comparison with the word would stop working the moment the word was translated).
+// Which band it is in: 0 broken, 1 bleeding, 2 hurting, 3 strong. Code asks this; only the player reads the word (a
+// comparison with the word would stop working the moment the word was translated).
 public func CBGangStrengthBand(strength: Float) -> Int32 {
   if strength < CBConfig.GangBrokenStrength() {
     return 0;
@@ -100,10 +71,7 @@ public func CBGangStrengthWord(strength: Float) -> String {
   return CBT(n"Cyberbane-Territory-Strong");
 }
 
-// V has cost this gang something. Settled callers only (the kill path, a Rival's death, a crew
-// or an apex squad beaten), and it only ever writes a number into the play service.
-// `at` (2.7.6): the streets it happened on, when that is not where V is standing: a crew war is fought on the gang's own home
-// streets, and its toll on those streets was booked wherever V happened to be.
+// V has cost this gang something.
 public func CBWeakenGang(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName, amount: Float, opt at: CName) -> Void {
   if !IsDefined(sys) || Equals(faction, n"") || amount <= 0.0 || !CBTurfWarsOn()
      || !CBGangHoldsTurf(sys, faction) {
@@ -208,7 +176,7 @@ public func CBTurfContenders(sys: ref<CyberbaneSystem>, game: GameInstance, dist
   let heldProf = NotEquals(held, n"") ? content.GetFaction(held) : null;
   let def = content.GetDistrict(district);
   let sealed = IsDefined(def) && def.sealed;
-  // V's crew holding it is outsiders holding it too (2.7.6): the home gangs are the ones fighting their way back in.
+  // V's crew holding it is outsiders holding it too: the home gangs are the ones fighting their way back in.
   let invaded = !sealed && ((IsDefined(heldProf) && !ArrayContains(heldProf.turf, district)) || CBIsCrewTurf(held));
   let factions = content.GetFactions();
   let weakestNative = 100.0;
@@ -233,8 +201,8 @@ public func CBTurfContenders(sys: ref<CyberbaneSystem>, game: GameInstance, dist
     }
     i += 1;
   }
-  // V's crew, where it has a hold on the streets (Model/CrewTurf.reds, 2.7.6): its weight there, by its foothold, squared
-  // as every gang's strength is. Only where some gang has streets, and never behind a wall.
+  // V's crew, where it has a hold on the streets (Model/CrewTurf.reds): its weight there, by its foothold, squared as
+  // every gang's strength is. Only where some gang has streets, and never behind a wall.
   if ArraySize(natives) > 0 && !sealed {
     let crewPush = CBCrewTurfWeight(sys, game, district, dIdx);
     if crewPush > 0.0 {
@@ -297,10 +265,7 @@ public func CBTurfShares(sys: ref<CyberbaneSystem>, game: GameInstance, district
   }
 }
 
-// Each share by its gang's claim to run the district (2.7.0, turfClaim), in step with `ids`: who holds it and who can take
-// it. "The Mox control Watson": the shares were all a holder was read from, and a gang V had never fought led every district
-// it shared once V had worn the others down, whether or not it had ever run more than a few blocks. Where each gang is on
-// its own streets (CBTurfGangsIn) still reads the shares themselves.
+// Each share by its gang's claim to run the district (turfClaim), in step with `ids`: who holds it and who can take it.
 func CBTurfClaims(sys: ref<CyberbaneSystem>, ids: array<CName>, shares: array<Float>) -> array<Float> {
   let out: array<Float>;
   let content = IsDefined(sys) ? sys.GetContent() : null;
@@ -471,7 +436,7 @@ func CBTurfTickDistrict(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
   if ArraySize(ids) == 0 {
     return;
   }
-  // By claim (2.7.0): a gang that guards a corner leads the district only once those who run it are bled white.
+  // By claim: a gang that guards a corner leads the district only once those who run it are bled white.
   let claims = CBTurfClaims(sys, ids, shares);
   let leader = CBTurfLeader(ids, claims);
   let held = book.Holder(i);
@@ -479,8 +444,6 @@ func CBTurfTickDistrict(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
     book.StartHolding(i, leader, now);
     return;
   }
-  // Sealed since 1.7.8: a save that saw it taken before then gets it back at once, without a
-  // story about a war that is not happening.
   let content = sys.GetContent();
   let def = IsDefined(content) ? content.GetDistrict(district) : null;
   let heldProf = IsDefined(content) ? content.GetFaction(held) : null;
@@ -508,9 +471,8 @@ func CBTurfTickDistrict(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
   CBTurfCounterattack(sys, game, book, i, district, now);
 }
 
-// The gang that lost a district does not forget it. Once it has rebuilt it comes back at the holder,
-// a few days apart, and enough of that is how a district is won back with nobody's help. V can make
-// that faster, or slower, by who V chooses to hurt.
+// The gang that lost a district does not forget it. Once it has rebuilt it comes back at the holder, a few days apart,
+// and enough of that is how a district is won back with nobody's help.
 func CBTurfCounterattack(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBTurfBook>, i: Int32,
                          district: CName, now: Float) -> Void {
   let old = book.From(i);
@@ -526,8 +488,8 @@ func CBTurfCounterattack(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
     return;
   }
   book.SetPushAt(i, now);
-  // On the crew's corners (2.7.7): told ahead with a place and an hour, so V can be there; the ground is lost only if
-  // nobody holds it (Reactions/CrewLife.reds).
+  // On the crew's corners: told ahead with a place and an hour, so V can be there; the ground is lost only if nobody
+  // holds it (Reactions/CrewLife.reds).
   if CBIsCrewTurf(holder) && CBCrewCounterattackTold(sys, game, district, old) {
     CBFileLog(sys, n"TurfPush", now, district, old, 0.0);
     return;
@@ -540,7 +502,7 @@ func CBTurfCounterattack(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
   let h = CBFactionLabel(holder);
   if CBMessagesOn() && StrLen(place) > 0 && StrLen(o) > 0 && StrLen(h) > 0 {
     CBHearsayFromDistrict(game, district, CBTf(n"Cyberbane-Territory-HitInLastNightTheyWant", [s"\(CBCapFirst(o))", s"\(h)", s"\(place)"]), n"");
-    // On the crew's own corners (2.7.6): the crew tells V, in its group chat.
+    // On the crew's own corners: the crew tells V, in its group chat.
     if CBIsCrewTurf(holder) {
       CBCrewText(sys, game, null, CBTf(n"Cyberbane-CrewTurf-HitOurCorners", [CBCapFirst(o), place]));
     }
@@ -551,7 +513,7 @@ func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district:
                         winner: CName, loser: CName, tookBack: Bool) -> Void {
   let now = CBGameSeconds(game);
   CBFileLog(sys, n"TurfTaken", now, district, winner, 0.0);
-  // The map remembers it (UI/MapPins.reds, 2.5.0), where the street last saw something happen there.
+  // The map remembers it (UI/MapPins.reds), where the street last saw something happen there.
   let spot: Vector4;
   if CBMapTakeoverSpot(sys, game, district, spot) {
     let book = CBMapBook.Get(game);
@@ -560,13 +522,13 @@ func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district:
     }
   }
   if !CBIsCrewTurf(winner) {
-    CBOweCelebration(game, winner);   // and they celebrate (Spawn/StreetEvents.reds, 2.3.3)
+    CBOweCelebration(game, winner);   // and they celebrate (Spawn/StreetEvents.reds)
   }
   CBLog.Info(n"Model", s"\(NameToString(winner)) took \(NameToString(district)) from \(NameToString(loser)).");
   if !CBMessagesOn() {
     return;
   }
-  // V's crew took it, or lost it (2.7.6): the crew says so in its group chat, on top of what the street says.
+  // V's crew took it, or lost it: the crew says so in its group chat, on top of what the street says.
   if CBIsCrewTurf(winner) {
     CBCrewText(sys, game, null, CBTf(n"Cyberbane-CrewTurf-DistrictIsOurs", [CBDistrictLabel(district), CBFactionLabel(loser)]));
     CBHearsayFromDistrict(game, district, CBTf(n"Cyberbane-CrewTurf-StreetSaysCrewTookIt", [CBCapFirst(CBCrewTurfLabel()), CBFactionLabel(loser), CBDistrictLabel(district)]), n"");

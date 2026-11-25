@@ -10,7 +10,7 @@ public func CBSeedNames(c: ref<CyberbaneContent>) -> Void {
   //     anywhere else, or taking one out, renames every Rival after it in every save.
   //   - Keep a gang's two lists at different lengths. A Rival's first guess at a name is arithmetic
   //     on its number, and two lists of one length only make as many first guesses as one has names.
-  // No names of the game's own characters: a stranger called the same as somebody in the story
+  // No names of the game's characters: a stranger called the same as somebody in the story
   // reads as that person.
   let copFirst = ["Marcus", "Dana", "Elliot", "Rosa", "Tyler", "Hal", "June", "Ivan", "Priya", "Owen",
                   "Terrence", "Gwen", "Sam", "Lourdes", "Nate", "Bea", "Curtis"];
@@ -101,9 +101,8 @@ public func CBSeedNames(c: ref<CyberbaneContent>) -> Void {
      "Drywell", "Hardpan", "Tumbleweed", "Gila", "Saltflat", "Sandstorm", "Cinder", "Dune", "Jackal", "Vagrant",
      "Arroyo", "Mesquite", "Dry Gulch", "Heatstroke"]));
 
-  // A name is never given out twice in a save, so a gang with one list needs far more than one list
-  // can reasonably hold. These run after the handles above. To add more, add another call after these
-  // four, because a word added to one of these lists moves every name built after it.
+  // A name is never given out twice in a save, so a gang with one list needs far more than one list can reasonably
+  // hold. These run after the handles above.
   CBAddCompoundHandles(c, n"Maelstrom",
     ["Chrome", "Rust", "Null", "Hex", "Bit", "Void", "Slag", "Wire", "Glitch", "Scrap", "Arc", "Fuse"],
     ["bite", "jaw", "rot", "skull", "tooth", "lung", "spine", "socket", "gut", "vein"]);
@@ -117,8 +116,8 @@ public func CBSeedNames(c: ref<CyberbaneContent>) -> Void {
     ["Dust", "Sand", "Salt", "Bone", "Sun", "Dry", "Ash", "Thorn", "Flint", "Rattle", "Burn", "Scorch"],
     ["devil", "wind", "runner", "fang", "snake", "back", "claw", "mouth", "walker", "crow"]);
 
-  // Dogtown's Scrappers (2.6.4): handles from what they pull out of the ruins. A new gang's pools go last, after every
-  // other call, so no name already given out in a save moves.
+  // Dogtown's Scrappers: handles from what they pull out of the ruins. A new gang's pools go last, after every other
+  // call, so no name already given out in a save moves.
   c.AddFactionNames(CBMakeHandleNames(n"Scrappers",
     ["Lugnut", "Rebar", "Crowbar", "Gasket", "Ratchet", "Sprocket", "Copperwire", "Pliers", "Rivet", "Tinker",
      "Hubcap", "Flux", "Axle", "Slagheap", "Spanner", "Bracket", "Torque", "Dross", "Filament", "Washer",
@@ -127,8 +126,8 @@ public func CBSeedNames(c: ref<CyberbaneContent>) -> Void {
     ["Copper", "Lug", "Crank", "Cog", "Brass", "Tar", "Grease", "Pipe", "Slug", "Wrench", "Nickel", "Dent"],
     ["nut", "hand", "rat", "head", "tooth", "knuckle", "eye", "pocket", "boot", "neck"]);
 
-  // How long each list was before 1.7.7. These numbers never change: they mark the names that may
-  // already have been somebody in a save, before saves kept a record of them.
+  // These numbers never change: they mark the names that may already have been somebody in a save, before saves kept a
+  // record of them.
   c.MarkOldNames(n"NCPD", 5, 5);
   c.MarkOldNames(n"Police", 5, 5);
   c.MarkOldNames(n"Arasaka", 5, 4);
@@ -148,7 +147,6 @@ public func CBSeedNames(c: ref<CyberbaneContent>) -> Void {
 
   // Epithets by Rival source + promotion. Added to at the end only, as above.
   let e = new CBEpithets();
-  // 1.8.5 added the second line of each, at the end, so every Rival who already has one keeps it.
   e.survivor = ["Who Ran", "the Survivor", "Last One Standing", "Still Breathing", "Lucky", "Cockroach",
                 "Nine Lives", "the Getaway", "Not Today", "Long Shot", "Walked Away", "Patched Up", "Bad Penny",
                 "Slippery", "Ghost Step", "Close Call", "Half-Dead", "Stitches", "Second Wind", "Rabbit",

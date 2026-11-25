@@ -1,4 +1,4 @@
-// Cyberbane - The Crew page's words (2.7.7)
+// Cyberbane - The Crew page's words
 //
 // What the Crew page's three views say: the Roster's line on the picked member, the Member view's file and numbers, and the
 // Crew view's own lines; a member's climb as a bar, a piece of chrome's change before it goes in. Words only: the page
@@ -205,7 +205,7 @@ public func CBCrewPageLines(sys: ref<CyberbaneSystem>, game: GameInstance) -> St
   return out;
 }
 
-// A district on the Hub's map, as the crew sees it (2.7.7): who of them lives there, a war on the gang that holds it, the
+// A district on the Hub's map, as the crew sees it: who of them lives there, a war on the gang that holds it, the
 // crew's own corners and a counterattack coming, and the shops' tax waiting there.
 public func CBCrewMapLines(sys: ref<CyberbaneSystem>, game: GameInstance, d: CName) -> String {
   let out = "";
@@ -245,7 +245,7 @@ public func CBCrewMapLines(sys: ref<CyberbaneSystem>, game: GameInstance, d: CNa
   return out;
 }
 
-// The Standing page's "right now" (2.7.7): who is on V now or coming, and the crew's business waiting on V, in one line;
+// The Standing page's "right now": who is on V now or coming, and the crew's business waiting on V, in one line;
 // "" when nothing is.
 public func CBHudRightNow(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   let parts: array<String>;

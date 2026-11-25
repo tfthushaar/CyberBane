@@ -34,12 +34,8 @@ public abstract class CBConfig {
   // frames, and orders issued then are silently discarded.
   public static func SpawnSetupRetrySeconds() -> Float = 0.4
   public static func SpawnSetupMaxTries() -> Int32 = 12
-  // If at least this many entities attached in a single tick interval, the world is streaming
-  // heavily (a flood) even without a transition - stand down until it settles. This catches
-  // ambient floods (dense districts, scene loads) that no menu/time-jump signal would flag.
-  // Puppets attached in one second that counts as the world being rebuilt around you. A busy
-  // street streams people in constantly, so this has to sit well above a crowd and below a
-  // load: at 25, counting every entity type, it was tripped more or less permanently.
+  // If at least this many entities attached in a single tick interval, the world is streaming heavily (a flood) even
+  // without a transition - stand down until it settles.
   public static func FloodAttachThreshold() -> Int32 = 60
 
   // ---- Reaction director (spec §9.1, §18) ------------------------------
@@ -47,23 +43,22 @@ public abstract class CBConfig {
   // a busy street actually reacts instead of one or two people noticing you.
   public static func NpcEvalRadius() -> Float = 35.0           // metres
   public static func NpcEvalPerTick() -> Int32 = 16
-  // The most NPCs whose position the Director reads in one tick, carrying on round the registry from
-  // where the last tick stopped; and how many ticks somebody who failed its checks (sitting, selling,
-  // at a job, one of ours) is passed over before being asked again (1.9.1). A registry of two hundred
-  // is gone round about every four seconds; anybody who passes is always checked afresh.
+  // The most NPCs whose position the Director reads in one tick, carrying on round the registry from where the last
+  // tick stopped; and how many ticks somebody who failed its checks (sitting, selling, at a job, one of ours) is passed
+  // over before being asked again.
   public static func NpcLookPerTick() -> Int32 = 48
   public static func NpcGateRetryTicks() -> Int32 = 5
-  // How often the Director hands back anybody it turned on V whose faction has since been switched
-  // off in Mod Settings (Reactions/Director.reds, RevertNotFielding, 1.9.1), in settled ticks.
+  // How often the Director hands back anybody it turned on V whose faction has since been switched off in Mod Settings
+  // (Reactions/Director.reds, RevertNotFielding), in settled ticks.
   public static func SwitchedOffRevertTicks() -> Int32 = 5
-  // How long somebody Cyberbane turned on V stays turned, out of a fight, once their gang has no vendetta
-  // left against V (RevertNotFielding, 1.9.5): a pay-off, a cooled grudge, a street fight V picked.
+  // How long somebody Cyberbane turned on V stays turned, out of a fight, once their gang has no vendetta left against
+  // V (RevertNotFielding): a pay-off, a cooled grudge, a street fight V picked.
   public static func HostileCoolTicks() -> Int32 = 30
-  // How long after being set up one of ours is watched for having slipped to neutral (Spawn/Spawner.reds,
-  // CBRearmTick, 1.9.6), in settled ticks.
+  // How long after being set up one of ours is watched for having slipped to neutral (Spawn/Spawner.reds, CBRearmTick),
+  // in settled ticks.
   public static func RearmWatchTicks() -> Int32 = 30
-  // How long a gang's warning stands before they draw (Reactions/Director.reds, 1.9.5): long enough to
-  // walk away, or to walk up and talk them down.
+  // How long a gang's warning stands before they draw (Reactions/Director.reds): long enough to walk away, or to walk
+  // up and talk them down.
   public static func GangWarnGraceTicks() -> Int32 = 10
   // Upper bound on the attitude-revert list (NPCs Cyberbane turned hostile). Only live
   // NPCs ever need reverting, so this just keeps the list from growing all session.
@@ -112,15 +107,15 @@ public abstract class CBConfig {
   public static func LayingLowMult() -> Float = 2.0
   public static func HeatCurveScale() -> Float = 150.0
   public static func UnwitnessedDreadMult() -> Float = 0.5
-  // What the frightening things V does add to the "terrifying deeds" part of Dread, in the same
-  // points a deed's own dread is counted in (Model/Encounter.reds, CBTerrorDeed, 1.9.3).
+  // What the frightening things V does add to the "terrifying deeds" part of Dread, in the same points a deed's own
+  // dread is counted in (Model/Encounter.reds, CBTerrorDeed).
   public static func TerrorMassacre() -> Float = 30.0
   public static func TerrorBoss() -> Float = 20.0
   public static func TerrorMaxTac() -> Float = 12.0
   public static func TerrorApexSquad() -> Float = 25.0
   public static func TerrorRival() -> Float = 10.0
-  // Keeping the peace (Model/GangRivalries.reds, 1.9.3): standing a gang gives V for each in-game
-  // hour spent on its streets with no trouble between them for this long.
+  // Keeping the peace (Model/GangRivalries.reds): standing a gang gives V for each in-game hour spent on its streets
+  // with no trouble between them for this long.
   public static func PeaceKeptPerHour() -> Float = 0.3
   public static func PeaceKeptQuietHours() -> Float = 24.0
 
@@ -145,16 +140,9 @@ public abstract class CBConfig {
   public static func RumorMagnitudeCivilian() -> Float = 6.0
   // Unseen kills needed, as a Ghost, for the Konpeki Ghost title.
   public static func KonpekiUnattributed() -> Int32 = 25
-  // How many titles still to earn the Hub's Titles screen lists beside the earned ones. Earned
-  // titles are rows of their own now, every one of them, so this only limits the right-hand column:
-  // nine entries of two lines each, with room left for the longer requirements to wrap. (There used
-  // to be a limit of eight on the earned list too, which hid every title past the eighth.)
-  // How close a story companion has to be for the story to have the stage (Core/StoryHold.reds).
-  // Generous, because a companion leading the way or a step behind is still walking with V, and a
-  // crew arriving forty metres off is arriving in the middle of their scene.
+  // How many titles still to earn the Hub's Titles screen lists beside the earned ones.
   public static func StoryCompanionRadius() -> Float = 40.0
-  // The pass that looks for a story companion walks the whole registry; once every this many settled
-  // ticks is enough (1.9.1).
+  // The pass that looks for a story companion walks the whole registry; once every this many settled ticks is enough.
   public static func StoryCompanionScanTicks() -> Int32 = 3
   // Settled fast ticks (about seconds) a story restriction has to hold before anybody is called
   // back. The game puts some of the same restrictions on V for a moment in ordinary play.
@@ -162,10 +150,8 @@ public abstract class CBConfig {
   // Width of the threat bar across the top of the screen.
   // Narrower than it was, because there is a stack of these now rather than one.
   public static func ThreatBarWidth() -> Float = 520.0
-  // An apex squad of four plus the Rival lane's encounter is the most that can be on you at once,
-  // since the three lanes can overlap but never double up on their own kind. Since 1.9.0 that
-  // encounter can be three Rivals who came together (Rivals team up), so seven: at five, a team that
-  // arrived after an apex squad had its second and third names left off the stack.
+  // An apex squad of four plus the Rival lane's encounter is the most that can be on you at once, since the three lanes
+  // can overlap but never double up on their own kind.
   public static func ThreatBarRows() -> Int32 = 7
   public static func ThreatBarRowStride() -> Float = 34.0
   public static func ThreatBarTopMargin() -> Float = 80.0
@@ -186,19 +172,14 @@ public abstract class CBConfig {
   // ---- Recognition (spec §8.7) -----------------------------------------
   public static func RecognitionCap() -> Float = 0.95
 
-  // ---- Civilians (spec §9.2) -------------------------------------------
-  // Reaction tiers. These sat at 60/80, which a mid-game V almost never reached, so the city
-  // stayed silent and the mod read as "not working". Pitched so a V with obvious chrome gets
-  // noticed, and a feared, heavily-built one clears a path. Still scaled by the intensity
-  // slider, capped per tick, and switched off entirely inside safe areas.
+  // ---- Civilians (spec §9.2) ------------------------------------------- Reaction tiers. These sat at 60/80, which a
+  // mid-game V almost never reached, so the city stayed silent and the mod read as "not working".
   public static func CivTierNotice() -> Float = 18.0
   public static func CivTierUneasy() -> Float = 32.0
   public static func CivTierAfraid() -> Float = 42.0
   public static func CivTierTerror() -> Float = 68.0
-  // What a passer-by does, by how frightening V reads to them. Separate from the tiers above,
-  // which also price vendors and name V's standing on the Hub. A V at the start of the game gets
-  // looks; most of a playthrough gets people stepping aside; running is for a legend at close
-  // range, or a slider turned right up. All of them scale with the intensity slider.
+  // What a passer-by does, by how frightening V reads to them. Separate from the tiers above, which also price vendors
+  // and name V's standing on the Hub.
   public static func CivFearGlance() -> Float = 12.0
   public static func CivFearStartle() -> Float = 30.0
   public static func CivFearCower() -> Float = 75.0
@@ -213,13 +194,11 @@ public abstract class CBConfig {
   // that one person does not flinch continuously, short enough that walking back down a street
   // still gets a reaction.
   public static func CivReactionCooldownTicks() -> Int32 = 45
-  // How much further obvious chrome gets noticed. At full visible chrome both reaction ranges
-  // widen by this fraction, so blades-for-arms reads from across the street. Kept low enough
-  // that the widened flee range stays inside NpcEvalRadius.
-  // How far the terror of somebody breaking in a fight carries. The game's own NPC terror is 10 m.
+  // How much further obvious chrome gets noticed. At full visible chrome both reaction ranges widen by this fraction,
+  // so blades-for-arms reads from across the street.
   public static func FearStimRadius() -> Float = 10.0
-  // How far panic driving's gunshot carries when the district has not given V a gunshot range yet:
-  // the game's own gunshot stimulus radius (stimpresets.tweak, GunshotStimuli).
+  // How far panic driving's gunshot carries when the district has not given V a gunshot range yet: the game's gunshot
+  // stimulus radius (stimpresets.tweak, GunshotStimuli).
   public static func PanicStimRadius() -> Float = 30.0
   // How far somebody running from V startles the people next to them.
   public static func FearSpreadRadius() -> Float = 6.0
@@ -228,22 +207,13 @@ public abstract class CBConfig {
   public static func ApexTerrorRadius() -> Float = 100.0
   // What a mask is worth as a disguise on its own, and how much a disguise damps what the
   // street reads off you.
-  //
-  // This was 0.4, which through the 0.5 damp came to a fifth off what a stranger reads. A fifth
-  // is not enough to cross a tier, so a player could put a full face mask on and watch the
-  // street panic exactly as before - the feature working and looking broken, which is the
-  // failure this mod keeps having to fix. At 0.6 a masked V drops about thirty percent, which
-  // is the difference between people running and people getting out of the way. The reputation
-  // itself is still untouched: a mask changes what lands on the person in front of them, not
-  // what the city knows about you.
   public static func MaskDisguise() -> Float = 0.60
   public static func DisguiseDreadDamp() -> Float = 0.50
-  // How much of V's face They Will Remember must count hidden for Cyberbane to treat it as a mask (2.4.2).
-  // A full-face helmet or a mask reads 80-95% there; a cap or sunglasses well under half. Below this its
-  // reading still counts, in proportion, towards the disguise (CBUpdateLook).
+  // How much of V's face They Will Remember must count hidden for Cyberbane to treat it as a mask. A full-face helmet
+  // or a mask reads 80-95% there; a cap or sunglasses well under half.
   public static func TwrMaskedFace() -> Float = 0.75
-  // How long after a meeting's people are placed its two sides go on being set to keep the peace while the last
-  // of them come into the world (Spawn/StreetEvents.reds, CBCalmSides, 2.4.2).
+  // How long after a meeting's people are placed its two sides go on being set to keep the peace while the last of them
+  // come into the world (Spawn/StreetEvents.reds, CBCalmSides).
   public static func EventCalmTicks() -> Int32 = 12
   public static func ChromeNoticeRangeBonus() -> Float = 0.5
 
@@ -252,18 +222,14 @@ public abstract class CBConfig {
   // more often and from a little further out.
   public static func WhisperRadius() -> Float = 13.0
   public static func WhisperChance() -> Float = 0.45
-  // How often a plain whisper gives way to one about a story that has actually reached this
-  // district. High on purpose: a line about a specific thing V did somewhere else is the whole
-  // point of the rumour engine, and hearing it is the only way a player knows it exists.
+  // How often a plain whisper gives way to one about a story that has actually reached this district.
   public static func WhisperRumorChance() -> Float = 0.6
-  // The line library (Narrative/Lines.reds, 2.3.1): how many lines the street remembers saying, and what a
-  // line heard among them is still worth in a weighted pick.
+  // The line library (Narrative/Lines.reds): how many lines the street remembers saying, and what a line heard among
+  // them is still worth in a weighted pick.
   public static func LineMemory() -> Int32 = 40
   public static func LineHeardWeight() -> Float = 0.15
-  // The moment (Model/Moment.reds, 2.3.1). A face is that much harder to place at night (the lanes' night,
-  // NightStartHour) and in rain: recognition, the reach of a witness, and in rain a hunter's sight. V is wounded
-  // under 40% health, and fresh from a fight for 600 game seconds (about a real minute and a quarter) after
-  // hurting anybody.
+  // The moment (Model/Moment.reds). A face is that much harder to place at night (the lanes' night, NightStartHour) and
+  // in rain: recognition, the reach of a witness, and in rain a hunter's sight.
   public static func NightSight() -> Float = 0.8
   public static func HeavyRainSight() -> Float = 0.8
   public static func LightRainSight() -> Float = 0.92
@@ -273,9 +239,8 @@ public abstract class CBConfig {
   public static func WoundedCrowdMult() -> Float = 1.1
   // A ganger who sees V bleeding is that much less afraid of V (CBHoldBackOdds).
   public static func WoundedEmbolden() -> Float = 0.1
-  // Places that remember (Model/StreetBook.reds, 2.3.1): up to twelve, one per corner (a deed within 30 m of a
-  // remembered one replaces it). Within 40 m people talk about it and the gang that lost people there is that
-  // much more afraid; within 60 m of it, for twelve in-game hours, that gang sends nobody.
+  // Places that remember (Model/StreetBook.reds): up to twelve, one per corner (a deed within 30 m of a remembered one
+  // replaces it).
   public static func PlaceCap() -> Int32 = 12
   public static func PlaceMergeDistance() -> Float = 30.0
   public static func PlaceReach() -> Float = 40.0
@@ -295,9 +260,8 @@ public abstract class CBConfig {
   // seconds) of V masked or in their colours places V anyway.
   public static func EnforcerLookRange() -> Float = 15.0
   public static func EnforcerLookSeconds() -> Float = 30.0
-  // Witnesses who tell the gang (Reactions/Witnesses.reds, 2.3.1): three in four go, times the district's temper,
-  // and take twelve seconds to get there. Hushing one costs 150eb plus 0.4eb per point of V's renown; leaning
-  // on them is that much easier than leaning on a ganger.
+  // Witnesses who tell the gang (Reactions/Witnesses.reds): three in four go, times the district's temper, and take
+  // twelve seconds to get there.
   public static func WitnessTellChance() -> Float = 0.75
   public static func WitnessTellTicks() -> Int32 = 12
   public static func HushBasePrice() -> Float = 150.0
@@ -308,25 +272,24 @@ public abstract class CBConfig {
   public static func WatchPrice() -> Int32 = 250
   public static func WatchHours() -> Float = 6.0
   public static func WatchExtraTicks() -> Int32 = 20
-  // The braindance goes round (Model/RumorEngine.reds, 2.3.1): a witnessed story of magnitude 8 or more (a
-  // massacre, a boss) has an even chance of being recorded and reaching every district at once.
+  // The braindance goes round (Model/RumorEngine.reds): a witnessed story of magnitude 8 or more (a massacre, a boss)
+  // has an even chance of being recorded and reaching every district at once.
   public static func BraindanceMinMagnitude() -> Float = 8.0
   public static func BraindanceChance() -> Float = 0.5
-  // Gang codes (Data/GangCodes.reds, 2.3.2): what every other gang gives for a Scavenger down, what a guarding gang
-  // takes for one of its district's people, the base of the extra grudge for shooting somebody with their hands up,
-  // and how much chrome Maelstrom can tell is under clothes.
+  // Gang codes (Data/GangCodes.reds): what every other gang gives for a Scavenger down, what a guarding gang takes for
+  // one of its district's people, the base of the extra grudge for shooting somebody with their hands up, and how much
+  // chrome Maelstrom can tell is under clothes.
   public static func ScavengerFavour() -> Float = 0.5
   public static func GuardCivilianLoss() -> Float = 4.0
   public static func SurrenderShotStanding() -> Float = 5.0
   public static func ChromeUnderClothes() -> Float = 50.0
-  // Surrender, let go (Spawn/LivingStreet.reds, 2.3.2): standing with their gang (as a mercy, times its code) and Code.
+  // Surrender, let go (Spawn/LivingStreet.reds): standing with their gang (as a mercy, times its code) and Code.
   public static func SurrenderLetGoStanding() -> Float = 2.0
   public static func SurrenderLetGoCode() -> Float = 0.5
-  // Each gang's voice (Narrative/GangVoice.reds, 2.3.2): how often a street warning is in their own words.
+  // Each gang's voice (Narrative/GangVoice.reds): how often a street warning is in their own words.
   public static func GangVoiceShare() -> Float = 0.7
-  // Gangs adapt (Model/Ledger.reds, 2.3.2): a way of fighting dominates at ten weight (a body is 1, somebody left
-  // breathing 0.6) and over 55% of it; the ledger keeps 80% a day. Prepared, a gang's people get 20% armour, 15%
-  // health or 3 ICE, and its hunters see 25% further.
+  // Gangs adapt (Model/Ledger.reds): a way of fighting dominates at ten weight (a body is 1, somebody left breathing
+  // 0.6) and over 55% of it; the ledger keeps 80% a day.
   public static func AdaptMinWeight() -> Float = 10.0
   public static func AdaptShare() -> Float = 0.55
   public static func AdaptLiveWeight() -> Float = 0.6
@@ -342,17 +305,13 @@ public abstract class CBConfig {
   public static func BuildReadCeiling() -> Float = 0.4
   public static func CrewBuildHealthCeiling() -> Float = 0.4
   public static func CrewBuildArmourCeiling() -> Float = 0.3
-  // An apex squad's netrunner spots V from twice as far as the rest, and locates V for the squad ([U4], 2.3.2).
+  // An apex squad's netrunner spots V from twice as far as the rest, and locates V for the squad ([U4]).
   public static func ApexNetrunnerReach() -> Float = 2.0
   // An apex squad searching as one: the spot the first of them chose holds for 20 seconds, and the rest search
   // within 6 m of it.
   public static func ApexSearchShareTicks() -> Int32 = 20
   public static func ApexSearchSpread() -> Float = 6.0
-  // Gang life (Spawn/StreetEvents.reds, 2.3.3). The sit-down keeps its own clock (MeetGapTicks, MeetChance). The rest
-  // roll every twenty-five minutes of play (divided by Gang life's How often), at 70%, set half an hour to an hour and
-  // a half of game time ahead, for an hour and a half of game time. Raised in 2.5.0 from forty minutes at 60%: about
-  // one an hour was too few to feel the gangs living round V. A funeral is owed eight game hours after a Rival or
-  // a boss falls, a celebration four after a district is taken, and either is forgotten after a day.
+  // Gang life (Spawn/StreetEvents.reds). The sit-down keeps its own clock (MeetGapTicks, MeetChance).
   public static func EventGapTicks() -> Int32 = 1500
   public static func EventChance() -> Float = 0.7
   public static func EventLeadMinHours() -> Float = 0.5
@@ -372,10 +331,10 @@ public abstract class CBConfig {
   public static func EventBolster() -> Float = 3.0
   public static func RespectsStanding() -> Float = 6.0
   public static func RespectsCode() -> Float = 1.0
-  // The fights between gangs (Spawn/StreetEvents.reds, 2.3.4): in the draw half the time; an execution happens 25
-  // seconds after its people are in place; the hunted runs 30 m past V and is clear at 120 m from the start; a front
-  // line won is 6 strength to the winner and 6 off the loser; saving a prisoner or the hunted is 6 standing with
-  // their gang and 1 of Code.
+  // The fights between gangs (Spawn/StreetEvents.reds): in the draw half the time; an execution happens 25 seconds
+  // after its people are in place; the hunted runs 30 m past V and is clear at 120 m from the start; a front line won
+  // is 6 strength to the winner and 6 off the loser; saving a prisoner or the hunted is 6 standing with their gang and
+  // 1 of Code.
   public static func GangFightShare() -> Float = 0.5
   public static func ExecutionDelayTicks() -> Int32 = 25
   public static func FugitiveRunPast() -> Float = 30.0
@@ -383,7 +342,7 @@ public abstract class CBConfig {
   public static func FrontLineGain() -> Float = 6.0
   public static func FrontLineLoss() -> Float = 6.0
   // A front line squares up this many ticks before it starts, time to pick a side; V's side winning pays this and warms
-  // that gang this much, and costs V this much with the other (2.6.1).
+  // that gang this much, and costs V this much with the other.
   public static func FrontLineStandoffTicks() -> Int32 = 40
   public static func FrontLineSidePay() -> Int32 = 1500
   public static func FrontLineSideWarmth() -> Float = 10.0
@@ -395,10 +354,8 @@ public abstract class CBConfig {
   public static func StruggleDays() -> Float = 2.0
   public static func StruggleBackStanding() -> Float = 15.0
   public static func StruggleBothLoss() -> Float = 12.0
-  // The war chest and manpower (Economy/War.reds, 2.4.0). A gang starts with 6000eb (up to 20000), earns 300 a day
-  // plus 400 for each district it holds; a crew member costs it 150 and an apex squad 1500. Under 1000 it is broke
-  // (crews at 60%), over 12000 flush (110%). A robbed bagman or a hit racket costs it twice the take; a deal is worth
-  // 2000 to it. Ranks refill 20 a day; a body takes 1, a massacre 30; under 10 they send nobody.
+  // The war chest and manpower (Economy/War.reds). A gang starts with 6000eb (up to 20000), earns 300 a day plus 400
+  // for each district it holds; a crew member costs it 150 and an apex squad 1500.
   public static func WarChestStart() -> Float = 6000.0
   public static func WarChestMax() -> Float = 20000.0
   public static func WarIncomeBase() -> Float = 300.0
@@ -445,12 +402,8 @@ public abstract class CBConfig {
   public static func ProtectionUnpaidStanding() -> Float = 8.0
   // A turf patrol that walks its beat without trouble adds 2 to its gang's strength.
   public static func PatrolGrip() -> Float = 2.0
-  // Being hunted (Spawn/Hunted.reds, 2.4.1). A hunter handed V aims at 40% for 2.5 seconds. A gang is "still hot"
-  // for 2 game hours after its last incident and "cooling off" until 12. While they search, a change of clothes (look
-  // moved by 8) or district, unseen for 10 seconds, loses the trail at 35%. A haunt holds a third of V's time, once V has
-  // spent two game hours anywhere; samples every 10 ticks count 80 game seconds and fade to 85% a day; a hunt starting
-  // in one starts from a tip 60% as far off. V by the car or gun they know is seen 15% further. A Voodoo Boys scout sees
-  // 60% further. A scout takes 300eb plus 0.3 a point of renown; a lookout stands 15 to 45 m from V.
+  // Being hunted (Spawn/Hunted.reds). A hunter handed V aims at 40% for 2.5 seconds. A gang is "still hot" for 2 game
+  // hours after its last incident and "cooling off" until 12.
   public static func FairVolleyAim() -> Float = 0.4
   public static func FairVolleySeconds() -> Float = 2.5
   public static func HeatHotHours() -> Float = 2.0
@@ -458,13 +411,13 @@ public abstract class CBConfig {
   public static func TrailLookChange() -> Float = 8.0
   public static func TrailUnseenTicks() -> Int32 = 10
   public static func TrailColdChance() -> Float = 0.35
-  // Slipping the countdown (2.7.1, Spawn/Slip.reds): the chance they lose V before setting off, with two changes and with
+  // Slipping the countdown (Spawn/Slip.reds): the chance they lose V before setting off, with two changes and with
   // three or more; and how much less sharp they are when they come in looking in the wrong place.
   public static func SlipLoseTwo() -> Float = 0.55
   public static func SlipLoseMore() -> Float = 0.85
   public static func SlipSenseMult() -> Float = 0.7
-  // Home ground (2.7.1, Spawn/HomeGround.reds): how far round an apartment, flat on the map, counts as its building; how
-  // close a bed must be to a home already known to be the same one; how many homes are kept.
+  // Home ground (Spawn/HomeGround.reds): how far round an apartment, flat on the map, counts as its building; how close
+  // a bed must be to a home already known to be the same one; how many homes are kept.
   public static func HomeRadius() -> Float = 110.0
   public static func HomeMergeDistance() -> Float = 60.0
   public static func HomeMax() -> Int32 = 8
@@ -479,17 +432,13 @@ public abstract class CBConfig {
   public static func ScoutBribePerRenown() -> Float = 0.3
   public static func LookoutMinDistance() -> Float = 15.0
   public static func LookoutMaxDistance() -> Float = 45.0
-  // The hunt grows (Spawn/HuntGrows.reds, 2.4.2). A tracker lasts 12 game hours, or 60 real seconds somewhere safe; a
-  // tracked gang's hunt starts from a tip 15% as far off. Open season: 10% a day for a sworn gang with 40 of theirs
-  // dead and a leader; a crew provoked every 450 ticks (about a game hour); paying costs 2.5 times; surviving is 40
-  // fear and 60 renown. Lying in wait: the Wraiths on their road 2.5 times as likely, 1.5 where V is known to go. V's
-  // road: 40% of the time a sworn crew's moment comes with a job tracked 300 m or more away; they wait 20 m beyond the
-  // job's clearance, up to 6 of them, for 1.5 game hours. The Claws' assassin: 35% of nights.
+  // The hunt grows (Spawn/HuntGrows.reds). A tracker lasts 12 game hours, or 60 real seconds somewhere safe; a tracked
+  // gang's hunt starts from a tip 15% as far off.
   public static func TrackedHours() -> Float = 12.0
   public static func TrackedClearTicks() -> Int32 = 60
   public static func TrackedTipMult() -> Float = 0.15
-  // A quarter of days for a gang at the top of its anger with 40 of its own dead (2.5.0; a tenth was about once in
-  // thirty hours of play).
+  // A quarter of days for a gang at the top of its anger with 40 of its own dead (a tenth was about once in thirty
+  // hours of play).
   public static func OpenSeasonChancePerDay() -> Float = 0.25
   public static func OpenSeasonKills() -> Int32 = 40
   public static func OpenSeasonCrewTicks() -> Int32 = 450
@@ -504,15 +453,8 @@ public abstract class CBConfig {
   public static func RoadMaxCrew() -> Int32 = 6
   public static func AmbushWaitSeconds() -> Float = 5400.0
   public static func AssassinChance() -> Float = 0.35
-  // A price on V's head (Spawn/Bounty.reds, 2.4.3). A gang sworn against V, with 15 of theirs dead, a leader and 3000eb
-  // in its chest, puts up 40% of its chest (5000 to 40000), 30% a day; a Rival of rank 3 who has met V 3 times, 4000 a
-  // rank; a corporation that wants V dead, 20000 (hostile) or 40000 (sworn), 50% a day, for 5 days, bought off at 1.5
-  // times. The first hunter 2 to 5 game hours after it goes up, then one every 9 (three quarters to one and a quarter
-  // of that); two at once a third of the time from 20000. Ten places on the ladder; the roster keeps 30 names. A hunter
-  // left breathing is taken as beaten once V is 45 m off, or 40 seconds out of combat, and comes back a Rival half
-  // the time. Rank ten is built to 0.6 of an apex, rank one to a whole one; ranks three to one get the bar. Renown: 4,
-  // and 1.5 more for each place above the bottom.
-  public static func BountyChancePerDay() -> Float = 0.4   // a gang posting a price, a day (2.5.0, from 0.3)
+  // A price on V's head (Spawn/Bounty.reds).
+  public static func BountyChancePerDay() -> Float = 0.4   // a gang posting a price, a day (from 0.3)
   public static func BountyGangKills() -> Int32 = 15
   public static func BountyMinChest() -> Float = 3000.0
   public static func BountyChestShare() -> Float = 0.4
@@ -548,9 +490,9 @@ public abstract class CBConfig {
   public static func CorpContractDays() -> Float = 7.0
   public static func CorpContractPay() -> Int32 = 30000
   public static func CorpContractStanding() -> Float = 10.0
-  // Street clashes ([N1], Spawn/Clashes.reds, 2.4.3): the last four of each side the Director saw; who is at war here
-  // worked out every 15 ticks; a try every two minutes at 35%, then ten minutes before the next; up to two pairs, each
-  // within 35 m of each other and 15 to 70 m from V; over at three minutes or with V 140 m off; two points of strength.
+  // Street clashes ([N1], Spawn/Clashes.reds): the last four of each side the Director saw; who is at war here worked
+  // out every 15 ticks; a try every two minutes at 35%, then ten minutes before the next; up to two pairs, each within
+  // 35 m of each other and 15 to 70 m from V; over at three minutes or with V 140 m off; two points of strength.
   public static func ClashKeep() -> Int32 = 4
   public static func ClashPairTicks() -> Int32 = 15
   public static func ClashRollTicks() -> Int32 = 120
@@ -565,30 +507,21 @@ public abstract class CBConfig {
   public static func ClashGain() -> Float = 2.0
   // The Hub's web of gangs ([H1], UI/HubWeb.reds): a peace paid in the last three game days is said on V's line.
   public static func WebPeaceDays() -> Float = 3.0
-  // The Rivals' moments (Rivals/RivalMoments.reds, 2.4.4). Chrome: one implant a climb, up to four. The facedown opens
-  // with a Rival 24 m off (or closer) before anybody fires, holds their people within 40 m, and lasts 15 seconds; a
-  // draw gives V 3 seconds of their bad aim. Staring down: 30%, up to 35 more for Cool, up to 25 more for renown, 8
-  // less a rank above one; won, the Rival's aim is 0.6 for 20 s; lost, theirs is 1.25. Just you and me: 45%, 30 more
-  // for the Valentinos and the Animals. Call it even: 30%, 25 more each time V spared them. Humiliation: 10 fear, half
-  // quit. Feuds: a set one lands 18 game hours later with a 3 point edge; otherwise 20% a day. Trophies from rank two.
-  // Bonds: 35% each Rival, once; vengeance brings them within 5 minutes; a spare puts the other in V's debt 35% of the
-  // time. Back from the dead: 15% a day, 5 days after. Ended up: 25% a day, 7 days after. (2.5.0: feuds were 8%, a
-  // return 5% after 14 days and an ending heard 15% after 20, waits long enough that nobody saw them.) Taunts: every 25 s or so
-  // in a fight within 40 m, half the time. A place with meaning: within 600 m of V.
+  // The Rivals' moments (Rivals/RivalMoments.reds). Chrome: one implant a climb, up to four.
   public static func RivalImplantsMax() -> Int32 = 4
   public static func FacedownRange() -> Float = 24.0
   public static func FacedownEscortRange() -> Float = 40.0
   public static func FacedownTicks() -> Int32 = 15
-  // A Rival owed a facedown walks up calm for at most this long before it is a fight anyway (2.5.0).
+  // A Rival owed a facedown walks up calm for at most this long before it is a fight anyway.
   public static func FacedownWaitTicks() -> Int32 = 75
-  // In all, holding while V fights somebody else included (2.5.7).
+  // In all, holding while V fights somebody else included.
   public static func FacedownWaitMaxTicks() -> Int32 = 240
-  // A Rival at the end of their rope who breaks gives up where they stand this often, instead of running (2.5.7).
+  // A Rival at the end of their rope who breaks gives up where they stand this often, instead of running.
   public static func RivalYieldShare() -> Float = 0.5
 
-  // ---- Kitting out the crew (Reactions/CrewKit.reds, 2.6.0) ----
+  // ---- Kitting out the crew (Reactions/CrewKit.reds) ----
   public static func CrewNameMaxLength() -> Int32 = 24
-  // How many weapons or pieces of chrome a pick list holds (2.7.4: 60, scrolled ten at a time; it was 10 and stopped there).
+  // How many weapons or pieces of chrome a pick list holds (60, scrolled ten at a time; it was 10 and stopped there).
   public static func CrewPickListMax() -> Int32 = 60
   // Each rank above Rookie (1 to 6): this much more health, armour and damage.
   public static func CrewRankHealthStep() -> Float = 0.12
@@ -598,17 +531,16 @@ public abstract class CBConfig {
   public static func CrewGearStep() -> Float = 0.1
   // A weapon handed over: damage by its quality, common 1 step to legendary 5.
   public static func CrewWeaponTierDamage() -> Float = 0.05
-  // Each implant does what the game says it does (Reactions/CrewKit.reds, CBCrewChromeRead). What only V can use is worth
-  // its average: critical hits over V's own base chance and damage (percent), and the share of hits on a head or a weak spot.
+  // Each implant does what the game says it does (Reactions/CrewKit.reds, CBCrewChromeRead).
   public static func CrewCritBaseChance() -> Float = 5.0
   public static func CrewCritBaseDamage() -> Float = 50.0
   public static func CrewHeadshotShare() -> Float = 0.2
   public static func CrewWeakspotShare() -> Float = 0.05
   public static func CrewChromeMax() -> Int32 = 4
   public static func CrewMultCeiling() -> Float = 3.0
-  // Their climb on the apex squads' scale (2.6.1, CBCrewApplyKit): this share of Adam Smasher at Legend (an apex member
-  // tops out at ApexSmasherShareMax), and this much more for every spar with V, up to the most; this much longer under
-  // V's fire than an apex member at the highest strength, at Legend; and no single hit takes more than this percent of
+  // Their climb on the apex squads' scale (CBCrewApplyKit): this share of Adam Smasher at Legend (an apex member tops
+  // out at ApexSmasherShareMax), and this much more for every spar with V, up to the most; this much longer under V's
+  // fire than an apex member at the highest strength, at Legend; and no single hit takes more than this percent of
   // their health, from Rookie down to Legend.
   public static func CrewSmasherShareTop() -> Float = 0.45
   public static func CrewSmasherSparStep() -> Float = 0.01
@@ -616,7 +548,6 @@ public abstract class CBConfig {
   public static func CrewPastApex() -> Float = 1.1
   public static func CrewHitCapRookie() -> Float = 30.0
   public static func CrewHitCapLegend() -> Float = 9.0
-  // A Legend's dodging, as evasion (2.6.3): rank 6 brought a Kerenzikov in 2.6.2, which crash rule 5 forbids.
   public static func CrewLegendEvasion() -> Float = 8.0
   // Training: the first costs this, each one after it more; away this many game hours, more each time; at most this many.
   public static func CrewTrainCostBase() -> Int32 = 2500
@@ -630,7 +561,7 @@ public abstract class CBConfig {
   public static func CrewWarStanding() -> Float = 12.0
   public static func CrewWarDeathShare() -> Float = 0.35
   public static func CrewWarHurtHours() -> Float = 48.0
-  // War parties (2.7.6, Reactions/CrewWar.reds). Who may go along (a Lieutenant, CrewWarMinRank, leads), and how many.
+  // War parties (Reactions/CrewWar.reds). Who may go along (a Lieutenant, CrewWarMinRank, leads), and how many.
   public static func CrewWarFollowMinRank() -> Int32 = 2
   public static func CrewWarPartyMax() -> Int32 = 6
   // A member's weight: a base, then per rank, per piece of chrome, per tier of the gun V gave them, per training, a spar's
@@ -669,8 +600,8 @@ public abstract class CBConfig {
   public static func WarStashesDecisive() -> Int32 = 4
   public static func WarDefectorPrice() -> Float = 0.5
   public static func SecretStashReach() -> Float = 12.0
-  // The crew as a power on the street (2.7.6, Model/CrewTurf.reds). Its weight: per member, per rank, per war won (that
-  // many counted at most).
+  // The crew as a power on the street (Model/CrewTurf.reds). Its weight: per member, per rank, per war won (that many
+  // counted at most).
   public static func CrewWeightPerMember() -> Float = 6.0
   public static func CrewWeightPerRank() -> Float = 3.0
   public static func CrewWeightPerWar() -> Float = 4.0
@@ -702,8 +633,8 @@ public abstract class CBConfig {
   // Work: each earner brings in this much per rank each game day; now and then gets hurt for a day.
   public static func CrewEarnPerRank() -> Int32 = 150
   public static func CrewEarnHurtChance() -> Float = 0.08
-  // The crew as a crew (Reactions/CrewBanner.reds, 2.6.0): its colours, its own standing with each gang, its fallen
-  // and its recruiter.
+  // The crew as a crew (Reactions/CrewBanner.reds): its colours, its own standing with each gang, its fallen and its
+  // recruiter.
   public static func CrewColourDefault() -> Int32 = 3          // green, the colour its texts always had
   public static func CrewStandWarWon() -> Int32 = 30           // the gang a war was won on
   public static func CrewStandWarEnemy() -> Int32 = 10         // and the gang at war with them, pleased
@@ -733,7 +664,7 @@ public abstract class CBConfig {
   public static func DuelBase() -> Float = 0.45
   public static func DuelGangBonus() -> Float = 0.3
   public static func DuelFear() -> Float = 8.0
-  // How low the Rival's health goes in a fair fight before their people break their word and step in (2.6.7), in percent.
+  // How low the Rival's health goes in a fair fight before their people break their word and step in, in percent.
   public static func DuelStepInHealth() -> Float = 15.0
   public static func CallEvenBase() -> Float = 0.3
   public static func HumiliateFear() -> Float = 10.0
@@ -757,14 +688,8 @@ public abstract class CBConfig {
   public static func GuardBeatTicks() -> Int32 = 20
   public static func GuardBeatMin() -> Float = 4.0
   public static func GuardBeatMax() -> Float = 10.0
-  // Talk and allies (Reactions/Allies.reds, 2.4.5). A borrowed crew: two (three at Allied), placed 22 m off, for a game
-  // hour; home when V is 90 m off, off their turf for two minutes, at a job, or shoots one (6 standing). One of theirs:
-  // 20% a day an Allied gang offers; leaving costs 25 standing; a duty every 7 days, five of an enemy, 6 standing
-  // either way. Ransom: 1500eb at level one, answered in 20 seconds, paid 60% of the time (less for a gang that never
-  // forgives a shot prisoner). Handing one over: 8 with the buyer, 6 off their gang. A lie: 35%, up to 35 more for Cool,
-  // up to 30 less the better the gang knows V; holds 8 game hours. An informant found out: 6% a day; saved, two more
-  // tips. The sergeant's parley: within 18 m, five minutes apart; scaring them 20%, up to 40 for fear and 25 for Cool.
-  // Greetings within 8 m, a minute and a half apart.
+  // Talk and allies (Reactions/Allies.reds). A borrowed crew: two (three at Allied), placed 22 m off, for a game hour;
+  // home when V is 90 m off, off their turf for two minutes, at a job, or shoots one (6 standing).
   public static func CrewFriendly() -> Int32 = 2
   public static func CrewAllied() -> Int32 = 3
   public static func CrewSpawnDistance() -> Float = 22.0
@@ -798,11 +723,8 @@ public abstract class CBConfig {
   // One of theirs counts as wearing their colours at 0.8 (a good disguise); a lie sends the hunt's tip 4 times as far.
   public static func OneOfTheirsColours() -> Float = 0.8
   public static func LieTipMult() -> Float = 4.0
-  // Telling it (Narrative/Telling.reds, 2.4.6). Panic in the dark: crew within 40 m hear it; from the second unseen
-  // kill somebody may run, 25% more each one. The brief covers the last 12 game hours. Phone: stalling holds a crew 5
-  // more minutes; an insult is 5 standing and 2 renown in the district; "come and find me" brings a Rival within a
-  // minute; a taunt shakes a Rival 40% of the time. Street Cred: 60 and 40 a rank for a Rival, 250 for surviving open
-  // season, 15 a place for a hunter and 400 for the top of the ladder.
+  // Telling it (Narrative/Telling.reds). Panic in the dark: crew within 40 m hear it; from the second unseen kill
+  // somebody may run, 25% more each one. The brief covers the last 12 game hours.
   public static func PanicRange() -> Float = 40.0
   public static func PanicRunAfter() -> Int32 = 2
   public static func PanicBreakChance() -> Float = 0.25
@@ -817,41 +739,29 @@ public abstract class CBConfig {
   public static func CredOpenSeason() -> Int32 = 250
   public static func CredHunterPerPlace() -> Int32 = 15
   public static func CredLadderTop() -> Int32 = 400
-  // A crew of V's own (Reactions/Crew.reds, 2.5.0). Five on the roster, three out at once (two to walk with V when there
-  // is nothing to fight); every other spawn leaves three places under the live ceiling for them while they could be
-  // called (CBCrewRoomKept, 2.6.3, where it used to be the crew that left four for everybody else); each can be called
-  // once a quarter of a game hour from the moment they arrived (an hour, from the asking, up to 2.6.2), and they arrive
-  // 24 m out; one the engine has not placed in 30 ticks is let go with no wait. Home a
-  // minute after the fight, after 4 seconds in a car, or past 120 m. One set to turn does it 10 seconds into the fight
-  // and runs 35 seconds after that. Loyalty starts at 80 owed, 65 lent, 60 paid, 35 frightened; restless under 40;
-  // below 25 a call can go wrong (35 when the hunters are their old gang), 25% plus 3 a point under, at most 85%. Come
-  // on their own: 70 and up. A win is 3, standing over one who went down 5, leaving them lying 10, a dead friend 6, a
-  // fair cut 5 (8 for a solo); fear wears 3 a day, an unpaid cut 4 (8 for a solo), and 2 for each of their old gang V
-  // kills, at most 10 a day. Hurt for six game hours (a whole day up to 2.6.2). The cut: 250 a week, 600 for a solo, 100 more a rank. A solo costs 1000 and
-  // 400 a renown tier to sign, offered 15% of days from Known Merc. A Rival says yes 80% of the time, before traits.
-  // Five renown points for each who joins. The last twelve who left are remembered.
+  // A crew of V's own (Reactions/Crew.reds).
   public static func MyCrewRoster() -> Int32 = 5
   public static func MyCrewOut() -> Int32 = 3
   public static func MyCrewEscortOut() -> Int32 = 2
   public static func MyCrewSpawnReserve() -> Int32 = 3
   public static func MyCrewCallSeconds() -> Float = 900.0
   public static func MyCrewNoShowTicks() -> Int32 = 30
-  // How far from V the crew takes on whoever is fighting V (2.6.3, CBCrewHostilityTick).
+  // How far from V the crew takes on whoever is fighting V (CBCrewHostilityTick).
   public static func MyCrewFightRange() -> Float = 45.0
   public static func MyCrewSpawnDistance() -> Float = 24.0
-  // Further out when nowhere that close will take them (2.6.4, CBSpawnOnSide): the middle ring, then the distance every
-  // hunter is sent from (HitSquadMinSpawnDistance), where there is always somewhere out of V's sight.
+  // Further out when nowhere that close will take them (CBSpawnOnSide): the middle ring, then the distance every hunter
+  // is sent from (HitSquadMinSpawnDistance), where there is always somewhere out of V's sight.
   public static func MyCrewMidSpawnDistance() -> Float = 50.0
   public static func MyCrewFarSpawnDistance() -> Float = 85.0
   public static func MyCrewQuietTicks() -> Int32 = 60
-  // A fight the crew stood in counts as won once it has been over this many ticks (2.7.6, CBCrewBattleTick): long enough
-  // that a lull is not a win, short enough that sending them home straight after still finds it counted.
+  // A fight the crew stood in counts as won once it has been over this many ticks (CBCrewBattleTick): long enough that
+  // a lull is not a win, short enough that sending them home straight after still finds it counted.
   public static func MyCrewWonTicks() -> Int32 = 5
-  // Really in it (2.7.7, CBCrewBattleTick): somebody fighting V this close to one of them for this many ticks, unless one
-  // of them took or landed a hit or an enemy went down near them first.
+  // Really in it (CBCrewBattleTick): somebody fighting V this close to one of them for this many ticks, unless one of
+  // them took or landed a hit or an enemy went down near them first.
   public static func MyCrewEngageRadius() -> Float = 30.0
   public static func MyCrewEngageTicks() -> Int32 = 4
-  // The crew's own lives (2.7.7, Reactions/CrewLife.reds). A member's story keeps its newest lines, the whole book a few
+  // The crew's own lives (Reactions/CrewLife.reds). A member's story keeps its newest lines, the whole book a few
   // hundred; kit texts sent within a few ticks of each other go as one.
   public static func CrewStoryKept() -> Int32 = 12
   public static func CrewStoryBookCap() -> Int32 = 240
@@ -875,21 +785,19 @@ public abstract class CBConfig {
   public static func CrewFuneralMissLoyalty() -> Int32 = 6
   // A bed at the crew's home: time out hurt, by this much.
   public static func CrewHomeHealFactor() -> Float = 0.5
-  // V in the war (2.7.7): each of the gang's people V puts down while the crew's war on them is on adds to the crew's side,
-  // up to a ceiling; the spoils grow with it.
-  // The street tax in person (2.7.7): how much a district's shops keep for V at most, how close V has to be to one of them,
-  // and how much more they pay when they fear V.
+  // V in the war: each of the gang's people V puts down while the crew's war on them is on adds to the crew's side, up
+  // to a ceiling; the spoils grow with it.
   public static func CrewTaxOwedCap() -> Int32 = 6000
   public static func CrewTaxShopRange() -> Float = 8.0
   public static func CrewTaxFearBonus() -> Float = 0.75
-  // A counterattack on the crew's corners (2.7.7): told this many game hours ahead, open this long, their crew this many
-  // ticks behind V's arrival, and what holding or losing it does to the crew's hold there.
+  // A counterattack on the crew's corners: told this many game hours ahead, open this long, their crew this many ticks
+  // behind V's arrival, and what holding or losing it does to the crew's hold there.
   public static func CrewCounterAheadHours() -> Float = 3.0
   public static func CrewCounterWindowHours() -> Float = 3.0
   public static func CrewCounterArriveTicks() -> Int32 = 25
   public static func CrewCounterHeldFoot() -> Float = 12.0
   public static func CrewCounterLostFoot() -> Float = 10.0
-  // A Rival's timeline (2.7.7, Rivals/RivalTimeline.reds): how much the book keeps, how much a Rival's line shows.
+  // A Rival's timeline (Rivals/RivalTimeline.reds): how much the book keeps, how much a Rival's line shows.
   public static func RivalTimelineCap() -> Int32 = 400
   public static func RivalTimelineShown() -> Int32 = 6
   // Calling cards: the chance one is left, how far away, how long it waits, how close V has to come, and what it holds.
@@ -903,22 +811,22 @@ public abstract class CBConfig {
   public static func RivalTurnChance() -> Float = 0.2
   public static func RivalHuntsCrewChance() -> Float = 0.35
   public static func RivalHuntsCrewOdds() -> Float = 0.15
-  // What the street talks about (2.7.7, Reactions/TalkMore.reds): things V did in the last this many game hours.
+  // What the street talks about (Reactions/TalkMore.reds): things V did in the last this many game hours.
   public static func TalkNewsHours() -> Float = 48.0
-  // A meeting or gang business that runs late while V waits at the place (2.7.7), at most this many times.
+  // A meeting or gang business that runs late while V waits at the place, at most this many times.
   public static func EventLateMax() -> Int32 = 2
-  // A friendly gang's people stay out of fights V did not start with them (2.7.7, CBSidesWithV), unless V hurt one of theirs
+  // A friendly gang's people stay out of fights V did not start with them (CBSidesWithV), unless V hurt one of theirs
   // this close.
   public static func AllyHurtNearRange() -> Float = 30.0
   public static func HangoutGreetDistance() -> Float = 8.0
-  // The crew on its corners (2.7.7, Reactions/CrewLoiter.reds): at most this many, this far from V, and this long between.
+  // The crew on its corners (Reactions/CrewLoiter.reds): at most this many, this far from V, and this long between.
   public static func CrewLoiterMax() -> Int32 = 2
   public static func CrewLoiterDistance() -> Float = 24.0
   public static func CrewLoiterGapHours() -> Float = 3.0
-  // Hunters who regroup (2.7.7, Spawn/Regroup.reds): at least this many down first, and more sent this many ticks later.
+  // Hunters who regroup (Spawn/Regroup.reds): at least this many down first, and more sent this many ticks later.
   public static func RegroupMinDown() -> Int32 = 3
   public static func RegroupReinforceTicks() -> Int32 = 45
-  // Sit-downs and crashed business (2.7.7, Model/GangBosses.reds): how close V has to have come to have been there, what
+  // Sit-downs and crashed business (Model/GangBosses.reds): how close V has to have come to have been there, what
   // speaking for a gang is worth, what the gang V helped thinks of it, the chance of a Rival, and the ground lost.
   public static func SitDownPresentDistance() -> Float = 40.0
   public static func SitDownSpokeWarmth() -> Float = 8.0
@@ -935,8 +843,8 @@ public abstract class CBConfig {
   public static func MyCrewLoyaltyOwed() -> Int32 = 80
   public static func MyCrewLoyaltyLent() -> Int32 = 65
   public static func MyCrewLoyaltyPaid() -> Int32 = 60
-  // Frightened recruits start at 60 and their fear wears off by 1 a day (2.5.0): at 35 and 3 they were under the
-  // betrayal line against their old gang inside a day, and turned on V a third of the time when called.
+  // Frightened recruits start at 60 and their fear wears off by 1 a day: at 35 and 3 they were under the betrayal line
+  // against their old gang inside a day, and turned on V a third of the time when called.
   public static func MyCrewLoyaltyFrightened() -> Int32 = 60
   public static func MyCrewRestless() -> Int32 = 40
   public static func MyCrewBetrayLine() -> Int32 = 25
@@ -958,13 +866,11 @@ public abstract class CBConfig {
   public static func MyCrewCutPerRank() -> Int32 = 100
   public static func MyCrewMercBase() -> Int32 = 1000
   public static func MyCrewMercPerTier() -> Int32 = 400
-  public static func MyCrewOfferChance() -> Float = 0.35   // a solo on offer, a day (2.5.0; 0.15 was one in twenty hours)
+  public static func MyCrewOfferChance() -> Float = 0.35   // a solo on offer, a day (0.15 was one in twenty hours)
   public static func MyCrewRecruitBase() -> Float = 0.8
   public static func MyCrewRenown() -> Float = 5.0
   public static func MyCrewPastKept() -> Int32 = 12
-  // The map remembers (UI/MapPins.reds, 2.5.0): a day, twelve places at most, one per 40 m of each kind.
-  // A lookout at a Rival's place (Rivals/Whereabouts.reds, [U10], 2.5.0): three seconds with V in sight inside 25 m,
-  // eight to get away; the place moves 100 to 180 m.
+  // The map remembers (UI/MapPins.reds): a day, twelve places at most, one per 40 m of each kind.
   public static func LairSpotRange() -> Float = 25.0
   public static func LairSpotTicks() -> Int32 = 3
   public static func LairWarnTicks() -> Int32 = 8
@@ -979,16 +885,14 @@ public abstract class CBConfig {
   public static func MapMemoryHours() -> Float = 24.0
   public static func MapMemoryKept() -> Int32 = 12
   public static func MapMemoryMerge() -> Float = 40.0
-  // A head start from the lifepath (Model/Lifepath.reds, 2.3.1): fifteen standing with the gang that is V's own,
-  // ten against the one with a grudge, ten points of being known by each, and five in the home district.
+  // A head start from the lifepath (Model/Lifepath.reds): fifteen standing with the gang that is V's own, ten against
+  // the one with a grudge, ten points of being known by each, and five in the home district.
   public static func HeadStartFriend() -> Float = 15.0
   public static func HeadStartGrudge() -> Float = 10.0
   public static func HeadStartKnown() -> Float = 10.0
   public static func HeadStartDistrict() -> Float = 5.0
-  // Wannabes (Spawn/Wannabe.reds, 2.3.1): once V is a known merc, a 60% chance every six in-game hours or so (about
-  // forty-five minutes of real play; an even chance every ten until 2.5.0, one in two and a half hours). They challenge within 4 m, give up walking after 90 seconds or
-  // 90 m, stand down when V is under 25% health or 35 m away mid-fight, or after 150 seconds of it. Three
-  // points of the district's renown won or lost (a third of that for walking away); two of Code for shooting one.
+  // They challenge within 4 m, give up walking after 90 seconds or 90 m, stand down when V is under 25% health or 35 m
+  // away mid-fight, or after 150 seconds of it.
   public static func WannabeGapHours() -> Float = 6.0
   public static func WannabeChance() -> Float = 0.6
   public static func WannabeSpawnGraceTicks() -> Int32 = 20
@@ -1004,10 +908,8 @@ public abstract class CBConfig {
 
   // ---- Morale (spec §9.4) ----------------------------------------------
   public static func MoraleMaxBreakFraction() -> Float = 0.35
-  // What goes into the chance of somebody running (Reactions/Morale.reds, CBBreakChance). Nobody
-  // breaks on the first body. How shaken they are carries the most weight, scaled by how much
-  // their gang fears V; being hurt, being alone, and what they just saw add to it; rank and a
-  // sworn vendetta take away. Never more than the ceiling, however bad it gets.
+  // What goes into the chance of somebody running (Reactions/Morale.reds, CBBreakChance). Nobody breaks on the first
+  // body.
   public static func MoraleBreakMinShock() -> Float = 0.15
   public static func MoraleBreakShockWeight() -> Float = 0.5
   public static func MoraleHurtBelow() -> Float = 50.0
@@ -1021,15 +923,13 @@ public abstract class CBConfig {
   public static func MoraleBreakMaxChance() -> Float = 0.4
   // On streets they have just lost, nobody is sure what they are still fighting for.
   public static func MoraleLostGroundMult() -> Float = 1.4
-  // A gang V has broken (Model/Territory.reds, GangBrokenStrength) breaks sooner still, and its vendetta no
-  // longer stiffens it (1.9.5).
+  // A gang V has broken (Model/Territory.reds, GangBrokenStrength) breaks sooner still, and its vendetta no longer
+  // stiffens it.
   public static func MoraleBrokenGangMult() -> Float = 1.8
   // What a broken gang asks to call off its grudge, as a share of its usual price (Economy/Peace.reds).
   public static func PeaceBrokenShare() -> Float = 0.5
-  // Holding back from V on the street (Reactions/Morale.reds, CBHoldBackChance, 1.9.5). Fear is the gang's
-  // fear of V as 0..1; a broken gang adds BrokenGangFear, one that has lost ground LostGroundFear. A rank-
-  // and-file nerve of 0.5 takes 0.3 off; every friend within the radius takes off HoldBackPerBacker.
-  // At fear 0.8 a ganger alone holds back four times in five; at 0.5, one in three; under 0.3, never.
+  // Holding back from V on the street (Reactions/Morale.reds, CBHoldBackChance). Fear is the gang's fear of V as 0..1;
+  // a broken gang adds BrokenGangFear, one that has lost ground LostGroundFear.
   public static func BrokenGangFear() -> Float = 0.35
   public static func LostGroundFear() -> Float = 0.10
   public static func HoldBackNerveWeight() -> Float = 0.6
@@ -1054,15 +954,10 @@ public abstract class CBConfig {
   public static func FleeHealthThreshold() -> Float = 25.0   // health % below which they may run
   public static func FleeChance() -> Float = 0.5             // else they fight to the death
   public static func EscapeDistance() -> Float = 60.0        // ran this far from V = got away
-  // Both of these are fast ticks, about a real second each. They were compared against the
-  // in-game clock, which runs about eight times faster, so "two minutes" to get away was fifteen
-  // real seconds and somebody V knocked out was declared spared three real seconds later - in the
-  // middle of the fight, with a text saying they had walked away breathing, and before V had any
-  // chance to finish them.
+  // Both of these are fast ticks, about a real second each.
   public static func EscapeTimeoutTicks() -> Int32 = 120    // give up tracking an escapee after this
-  // Someone you put down and left does not run anywhere, so there is nothing to wait for.
-  // Two minutes of standing around before the Rival existed is why sparing felt like it did
-  // nothing at all. It also needs V to have walked off: out of the fight, or well away.
+  // Someone you put down and left does not run anywhere, so there is nothing to wait for. Two minutes of standing
+  // around before the Rival existed is why sparing felt like it did nothing at all.
   public static func SparedResolveTicks() -> Int32 = 25
   // However the fight goes, a Rival's mercy is settled by this point. Anyone else's waits for V
   // to actually leave them (SparedLeftDistance), or for the body to stream out.
@@ -1091,30 +986,28 @@ public abstract class CBConfig {
   // Enough for every body of ours alive at once, and the ones just gone (CBApplyApexBuild).
   public static func BuiltRecordCap() -> Int32 = 64
 
-  // ---- Tribute (spec §9.8) ---------------------------------------------
-  // Rolled once an in-game day per gang that qualifies. A quarter left a gang that qualified about four
-  // in-game days (some twelve hours of play) before it paid; a half is about two. The week between
-  // payments still holds.
+  // ---- Tribute (spec §9.8) --------------------------------------------- Rolled once an in-game day per gang that
+  // qualifies.
   public static func TributeChance() -> Float = 0.5
   public static func TributeCooldownDays() -> Float = 7.0
-  // 75 until 1.9.3. A gang's fear is Dread scaled by how well it knows V, and Dread itself could
-  // not get past the sixties, so outside the Scavs nobody ever paid.
+  // A gang's fear is Dread scaled by how well it knows V, and Dread itself could not get past the sixties, so outside
+  // the Scavs nobody ever paid.
   public static func TributeFearThreshold() -> Float = 65.0
-  // What the two hardest titles ask (Model/TitleEngine.reds). They asked for Dread 90 and a gang's
-  // fear at 85, which the sums could not produce for any gang but the Scavs (1.9.3).
+  // What the two hardest titles ask (Model/TitleEngine.reds). They asked for Dread 90 and a gang's fear at 85, which
+  // the sums could not produce for any gang but the Scavs.
   public static func TitleDreadNeeded() -> Float = 80.0
   public static func TitleFearNeeded() -> Float = 75.0
   public static func TributeRenownThreshold() -> Float = 50.0
 
   // ---- Hit squads (spec §9.9) ------------------------------------------
   public static func HitSquadFactionCooldownDays() -> Float = 2.0
-  // The grudge clock (2.6.5, Spawn/Grudge.reds), in game hours and multipliers on a gang's or a Rival's patience.
+  // The grudge clock (Spawn/Grudge.reds), in game hours and multipliers on a gang's or a Rival's patience.
   public static func GrudgeSlowHours() -> Float = 24.0       // just over the line into Hostile
   public static func GrudgeFastHours() -> Float = 3.0        // the bottom of Vendetta
   public static func GrudgeFloorHours() -> Float = 1.5
-  // Before V is known (2.7.0, CBMercStanding): the Street Cred at which V's name carries in full, about where the Heist
-  // falls; what share of renown V earns, how much longer gangs and Rivals wait, and what share of the Rivals that would
-  // be made are made, at Street Cred 0, each easing to the full amount by StandingFullCred; and the Street Cred before
+  // Before V is known (CBMercStanding): the Street Cred at which V's name carries in full, about where the Heist falls;
+  // what share of renown V earns, how much longer gangs and Rivals wait, and what share of the Rivals that would be
+  // made are made, at Street Cred 0, each easing to the full amount by StandingFullCred; and the Street Cred before
   // which no gang sends its best.
   public static func StandingFullCred() -> Float = 20.0
   public static func EarlyRenownShare() -> Float = 0.4
@@ -1138,35 +1031,25 @@ public abstract class CBConfig {
   // Further out than an ambush, out of sight, and they have to come and find V (Spawn/Hunt.reds).
   // These were 42 to 50 m, which is behind you rather than coming for you.
   public static func HitSquadMinSpawnDistance() -> Float = 85.0
-  // Rivals spawn closer than hit squads so they immediately perceive V and give chase.
-  // Close enough that V meets them before driving off. At 35 m a Rival could spawn behind
-  // you, lose you to a vehicle, and be despawned before either of you noticed.
-  // Far enough back that spawnInView = false has somewhere to work. At twenty metres a single
-  // camera turn put the point in view, and the engine then declines the spawn without saying
-  // so - which read as a Rival that was due and never came. They are told to run at V on
-  // arrival (CBOrderHunt), so the extra distance costs nothing.
+  // Rivals spawn closer than hit squads so they immediately perceive V and give chase. Close enough that V meets them
+  // before driving off.
   public static func RivalSpawnDistance() -> Float = 80.0
 
-  // How many downed enemies the mercy sweep looks at per fast tick. The sweep exists because
-  // the hit hook alone misses anyone who drops to damage that does not raise a hit event we
-  // see (a burn, a quickhack tick, an explosion, another mod's damage).
+  // How many downed enemies the mercy sweep looks at per fast tick.
   public static func SparedSweepPerTick() -> Int32 = 10
 
-  // ---- Quiet work (spec §16) ---------------------------------------------
-  // How long the "do not walk in on a stealth job" hold outlives the game's own Stealth
-  // state. The game only reports it while V is crouched, so this covers standing up to
-  // cross a room without handing anyone a window to arrive in.
+  // ---- Quiet work (spec §16) --------------------------------------------- How long the "do not walk in on a stealth
+  // job" hold outlives the game's Stealth state.
   public static func StealthHoldGraceTicks() -> Int32 = 25
 
-  // ---- Archetypes (spec §8.3) -------------------------------------------
-  // How much a plain lethal kill says about you. Small on purpose: killing an armed ganger
-  // in a firefight is the job, not butchery. A long enough body count still gets there.
+  // ---- Archetypes (spec §8.3) ------------------------------------------- How much a plain lethal kill says about
+  // you. Small on purpose: killing an armed ganger in a firefight is the job, not butchery.
   public static func ButcherPerLethalKill() -> Float = 0.2
   // Finishers, dismemberment, blades and fists. This is what Butcher is actually measuring.
   public static func ButcherPerBrutalKill() -> Float = 1.5
   // Lethal with nobody left to report it.
   public static func GhostPerUnseenKill() -> Float = 1.5
-  // On top of the plain kill, for one in an open fight (2.5.1): going in shooting is the body count Butcher measures.
+  // On top of the plain kill, for one in an open fight: going in shooting is the body count Butcher measures.
   public static func ButcherPerLoudKill() -> Float = 0.6
 
   // ---- Witnesses (spec §8.5) -------------------------------------------
@@ -1207,17 +1090,14 @@ public abstract class CBConfig {
   public static func LeaderHealthMult() -> Float = 1.25
   public static func LieutenantHealthMult() -> Float = 1.1
 
-  // ---- Succession (spec §10.1) ------------------------------------------
-  // The chance someone steps into a slain Rival's place: the base plus this per rank of the one
-  // you put down, so a rank 1 is 40% and a rank 4 is 85% before the Rival frequency setting. A crew
-  // cannot be decapitated in a single fight, and killing a small name usually settles it. Until the
-  // 1.9.0 bug pass the base was the officer-kill avenger's 60%, so even a rank 1 came back 72%.
+  // ---- Succession (spec §10.1) ------------------------------------------ The chance someone steps into a slain
+  // Rival's place: the base plus this per rank of the one you put down, so a rank 1 is 40% and a rank 4 is 85% before
+  // the Rival frequency setting.
   public static func SuccessionChanceBase() -> Float = 0.25
   public static func SuccessionChancePerRank() -> Float = 0.15
 
-  // ---- Spawn ground probe (mid-air spawn fix) --------------------------
-  // The spawn point is a flat offset behind V, so the floor under it is often not at V's own
-  // height. These drive the downward trace that finds the real floor (see CBGroundAt).
+  // ---- Spawn ground probe (mid-air spawn fix) -------------------------- The spawn point is a flat offset behind V,
+  // so the floor under it is often not at V's own height.
   public static func GroundProbeUp() -> Float = 3.0      // start the ray this far above the guess
   public static func GroundProbeDown() -> Float = 25.0   // and look this far below it
   // Minimum upward tilt of the hit surface for it to count as a floor rather than a wall or
@@ -1226,38 +1106,24 @@ public abstract class CBConfig {
   // A floor further than this from V's own height is another level - a roof, the bottom of a
   // shaft - so the point is moved in toward V instead of used.
   // How far above or below V a spawn point's floor may be.
-  //
-  // This was fifteen metres, which is three storeys: a billboard, an awning or a first floor
-  // walkway all passed as "the same level", and the raycast is perfectly happy to find the top
-  // of a sign. That is the enemy standing in mid-air next to a hoarding. Somebody arriving to
-  // fight you is on your level or they are no use to anybody.
   public static func GroundMaxDrop() -> Float = 3.5
-  // Set them down a hair above the floor so they never start clipped into it.
-  // Clearance above the floor a spawn is placed on. A tenth of a metre left somebody
-  // intersecting the surface they had just been put on, which the engine resolves by dropping
-  // them into a ragdoll.
+  // Set them down a hair above the floor so they never start clipped into it. Clearance above the floor a spawn is
+  // placed on.
   public static func GroundSpawnLift() -> Float = 0.35
-  // Only used where the navigation system cannot be asked at all. Every other spawn is created
-  // on the navmesh point itself (CBSettleOnGround / CBStandOnNavmesh): an NPC is not dropped by
-  // physics when it is created, so 0.35 m of lift was 0.35 m of hovering.
-  //
-  // How far above a navmesh point the floor probe starts. Just enough to catch a floor a hair
-  // above the navmesh; three metres (GroundProbeUp) found awnings and ledges instead.
+  // Only used where the navigation system cannot be asked at all.
   public static func NavFloorProbeUp() -> Float = 0.5
-  // A hair of clearance over the navmesh point or the floor, whichever is higher. The game's
-  // own pursuers use the point exactly; this only keeps the feet out of the surface.
+  // A hair of clearance over the navmesh point or the floor, whichever is higher. The game's pursuers use the point
+  // exactly; this only keeps the feet out of the surface.
   public static func NavSpawnClearance() -> Float = 0.03
   // How far a raycast floor point may be from the navmesh under it and still be that point.
   public static func NavFloorSnapRadius() -> Float = 1.5
   public static func NavFloorSnapHeight() -> Float = 0.6
-  // How far a candidate point may sit above the floor underneath it and still count as that
-  // floor's. Two metres covers navmesh that rides a little proud of the collision surface and a
-  // kerb or a step; anything further means the point is over a drop, not on ground.
+  // How far a candidate point may sit above the floor underneath it and still count as that floor's.
   public static func SpawnGroundSettle() -> Float = 2.0
   // Nobody stands inside anybody else. Enough for two people to be distinct bodies and small
   // enough that a squad still reads as a squad.
   public static func SpawnMinSeparation() -> Float = 1.6
-  // Chippin' In (2.7.6, Reactions/ChippinIn.reds): V's health down and back up, in percent; how long V stays down at least
+  // Chippin' In (Reactions/ChippinIn.reds): V's health down and back up, in percent; how long V stays down at least
   // (the knockdown is 4.1 s), how long at most before getting up alone, and how close they must be to count as there.
   public static func ChipInDownHealth() -> Float = 5.0
   public static func ChipInUpHealth() -> Float = 50.0
@@ -1265,12 +1131,12 @@ public abstract class CBConfig {
   public static func ChipInMinDownSeconds() -> Float = 4.5
   public static func ChipInMaxDownSeconds() -> Float = 14.0
   public static func ChipInReachDistance() -> Float = 4.0
-  // V's people in V's car (2.7.6, Reactions/CrewCar.reds): how long a seat just given stays theirs while they walk to it,
-  // how long somebody asked out of a car may sit there before being lifted out, and how slow the car must be for that.
+  // V's people in V's car (Reactions/CrewCar.reds): how long a seat just given stays theirs while they walk to it, how
+  // long somebody asked out of a car may sit there before being lifted out, and how slow the car must be for that.
   public static func SeatWalkSeconds() -> Float = 8.0
   public static func UnmountStuckSeconds() -> Float = 5.0
   public static func UnmountStillSpeed() -> Float = 1.0
-  // How long a spawn point stays taken for every other group (2.7.6, CBPointIsFree), and how many are remembered.
+  // How long a spawn point stays taken for every other group (CBPointIsFree), and how many are remembered.
   public static func RecentSpawnSeconds() -> Float = 12.0
   public static func RecentSpawnCap() -> Int32 = 40
   // How far the rest of a group may form up from the first one placed. Keeps a squad together
@@ -1287,10 +1153,7 @@ public abstract class CBConfig {
   public static func SpawnMaxFacingCosine() -> Float = 0.342
   // And the shortest distance worth queuing an out-of-view spawn at.
   public static func SpawnMinDistance() -> Float = 25.0
-  // Bearings tried around V before giving up, starting directly behind and widening. Every
-  // candidate point used to lie on the one line behind the player, so a wall, a building or a
-  // drop in that direction failed all of them for the same reason and the encounter was
-  // refused while perfectly good ground sat to either side.
+  // Bearings tried around V before giving up, starting directly behind and widening.
   public static func SpawnBearingTries() -> Int32 = 9
   public static func SpawnPerRank() -> Int32 = 4
   public static func SpawnRankSpacing() -> Float = 3.0
@@ -1301,10 +1164,8 @@ public abstract class CBConfig {
   public static func HuntStopDistance() -> Float = 3.0
   public static func HuntStopSpread() -> Float = 8.0
 
-  // ---- Arriving by car (spec 9.9) ----
-  // Far enough out that the car is not seen appearing and has room to build up speed. Under
-  // ChaseLoseDistance on purpose, and a car on its way never counts as lost whatever the distance
-  // (Spawn/Hunt.reds).
+  // ---- Arriving by car (spec 9.9) ---- Far enough out that the car is not seen appearing and has room to build up
+  // speed.
   public static func VehicleArrivalDistance() -> Float = 110.0
   // How many of the game's pursuit points a car arrival may try when the navmesh anchor has no
   // room for a car (CBCarSpawnPoint). Each costs two overlap tests and a floor trace.
@@ -1314,13 +1175,6 @@ public abstract class CBConfig {
   public static func CarsPerArrivalDefault() -> Int32 = 4
   public static func ConvoyCarTries() -> Int32 = 4
   // The box a car needs to be clear before one is put there, in metres.
-  //
-  // These are half extents: SpatialQueriesSystem.Overlap takes half the box, as the game's own
-  // calls do (NPCPuppet.script, queryDimensions * 0.5). They were written as the car's full size,
-  // so the box asked for was five metres by nine by two, starting twenty centimetres off the
-  // ground: wider than a lane, longer than a truck, and stopped by a lamp post, a kerb or a road
-  // with any slope to it. Very little of Night City passes that, which is half of why a car so
-  // seldom got as far as being sent.
   public static func CarFitWidth() -> Float = 1.2
   public static func CarFitLength() -> Float = 2.6
   public static func CarFitHeight() -> Float = 0.7
@@ -1330,8 +1184,6 @@ public abstract class CBConfig {
   // One beat for the mounts to settle before the driver is given orders.
   public static func CarStartDelay() -> Float = 0.3
   // A vendetta crew waiting up the road for a V who is driving (Spawn/Arrival.reds, CBAmbushSpot).
-  // How often a crew does this instead of chasing, how fast V must be going for "up the road" to
-  // mean anything, how far ahead they park, and how near V comes before they pull out.
   public static func AmbushChance() -> Float = 0.5
   public static func AmbushMinSpeed() -> Float = 8.0
   public static func AmbushDistance() -> Float = 150.0
@@ -1344,9 +1196,8 @@ public abstract class CBConfig {
   public static func ChaseDistanceMin() -> Float = 3.0
   public static func ChaseDistanceMax() -> Float = 12.0
   public static func ChaseStartSpeed() -> Float = 10.0
-  // Metres a second. This was 80, nearly 290 km/h through city traffic, which is why crews arrived by
-  // driving into things. The game's own police send this exact order at 20 and 10, and stop 20 m
-  // short (preventionSystem.script, the drive to the police strategy's destination).
+  // Metres a second. This was 80, nearly 290 km/h through city traffic, which is why crews arrived by driving into
+  // things.
   public static func ArrivalDriveMaxSpeed() -> Float = 20.0
   public static func ArrivalDriveMinSpeed() -> Float = 10.0
   public static func ArrivalStopDistance() -> Float = 20.0
@@ -1377,13 +1228,10 @@ public abstract class CBConfig {
   public static func PendingHoldGiveUpTicks() -> Int32 = 120
 
   // ---- Can a car even get here (spec 9.9) ------------------------------
-  //
 
   // ---- Messages on the phone (spec 12.2) -------------------------------
   //
-  // The card is authored in 1080p units and scaled by the same fit the Hub uses. Positioned on
-  // the left at a little above the middle, which is where the game's own incoming SMS appears -
-  // the point is that it reads as the phone rather than as a mod.
+  // The card is authored in 1080p units and scaled by the same fit the Hub uses.
   public static func PhoneCardRows() -> Int32 = 3
   public static func PhoneCardWidth() -> Float = 580.0
   public static func PhoneCardHeight() -> Float = 118.0
@@ -1401,18 +1249,13 @@ public abstract class CBConfig {
   // Three wrapped lines on a card this wide. Anything longer is a paragraph, and a message
   // that needs a paragraph is a message that needed cutting.
   public static func PhoneBodyMaxChars() -> Int32 = 180
-  // The threads in the phone. Session only; see the note in UI/PhoneMessages.reds about why
-  // they are not persisted. Senders are bounded (a handle per gang, a broker per district and a
-  // few unknown numbers), so the thread cap is there for safety rather than expected to bind.
+  // The threads in the phone. Session only; see the note in UI/PhoneMessages.reds about why they are not persisted.
   public static func PhoneThreadCap() -> Int32 = 64
   public static func PhoneMessageCap() -> Int32 = 240
   // How much of one thread the phone draws. A thread longer than this shows its newest lines.
   public static func PhoneThreadShown() -> Int32 = 30
-  // The quietest the phone is allowed to be busy. A player on 1.4.7 reported it "constantly
-  // blowing up", and the mod has a sender per gang, a broker per district and a few unknown
-  // numbers, so a busy few minutes really can ring repeatedly. Messages are always filed in
-  // their thread and always mark it unread; this only limits how often one of them is allowed
-  // to put a notification on screen, in real seconds.
+  // The quietest the phone is allowed to be busy. Messages are always filed in their thread and always mark it unread;
+  // this only limits how often one of them is allowed to put a notification on screen, in real seconds.
   public static func PhoneNotifyGapSeconds() -> Float = 9.0
   // A message identical to the last one from the same contact, within this long, is the same
   // message arriving twice - the second one is filed but never announced. ("Pretty sure I'm
@@ -1422,30 +1265,29 @@ public abstract class CBConfig {
   // Messages waiting for a settled tick. More than this in one go is a burst, and the newest
   // are the ones worth a notification; the rest are still filed in their threads.
   public static func PhonePendingCap() -> Int32 = 6
-  // In Phone mode, how long waiting messages hold their notification for a phone to attach after a
-  // load or a fast travel, in real seconds (1.9.1). Past this they stay in their threads unannounced.
+  // In Phone mode, how long waiting messages hold their notification for a phone to attach after a load or a fast
+  // travel, in real seconds. Past this they stay in their threads unannounced.
   public static func PhoneAttachWaitSeconds() -> Float = 45.0
   // Word getting around (CBPhone.Hearsay). Defaults for the two settings, used before Mod
   // Settings is up.
   public static func WordTravelMinutesDefault() -> Int32 = 30
   public static func InboxGapSecondsDefault() -> Int32 = 90
-  // News waits until V has been out of any fight this long (real seconds), 2.6.1.
   public static func WordCalmSeconds() -> Float = 60.0
   // Word from further off takes one more travel time a district, up to this many (so at most three times as long).
   public static func WordMaxHops() -> Int32 = 2
-  // How long a gang's people take to reach V, against the usual warning, by districts from their nearest streets (2.6.1,
-  // CBArrivalTicks): on their own turf, two away, three or more.
+  // How long a gang's people take to reach V, against the usual warning, by districts from their nearest streets
+  // (CBArrivalTicks): on their own turf, two away, three or more.
   public static func ArrivalHomeMult() -> Float = 0.6
   public static func ArrivalFarMult() -> Float = 1.35
   public static func ArrivalAcrossCityMult() -> Float = 1.7
-  // Cleared streets (Spawn/ClearedStreets.reds, 2.6.1): this many of one gang dead in a fight clears them off this far
-  // round the last body for this many in-game days; at most this many spots kept.
+  // Cleared streets (Spawn/ClearedStreets.reds): this many of one gang dead in a fight clears them off this far round
+  // the last body for this many in-game days; at most this many spots kept.
   public static func ClearKills() -> Int32 = 6
   public static func ClearRadius() -> Float = 70.0
   public static func ClearDays() -> Float = 3.0
   public static func ClearSpotsCap() -> Int32 = 24
-  // Hangouts (Spawn/Hangouts.reds, 2.6.1): looked for every this many ticks; on a gang's turf with none of theirs within
-  // this range, this likely; this many of them, this far off; packed up past this distance or after this many hours.
+  // Hangouts (Spawn/Hangouts.reds): looked for every this many ticks; on a gang's turf with none of theirs within this
+  // range, this likely; this many of them, this far off; packed up past this distance or after this many hours.
   public static func HangoutLookTicks() -> Int32 = 120
   public static func HangoutScarceRange() -> Float = 120.0
   public static func HangoutChance() -> Float = 0.6
@@ -1453,10 +1295,10 @@ public abstract class CBConfig {
   public static func HangoutDistance() -> Float = 60.0
   public static func HangoutLeaveDistance() -> Float = 300.0
   public static func HangoutHours() -> Float = 2.0
-  // Gangs putting their price to V: one every this many in-game hours, the first this long after a load (2.6.1).
+  // Gangs putting their price to V: one every this many in-game hours, the first this long after a load.
   public static func PeaceOfferSpacingHours() -> Float = 2.0
   public static func PeaceOfferFirstHours() -> Float = 0.5
-  // The same gang's spoken warning, at most once in this many in-game hours (2.6.1); the warning itself still happens.
+  // The same gang's spoken warning, at most once in this many in-game hours; the warning itself still happens.
   public static func GangWarnLineHours() -> Float = 1.0
   // From this many of theirs dead, a gang's warning is about what V did to them, never its words for a stranger.
   public static func WarnKnowsYouKills() -> Int32 = 20
@@ -1465,17 +1307,15 @@ public abstract class CBConfig {
   public static func HearsayRepeatHours() -> Float = 6.0
   // Stories waiting at once, and how many recently told ones are remembered for that window.
   public static func HearsayQueueCap() -> Int32 = 12
-  // The longest word waits in the queue, in real seconds (2.7.7, CBPhone.ReleaseWord): then it comes inside the inbox gap.
+  // The longest word waits in the queue, in real seconds (CBPhone.ReleaseWord): then it comes inside the inbox gap.
   public static func HearsayMaxWaitReal() -> Float = 240.0
   public static func HearsayToldCap() -> Int32 = 32
   // The same contact sending the same words inside this many in-game hours is filed once.
   public static func PhoneDuplicateHours() -> Float = 1.0
-  // Where Cyberbane's contacts sit in the phone's hash space. Real contacts use hashes of their
-  // journal paths, spread over the whole Int32 range; a block of 64 at a fixed odd value is
-  // vanishingly unlikely to meet one, and every check also confirms the thread exists.
+  // Where Cyberbane's contacts sit in the phone's hash space.
   public static func PhoneHashBase() -> Int32 = 1128415233
-  // Overheard lines: a line of the game's own subtitles (UI/PhoneMessages.reds, 1.9.5). With the game's
-  // subtitles switched off, Cyberbane's own line is drawn where they would be.
+  // Overheard lines: a line of the game's subtitles (UI/PhoneMessages.reds). With the game's subtitles switched off,
+  // Cyberbane's own line is drawn where they would be.
   public static func OverheardSeconds() -> Float = 5.5
   public static func OverheardFloor() -> Float = 3.5
   public static func OverheardWidth() -> Float = 1100.0
@@ -1483,16 +1323,8 @@ public abstract class CBConfig {
 
   // ---- Keeping an arrival out of frame ---------------------------------
   //
-  // "They pop out of nowhere like the old police spawns" is the most repeated complaint about
-  // this mod, and `spawnInView = false` on the entity spec does not answer it: the flag is
-  // advisory and the engine honours it by delaying rather than refusing.
-  //
-  // The facing threshold is SpawnMaxFacingCosine, further down, which CBNavAnchor has used
-  // since 1.1.5. There is deliberately not a second one here: the group anchor and the
-  // pursuit points are answering the same question and had better answer it the same way.
-  //
-  // In front of V, but this far away, so all the player sees is somebody walking into frame
-  // rather than appearing. Deliberately generous: at this range a body is a few pixels.
+  // There is deliberately not a second one here: the group anchor and the pursuit points are answering the same
+  // question and had better answer it the same way.
   public static func SpawnInViewFarDistance() -> Float = 70.0
   // Eye height for the line-of-sight trace, so the ray clears a kerb and is stopped by a wall.
   public static func SpawnEyeHeight() -> Float = 1.5
@@ -1508,10 +1340,6 @@ public abstract class CBConfig {
   // How much of its own contribution Cyberbane keeps when New Game Plus is also buffing NPCs.
   public static func ApexNgpStepDown() -> Float = 0.5
   // Size of one random trait, as a fraction added on top of the stat it touches.
-  //
-  // Was 0.6, which at full strength put another 42% on health or armour on top of a
-  // multiplier that was already too high. A trait is supposed to make two apexes from the same
-  // gang fight differently, not to be a second difficulty slider.
   public static func ApexTraitStrength() -> Float = 0.25
   public static func ApexPowerLevelBonus() -> Float = 2.0
   // How many enforcers turn up when a gang sends its apex by car. A full car of them is the
@@ -1526,9 +1354,7 @@ public abstract class CBConfig {
   public static func RivalLadderSteps() -> Int32 = 6
   // What a Rival is worth the first time you meet them, as a fraction of an apex.
   public static func RivalGradeFloor() -> Float = 0.45
-  // How far up the ladder a Rival has to be before they get the boss bar. Zero means every
-  // Rival gets it, which is the intent: a Rival is built to apex grade from the first meeting,
-  // so the bar is not flattery, it is telling the truth about what is in front of you.
+  // How far up the ladder a Rival has to be before they get the boss bar.
   public static func RivalBossBarGrade() -> Float = 0.0
 
   // ---- Brokering peace (spec 11.3) ----
@@ -1545,24 +1371,21 @@ public abstract class CBConfig {
   public static func MessageHoldDefault() -> Int32 = 175
   // Nothing is shown for less than this, however short the caller asked for.
   public static func MessageMinSeconds() -> Float = 5.0
-  // The card on screen keeps its whole time and the next waits behind it (2.6.3, UI/Notify.reds): at most this many in
-  // line, each dropped once it has waited this long; and no card is ever up longer than this, so a clock that reads
-  // past it is from before a load. Up to 2.6.2 a card was dropped within 3.5 s of the last and replaced after it.
+  // The card on screen keeps its whole time and the next waits behind it (UI/Notify.reds): at most this many in line,
+  // each dropped once it has waited this long; and no card is ever up longer than this, so a clock that reads past it
+  // is from before a load.
   public static func CardQueueCap() -> Int32 = 3
   public static func CardStaleSeconds() -> Float = 20.0
   public static func MessageMaxSeconds() -> Float = 60.0
-  // A card is taken down this long after the game should have faded it, if it has not (UI/Notify.reds, 2.5.6).
-  public static func MessageClearSlackSeconds() -> Float = 2.0   // past the game's own fade, so a card that did go is never cut short
+  // A card is taken down this long after the game should have faded it, if it has not (UI/Notify.reds).
+  public static func MessageClearSlackSeconds() -> Float = 2.0   // past the game's fade, so a card that did go is never cut short
 
   // ---- Vendetta hit squads ----
   // Smallest share of the full crew that turns out, before menace scales it up.
   public static func VendettaSquadFloorFraction() -> Float = 0.6
   public static func VendettaSquadSizeDefault() -> Int32 = 20
 
-  // ---- Who comes next (spec 9.9) ----
-  // How much each kind of contender wants the next turn. A vendetta outranks an ordinary
-  // grudge, a gang ready to send its best outranks an ordinary crew, and a Rival with history
-  // outranks a new one once their rank and escapes are added on.
+  // ---- Who comes next (spec 9.9) ---- How much each kind of contender wants the next turn.
   public static func QueueScoreVendetta() -> Float = 100.0
   public static func QueueScoreApex() -> Float = 85.0
   public static func QueueScoreRival() -> Float = 55.0
@@ -1576,19 +1399,8 @@ public abstract class CBConfig {
   public static func ApexQueueTicks() -> Int32 = 180
   // Minutes a lane rests after its encounter ends, before it looks for anybody new.
   public static func EncounterGapMinutesDefault() -> Int32 = 10
-  // What one in-game day holds, per kind. Three Rivals, two crews and two apex squads is a
-  // day with a shape to it: busy enough that the city is clearly after you, bounded enough
-  // that it ends. Each lane counts separately, so a full day of Rivals does not use up the
-  // crews.
-  // Set against the clock rather than by feel. An in-game day is 24 hours and the world clock
-  // runs about 8.1x real time, so a day is roughly 178 minutes of actually playing. At the old
-  // 3/2/2 that is one Rival every 59 real minutes and something of any kind every 25, which is
-  // most of an evening spent waiting - and the Hub said so, in plain minutes.
-  //
-  // 8/5/4 puts something on you every 10 real minutes: Rivals every 22, crews every 36, apex
-  // squads every 45. Apex stays the rare one, which is what makes it land.
-  // How long you may be left waiting at the start of a session before something is pulled
-  // forward. 0.5 in-game hours is about four minutes of real play.
+  // What one in-game day holds, per kind. Three Rivals, two crews and two apex squads is a day with a shape to it: busy
+  // enough that the city is clearly after you, bounded enough that it ends.
   public static func FirstSlotMaxWaitHours() -> Float = 0.5
   public static func RivalsPerDayDefault() -> Int32 = 8
   public static func HitSquadsPerDayDefault() -> Int32 = 5
@@ -1611,23 +1423,18 @@ public abstract class CBConfig {
   // what the police in this game give you, and the reason a chase is a chase and not a leash.
   public static func ChaseLoseDistance() -> Float = 120.0
   public static func ChaseLoseTicks() -> Int32 = 22
-  // How long an ordinary hostile gang takes to put a crew together, at its slowest and its
-  // fastest. Scaled between the two by how much they hate you and how well they know you.
-  // The warning window once a lane picks somebody. Short on purpose: the long wait between
-  // encounters is the rest period above, and this is only how much notice you get.
+  // How long an ordinary hostile gang takes to put a crew together, at its slowest and its fastest. Scaled between the
+  // two by how much they hate you and how well they know you. The warning window once a lane picks somebody.
   public static func HostileSquadTicksMin() -> Int32 = 90
   public static func HostileSquadTicksMax() -> Int32 = 240
   // How well a gang has to know you before they bother sending anyone.
   public static func HitSquadMinRenown() -> Float = 25.0
 
-  // ---- Faction apex enforcer (spec §9.9) -------------------------------
-  // Bodies from one gang before they stop sending squads and send someone who matters. Kept
-  // deliberately reachable: a couple of serious run-ins with the same crew gets you there.
+  // ---- Faction apex enforcer (spec §9.9) ------------------------------- Bodies from one gang before they stop
+  // sending squads and send someone who matters.
   public static func ApexKillThreshold() -> Int32 = 20
-  // Fast ticks between the warning and the apex actually walking in (~seconds), so the line
-  // lands before they do instead of alongside them.
-  // Fast ticks between the warning and the apex arriving. Long enough to read as a countdown
-  // in the Hub and to brace for, short enough that you have not driven to another district.
+  // Fast ticks between the warning and the apex actually walking in (~seconds), so the line lands before they do
+  // instead of alongside them. Fast ticks between the warning and the apex arriving.
   public static func ApexWarningTicks() -> Int32 = 45
   public static func ApexSpawnDistance() -> Float = 90.0
   // Muscle that comes in with them. Built from the gang's rank-and-file record.
@@ -1635,35 +1442,8 @@ public abstract class CBConfig {
   // How long, in fast ticks, an apex squad that arrived short keeps walking in its missing
   // chairs (Spawn/FactionApex.reds, CBApexMusterTick).
   public static func ApexMusterTicks() -> Int32 = 120
-  // The apex is built from a gang archetype, which on its own is nowhere near a boss, so the
-  // spawned one is lifted to boss grade. The lift scales with how dangerous V actually is
-  // (menace: level, Street Cred and skills), so a maxed-out merc gets a real fight instead of
-  // a sponge that dies in a burst, and someone just starting out is not simply deleted.
-  // Base applies at no build at all, base + range at full menace.
-  // An apex is meant to read as the worst thing that gang has. These are deliberately big:
-  // What an apex is worth in raw survivability.
-  //
-  // Third pass at these numbers, and the first one driven by more than one report of the same
-  // thing: enemies nothing could kill. The target is a cyberpsycho, which is a fight you have
-  // to take seriously and can win with the gun you are carrying. It is not a boss with a
-  // health bar measured in magazines.
-  //
-  // The history is worth keeping, because the arithmetic is what went wrong rather than the
-  // intent. 1.2.6 had 10x..25x health behind 4x..10x armour. 1.3.0 cut that to 2.5x..5x and
-  // 1.5x..3x and called it done, which still multiplied out: the stated range is only the
-  // first of four terms. A random trait could add another 42% to health or armour, the
-  // Overclocked trait added ten power levels (and the game derives health, armour and damage
-  // from power level, so that term multiplies everything again), and a Rival who was running a
-  // crew took a further 2x on top of all of it. A leader Rival at the top of the ladder came
-  // out near eleven times health behind three and a half times armour, several levels above
-  // its own gang. That is the immortal enemy, and no single number in the file looked wrong.
-  //
-  // So two things change. The numbers below come down to a cyberpsycho's territory, and
-  // CBApplyApexGradeBuff now folds the traits and the role into one multiplier per stat and
-  // clamps it against the ceilings underneath, so no combination of them can compound into a
-  // wall again. The tactical half of the brief is carried by the kit in ApexSquad.reds - cover,
-  // advancing fire, anti-stun, reinforcements, seeing through optical camo - which is what makes
-  // an apex a different fight rather than a longer one.
+  // The apex is built from a gang archetype, which on its own is nowhere near a boss, so the spawned one is lifted to
+  // boss grade.
   public static func ApexHealthMultBase() -> Float = 1.6
   public static func ApexHealthMultRange() -> Float = 1.4     // 1.6x .. 3x before strength
   public static func ApexArmorMultBase() -> Float = 1.2
@@ -1677,31 +1457,22 @@ public abstract class CBConfig {
 
   // The ceilings. Nothing Cyberbane does to an NPC may take a stat past these, whatever the
   // slider, the menace, the traits, the ladder and the role add up to.
-  //
-  // This is the part that was missing. Every term above was individually defensible and the
-  // product of them was not, and there was no single place that knew the product. There is
-  // now: CBApplyApexGradeBuff combines everything and clamps it here, so the worst enemy the
-  // mod can build is a known quantity rather than an emergent one.
   public static func ApexHealthMultCeiling() -> Float = 3.0
-  // Apex squads, Rivals and named hunters matched to V (2.6.1, Spawn/MeasureV.reds): each takes this many seconds of V's
-  // steady fire at a middling strength (half again at 100, half at 0), answers this share of V's armour, and never passes
-  // these ceilings.
+  // Apex squads, Rivals and named hunters matched to V (Spawn/MeasureV.reds): each takes this many seconds of V's
+  // steady fire at a middling strength (half again at 100, half at 0), answers this share of V's armour, and never
+  // passes these ceilings.
   public static func ApexMatchSeconds() -> Float = 6.0
   public static func RivalMatchSeconds() -> Float = 10.0
   // ICE an enemy brings against a netrunner V, at a full answer.
   public static func CounterIce() -> Float = 30.0
   // Evasion (the share of hits that do nothing at all, which the game rolls for every target, damageSystem.script
-  // ProcessEvasion) an enemy brings against a quick V, at a full answer. It stands where a Kerenzikov stood in 2.6.1:
-  // cyberware the game never built its NPCs to fire, which crash rule 5 keeps off every one of Cyberbane's people.
+  // ProcessEvasion) an enemy brings against a quick V, at a full answer.
   public static func CounterEvasion() -> Float = 8.0
   public static func ApexArmourAnswer() -> Float = 0.5
   public static func ApexMatchHealthCeiling() -> Float = 15.0
   public static func ApexMatchDamageCeiling() -> Float = 2.5
-  // Adam Smasher's scaling, shared out (2.6.1, CBSmasherScale): an apex squad member gets this share of his health and
-  // damage multipliers at the lowest and the highest Apex strength; a Rival this share, times how far up they are. Never
-  // more than SmasherCeilingShare of Smasher himself; his damage curve is taken at his own 0.7. No single hit takes more
-  // than this percent of their health, from the lowest to the highest strength, and down to RivalHitCapTop at the top
-  // of a Rival's climb.
+  // Adam Smasher's scaling, shared out (CBSmasherScale): an apex squad member gets this share of his health and damage
+  // multipliers at the lowest and the highest Apex strength; a Rival this share, times how far up they are.
   public static func ApexSmasherShareMin() -> Float = 0.15
   public static func ApexSmasherShareMax() -> Float = 0.4
   public static func RivalSmasherShareMin() -> Float = 0.2
@@ -1712,22 +1483,16 @@ public abstract class CBConfig {
   public static func ApexHitCapAtMax() -> Float = 10.0
   public static func RivalHitCapTop() -> Float = 8.0
   public static func ApexArmorMultCeiling() -> Float = 1.8
-  // Nobody Cyberbane sends is beyond V's reach (2.7.2, Spawn/Killable.reds): the finished body carries no more effective
+  // Nobody Cyberbane sends is beyond V's reach (Spawn/Killable.reds): the finished body carries no more effective
   // health (health, and what armour multiplies it by) than this many seconds of V's measured damage, from the lowest to
-  // the highest Rival, for an apex squad, and for anybody else Cyberbane builds; KillableBlindMult times what it carried
-  // before the build when V's damage cannot be read. Armour never divides a hit by more than KillableArmourFactor. While
-  // V lands hits, once they add up to KillableWatchWindow of the body's health, and KillableUndoneShare of it has come
-  // back, whatever brought it back comes off. Hits closer together than KillableBurstSeconds count as one burst.
-  // A gang's home (2.7.2, Spawn/GangHomes.reds): somebody is placed there when V comes this close.
+  // the highest Rival, for an apex squad, and for anybody else Cyberbane builds; KillableBlindMult times what it
+  // carried before the build when V's damage cannot be read.
   public static func GangHomeReach() -> Float = 150.0
   public static func GangHomeStepOut() -> Float = 60.0
-  // The crew at home (2.7.2, Reactions/CrewHome.reds): the stash counts as the armory within ArmoryReach of V, and the
-  // watch takes up a fight of Cyberbane's within GuardDefendRange of its post.
+  // The crew at home (Reactions/CrewHome.reds): the stash counts as the armory within ArmoryReach of V, and the watch
+  // takes up a fight of Cyberbane's within GuardDefendRange of its post.
   public static func ArmoryReach() -> Float = 25.0
-  // The crew at work (2.7.2, Reactions/CrewJobs.reds). Odds: a base, plus CrewJobPerRank for each of the member's ranks
-  // and a little for gear, chrome, training and a spar's edge; a hit loses CrewHitPerRivalRank for each of the Rival's
-  // ranks and gains CrewHitFlawBonus when the crew knows the weak spot. Hours away; a hit that misses leaves the Rival
-  // wounded CrewHitWoundShare of the time; a job gone wrong kills the member up to CrewJobDeathBase (less by rank).
+  // The crew at work (Reactions/CrewJobs.reds).
   public static func CrewJobPerRank() -> Float = 0.06
   public static func CrewHitBase() -> Float = 0.30
   public static func CrewHitPerRivalRank() -> Float = 0.08
@@ -1761,16 +1526,13 @@ public abstract class CBConfig {
   public static func CrewRunHatedBelow() -> Int32 = -40
   public static func CrewRunJumpHated() -> Float = 0.15
   public static func CrewRunJumpPerExtra() -> Float = 0.05
-  // Goods (2.7.2): GoodsShare of robbed bags, worth GoodsWorthMult of the cash, losing GoodsStalePerDay of it a day and
-  // gone after GoodsLifeDays. Sold back to their owners for GoodsSellBackShare, to their sworn enemies for GoodsEnemyMult.
-  // Signature chrome (2.7.2, Rivals/Signature.reds): from this rank a Rival comes back on one of their gang's signature
-  // records, and is that much likelier to drop an iconic.
+  // Goods: GoodsShare of robbed bags, worth GoodsWorthMult of the cash, losing GoodsStalePerDay of it a day and gone
+  // after GoodsLifeDays. Sold back to their owners for GoodsSellBackShare, to their sworn enemies for GoodsEnemyMult.
   public static func SignatureRank() -> Int32 = 3
   public static func LootIconicSignatureBonus() -> Float = 0.10
-  // Strongholds (2.7.2, Rivals/Strongholds.reds): a Rival of StrongholdMinRank or more takes a cleared base, at most
+  // Strongholds (Rivals/Strongholds.reds): a Rival of StrongholdMinRank or more takes a cleared base, at most
   // StrongholdMax in the city, for StrongholdDays; the garrison is placed within StrongholdReach and goes past
-  // StrongholdLeave; StrongholdSize in all, only with StrongholdMinRoom free. Cleared, the gang loses StrongholdGangLoss
-  // (a Rival's own death is six) and ground in the district, and V is paid.
+  // StrongholdLeave; StrongholdSize in all, only with StrongholdMinRoom free.
   public static func StrongholdMinRank() -> Int32 = 3
   public static func StrongholdMax() -> Int32 = 2
   public static func StrongholdDays() -> Float = 7.0
@@ -1784,13 +1546,13 @@ public abstract class CBConfig {
   public static func StrongholdTurfLoss() -> Float = 25.0
   public static func StrongholdPay() -> Int32 = 5000
   public static func StrongholdLtGrade() -> Float = 0.8
-  // A cleared stronghold's stash is laid once the fight is over and V is this close to where they kept it (2.7.3).
+  // A cleared stronghold's stash is laid once the fight is over and V is this close to where they kept it.
   public static func StrongholdStashReach() -> Float = 60.0
-  // Two cleared gigs this close are one place (2.7.5): a gig played again is not a second base.
+  // Two cleared gigs this close are one place: a gig played again is not a second base.
   public static func StrongholdSameSite() -> Float = 40.0
-  // How near V a spot has to be for the Badlands part V stands in to name it (2.7.4, CBPlacePhrase).
+  // How near V a spot has to be for the Badlands part V stands in to name it (CBPlacePhrase).
   public static func SubDistrictNear() -> Float = 400.0
-  // An add-on's convoy (API/Convoy.reds, 2.7.4): put on the road once V is this near where it is on paper; a route point
+  // An add-on's convoy (API/Convoy.reds): put on the road once V is this near where it is on paper; a route point
   // counts as reached this close; escorts this far behind the lead (each further one four metres more); and the ticks
   // its crews have to board before it drives anyway.
   public static func ConvoyReach() -> Float = 300.0
@@ -1798,15 +1560,15 @@ public abstract class CBConfig {
   public static func ConvoyGapMin() -> Float = 6.0
   public static func ConvoyGapMax() -> Float = 18.0
   public static func ConvoyBoardTicks() -> Int32 = 20
-  // A convoy in a fight that V has been out of reach of for this many ticks got away (2.7.5).
+  // A convoy in a fight that V has been out of reach of for this many ticks got away.
   public static func ConvoyGotAwayTicks() -> Int32 = 60
-  // API level 2 (2.7.5): CBListener.OnTick every this many settled ticks (about two seconds); add-on vehicles out at once;
+  // API level 2: CBListener.OnTick every this many settled ticks (about two seconds); add-on vehicles out at once;
   // how near V an add-on's loot can be laid, metres.
   public static func ApiListenerTickEvery() -> Int32 = 2
   public static func ApiVehicleMax() -> Int32 = 4
   public static func ApiLootReach() -> Float = 100.0
-  // Much Better Contracts (2.7.5): at most this many of its completed contracts counted as jobs at one look, so a count
-  // that jumps for any other reason (its own history repair) cannot pour Renown in.
+  // Much Better Contracts: at most this many of its completed contracts counted as jobs at one look, so a count that
+  // jumps for any other reason (its own history repair) cannot pour Renown in.
   public static func MbcJobsPerLook() -> Int32 = 3
   public static func GoodsShare() -> Float = 0.3
   public static func GoodsWorthMult() -> Float = 1.4
@@ -1835,26 +1597,19 @@ public abstract class CBConfig {
   // without hiding a multiplier inside it.
   public static func ApexPowerLevelCeiling() -> Float = 3.0
 
-  // ---- Rivals (spec §10.2, §10.7, Appendix A) --------------------------
-  // Rivals only land if they actually happen. Each of these is the base for one way of becoming a
-  // Rival, for an ordinary member of a gang, before CBRivalOdds weighs it: the Rival frequency
-  // setting, how much the person counted for (a lookout 0.5x up to an elite 1.4x), and how many
-  // Rivals the last few minutes already made (RivalBurstTicks: the second in a fight is half as
-  // likely, the third a third). The ceiling is last. So the first person who gets away from V is
-  // still more likely than not to come back, an officer more so, and one fight makes one or two
-  // names rather than a crowd of them.
+  // ---- Rivals (spec §10.2, §10.7, Appendix A) -------------------------- Rivals only land if they actually happen.
   public static func RivalChanceSurvivor() -> Float = 0.6
   public static func RivalChanceSpared() -> Float = 0.6
   public static func RivalBurstTicks() -> Int32 = 300
   public static func RivalOddsCeiling() -> Float = 0.95
-  // A Rival a fight makes is made once V has been out of combat this many settled ticks (about
-  // seconds), chosen afresh for each (Rivals/Births.reds, 1.9.1). And how many may wait at once.
+  // A Rival a fight makes is made once V has been out of combat this many settled ticks (about seconds), chosen afresh
+  // for each (Rivals/Births.reds). And how many may wait at once.
   public static func RivalBirthCalmMin() -> Int32 = 30
   public static func RivalBirthCalmMax() -> Int32 = 60
   public static func RivalBirthQueueCap() -> Int32 = 6
-  // Hostile to V and not by Cyberbane (Reactions/Director.reds, NoteForeignHostility, 1.9.1): how
-  // often one NPC's attitude is read, how long a sighting stops the faction being read again, and how
-  // long the Gangs screen goes on saying so, all in settled ticks (about seconds).
+  // Hostile to V and not by Cyberbane (Reactions/Director.reds, NoteForeignHostility): how often one NPC's attitude is
+  // read, how long a sighting stops the faction being read again, and how long the Gangs screen goes on saying so, all
+  // in settled ticks (about seconds).
   public static func ForeignHostileReadTicks() -> Int32 = 10
   public static func ForeignHostileFreshTicks() -> Int32 = 60
   public static func ForeignHostileShowTicks() -> Int32 = 1800
@@ -1864,16 +1619,12 @@ public abstract class CBConfig {
   // How far a gang's opinion of V moves when one of theirs puts V down. Standing is V's
   // footing with them, so beating V costs V footing: they have seen that it can be done.
   public static func DeathStandingDrop() -> Float = 6.0
-  // Killing an Officer or Boss: somebody of theirs takes it personally. Weighed by rank like the
-  // rest, so an officer is 50% and a boss 60%. It used to be a flat 60% for either, and officers lead
-  // most gang groups, so a fight with three of them made a Rival of nearly every one. A slain Rival's
-  // successor has its own numbers now (SuccessionChanceBase).
+  // Killing an Officer or Boss: somebody of theirs takes it personally. Weighed by rank like the rest, so an officer is
+  // 50% and a boss 60%.
   public static func RivalChanceAvenger() -> Float = 0.40
   public static func RivalChanceHunter() -> Float = 0.50
-  // How long a Rival takes to track you down, in fast ticks (roughly seconds). A higher
-  // rank has better information and finds you sooner. This replaced a per-slow-tick dice
-  // roll, which meant a Rival might show up in ten seconds or never, and nothing could be
-  // shown to the player because nothing was actually scheduled.
+  // How long a Rival takes to track you down, in fast ticks (roughly seconds). A higher rank has better information and
+  // finds you sooner.
   public static func RivalHuntTicksBase() -> Int32 = 240
   public static func RivalHuntTicksPerRank() -> Int32 = 35
   public static func RivalHuntTicksMin() -> Int32 = 75
@@ -1898,31 +1649,18 @@ public abstract class CBConfig {
   public static func LieutenantEscort() -> Int32 = 1
   // How far up the Rival queue a Grudge-Bearer jumps.
   public static func QueueGrudgeBonus() -> Float = 10.0
-  // ---- Earning a gang's respect without killing for it -------------------
-  // Before 1.5.5 the only way standing could rise was killing a gang's enemies, so the only
-  // road to Friendly ran through somebody else's body. These are the other roads.
-  //
-  // What a gang minds about one of theirs being put down, when they are still breathing. The
-  // same hit as a kill was being taken either way, which made mercy pointless.
-  //
-  // A quarter until 1.9.3, which against the credit below still came out as a loss for every
-  // knockout (a ganger -0.1, an officer -1.1), on the road the Hub tells players to take. At a
-  // tenth, leaving a ganger breathing earns a little, an elite breaks even, and putting their
-  // officers and bosses on the floor still costs.
+  // These are the other roads.
   public static func NonLethalStandingShare() -> Float = 0.1
   // The share of a kill's Dread that putting somebody down alive adds (Model/Reputation.reds).
   public static func NonLethalDreadShare() -> Float = 0.25
-  // What each one of theirs V leaves alive is worth to them, and how far that alone can carry.
-  // At this rate Friendly (15) is a long run of restraint and nothing better - mercy makes a
-  // gang tolerate V, it does not make them allies. Only hurting their enemies does that.
+  // What each one of theirs V leaves alive is worth to them, and how far that alone can carry. At this rate Friendly
+  // (15) is a long run of restraint and nothing better - mercy makes a gang tolerate V, it does not make them allies.
   public static func MercyCredit() -> Float = 0.4
   public static func MercyCeiling() -> Float = 20.0
   // Letting a named Rival of theirs walk is worth more than sparing a nobody.
   public static func MercyRivalCredit() -> Float = 3.0
 
-  // Gangs at war (Model/GangRivalries.reds). Hurting a gang raises its enemies' standing with V
-  // by this share of what it lost, never past the ceiling: a witnessed ganger is +1 with each
-  // enemy, so Friendly (15) takes a run of work and Allied (50) takes a campaign.
+  // Gangs at war (Model/GangRivalries.reds).
   public static func RivalGangShare() -> Float = 0.5
   public static func RivalGangCeiling() -> Float = 75.0
   // A gang V has killed members of can like V's enemies' enemies only so far: just short of Allied.
@@ -1979,7 +1717,7 @@ public abstract class CBConfig {
   // streamed out (Spawn/Spawner.reds, CBSweepRemains).
   public static func RemainsSweepDistance() -> Float = 70.0
   // While V is still in a fight, somebody lying there (dead, or down and breathing) stays within this many metres of V
-  // whether V can see them or not (2.7.6, CBRemainsInReach): the fight can move across a street and back.
+  // whether V can see them or not (CBRemainsInReach): the fight can move across a street and back.
   public static func RemainsFightDistance() -> Float = 150.0
   public static func RemainsCap() -> Int32 = 96
   // The most of Cyberbane's people alive in the world at once (Spawn/Spawner.reds, CBSpawnGroup).
@@ -1997,17 +1735,13 @@ public abstract class CBConfig {
   public static func CombatReleaseTicks() -> Int32 = 30
   // Metres closer since the last two-second pass that counts as still coming.
   public static func CombatReleaseClosing() -> Float = 2.0
-  // Somebody cut off from V (Spawn/Hunt.reds, CBCutOffTick). How often they are looked at, how far
-  // they have to move to count as going somewhere, how many routes one pass may work out, when they
-  // stop counting as being in the fight and when they are taken out, in seconds.
+  // Somebody cut off from V (Spawn/Hunt.reds, CBCutOffTick).
   public static func CutOffPassTicks() -> Int32 = 3
   public static func CutOffRoam() -> Float = 6.0
   public static func CutOffPathsPerPass() -> Int32 = 4
   public static func CutOffQuietTicks() -> Int32 = 21
   public static func CutOffTicks() -> Int32 = 45
-  // A walking route (CBPointReachable). It may end this far from where it was asked to, for a V
-  // standing off the navmesh, and is a real route up to this many times the straight line plus
-  // this many metres. Further than that it is another level of the city, not a way here.
+  // A walking route (CBPointReachable). Further than that it is another level of the city, not a way here.
   public static func PathEndTolerance() -> Float = 5.0
   public static func PathDetourMax() -> Float = 3.0
   public static func PathDetourSlack() -> Float = 40.0
@@ -2026,8 +1760,6 @@ public abstract class CBConfig {
   public static func LootLegendaryChanceApex() -> Float = 0.25
   public static func LootLegendaryChanceTop() -> Float = 0.4
   // A small chance per apex member, and per top-ranked Rival or crew leader, of an iconic.
-  // An iconic: an apex fighter, and a Rival at the top of the ladder or leading their gang (2.5.0: 4% and 3% were
-  // seldom seen at all, the second only ever from the few Rivals who get that far).
   public static func LootIconicChanceApex() -> Float = 0.05
   public static func LootIconicChanceRival() -> Float = 0.1
   public static func BountyRivalPerRank() -> Int32 = 1500
@@ -2157,76 +1889,71 @@ public abstract class CBConfig {
   public static func CapSightings() -> Int32 = 48
   // Pins gathered from every active objective (CBRefreshJobPins). A full journal has a few dozen.
   public static func JobPinCap() -> Int32 = 64
-  // A crew this size or bigger brings a netrunner along (Spawn/HitSquad.reds, 1.8.5).
+  // A crew this size or bigger brings a netrunner along (Spawn/HitSquad.reds).
   public static func NetrunnerSeatMinCrew() -> Int32 = 3
-  // Rivals teaming up (1.9.0): how often a Rival who comes brings others of their gang who are free,
-  // when the setting is on; more often for one who holds a chair in the gang's crew or leads a pack.
-  // Each partner walks in RivalTeamSpacing metres further back than the one before.
+  // Rivals teaming up: how often a Rival who comes brings others of their gang who are free, when the setting is on;
+  // more often for one who holds a chair in the gang's crew or leads a pack.
   public static func RivalTeamUpChance() -> Float = 0.3
   public static func RivalTeamUpChanceLeader() -> Float = 0.2
   public static func RivalTeamSpacing() -> Float = 8.0
   // How many of V's clothing items the attached-clothing read looks through (Signals/Concealment.reds).
   // A wardrobe of a few hundred is common; this only bounds a pathological one.
   public static func WornScanCap() -> Int32 = 600
-  // Cyberpsychotic breaks (1.9.0): only a rank 4 Rival, a chance on each loss to V that grows with
-  // how many there have been, never more than the ceiling.
+  // Cyberpsychotic breaks: only a rank 4 Rival, a chance on each loss to V that grows with how many there have been,
+  // never more than the ceiling.
   public static func PsychoBreakBase() -> Float = 0.08
   public static func PsychoBreakPerLoss() -> Float = 0.05
   public static func PsychoBreakMax() -> Float = 0.45
   // Rivals forgotten one at a time, kept in the service for every save of their playthrough.
   public static func CapForgottenRivals() -> Int32 = 64
   public static func CapGangPower() -> Int32 = 96
-  // Which V each playthrough id belongs to (1.8.3). One per playthrough that has loaded since.
+  // Which V each playthrough id belongs to. One per playthrough that has loaded since.
   public static func CapBirths() -> Int32 = 128
   public static func CapTalkTallies() -> Int32 = 120
 
-  // ---- Street talk (Reactions/StreetTalk.reds, 1.9.5) ----
-  // The prompt: how often it is looked at, how close and for how long V has to look at somebody, how
-  // far they may drift and how long V may glance away before it goes, and how long before the same
-  // person can be spoken to again (fast ticks, about a second each).
+  // ---- Street talk (Reactions/StreetTalk.reds) ---- The prompt: how often it is looked at, how close and for how long
+  // V has to look at somebody, how far they may drift and how long V may glance away before it goes, and how long
+  // before the same person can be spoken to again (fast ticks, about a second each).
   public static func TalkTickSeconds() -> Float = 0.2
-  // How long street talk's list holds through the game's own clears without talk's tick renewing it (2.6.7). Five ticks:
-  // talk renews it every tick, so this only runs out if talk itself has stopped.
+  // How long street talk's list holds through the game's clears without talk's tick renewing it. Five ticks: talk
+  // renews it every tick, so this only runs out if talk itself has stopped.
   public static func TalkListHoldSeconds() -> Float = 1.0
-  // How long a text takes to land (2.6.8, UI/PhoneMessages.reds, CBPhone.Post), in real seconds. An answer to V: a base and
-  // a little more for each letter, between the two bounds. Anything else: a reaction. A warning about something on V now:
-  // a moment. Never two closer together than the gap.
+  // How long a text takes to land (UI/PhoneMessages.reds, CBPhone.Post), in real seconds. An answer to V: a base and a
+  // little more for each letter, between the two bounds. Anything else: a reaction.
   public static func TextTypingBase() -> Float = 3.0
   public static func TextTypingPerChar() -> Float = 0.06
   public static func TextTypingMin() -> Float = 4.0
   public static func TextTypingMax() -> Float = 16.0
   public static func TextReactMin() -> Float = 8.0
   public static func TextReactMax() -> Float = 25.0
-  // Urgent (2.7.7): the crew answering a call, somebody on V right now, "they're here". They land on the next tick or
-  // two, never behind the gossip already queued: "On my way" came after the crew was already fighting.
+  // Urgent: the crew answering a call, somebody on V right now, "they're here". They land on the next tick or two,
+  // never behind the gossip already queued: "On my way" came after the crew was already fighting.
   public static func TextUrgentMin() -> Float = 0.3
   public static func TextUrgentMax() -> Float = 1.2
   public static func TextGapMin() -> Float = 3.0
   public static func TextGapMax() -> Float = 7.0
-  // How far from V the people of the gang V is talking to hold their fire while the talking lasts (2.6.7,
-  // Reactions/TalkTruce.reds): as far as a gang's people warn from and shoot from in a street.
+  // How far from V the people of the gang V is talking to hold their fire while the talking lasts
+  // (Reactions/TalkTruce.reds): as far as a gang's people warn from and shoot from in a street.
   public static func TruceRadius() -> Float = 40.0
   public static func TalkRange() -> Float = 3.5
   public static func TalkKeepRange() -> Float = 5.5
   public static func TalkDwell() -> Float = 0.4
   public static func TalkLookGrace() -> Float = 2.0
-  // After a conversation, before the same person can be spoken to again (1.9.6: it used to follow every
-  // single exchange, for 45). 2.5.1: one tick, only so "Talk" does not flash straight back up under the last answer.
   public static func TalkCooldownTicks() -> Int32 = 1
   // How far to the side of V's line of sight the next talkable person may be when the one in front cannot talk.
   public static func TalkNextDot() -> Float = 0.8
   // The hold-position order's length (seconds), renewed every TalkHoldRenewSeconds while the conversation lasts and
-  // let go when it ends (2.5.1: it was one order of ninety seconds, which froze anybody whose cancel was missed).
+  // let go when it ends (it was one order of ninety seconds, which froze anybody whose cancel was missed).
   public static func TalkHoldSeconds() -> Float = 8.0
   public static func TalkHoldRenewSeconds() -> Float = 5.0
   // Somebody who gave up, and a Rival's people holding for a facedown, keep the long hold they always had.
   public static func SurrenderHoldSeconds() -> Float = 90.0
   public static func FacedownHoldSeconds() -> Float = 90.0
-  // How long the game's own interaction prompt may stay up once the person's own talk is switched off before it is
-  // taken for something else's (a door, a pickup) and talk waits for it (2.5.1).
+  // How long the game's interaction prompt may stay up once the person's own talk is switched off before it is taken
+  // for something else's (a door, a pickup) and talk waits for it.
   public static func TalkOwnPromptWait() -> Float = 1.5
   // At most this many bystanders in front of V have their own talk on F switched off at once while one of the game's
-  // prompts stands between V and the person V wants (Reactions/StreetTalk.reds, HushNear, 2.5.2).
+  // prompts stands between V and the person V wants (Reactions/StreetTalk.reds, HushNear).
   public static func TalkHushNearCap() -> Int32 = 6
   // How long "Talk" offered and not pressed holds a facedown's, a parley's or a scout's clock (ticks, CBTalkEngaged).
   // With the lines up it holds for as long as V takes to choose.
@@ -2240,34 +1967,33 @@ public abstract class CBConfig {
   public static func SqueezeSeconds() -> Float = 3.5
   public static func DownedTalkSeconds() -> Float = 2.0
   public static func DownedTalkRange() -> Float = 2.5
-  public static func IntelScanChance() -> Float = 0.5   // a scan turns something up (2.5.0, from 0.35)
+  public static func IntelScanChance() -> Float = 0.5   // a scan turns something up (from 0.35)
   public static func TurnBase() -> Float = 0.25
   public static func InformantSetupChance() -> Float = 0.15
   public static func FlawMinRank() -> Int32 = 3
   public static func FlawChance() -> Float = 0.4
-  // Rivals with a life (Rivals/RivalLife.reds, 1.9.9): the mercy choice's empty-handed moment and its
-  // shortest wait (fast ticks), exile's odds, a successor being family, a Rival calling V out instead of
-  // coming, what finishing a called-out Rival pays, and what each fallen bodyguard costs the Rival.
-  // Once the NPC registry is most of the way full, people farther than this from V make room (1.9.9).
+  // Rivals with a life (Rivals/RivalLife.reds): the mercy choice's empty-handed moment and its shortest wait (fast
+  // ticks), exile's odds, a successor being family, a Rival calling V out instead of coming, what finishing a
+  // called-out Rival pays, and what each fallen bodyguard costs the Rival.
   public static func RegistryKeepRadius() -> Float = 120.0
   public static func MercyHolsterTicks() -> Int32 = 3
-  // Within this of a Rival V put down, V is still deciding: empty hands do not spare them (2.5.1).
+  // Within this of a Rival V put down, V is still deciding: empty hands do not spare them.
   public static func MercyTalkRadius() -> Float = 10.0
   public static func MercyMinTicks() -> Int32 = 4
-  public static func ExileBase() -> Float = 0.7   // less 0.15 a rank above the first (2.5.0, from 0.6)
+  public static func ExileBase() -> Float = 0.7   // less 0.15 a rank above the first (from 0.6)
   public static func KinChance() -> Float = 0.5
   public static func CallOutChance() -> Float = 0.25
   public static func WordKeptRenownShare() -> Float = 0.5
   public static func WordKeptFear() -> Float = 3.0
   public static func GuardNerveLoss() -> Float = 15.0
-  // A living street (Spawn/LivingStreet.reds, 2.0.0). Ticks are fast ticks (seconds).
+  // A living street (Spawn/LivingStreet.reds). Ticks are fast ticks (seconds).
   public static func WhileOutDelayTicks() -> Int32 = 20
   public static func BagmanGapTicks() -> Int32 = 1200
   // A roll about every twenty minutes of free roaming. At 0.35 a bagman came about once an hour of play.
   public static func BagmanChance() -> Float = 0.5
-  // How close V has to be, gun out or running, for a bagman to see V coming and bolt (2.7.7).
+  // How close V has to be, gun out or running, for a bagman to see V coming and bolt.
   public static func BagmanSpotDistance() -> Float = 14.0
-  // Street life by the hour and the weather (2.7.7, CBStreetLifeMood), and hangouts by who holds the streets.
+  // Street life by the hour and the weather (CBStreetLifeMood), and hangouts by who holds the streets.
   public static func StreetNightMult() -> Float = 1.35
   public static func StreetRainMult() -> Float = 0.55
   public static func HeldDistrictHangoutMult() -> Float = 1.5
@@ -2279,9 +2005,8 @@ public abstract class CBConfig {
   public static func FavourDistance() -> Float = 55.0
   public static func FavourLifeTicks() -> Int32 = 600
   public static func FavourPay() -> Int32 = 700
-  // Corporate contracts (2.7.7, Spawn/LivingStreet.reds): looked at every five minutes or so, offered on 40% of those while
-  // no job is open, a corporation resting 8 game hours after it offers. Open for an hour. 2500-3750eb, 8 standing (two make
-  // a corporation friendly from nothing, about seven allied), 4 off the mark's own people.
+  // Corporate contracts (Spawn/LivingStreet.reds): looked at every five minutes or so, offered on 40% of those while no
+  // job is open, a corporation resting 8 game hours after it offers.
   public static func CorpContractEveryTicks() -> Int32 = 300
   public static func CorpContractChance() -> Float = 0.4
   public static func CorpContractLifeTicks() -> Int32 = 3600
@@ -2293,17 +2018,17 @@ public abstract class CBConfig {
   public static func CorpContractRestHours() -> Float = 8.0
   public static func FavourWarmth() -> Float = 2.0
   public static func FavourTipChance() -> Float = 0.35
-  // Who has work, and where the debt is (2.6.4, Spawn/LivingStreet.reds): the share of a friendly gang's people with a
-  // favour to give, the game hours a gang has nothing more after handing one out, how long a debt waits (a trip across
-  // town), how far off it is at least, the chance the one who owes pays when leaned on (more the more the street fears V,
+  // Who has work, and where the debt is (Spawn/LivingStreet.reds): the share of a friendly gang's people with a favour
+  // to give, the game hours a gang has nothing more after handing one out, how long a debt waits (a trip across town),
+  // how far off it is at least, the chance the one who owes pays when leaned on (more the more the street fears V,
   // never past 0.9), and the standing V loses with the gang for killing them.
   public static func FavourGiverChance() -> Float = 0.3
-  // How much you hear (2.6.5, UI/PhoneMessages.reds): chatter let through an in-game hour on Less chatter, and the sim
-  // seconds between lines overheard in passing on Less chatter and on Only what matters.
+  // How much you hear (UI/PhoneMessages.reds): chatter let through an in-game hour on Less chatter, and the sim seconds
+  // between lines overheard in passing on Less chatter and on Only what matters.
   public static func ChatterPerHour() -> Int32 = 2
-  // The street's stories (2.6.5, Spawn/StreetStories.reds): a debtor giving up another name, how far a bagman's drop may be,
-  // how long his walk may take, how near a witness is met, what they cost, a ransom's drop (reach, how long it waits, the
-  // chance it is a trap), wannabes' friends, and how much a crashed sit-down angers the side it hurt most.
+  // The street's stories (Spawn/StreetStories.reds): a debtor giving up another name, how far a bagman's drop may be,
+  // how long his walk may take, how near a witness is met, what they cost, a ransom's drop (reach, how long it waits,
+  // the chance it is a trap), wannabes' friends, and how much a crashed sit-down angers the side it hurt most.
   public static func FavourChainChance() -> Float = 0.35
   public static func BagmanDropMin() -> Float = 100.0
   public static func BagmanDropMax() -> Float = 400.0
@@ -2327,14 +2052,14 @@ public abstract class CBConfig {
   // more of play, before asking for a gang at war with the one holding the district.
   public static func MeetGapTicks() -> Int32 = 1800
   public static func MeetChance() -> Float = 0.5
-  // 2.7.2: 130 m, from 90: somebody watching from across the street or a roof never set a meeting off. Its people are
-  // placed no further than MeetWalkInReach from V (Spawn/StreetEvents.reds, Place).
+  // 130 m, from 90: somebody watching from across the street or a roof never set a meeting off. Its people are placed
+  // no further than MeetWalkInReach from V (Spawn/StreetEvents.reds, Place).
   public static func MeetSpawnDistance() -> Float = 130.0
   public static func MeetWalkInReach() -> Float = 140.0
-  // Street events, made sturdier from the game's own navigation (2.7.3): within this height of the place, its distance is
-  // read along the ground; how far round a navmesh point counts as loaded; how many ticks V waits near a place whose
-  // ground has not loaded before it is tried anyway; the ring of the navmesh's hidden points round the place; and the
-  // ticks between tries when nowhere was out of sight.
+  // Street events, made sturdier from the game's navigation: within this height of the place, its distance is read
+  // along the ground; how far round a navmesh point counts as loaded; how many ticks V waits near a place whose ground
+  // has not loaded before it is tried anyway; the ring of the navmesh's hidden points round the place; and the ticks
+  // between tries when nowhere was out of sight.
   public static func EventSameLevel() -> Float = 30.0
   public static func NavReadyTolerance() -> Float = 6.0
   public static func EventGroundWaitTicks() -> Int32 = 20
@@ -2349,7 +2074,7 @@ public abstract class CBConfig {
   public static func SpawnAheadNear() -> Float = 20.0
   public static func SpawnAheadFar() -> Float = 60.0
   public static func MeetWindowSeconds() -> Float = 5400.0
-  // How far from V a gathering's place is (2.6.8, CBEventFarPlace), in metres: in V's district, a walk or a drive off.
+  // How far from V a gathering's place is (CBEventFarPlace), in metres: in V's district, a walk or a drive off.
   public static func EventPlaceMin() -> Float = 300.0
   public static func EventPlaceMax() -> Float = 1500.0
   public static func MeetGangLoss() -> Float = 4.0
@@ -2394,7 +2119,7 @@ public abstract class CBConfig {
   public static func TalkLiarRevealSeconds() -> Float = 150.0
   // The odds a seller texting a lead comes down when V says it is too much, before their standing and V's Cool.
   public static func PhoneLeadHaggleBase() -> Float = 0.4
-  // 2.5.1: half a minute, from three. Somebody V sent packing is out of reach while they go, not for minutes after.
+  // half a minute, from three. Somebody V sent packing is out of reach while they go, not for minutes after.
   public static func TalkSentRestTicks() -> Int32 = 30
   // How long the prompt keeps away after V reaches for a weapon with it up.
   public static func TalkQuietAfterReach() -> Float = 1.5
@@ -2409,35 +2134,35 @@ public abstract class CBConfig {
   // close an empty-handed V may be to a ganger who has warned V, and for how long after the warning
   // (settled ticks), before they draw; and the odds of talking them down, from the nerve gap like
   // intimidation, held between the two bounds.
-  public static func ParleyRange() -> Float = 35.0   // the whole of NpcEvalRadius, where the warning comes from (2.6.3; was 20)
-  public static func ParleyMaxTicks() -> Int32 = 40  // 2.6.3; was 30
+  public static func ParleyRange() -> Float = 35.0   // the whole of NpcEvalRadius, where the warning comes from (was 20)
+  public static func ParleyMaxTicks() -> Int32 = 40
   public static func ParleyBase() -> Float = 0.4
   public static func ParleyScale() -> Float = 1.2
   public static func ParleyMin() -> Float = 0.1
   public static func ParleyMax() -> Float = 0.85
-  // 2.5.1: about 30 degrees, from 25: the look-at misses people the crosshair is not quite on.
+  // about 30 degrees, from 25: the look-at misses people the crosshair is not quite on.
   public static func TalkFacingDot() -> Float = 0.86
   // The same reason for no prompt is logged at most this often (seconds).
   public static func TalkWhyLogSeconds() -> Float = 8.0
-  // How long after telling V why somebody will not talk before another is told (StreetTalk Explain, 2.1.0).
+  // How long after telling V why somebody will not talk before another is told (StreetTalk Explain).
   public static func TalkExplainGapSeconds() -> Float = 30.0
-  // Cyberbane's hub id on the UIInteractions blackboard: far from the small numbers the game's own use.
+  // Cyberbane's hub id on the UIInteractions blackboard: far from the small numbers the game's use.
   public static func TalkHubId() -> Int32 = 1128415301
   // The exchange: V's line, a beat, then theirs.
   public static func TalkAnswerDelay() -> Float = 1.2
   public static func TalkLineSeconds() -> Float = 2.4
-  // Reading time for a spoken line (2.6.3, CBTalkReadSeconds): this much, and this much a letter, before the hold.
+  // Reading time for a spoken line (CBTalkReadSeconds): this much, and this much a letter, before the hold.
   public static func ReadSecondsBase() -> Float = 1.5
   public static func ReadSecondsPerChar() -> Float = 0.06
-  // A press on the lines counts this long after the list was last seen on screen (2.6.3, StreetTalk ShownJustNow): a
-  // game that keeps clearing the list leaves it gone a frame at a time, and presses landing then were lost.
+  // A press on the lines counts this long after the list was last seen on screen (StreetTalk ShownJustNow): a game that
+  // keeps clearing the list leaves it gone a frame at a time, and presses landing then were lost.
   public static func TalkPressGrace() -> Float = 0.6
   public static func TalkReplySeconds() -> Float = 4.0
-  // Voices in a conversation (2.7.8, Reactions/TalkVoice.reds): a line of theirs this many real seconds after it is asked
-  // for is the answer's; an answer in their words waits this long for them before Cyberbane's own go up; a crowd person's
+  // Voices in a conversation (Reactions/TalkVoice.reds): a line of theirs this many real seconds after it is asked for
+  // is the answer's; an answer in their words waits this long for them before Cyberbane's own go up; a crowd person's
   // voiceset lines are let through for this long, for the one line.
   public static func TalkVoiceWindow() -> Float = 5.0
-  // V's lines are short (the longest of those used, by the game's own length map, runs 3.2 seconds): only that long is a
+  // V's lines are short (the longest of those used, by the game's length map, runs 3.2 seconds): only that long is a
   // line of V's taken as the option's.
   public static func TalkVoiceVWindow() -> Float = 3.5
   public static func TalkVoiceWait() -> Float = 1.0
@@ -2495,17 +2220,12 @@ public abstract class CBConfig {
   // Draws before a new playthrough id gives up looking for one nobody has. Eight hex digits make a
   // second draw already unlikely; this only bounds the loop.
   public static func PlaythroughIdTries() -> Int32 = 32
-  // A save found to be another character's drops a Killer Rival it got from the shared death
-  // ledger only when that death is further ahead of the save's own clock than this (1.8.3). A V
-  // who died and reloaded is behind their own death by however long since the last save, which
-  // is minutes with autosaves; another character's deaths are usually days or weeks away.
+  // A save found to be another character's drops a Killer Rival it got from the shared death ledger only when that
+  // death is further ahead of the save's own clock than this.
   public static func ForeignDeathMarginSeconds() -> Float = 86400.0
 
-  // ---- Turf wars (Model/Territory.reds) -----------------------------------
-  // What V costs a gang: each of their people put down, an officer or elite, a boss, a Rival of
-  // theirs, a crew wiped out, their apex squad wiped out. Knocked out counts half.
-  // A ganger on the corner is the easiest thing in Night City to replace (2.7.0): 0.8 broke Maelstrom and the Scavengers
-  // in one evening of scanner jobs in Watson. The people who lead them still cost what they did.
+  // ---- Turf wars (Model/Territory.reds) ----------------------------------- What V costs a gang: each of their people
+  // put down, an officer or elite, a boss, a Rival of theirs, a crew wiped out, their apex squad wiped out.
   public static func GangLossMember() -> Float = 0.5
   public static func GangLossOfficer() -> Float = 3.0
   public static func GangLossBoss() -> Float = 8.0
@@ -2519,8 +2239,8 @@ public abstract class CBConfig {
   // The words the street uses, and the texts that go with crossing them.
   public static func GangBleedingStrength() -> Float = 50.0
   public static func GangBrokenStrength() -> Float = 30.0
-  // What share of its usual crew a gang at no strength at all would send (Spawn/Queue.reds,
-  // CBCrewSizeFor, 1.9.5); in between it scales with strength, so at the floor (15) about three in five.
+  // What share of its usual crew a gang at no strength at all would send (Spawn/Queue.reds, CBCrewSizeFor); in between
+  // it scales with strength, so at the floor (15) about three in five.
   public static func CrewStrengthFloorShare() -> Float = 0.5
   // Below this, a gang's districts are open to a gang at war with them from next door, and the push
   // such a gang makes, against a native's strength squared.
@@ -2572,13 +2292,13 @@ public abstract class CBConfig {
   public static func LeadLifetimeHours() -> Float = 24.0
   // V within this distance of the place puts the Rival there, out of V's sight.
   public static func LairPlaceDistance() -> Float = 85.0
-  // No closer to V than this, wherever V is standing. It was 30 m and measured from the place
-  // itself, so V standing at the pin was too close for anybody ever to be put there (1.7.1).
+  // No closer to V than this, wherever V is standing. It was 30 m and measured from the place itself, so V standing at
+  // the pin was too close for anybody ever to be put there.
   public static func LairMinDistance() -> Float = 10.0
   // Further than this from a waiting Rival who never noticed V, and they are taken back out.
   public static func LairLeaveDistance() -> Float = 160.0
-  // Buying where a Rival is (the Hub's Ambush button, 1.8.2). A rank-one name costs about a mid gig's
-  // pay, a gang's leader a good deal more, and well under the bounty on any of them.
+  // Buying where a Rival is (the Hub's Ambush button). A rank-one name costs about a mid gig's pay, a gang's leader a
+  // good deal more, and well under the bounty on any of them.
   public static func WhereaboutsPriceBase() -> Int32 = 1500
   public static func WhereaboutsPricePerRank() -> Int32 = 1000
   // When nobody has seen them anywhere usable, the seller tracks them down near V: out past the range
@@ -2594,9 +2314,9 @@ public abstract class CBConfig {
   public static func LairSearchRadius() -> Float = 12.0
   public static func LairOuterSearchRadius() -> Float = 22.0
   public static func LairTryEveryTicks() -> Int32 = 3
-  // 1.9.3. How long somebody V put down at their place is given to be logged as a mercy before the
-  // place lets go of them; a third ring of spots to try; and when V, standing this close to the pin
-  // with nobody placed for this many tries, is told why.
+  // How long somebody V put down at their place is given to be logged as a mercy before the place lets go of them; a
+  // third ring of spots to try; and when V, standing this close to the pin with nobody placed for this many tries, is
+  // told why.
   public static func LairDownWaitTicks() -> Int32 = 20
   public static func LairFarSearchRadius() -> Float = 32.0
   public static func LairHintDistance() -> Float = 45.0

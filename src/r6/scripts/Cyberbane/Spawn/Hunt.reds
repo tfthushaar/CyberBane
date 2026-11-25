@@ -1,31 +1,6 @@
 // Cyberbane - Being hunted (spec §9.11)
 //
-// A player put the problem better than any note in this file had: "I don't feel like I'm being
-// hunted, I just feel like an arbitrary timer spawns hard to kill mobs on me." They were right
-// about how it worked. Everyone Cyberbane sent was placed a short way behind V and handed V's live
-// position, refreshed every few seconds for the whole encounter, so a hunt was an ambush with a
-// target lock. Nobody ever had to find V, so nobody could ever fail to.
-//
-// The police in this game are the model players already know. They are told roughly where you
-// are, they search, they converge when they see you, they search where they last saw you when you
-// break contact, and if you stay gone they give up. This file is that, for the people Cyberbane
-// sends:
-//
-//   Dispatched   the gang or the Rival tells you they are coming, and you get lead time.
-//   Searching    they arrive further out and run a closing ring around where they think you are.
-//                That starts as a rough tip and tightens the longer they look.
-//   Located      one of them has seen you, or heard you: gunfire and bodies carry. Now they get
-//                your position, and only while somebody can actually see you.
-//   Lost         nobody has seen you for a while: they go back to searching where you were last
-//                seen, and if that comes to nothing for long enough, they give up.
-//
-// What "seen" means is deliberately the game's own idea of it: a hunter who is in combat with V,
-// or one close enough to see V with nothing in the way, by the same visibility test the witness
-// system uses (StimReactionComponent.IsTargetVisible). Noise is a kill or a firefight within
-// earshot of a hunter.
-//
-// The state is session only and global: there is one answer to "do the people after you know
-// where you are", whichever lane sent them, which is also how the police work.
+// Hunters search from where V was last seen instead of being handed V's position, so V can get away.
 
 public func CBHuntNone() -> Int32 = 0
 public func CBHuntSearching() -> Int32 = 1
@@ -44,7 +19,7 @@ public func CBHuntBegin(sys: ref<CyberbaneSystem>, game: GameInstance, faction: 
   let near = Equals(faction, CBTrackerGang(game)) || CBBetrayerKnowsHaunts(sys, faction) ? CBConfig.TrackedTipMult()
                                                                                           : CBHauntTipMult(sys, game);
   let tip = new Vector4(p.X + (rough.X - p.X) * near, p.Y + (rough.Y - p.Y) * near, rough.Z, 1.0);
-  // A lie V had the street carry (Reactions/Allies.reds, [69], 2.4.5): they start looking somewhere else entirely.
+  // A lie V had the street carry (Reactions/Allies.reds, [69]): they start looking somewhere else entirely.
   if CBTakeLie(game, faction) {
     tip = new Vector4(p.X + (rough.X - p.X) * CBConfig.LieTipMult(), p.Y + (rough.Y - p.Y) * CBConfig.LieTipMult(), rough.Z, 1.0);
   }
@@ -59,7 +34,7 @@ public func CBHuntBegin(sys: ref<CyberbaneSystem>, game: GameInstance, faction: 
     sys.SetHuntFromTip(true);
     sys.SetHuntTipWord(p, sys.GetTickCount());
     CBHuntStartSearch(sys);
-    // A new hunt: nobody has been picked off unseen yet, and other mods can hear it started (2.4.6).
+    // A new hunt: nobody has been picked off unseen yet, and other mods can hear it started.
     let huntBook = CBHuntBook.Get(game);
     if IsDefined(huntBook) {
       huntBook.darkKills = 0;
@@ -123,9 +98,6 @@ public func CBHuntersOut(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool 
 public func CBHuntPending(sys: ref<CyberbaneSystem>) -> Bool {
   let rivalComing = sys.GetRivalWarned() > 0 && sys.GetLaneRivalId(CBLaneRival()) == sys.GetRivalWarned();
   // A car on its way counts too: its crew are in the world only once the car has arrived.
-  // So does an apex squad still being brought up to four (Spawn/FactionApex.reds): the chairs it
-  // is still walking in are on their way, and the hunt is not over before they get here.
-  // And a bounty hunter who has texted and is on the clock (Spawn/Bounty.reds, 2.4.3).
   return NotEquals(sys.GetScoutFaction(), n"")
       || NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetPendingApexFaction(), n"")
       || sys.HasPendingArrival() || sys.HasConvoyLegs() || sys.GetRivalCarPending() > 0
@@ -133,9 +105,8 @@ public func CBHuntPending(sys: ref<CyberbaneSystem>) -> Bool {
       || rivalComing || CBBountyComing(sys.GetGameInstance());
 }
 
-// Send one hunter where the hunt says they should go: at V while V is located, otherwise to a
-// point near where V is thought to be. Used by spawn setup, the car watch and the hunt tick, so a
-// hunter is never handed V's position by some other door.
+// Send one hunter where the hunt says they should go: at V while V is located, otherwise to a point near where V is
+// thought to be.
 public func CBOrderPursue(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(puppet) || puppet.cbMoraleBroken || puppet.cbFacedownHeld {
     return;
@@ -146,10 +117,8 @@ public func CBOrderPursue(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   if IsDefined(des) && des.IsTagged(puppet.GetEntityID(), n"CB_Orphan") {
     return;
   }
-  // Every order on foot comes through here. While V is safe there is nowhere to send anybody
-  // (Spawn/Sanctuary.reds), and they are asked again once V is not.
-  // Nor onto a job (1.8.4), even once they have found V.
-  // Nor across home ground (2.7.1, Spawn/HomeGround.reds).
+  // Every order on foot comes through here. While V is safe there is nowhere to send anybody (Spawn/Sanctuary.reds),
+  // and they are asked again once V is not. Nor onto a job, even once they have found V.
   if IsDefined(sys) && (sys.IsInSanctuary() || sys.IsOnJob() || CBHomeHolds(sys, sys.GetHuntFaction())) {
     CBCancelMove(puppet);
     puppet.cbSearchGen = 0;
@@ -185,11 +154,6 @@ public let cbSearchGen: Int32;
 
 // Does this searcher need somewhere new to look? Only once they have got where they were sent,
 // or the walk has gone on too long, or a new search has started since.
-//
-// Every searcher used to be handed a brand new point every eight seconds whether or not they had
-// got anywhere near the last one. Together with points that nobody could walk to (see
-// CBHuntPickSearchPoint), that is the "they teleport around every few seconds" report: the
-// order was replaced before it could ever be walked.
 func CBHuntNeedsNewPoint(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedPuppet>) -> Bool {
   if puppet.cbSearchGen == 0 || puppet.cbSearchGen != sys.GetHuntSearchGen() {
     return true;
@@ -211,16 +175,6 @@ func CBHuntNarrowing(sys: ref<CyberbaneSystem>) -> Float {
 }
 
 // The middle of the search.
-//
-// After contact is lost it is where V was last seen, and stays there: V broke away, and they only
-// know where that happened. Before anybody has found V at all it is the tip they set off with,
-// which could be up to HuntTipError out - and it stayed that far out for the whole search. The
-// circle narrowed round the wrong spot, so somebody standing still where the warning found them
-// was searched for thirty or sixty metres away until the hunters gave up, never seen and never
-// seen coming: "the countdown ends and they never show up", with the health bar on screen. The
-// tip now firms up as they ask around, towards the street's latest word on where V is, which is
-// only refreshed every so often (HuntTipWordTicks). It is still not V's position: they still
-// have to see V, crouching and the dark still hide V, and moving on still leaves them behind.
 public func CBHuntSearchCenter(sys: ref<CyberbaneSystem>) -> Vector4 {
   let lkp = sys.GetHuntLkp();
   if !sys.IsHuntFromTip() {
@@ -239,28 +193,6 @@ func CBHuntRadius(sys: ref<CyberbaneSystem>) -> Float {
 }
 
 // Somewhere on the closing ring that this hunter can actually walk to.
-//
-// "They don't actively search for me, they just walk around and hit me if they find me." That is
-// what this asked of them. Each searcher drew a random point anywhere in a circle fifty metres
-// wide, walked the last twenty metres of it, drew another, and nothing about any of it depended on
-// where anybody else was or brought them closer together, so a crew was a handful of people
-// strolling about a neighbourhood for a minute and a half. Now the circle is a ring that closes:
-// each searcher runs in on their own side of it, so a crew arrives from several directions, and a
-// searcher already inside it cuts across. The middle is the street's latest word on V
-// (CBHuntSearchCenter), so standing still gets V found in well under a minute and moving on still
-// leaves them behind.
-//
-// The point used to be any spot in the circle, at V's height, checked against nothing but job
-// sites - and when every try was near a job site (V had just finished one) the last try was used
-// anyway. So hunters were sent into walls, onto roofs, into the middle of the air over a drop and
-// into sealed lots. The game cannot walk an NPC to a place like that, and what it does instead,
-// out of the player's sight, is put them there: the searchers who jumped from spot to spot on the
-// minimap and vanished from the scanner after a couple of seconds. Every point is now a floor
-// with navmesh on it that this hunter has a path to, the same tests a spawn point has to pass.
-// False when there is none; the hunter is then left where they are and asked again shortly.
-// An apex squad that has lost V searches as one ([U4], 2.3.2): the first of them to pick a spot names it for the
-// squad, and the rest search round the same spot, a few metres apart, until it goes stale. Everybody else picks
-// their own, as before.
 public func CBHuntPickSearchPoint(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>,
                                   out point: Vector4) -> Bool {
   let des = GameInstance.GetDynamicEntitySystem();
@@ -341,18 +273,15 @@ func CBHuntPickOwnPoint(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: r
   return false;
 }
 
-// A floor at this spot, near this height, with navmesh on it, and not inside anywhere the game
-// protects. Every point anybody is sent to search comes through here, and a ring around V in the
-// corridor outside their apartment has the apartment in it.
+// A floor at this spot, near this height, with navmesh on it, and not inside anywhere the game protects.
 func CBHuntStandAt(game: GameInstance, x: Float, y: Float, zHint: Float, out at: Vector4) -> Bool {
   let gz: Float;
   return CBGroundAt(game, x, y, zHint, gz) && AbsF(gz - zHint) <= CBConfig.HuntSearchMaxDrop()
       && CBStandOnNavmesh(game, x, y, gz, at) && !CBPointIsSafeArea(game, at);
 }
 
-// Get somewhere and look around. A position rather than V, and released when they get there or the
-// moment combat starts. Nobody on a hunt walks: walking the last of every leg is what made a crew
-// look like people out for a stroll. A sprint across the ground, a run once they are close.
+// Get somewhere and look around. A position rather than V, and released when they get there or the moment combat
+// starts. Nobody on a hunt walks: walking the last of every leg is what made a crew look like people out for a stroll.
 public func CBOrderSearch(game: GameInstance, puppet: ref<ScriptedPuppet>, point: Vector4) -> Void {
   if !IsDefined(puppet) {
     return;
@@ -395,12 +324,7 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     // that has just been sent takes a moment to appear), the hunt is over.
     if !CBHuntPending(sys) && sys.GetHuntState() != CBHuntNone() {
       if sys.BumpHuntIdleTicks() >= CBConfig.HuntIdleEndTicks() {
-        // Nobody of ours is in the world, but that is not the same as nobody being left. V can
-        // simply have gone far enough for them to stream out, and they stay registered: the
-        // hunt used to end here with them still on the books, so they came back into the world
-        // as hostile hunters whenever V next passed that way (starting a hunt from nowhere), and
-        // a Rival among them stayed "hunting" with a body nobody could reach. V got away from
-        // them, so it ends the way getting away does.
+        // Nobody of ours is in the world, but that is not the same as nobody being left.
         if !sys.CarRecentlyOnTheWay() && CBHuntersLeftBehind(sys, game, des) {
           // Every Rival of the encounter whose body has left the world, the one leading and anyone
           // who came with them (Spawn/RivalEncounter.reds).
@@ -425,13 +349,6 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     } else {
       sys.SetHuntIdleTicks(0);
       // Nobody has arrived yet, so nobody has started looking.
-      //
-      // The hunt is opened when the warning goes out, a minute or two before anybody is in the
-      // world, and every clock on it ran from that moment. So they turned up with most of their
-      // patience already spent and the ring already closed tight around wherever V stood when the
-      // text arrived, gave it a few seconds and left. All of it starts now: from word on where V
-      // is today, when they get here.
-      // Unless V has broken the trail since the word went out (2.7.1, Spawn/Slip.reds): then the word stays where V was.
       if sys.GetHuntState() == CBHuntSearching() && sys.IsHuntFromTip() && !CBSlipBroken(game) {
         let waiting = sys.GetTickCount();
         let vAt = player.GetWorldPosition();
@@ -453,8 +370,8 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let ppos = player.GetWorldPosition();
   let now = sys.GetTickCount();
 
-  // Home ground (2.7.1, Spawn/HomeGround.reds) holds them the way a job does: nobody is sent looking, nobody is handed V,
-  // and somebody already fighting V close by goes on fighting.
+  // Home ground (Spawn/HomeGround.reds) holds them the way a job does: nobody is sent looking, nobody is handed V, and
+  // somebody already fighting V close by goes on fighting.
   let jobLike = sys.IsOnJob() || CBHomeHolds(sys, sys.GetHuntFaction());
   // V got somewhere safe: orders taken back, and nobody who has lost sight of V goes on after them.
   // First, so the question below is asked of people who have already stopped.
@@ -464,9 +381,9 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
       CBLog.Info(n"Spawn", "You are somewhere safe: they will not follow you in.");
     }
   } else {
-    // On a job, the same (1.8.4). Search orders already stopped here, but only until somebody had
-    // found V: from then on they chased V into the job, which is how a Valentino hunting V walked
-    // into a Maelstrom building in the middle of a gig. Anybody who can see V still fights.
+    // On a job, the same. Search orders already stopped here, but only until somebody had found V: from then on they
+    // chased V into the job, which is how a Valentino hunting V walked into a Maelstrom building in the middle of a
+    // gig.
     if jobLike {
       CBSanctuaryHold(sys, game, des, player, true);
       if now % 30 == 0 {
@@ -477,9 +394,6 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   }
 
   // Can anybody see or hear V? 2 is certain (already fighting V, or heard it), 1 is a sighting.
-  // A sighting has to hold for a moment before the hunt counts V as found: a glimpse is not a
-  // fix, and breaking line of sight in that moment sends them back to searching. This only
-  // changes what Cyberbane does with them; the game's own perception still runs as it always does.
   let contact = CBHuntAnyoneSeesPlayer(sys, game, des, player, ppos);
   let confirmed = contact >= 2 || sys.GetHuntState() == CBHuntLocated() && contact >= 1;
   if !confirmed && contact == 1 {
@@ -510,18 +424,14 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     }
   }
 
-  // Found: everybody of ours close enough is told where V is, and the fight is on. This is the
-  // only place a hunter is handed V as a target (Spawn/Spawner.reds, CBEngageV), so until somebody
-  // has actually found V nobody is tracking V and V is not in combat - the phone, saving and fast
-  // travel all work while they are still looking. Not while the story has the stage.
+  // Found: everybody of ours close enough is told where V is, and the fight is on.
   if sys.GetHuntState() == CBHuntLocated() && sys.GetStoryHold() == CBStoryNone() && !sys.IsInSanctuary()
      && !jobLike {
     CBHuntEngage(sys, game, des, ppos);
   }
 
-  // The street's word on where V is, while they are still working from the tip. Refreshed only
-  // every so often, so it is a rumour that firms up, not a fix (CBHuntSearchCenter).
-  // Not for a crew that came in looking where V was (2.7.1, Spawn/Slip.reds): their word is stale and stays so.
+  // The street's word on where V is, while they are still working from the tip. Refreshed only every so often, so it is
+  // a rumour that firms up, not a fix (CBHuntSearchCenter).
   if sys.IsHuntFromTip() && now - sys.GetHuntTipWordTick() >= CBConfig.HuntTipWordTicks() && !CBSlipSlipped(game, sys.GetHuntFaction()) {
     sys.SetHuntTipWord(ppos, now);
   }
@@ -540,9 +450,8 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     }
     let unseen = now - sys.GetHuntLastSeenTick();
     let nearest = CBNearestHunterDistance(sys, game, des, ppos);
-    // A car on its way has not lost V: it is further off than the lose distance by design, and its
-    // crew count as hunters from the moment they are seated. Without this a car on its way to V
-    // was called off and its crew deleted after twenty-two seconds, before it could arrive.
+    // A car on its way has not lost V: it is further off than the lose distance by design, and its crew count as
+    // hunters from the moment they are seated.
     let carComing = sys.CarRecentlyOnTheWay() || sys.HasPendingArrival() || sys.HasConvoyLegs();
     if carComing {
       sys.SetChaseAwayTicks(0);
@@ -572,9 +481,7 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   // Orders, a few at a time. Searching hunters get a fresh point every so often; located hunters
   // are kept coming while they are not already on V.
   let every = sys.GetHuntState() == CBHuntLocated() ? CBConfig.ChaseRefreshEveryTicks() : CBConfig.HuntSearchOrderTicks();
-  // No search orders while V is on a job: they hold where they are rather than walk into it. And
-  // no orders at all while the story has the stage, whether or not they had found V: anybody still
-  // out is somebody V can see, left alone until they are not (Core/StoryHold.reds).
+  // No search orders while V is on a job: they hold where they are rather than walk into it.
   if now % every == 0 && !(sys.IsInQuestArea() && sys.GetHuntState() != CBHuntLocated())
      && sys.GetStoryHold() == CBStoryNone() && !sys.IsInSanctuary() && !jobLike {
     let done = 0;
@@ -595,7 +502,7 @@ func CBHuntEngage(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
   CBHuntEngageTag(sys, game, des, ppos, n"CB_Squad");
   CBHuntEngageTag(sys, game, des, ppos, n"CB_Escort");
   if Equals(sys.GetScoutFaction(), n"") {
-    CBHuntEngageTag(sys, game, des, ppos, n"CB_Scout");   // only once they have called it in (2.4.1)
+    CBHuntEngageTag(sys, game, des, ppos, n"CB_Scout");   // only once they have called it in
   }
 }
 
@@ -606,12 +513,11 @@ func CBHuntEngageTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dyn
   while i < ArraySize(ids) {
     let p = GameInstance.FindEntityByID(game, ids[i]) as ScriptedPuppet;
     i += 1;
-    // Somebody still in a car gets out first: a fight started from a seat, in a moving car, is
-    // one of the things 1.5.0 found taking the game down. The car watch lets them out.
-    // Nor anybody held for a facedown, or standing back from a fight one on one (Rivals/RivalMoments.reds, 2.4.4).
+    // The car watch lets them out. Nor anybody held for a facedown, or standing back from a fight one on one
+    // (Rivals/RivalMoments.reds).
     if CBStillStanding(p) && CBNpcSafe(sys, p) && !p.cbMoraleBroken && !CBNpcInCombat(p) && !p.cbFacedownHeld
-       && !p.cbFacedownWait   // nor anybody walking up calm for one (2.5.0)
-       && !p.cbTruceHeld      // nor anybody holding while V talks to one of theirs (2.6.7)
+       && !p.cbFacedownWait   // nor anybody walking up calm for one
+       && !p.cbTruceHeld      // nor anybody holding while V talks to one of theirs
        && !VehicleComponent.IsMountedToVehicle(game, p.GetEntityID())
        && Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.HuntEngageDistance() {
       CBEngageV(game, p);
@@ -639,9 +545,8 @@ func CBHuntOrderTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dyna
   }
 }
 
-// How well hunters can find V right now, as a multiplier on how far they see and hear. Crouching,
-// the dark, wearing the hunting gang's own colours and the game's harder difficulties all make V
-// harder to find. Never below a fifth, so a hunt can always end in a fight.
+// How well hunters can find V right now, as a multiplier on how far they see and hear. Crouching, the dark, wearing the
+// hunting gang's own colours and the game's harder difficulties all make V harder to find.
 public func CBHuntSenseScale(sys: ref<CyberbaneSystem>, game: GameInstance) -> Float {
   let scale = 1.0;
   let psm = CBPlayerPSM(game);
@@ -652,13 +557,13 @@ public func CBHuntSenseScale(sys: ref<CyberbaneSystem>, game: GameInstance) -> F
   if CBIsNight(game) {
     scale *= CBConfig.NightSenseMult();
   }
-  // And the rain (Model/Moment.reds, 2.3.1).
+  // And the rain (Model/Moment.reds).
   scale *= CBRainSightMult(game);
-  // V by the car they know, or with the gun (Model/StreetBook.reds): easier to pick out ([U8], 2.4.1).
+  // V by the car they know, or with the gun (Model/StreetBook.reds): easier to pick out ([U8]).
   if IsDefined(sys) && CBVGivenAway(sys, game) > 0 {
     scale *= CBConfig.KnownSense();
   }
-  // A gang that has learnt V works unseen keeps its eyes open (Model/Ledger.reds, 2.3.2).
+  // A gang that has learnt V works unseen keeps its eyes open (Model/Ledger.reds).
   if IsDefined(sys) {
     scale *= CBAdaptSense(game, sys.GetHuntFaction());
   }
@@ -666,7 +571,7 @@ public func CBHuntSenseScale(sys: ref<CyberbaneSystem>, game: GameInstance) -> F
      && Equals(sys.GetDisguiseFaction(), sys.GetHuntFaction()) {
     scale *= CBConfig.DisguiseSenseMult();
   }
-  // A crew that came in looking where V was, not where V is (2.7.1, Spawn/Slip.reds).
+  // A crew that came in looking where V was, not where V is (Spawn/Slip.reds).
   if IsDefined(sys) && CBSlipSlipped(game, sys.GetHuntFaction()) {
     scale *= CBConfig.SlipSenseMult();
   }
@@ -680,10 +585,7 @@ public func CBHuntSenseScale(sys: ref<CyberbaneSystem>, game: GameInstance) -> F
 // Does any hunter know where V is? 2 for certain, 1 for a sighting, 0 for nothing.
 func CBHuntAnyoneSeesPlayer(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
                             player: ref<PlayerPuppet>, ppos: Vector4) -> Int32 {
-  // Noise: a kill carries a long way, and a hunter within earshot comes to look. Not V merely being in combat (2.6.8): the
-  // game counts V in combat for as long as anybody hostile is after V, the hunters themselves included, so a chase was
-  // always "loud", everybody within seventy metres always "heard" V, and V could never get away. Gunfire is the game's
-  // own to hear: a hunter who hears it is in combat, and counted below by what they can see.
+  // Noise: a kill carries a long way, and a hunter within earshot comes to look.
   let loud = sys.GetRecentKills() > 0;
   let sense = CBHuntSenseScale(sys, game);
   let best = CBHuntTagSees(sys, game, des, n"CB_Rival", player, ppos, loud, sense);
@@ -713,9 +615,7 @@ func CBHuntTagSees(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
     i += 1;
     if CBStillStanding(p) && CBNpcSafe(sys, p) {
       let d = Vector4.Distance(p.GetWorldPosition(), ppos);
-      // Fighting V, and V in sight or close: they know exactly where V is. In a fight alone was not enough to know
-      // (2.6.8): the game keeps somebody in combat for a while after V has gone round a corner, and with "in a fight within
-      // eighty metres" the hunt was handed V's exact place the whole time.
+      // Fighting V, and V in sight or close: they know exactly where V is.
       if CBNpcInCombat(p) && d <= CBConfig.HuntCombatKnowsDistance()
          && (d <= CBConfig.HuntSpotDistance() || CBWitnessCanSee(p, player)) {
         return 2;
@@ -724,7 +624,7 @@ func CBHuntTagSees(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
       if loud && d <= CBConfig.HuntHearDistance() * sense {
         return 2;
       }
-      // An apex squad's netrunner reaches further, and tells the rest exactly where V is ([U4], 2.3.2).
+      // An apex squad's netrunner reaches further, and tells the rest exactly where V is ([U4]).
       let role: ECBApexRole;
       if Equals(tag, n"CB_Apex") && CBApexSeatRole(p, role) && Equals(role, ECBApexRole.Netrunner)
          && d <= CBConfig.HuntSpotDistance() * sense * CBConfig.ApexNetrunnerReach() && CBWitnessCanSee(p, player) {
@@ -739,10 +639,7 @@ func CBHuntTagSees(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   return best;
 }
 
-// A car has parked beside V with a crew that was sent to V. Waiting for one of them to spot V all over
-// again is what "they drove up and did nothing" looks like, so they know where V is as they get out,
-// and the hunt tick hands V to each of them once they are on their feet. Not where nobody may follow,
-// on a job, or while the story has the stage. Their own eyes keep it going from there.
+// A car has parked beside V with a crew that was sent to V.
 public func CBHuntCrewPulledUp(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let player = GetPlayer(game);
   if !IsDefined(sys) || !IsDefined(player) || sys.IsInSanctuary() || sys.IsInQuestArea() || sys.IsOnJob()
@@ -769,21 +666,17 @@ func CBHuntOnLocated(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     sys.SetRivalSpottedTexted(r.id);
     let content = CBContent(game);
     if IsDefined(content) {
-      // What they remember of V goes with it (Rivals/RivalMoments.reds, [L4], 2.4.4).
+      // What they remember of V goes with it (Rivals/RivalMoments.reds, [L4]).
       let remembers = CBRivalRemembers(game, r);
       CBPhoneSendUrgent(game, CBRivalDisplayName(content, r), CBRivalArrivalLine(r) + " " + (StrLen(remembers) > 0 ? remembers + " " : "")
                         + CBRivalCatchphrase(r), CBHudRed());
     }
-    // And their people say who they are (Rivals/RivalLife.reds, 1.9.9).
+    // And their people say who they are (Rivals/RivalLife.reds).
     CBRivalAnnounce(sys, game, r);
   }
 }
 
-// One word for how well known V is in a district. Lifted out of the line below so that the line
-// and the slow sample that decides when the line has something new to say (Core/CyberbaneSystem
-// .reds) cannot drift to different thresholds - the third time that class of bug has turned up
-// here. FindDistrict rather than EnsureDistrict: neither caller may create state, and a district
-// V has done nothing in has no record yet, which is itself the answer.
+// One word for how well known V is in a district.
 public func CBDistrictRenownWord(sys: ref<CyberbaneSystem>, id: CName) -> String {
   if !IsDefined(sys) || Equals(id, n"") {
     return "";
@@ -803,15 +696,6 @@ public func CBDistrictRenownWord(sys: ref<CyberbaneSystem>, id: CName) -> String
 }
 
 // Where V stands in the district they are standing in, for the HUD.
-//
-// This goes in the hunt line's own widget rather than next to it. The hunt line is empty most of
-// the time - nobody is hunting V for most of a session - so the space is already there, already
-// positioned, already length-limited, and already respects the one setting that governs it. A
-// second widget would have been one more thing on screen to read, which is the opposite of what
-// was asked for.
-//
-// It reads as the street would put it rather than as a number first: the district, then how well
-// known V is there, with the figure in brackets for anybody who wants it.
 public func CBDistrictStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   // Only on Everything. HuntsOnly means what it says, and Off means nothing at all.
   if !IsDefined(sys) || !Equals(CBHudLineMode(), ECBHudLine.Everything) {
@@ -852,7 +736,7 @@ public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
     return "";
   }
   let huntsOnly = Equals(mode, ECBHudLine.HuntsOnly);
-  // Open season, and a tracker (Spawn/HuntGrows.reds, 2.4.2), while nobody is on V right now.
+  // Open season, and a tracker (Spawn/HuntGrows.reds), while nobody is on V right now.
   if !CBHuntersOut(sys, game) && Equals(sys.GetHuntFaction(), n"") {
     let open = CBOpenSeasonGang(game);
     let war = CBWarBook.Get(game);
@@ -865,17 +749,17 @@ public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
       return CBTf(n"Cyberbane-Hunt-ATRACKERONYOU", [CBClip(CBBarFactionLabel(tracker), CBConfig.HudNameMaxChars())]);
     }
   }
-  // A scout with eyes on V, calling it in (Spawn/Hunted.reds, 2.4.1): the moment V can still stop it.
+  // A scout with eyes on V, calling it in (Spawn/Hunted.reds): the moment V can still stop it.
   if NotEquals(sys.GetScoutFaction(), n"") && sys.GetScoutSeenTicks() > 0 {
     let left = Max(1, CBConfig.ScoutCallTicks() - sys.GetScoutSeenTicks());
     return CBTf(n"Cyberbane-Hunt-ASCOUTHASSEENYOUCALLING", [StrUpper(CBTimeText(left))]);
   }
-  // A witness on their way to a gang (Reactions/Witnesses.reds, 2.3.1), while nobody is hunting V yet.
+  // A witness on their way to a gang (Reactions/Witnesses.reds), while nobody is hunting V yet.
   let witness = CBWitnessHudLine(sys, game);
   if StrLen(witness) > 0 && Equals(sys.GetHuntFaction(), n"") && !CBHuntersOut(sys, game) {
     return witness;
   }
-  // A bounty hunter on the clock, or out after V, by their handle (Spawn/Bounty.reds, 2.4.3).
+  // A bounty hunter on the clock, or out after V, by their handle (Spawn/Bounty.reds).
   let hunterWho = CBClip(CBBountyHudWho(game), CBConfig.HudNameMaxChars());
   let hunterEta = CBBountyComingTicks(game);
   if StrLen(hunterWho) > 0 && hunterEta > 0 && !CBHuntersOut(sys, game) {
@@ -942,9 +826,6 @@ public func CBHuntStatusLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
 
 // Who is asking around about V right now: a crew or apex squad queued and not yet warned, or a
 // Rival on the clock who has not yet said they are coming. Empty when nobody is.
-//
-// Only once departure is close (TrackedShowTicks), so the line means "soon" and is not on screen
-// for the whole time somebody is merely queued.
 func CBTrackedBy(sys: ref<CyberbaneSystem>) -> String {
   if CBArrivalsHeld(sys, sys.GetGameInstance()) {
     return "";   // nobody is counting down while V cannot be reached
@@ -952,7 +833,7 @@ func CBTrackedBy(sys: ref<CyberbaneSystem>) -> String {
   let near = CBConfig.TrackedShowTicks();
   let apex = sys.GetLaneTarget(CBLaneApex());
   let apexTicks = sys.GetLaneTicks(CBLaneApex());
-  // A lane waiting out everybody's rest is not counting down either (2.7.1, CBLaneRestLeft).
+  // A lane waiting out everybody's rest is not counting down either (CBLaneRestLeft).
   let resting = CBRestTogether();
   if NotEquals(apex, n"") && apexTicks > 0 && apexTicks <= near && !(resting && CBLaneRestLeft(sys, CBLaneApex()) > 0) {
     return CBBarFactionLabel(apex);
@@ -987,10 +868,8 @@ public func CBClip(s: String, n: Int32) -> String {
 
 // ---- Provocation -----------------------------------------------------------
 //
-// A hunt should start because of something V did, not because a clock said so. Killing a hostile
-// gang's people where somebody sees it provokes that gang: their next crew comes now rather than
-// at the next slot on the day's timetable. The day's allowance and the rest between encounters
-// still apply, so provocation decides when, never how many.
+// A hunt should start because of something V did, not because a clock said so. Killing a hostile gang's people where
+// somebody sees it provokes that gang: their next crew comes now rather than at the next slot on the day's timetable.
 public func CBProvoke(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Void {
   if !IsDefined(sys) || Equals(faction, n"") || !CBFactionFieldsSquads(faction) {
     return;
@@ -1015,8 +894,8 @@ func CBHuntWhereLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
 
 // The gang tells V a crew is coming, and roughly how much they know.
 public func CBCrewWarning(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Void {
-  // One voice per arrival (2.6.1): V's own lookout first, a friendly gang next, the gang itself when nobody else tells
-  // V. All three used to text about the same crew in the same second.
+  // One voice per arrival: V's own lookout first, a friendly gang next, the gang itself when nobody else tells V. All
+  // three used to text about the same crew in the same second.
   let told = CBWatcherTipOff(sys, game, CBCapFirst(CBFactionLabel(faction))) || CBAllyTipOff(sys, game, faction);
   if CBToastsOn() && !told {
     let score = sys.GetScore();
@@ -1053,11 +932,11 @@ public func CBCrewWarning(sys: ref<CyberbaneSystem>, game: GameInstance, faction
 // The gang tells V its apex squad is on the road.
 public func CBApexOnTheWay(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Void {
   let fs = sys.FindFaction(faction);
-  // One voice per arrival (2.6.1, CBCrewWarning).
+  // One voice per arrival (CBCrewWarning).
   let told = CBWatcherTipOff(sys, game, CBTf(n"Cyberbane-Hunt-FourOfSBest", [CBFactionLabel(faction)])) || CBAllyTipOff(sys, game, faction);
   if CBToastsOn() && IsDefined(fs) && !told {
     let name = CBApexName(CBContent(game), faction, fs.apexAtKills);
-    // Their best remember how it went last time ([U4], 2.3.2).
+    // Their best remember how it went last time ([U4]).
     let beaten = CBApexTimesBeaten(sys, faction);
     let record = beaten == 1 ? CBT(n"Cyberbane-Hunt-YouBeatOurBestOnceThat") : (beaten > 1 ? CBTf(n"Cyberbane-Hunt-YouVeBeatenOurBestTimes", [s"\(beaten)"]) : "");
     CBPhoneDemandFromGang(game, faction, CBTf(n"Cyberbane-Hunt-AndThreeOfOursAreOn", [s"\(name)", s"\(CBHuntWhereLine(sys, game))", s"\(record)"]));
@@ -1086,24 +965,17 @@ public func CBRivalWarning(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref
       }
     }
   }
-  // One voice per arrival (2.6.1): V's lookout saw them first; the Rival's own text otherwise. Both came in the same
-  // second, saying the same thing.
+  // One voice per arrival: V's lookout saw them first; the Rival's own text otherwise. Both came in the same second,
+  // saying the same thing.
   if !CBWatcherTipOff(sys, game, CBRivalDisplayName(content, r)) {
-    CBPhoneSendUrgent(game, CBRivalDisplayName(content, r), line, CBHudRed());   // on V now (2.7.7)
+    CBPhoneSendUrgent(game, CBRivalDisplayName(content, r), line, CBHudRed());   // on V now
   }
 }
 
 // ---- Scouts --------------------------------------------------------------------
 //
-// A gang that does not know where V is does not send six people to wander around. It sends one.
-// The scout spawns out of sight, starts from the same rough tip any hunt starts from, and
-// searches. If the scout keeps eyes on V for a few seconds they call it in: the crew sets off,
-// starting from where the scout saw V. If V deals with the scout, or stays out of sight until they
-// give up, the crew never comes and that gang leaves V alone for a while.
-//
-// The scout is tagged CB_Scout. It is hunted, ordered, swept and looted like any of Cyberbane's
-// people, but it is not a crew: killing it does not count as beating that gang's crew, and it
-// never holds a crew's place in the lane beyond the scouting itself.
+// A gang that does not know where V is does not send six people to wander around. It sends one. The scout spawns out of
+// sight, starts from the same rough tip any hunt starts from, and searches.
 
 public func CBScoutsOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -1169,9 +1041,7 @@ func CBScoutTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
   let scout = GameInstance.FindEntityByID(game, sys.GetScoutId()) as ScriptedPuppet;
   let age = sys.GetTickCount() - sys.GetScoutSentTick();
   if !IsDefined(scout) {
-    // Out of the world again after they had appeared (2.5.5): V got far enough away that the game let them go, so
-    // they lost V. That went down the branch below for a scout who never appeared, and the crew came anyway, when
-    // Mod Settings promises that staying out of the scout's sight means the crew never comes.
+    // Out of the world again after they had appeared: V got far enough away that the game let them go, so they lost V.
     let des = GameInstance.GetDynamicEntitySystem();
     if sys.GetScoutInWorld() && !(IsDefined(des) && des.IsSpawning(sys.GetScoutId())) {
       CBScoutLostYou(sys, game, faction);
@@ -1185,8 +1055,8 @@ func CBScoutTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
     return;
   }
   sys.SetScoutInWorld();
-  // Down, not merely on their way out of the world (2.4.2): one streaming out was counted as put down, and the
-  // gang went quiet over a scout nobody had touched.
+  // Down, not merely on their way out of the world: one streaming out was counted as put down, and the gang went quiet
+  // over a scout nobody had touched.
   if CBIsDown(scout) {
     CBScoutSilenced(sys, game, faction);
     CBLog.Info(n"Spawn", s"The \(NameToString(faction)) scout went down before calling it in.");
@@ -1203,8 +1073,8 @@ func CBScoutTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
     sys.SetScoutSeenTicks(0);
     return;
   }
-  // V walking up to talk, or talking, to the scout (the bribe, [68]) holds the call (2.5.1): it went in six seconds after
-  // the scout saw V, whatever V was saying to them.
+  // V walking up to talk, or talking, to the scout (the bribe, [68]) holds the call: it went in six seconds after the
+  // scout saw V, whatever V was saying to them.
   if CBTalkEngaged(sys, scout) {
     return;
   }
@@ -1212,7 +1082,7 @@ func CBScoutTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
   if sys.GetScoutSeenTicks() >= CBConfig.ScoutCallTicks() {
     let scoutId = sys.GetScoutId();
     sys.ClearScout();
-    CBScoutDraws(game, scoutId);   // called in: now they fight (Spawn/Hunted.reds, 2.4.1)
+    CBScoutDraws(game, scoutId);   // called in: now they fight (Spawn/Hunted.reds)
     sys.SetHuntLkp(player.GetWorldPosition());
     sys.SetHuntLastSeenTick(sys.GetTickCount());
     CBScoutCallIn(sys, game, faction, true);
@@ -1233,8 +1103,8 @@ func CBScoutSilenced(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CNa
   }
 }
 
-// The scout lost V before they could call it in: V left them behind (2.5.5). As for a silenced scout, the crew never
-// hears and the gang cools off, but said as what happened: nobody touched this one.
+// The scout lost V before they could call it in: V left them behind. As for a silenced scout, the crew never hears and
+// the gang cools off, but said as what happened: nobody touched this one.
 func CBScoutLostYou(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName) -> Void {
   sys.ClearScout();
   CBDeleteTaggedSafe(game, n"CB_Scout", false, true);
@@ -1258,12 +1128,12 @@ func CBScoutCallIn(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName
   sys.SetHuntGrade(CBCrewGrade(sys, faction));
   if spotted && CBToastsOn() {
     let fs = sys.FindFaction(faction);
-    // One voice per arrival (2.6.1, CBCrewWarning).
+    // One voice per arrival (CBCrewWarning).
     if !CBWatcherTipOff(sys, game, CBCapFirst(CBFactionLabel(faction))) && !CBAllyTipOff(sys, game, faction) {
       CBPhoneDemandFromGang(game, faction, CBTf(n"Cyberbane-Hunt-OurScoutHasEyesOnYou", [s"\(CBCrewComingLine(sys, game, fs))"]));
     }
     CBLog.Info(n"Spawn", s"The \(NameToString(faction)) scout found you and called in the crew.");
-    CBVoiceNearest(sys, game, n"CB_Scout", 60.0, n"stlh_call", n"ScoutCalls", 30.0);   // heard calling it in (2.7.7)
+    CBVoiceNearest(sys, game, n"CB_Scout", 60.0, n"stlh_call", n"ScoutCalls", 30.0);   // heard calling it in
     return;
   }
   CBCrewWarning(sys, game, faction);
@@ -1299,25 +1169,14 @@ public func CBDistrictLineSeconds() -> Int32 {
 
 // ---- Letting go of a fight that is over -----------------------------------------
 //
-// "After the people hunting me find me and get killed, I stay stuck in combat for a long time."
-// The game keeps V in combat for as long as any NPC is in combat with V. Once the ones who found V
-// are dead, the ones keeping it going are Cyberbane's people who are still in combat but nowhere
-// near: one who broke and ran, one stuck behind geometry, one still sitting in a car. They will
-// never reach V, and the combat never ends. Anyone of ours who has been in combat with V for
-// CombatReleaseTicks while farther than CombatReleaseDistance and unable to see V is let go:
-// removed out of sight through the safe path, or ordered out of the car first.
+// The game keeps V in combat for as long as any NPC is in combat with V.
 public func CBCombatReleaseTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let player = GetPlayer(game);
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(sys) || !IsDefined(player) || !IsDefined(des) || !player.IsInCombat() || !CBWorldStable(game) {
     return;
   }
-  // Only once the fight near V is over. While anybody of ours is still close to V, or has eyes
-  // on V, the people further out are part of that fight - a flanker working round behind a wall,
-  // somebody hanging back in cover - and letting them go was another way for a crew to vanish in
-  // the middle of a firefight. The report this exists for is the other case: everybody close is
-  // down and somebody far off is still holding V in combat, and that is exactly when nobody is
-  // engaged.
+  // Only once the fight near V is over.
   let engaged = CBOursEngagedNear(sys, game, des, player);
   CBReleaseTag(sys, game, des, player, n"CB_Rival", engaged);
   CBReleaseTag(sys, game, des, player, n"CB_Apex", engaged);
@@ -1325,26 +1184,18 @@ public func CBCombatReleaseTick(sys: ref<CyberbaneSystem>, game: GameInstance) -
   CBReleaseTag(sys, game, des, player, n"CB_Escort", engaged);
   CBReleaseTag(sys, game, des, player, n"CB_Scout", engaged);
   CBReleaseTag(sys, game, des, player, n"CB_Patrol", engaged);
-  // The street's own people (2.0.0) hold V in combat the same way once V has fought them and left.
-  // Only the ones fighting V: the two sides of a sit-down can be fighting each other, which holds
-  // nobody in combat but themselves.
+  // The street's own people hold V in combat the same way once V has fought them and left. Only the ones fighting V:
+  // the two sides of a sit-down can be fighting each other, which holds nobody in combat but themselves.
   for tag in CBStreetTags() {
     CBReleaseTag(sys, game, des, player, tag, engaged, true);
   }
-  // Anyone handed to the orphan sweep because they were still in view when their encounter
-  // ended is still alive and may still be in combat with V, and the sweep only runs on the slow
-  // tick. Without this they could hold V in combat in the meantime, which is the 1.5.3 report
-  // arriving by a new road. Their encounter is over, so a fight still going on near V is not
-  // theirs and does not hold them.
+  // Anyone handed to the orphan sweep because they were still in view when their encounter ended is still alive and may
+  // still be in combat with V, and the sweep only runs on the slow tick.
   CBReleaseTag(sys, game, des, player, n"CB_Orphan", false);
 }
 
-// The street's own people (Spawn/LivingStreet.reds, 2.0.0): a bagman and their lookout, a favour's
-// lookout, the people at a sit-down. Nobody sends them after V, but any of them can end up fighting V,
-// so every rule about somebody of ours fighting V reaches them too (the 1.7.8 rule): the combat release
-// above, the sanctuary hold (CBStreetLife.Tick) and the re-arm watch (Spawn/Spawner.reds). The downed
-// sweep leaves them to whatever they belong to, which clears them when it ends. Not the help (CB_Ally),
-// who fight beside V. One list, so a new kind joins every rule at once.
+// The street's own people (Spawn/LivingStreet.reds): a bagman and their lookout, a favour's lookout, the people at a
+// sit-down. The downed sweep leaves them to whatever they belong to, which clears them when it ends.
 public func CBStreetTags() -> array<CName> {
   return [n"CB_Bagman", n"CB_Favour", n"CB_Meet", n"CB_Wannabe", n"CB_Event", n"CB_Ambush", n"CB_Hangout", n"CB_Debtor", n"CB_Witness", n"CB_Api", n"CB_Convoy", n"CB_Mark"];
 }
@@ -1394,9 +1245,7 @@ func CBReleaseTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
     if CBStillStanding(p) && CBNpcSafe(sys, p) {
       let away = Vector4.Distance(p.GetWorldPosition(), ppos);
       let far = away > CBConfig.CombatReleaseDistance();
-      // Somebody getting closer is on their way back into the fight, not stuck out of it. Without
-      // this, running forty-five metres was enough to have hunters deleted while they chased: the
-      // clock was already nearly full, and they went a second after losing sight of V.
+      // Somebody getting closer is on their way back into the fight, not stuck out of it.
       let closing = p.cbReleaseAway > 0.0 && away < p.cbReleaseAway - CBConfig.CombatReleaseClosing();
       p.cbReleaseAway = away;
       let againstV = !againstVOnly || (IsDefined(pagent) && IsDefined(p.GetAttitudeAgent())
@@ -1405,9 +1254,8 @@ func CBReleaseTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
         p.cbOutOfFightTicks += 2;
         if p.cbOutOfFightTicks >= CBConfig.CombatReleaseTicks() {
           CBLog.Info(n"Spawn", "One of ours was keeping you in combat from too far away; letting them go.");
-          // A Rival's encounter ends with them, as the cut-off ends it (CBCutOffOne): not an escape,
-          // V did nothing to shake them. Removed with the record still naming the body, they stayed
-          // filed as out after V, and one who had come with others stayed on the team for good.
+          // A Rival's encounter ends with them, as the cut-off ends it (CBCutOffOne): not an escape, V did nothing to
+          // shake them.
           if Equals(tag, n"CB_Rival") {
             let r = CBFindRivalByBody(sys, p.GetEntityID());
             if IsDefined(r) {
@@ -1432,16 +1280,7 @@ func CBReleaseTag(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynami
 
 // ---- Cut off ------------------------------------------------------------------------------------
 //
-// Somebody of ours who cannot get to V and whom V cannot get to. Placement is held to a high standard
-// (CBPointArrivable), but it can only speak for the moment it happens: V moves, a door is locked, a car
-// stops somewhere bad, a body lands in something. And the combat release could not help, because it
-// only looked past 45 m, and "cannot be killed" is exactly somebody below or behind V, close by.
-//
-// So this asks about the person rather than about how they got there. Nobody who can see V, or
-// whom V can see, is ever counted. Everybody else is counted if they are not getting anywhere: still
-// in one small patch of ground, or moving around with no route to V from where they are. Counted
-// long enough, they are taken out, out of V's sight, through the same removal as everybody else.
-// The route is the costly question, so it is asked only of somebody who has moved, a few a pass.
+// Somebody of ours who cannot get to V and whom V cannot get to.
 
 @addField(ScriptedPuppet)
 public let cbCutOffTicks: Int32;
@@ -1509,9 +1348,7 @@ func CBCutOffOne(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynamic
     p.cbCutOffAnchor = at;
     p.cbCutOffAnchored = true;
     if left <= 0 {
-      // Nothing learned either way, so nothing is remembered either (1.9.3). The anchor stayed
-      // set, and the next pass took that to mean the route had been asked about and refused: one
-      // who stood still was counted towards removal without ever being tested.
+      // Nothing learned either way, so nothing is remembered either.
       p.cbCutOffAnchored = false;
       return left;
     }
@@ -1544,8 +1381,8 @@ public let cbOutOfFightTicks: Int32;
 @addField(ScriptedPuppet)
 public let cbReleaseAway: Float;
 
-// How many of this gang's apex squads V has beaten, from the History ([U4], 2.3.2). Counted from what is kept, so a
-// very long playthrough may count only the recent ones.
+// How many of this gang's apex squads V has beaten, from the History ([U4]). Counted from what is kept, so a very long
+// playthrough may count only the recent ones.
 public func CBApexTimesBeaten(sys: ref<CyberbaneSystem>, faction: CName) -> Int32 {
   if !IsDefined(sys) || Equals(faction, n"") {
     return 0;

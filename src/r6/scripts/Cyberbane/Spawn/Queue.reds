@@ -1,25 +1,6 @@
 // Cyberbane - Who comes for you next (spec §9.9)
 //
 // Three lanes, each with its own clock: one Rival, one crew, one apex squad.
-//
-// Before this, every Rival ran its own countdown, hit squads ran theirs, and the apex ran a
-// third. They all held each other off at the moment of arrival, so only one ever actually
-// landed - but because each kept its own clock, the Hub showed several timers for things that
-// could not all happen, and anything without a clock just said "due", which from the outside
-// is indistinguishable from broken.
-//
-// Lanes rather than one queue, because the alternative is too polite. One global slot means
-// you are only ever fighting one thing, and the mod has no way to put you under real pressure.
-// Three lanes mean a Rival can catch up with you while a gang's crew is already on its way,
-// which is the situation worth building toward - and because a lane holds its own kind off
-// until that encounter is finished, you can never be jumped by two Rivals at once or two apex
-// squads at once. The pressure comes from different kinds of trouble arriving together, not
-// from the same kind stacking.
-//
-// Each lane owns *when*. None of them owns *how*: firing a crew or an apex hands off to the
-// pending mechanism those systems already have, which knows about cars, safe areas, quiet jobs
-// and giving up. Reusing them means this cannot break arrival paths that were only just made
-// to work.
 
 public func CBLaneRival() -> Int32 = 1
 public func CBLaneSquad() -> Int32 = 2
@@ -34,21 +15,15 @@ public func CBLaneBusy(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int3
   if !IsDefined(des) {
     return true;
   }
-  // Just sent somebody. Spawning is a request, not an instant: for a moment afterwards
-  // nothing has attached, every "is one of these alive" test answers no, and the lane would
-  // send a second one on top of the first. Bounded by a tick count rather than by waiting for
-  // an attach that might never come, so this can delay a lane but never wedge it.
-  // Zero means this lane has never sent anybody, not that it sent somebody at tick zero. The
-  // tick counter increments before any lane code runs, so a real stamp is always one or more.
+  // Just sent somebody. Spawning is a request, not an instant: for a moment afterwards nothing has attached, every "is
+  // one of these alive" test answers no, and the lane would send a second one on top of the first.
   if sys.GetLaneFired(lane) > 0
      && (sys.GetTickCount() - sys.GetLaneFired(lane)) < CBConfig.LaneSettleTicks() {
     return true;
   }
   if lane == CBLaneRival() {
-    // A Rival the city is still driving in counts as out: their body only becomes theirs once
-    // it is adopted, and until then the live test cannot see them.
-    // So does one waiting at their place for V (Rivals/Whereabouts.reds): one Rival in the world
-    // at a time, whichever way round the ambush is.
+    // A Rival the city is still driving in counts as out: their body only becomes theirs once it is adopted, and until
+    // then the live test cannot see them.
     return CBLiveRivalPresent(sys, game) || sys.GetRivalCarPending() > 0 || sys.IsLairActive();
   }
   if lane == CBLaneApex() {
@@ -60,20 +35,14 @@ public func CBLaneBusy(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int3
     return NotEquals(sys.GetPendingApexFaction(), n"") || CBLiveTaggedPresent(game, n"CB_Apex")
         || NotEquals(sys.GetApexMusterFaction(), n"") || crewApexComing;
   }
-  // A scout out looking holds the crew lane: the crew is waiting on what the scout finds. A crew
-  // that came with its apex squad is out for as long as either half of it is standing.
-  // A bounty hunter on the way holds it too (Spawn/Bounty.reds): once out, they are CB_Squad like anybody's crew.
+  // A scout out looking holds the crew lane: the crew is waiting on what the scout finds. A crew that came with its
+  // apex squad is out for as long as either half of it is standing.
   return NotEquals(sys.GetPendingSquadFaction(), n"") || NotEquals(sys.GetScoutFaction(), n"")
       || CBLiveTaggedPresent(game, n"CB_Squad") || CBBountyComing(game)
       || (sys.ActiveSquadHasApex() && CBLiveTaggedPresent(game, n"CB_Apex"));
 }
 
 // How many of ours are in the world or on their way into it.
-//
-// The ceiling on live spawns (CBSpawnGroup) counted only bodies that had finished attaching, and
-// a spawn is a request that takes a moment to attach. So several groups asked for in the same
-// tick - an apex squad and its crew, a Rival and their escorts - each saw the whole ceiling free,
-// and the ceiling held only between ticks. Counting anything still spawning closes that.
 public func CBCountLiveOrSpawning(game: GameInstance, tag: CName) -> Int32 {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) {
@@ -97,11 +66,8 @@ public func CBCountLiveOrSpawning(game: GameInstance, tag: CName) -> Int32 {
   return n;
 }
 
-// As above, leaving one body out: the one whose death is being handled. For "was that the last of
-// them" - somebody still on their way into the world is not beaten yet.
-// `without`: anybody also carrying that tag is not counted. A gang's crew is CB_Squad, and so is a bounty hunter (Spawn/
-// Bounty.reds), who belongs to no crew: counted as one of it, a hunter still standing kept a crew whose last member had
-// fallen from ever being beaten, and the hunter's own death was then never asked (2.5.0).
+// As above, leaving one body out: the one whose death is being handled. For "was that the last of them" - somebody
+// still on their way into the world is not beaten yet. `without`: anybody also carrying that tag is not counted.
 public func CBCountLiveOrSpawningExcept(game: GameInstance, tag: CName, except: EntityID, opt without: CName) -> Int32 {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) {
@@ -132,9 +98,8 @@ public func CBSpawnRoom(game: GameInstance) -> Int32 {
   return Max(0, CBConfig.MaxLiveSpawns() - CBCountLiveOrSpawning(game, n"Cyberbane"));
 }
 
-// What is taking up the room, in a line for the log (2.5.7): how many are still on their way into the world, and how
-// many are standing under each tag. Every spawn of Cyberbane's shares MaxLiveSpawns, so a room that never frees blocks
-// crews, the street and V's own crew at once, and nothing said so.
+// What is taking up the room, in a line for the log: how many are still on their way into the world, and how many are
+// standing under each tag.
 public func CBSpawnRoomNote(game: GameInstance) -> String {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) {
@@ -186,11 +151,8 @@ public func CBSpawnRoomNote(game: GameInstance) -> String {
 
 // ---- A hit squad is an apex squad and a crew ------------------------------------------
 //
-// "Apex squad should always be four members with MaxTac-like roles; a hit squad should contain an
-// apex squad and other crew." Until 1.6.3 only a gang at vendetta brought its apex, and only when
-// the four of them could be put in a car - which, with V on foot (the default), is never - so in
-// practice no crew ever arrived with one. Now every crew brings its gang's apex squad, whichever
-// way they come, and the one setting (Crews bring the apex squad) turns it off.
+// Now every crew brings its gang's apex squad, whichever way they come, and the one setting (Crews bring the apex
+// squad) turns it off.
 public func CBCrewApexOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
   if !IsDefined(rt) || !rt.HasSettings() {
@@ -201,10 +163,6 @@ public func CBCrewApexOn() -> Bool {
 
 // Does this gang's next crew come with its apex squad? The one answer for the spawn, the warning
 // text and the HUD line, so none of them promises what another will not do.
-//
-// Not while another apex squad is already in the world, on its way, or still being brought up to
-// four: one apex squad at a time, as the apex lane has always kept it, and the people already out
-// are in the fight anyway.
 public func CBCrewBringsApex(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> Bool {
   if !IsDefined(sys) || !IsDefined(fs) || !CBCrewApexOn() {
     return false;
@@ -233,25 +191,6 @@ public func CBCrewComingLine(sys: ref<CyberbaneSystem>, game: GameInstance, fs: 
 }
 
 // Is anyone wearing this tag still alive?
-//
-// IsPopulated counts tagged entities, and the tag stays on the body after death until the
-// despawn sweep clears it minutes later. So wiping a crew left its lane blocked and the next
-// gang could not be queued - the same mistake that was fixed for Rivals and missed here.
-// Clearing a squad should free its lane the moment the last one goes down.
-//
-// Escaping them frees it too, just not instantly: they stay alive and tagged until the sweep
-// removes them, which is the honest reading - you lost them, they are still out there.
-// `CBCountLiveTagged` was here: a standing-only head count, with no caller from 1.6.3 to 1.6.7
-// and then one new one in 1.6.8 (the Rival escort top-up), which it got wrong. **Deleted on
-// purpose - do not add it back.** Counting only bodies that are already standing misses everybody
-// the engine has been asked for and has not finished building, so any "how many are already out"
-// test written on it double-sends whatever was queued a moment ago. That is the same fault 1.6.3
-// swept the codebase for (`CBCountLiveTaggedExcept` -> `CBCountLiveOrSpawningExcept`) and the
-// reason `CBSpawnRoom` and `CBSpawnGroup` share their room by the or-spawning count.
-//
-// Use `CBCountLiveOrSpawning` (or `CBCountLiveOrSpawningExcept` inside a death event). If a
-// standing-only count is ever genuinely wanted, say why at the call site - the default is wrong
-// often enough that it should not be reachable by accident.
 
 public func CBLiveTaggedPresent(game: GameInstance, tag: CName) -> Bool {
   let des = GameInstance.GetDynamicEntitySystem();
@@ -299,11 +238,6 @@ func CBRivalCooldownTick(sys: ref<CyberbaneSystem>) -> Void {
 }
 
 // Somebody from a gang V has actually fought, when the Rival list has nobody to offer.
-//
-// Picks the gang with the most history: the one whose people V has put down most often is the
-// one most likely to send somebody after them. The record is the one already sampled from a
-// real enemy of that gang, which is the same source a hit squad draws from, so nothing here
-// invents a character the game would not otherwise produce.
 func CBSeedRivalFromFactions(sys: ref<CyberbaneSystem>, game: GameInstance) -> ref<CBRival> {
   if !CBRivalsOn() {
     return null;
@@ -335,9 +269,8 @@ public func CBRivalQueueable(sys: ref<CyberbaneSystem>, rivalId: Int32) -> Bool 
   if !IsDefined(r) || !TDBID.IsValid(r.recordID) || !CBRecordIsPerson(r.recordID) {
     return false;
   }
-  // A faction switched off in Mod Settings sends nobody, its Rivals included (1.9.1). They stay on the
-  // roster, and come again once it is switched back on. The picker, the lane's re-check and the team-up
-  // all ask this.
+  // A faction switched off in Mod Settings sends nobody, its Rivals included. They stay on the roster, and come again
+  // once it is switched back on. The picker, the lane's re-check and the team-up all ask this.
   if !CBFactionOn(r.faction) {
     return false;
   }
@@ -354,13 +287,7 @@ public func CBRivalQueueable(sys: ref<CyberbaneSystem>, rivalId: Int32) -> Bool 
   return r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting);
 }
 
-// Why nobody at all could take this lane's next turn, in the player's words, or "" when somebody could (2.5.3). The
-// Standing page named the time of the next window whether or not anybody could come in it, so a new game, with no
-// Rival and no gang against V, read as a Rival, a crew and an apex squad on their way. Only what CBLanePick itself
-// asks before it will pick anybody, so the two cannot disagree: a Rival who can be sent, or with none on the books a
-// gang V has fought to put one forward (CBSeedRivalFromFactions); a gang that may send people (CBGangMaySend); a gang
-// that has earned its apex squad (CBApexEligible). What changes by the hour (a reason to come today, a cooldown, a
-// Rival lying low) is left to the lines that already say it.
+// Why nobody at all could take this lane's next turn, in the player's words, or "" when somebody could.
 public func CBLaneNobodyWhy(sys: ref<CyberbaneSystem>, lane: Int32) -> String {
   if !IsDefined(sys) {
     return "";
@@ -431,22 +358,11 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     return;
   }
   // And a breather afterwards.
-  //
-  // Measured from the end of the last encounter in this lane rather than from when it was
-  // sent, so a long fight does not eat the gap. Without it a lane re-armed the instant the
-  // last body dropped and the next one was on its way before you had holstered, which reads
-  // as harassment instead of a city reacting to you.
-  //
-  // Only applies to picking somebody new. A lane that already has somebody on the clock keeps
-  // counting.
   if sys.GetLaneTicks(lane) <= 0 && Equals(sys.GetLaneTarget(lane), n"") && sys.GetLaneRivalId(lane) <= 0 {
-    // Nothing starts unless the day's timetable says this kind is due (Spawn/Schedule.reds).
-    // That is what gives a day a shape instead of leaving it to however long the player
-    // happened to stay in one.
-    // A provoked gang does not wait for the timetable: what V just did is the reason they are
-    // coming. The day's allowance and the rest below still apply.
+    // Nothing starts unless the day's timetable says this kind is due (Spawn/Schedule.reds). That is what gives a day a
+    // shape instead of leaving it to however long the player happened to stay in one.
     let provoked = lane == CBLaneSquad() && NotEquals(sys.GetProvoked(), n"");
-    // Somebody's grudge has run out of patience (2.6.5, Spawn/Grudge.reds): no timetable and no day's allowance any more.
+    // Somebody's grudge has run out of patience (Spawn/Grudge.reds): no timetable and no day's allowance any more.
     let slotDue = CBPacingDue(sys, game, lane);
     if !slotDue && !provoked {
       return;
@@ -454,36 +370,23 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     // Only the gang that was provoked may answer out of turn. Without this a provocation could open the lane for whichever
     // gang happened to score highest.
     provokedOnly = !slotDue;
-    // The spacing floor still applies on top. At default settings the slots are about an hour
-    // of real play apart and it never binds; it only matters if the per-day sliders are pushed
-    // high enough that two windows in one sector crowd each other.
+    // The spacing floor still applies on top.
     if CBLaneRestLeft(sys, lane) > 0 {
       return;
     }
   }
   // Is the person this lane is holding still somebody who can turn up?
-  //
-  // The lane records a Rival's id when it picks them and then only counts down. If that Rival
-  // is spared, retired or promoted out of the running in the meantime, the lane kept counting
-  // toward somebody the Rivals screen no longer lists, which is why the INCOMING line could
-  // name a Rival who did not appear on the Rivals tab at all. Re-checking each tick costs one
-  // lookup and lets the lane pick somebody who can actually come.
   if sys.GetLaneRivalId(lane) > 0 && !CBRivalQueueable(sys, sys.GetLaneRivalId(lane)) {
-    // And the warning they were given with it (2.5.6): left standing, a Rival warned and then spared, switched off or
-    // waiting at a place they named would, picked again some day, skip the warning and walk straight in.
+    // And the warning they were given with it: left standing, a Rival warned and then spared, switched off or waiting
+    // at a place they named would, picked again some day, skip the warning and walk straight in.
     if sys.GetRivalWarned() == sys.GetLaneRivalId(lane) {
       sys.SetRivalWarned(0);
     }
     sys.ClearLane(lane);
     return;
   }
-  // And the gang a crew or apex lane is holding, the same way: switched off, crews switched off, or no
-  // longer hostile since it was picked. Only the Rival lane asked, so a gang that had cooled, or that the
-  // player had switched off, went on counting down and was sent when its turn came.
-  // Never the Rival lane, whose target is the Rival's gang only for the record: a Rival is personal, and is asked
-  // CBRivalQueueable above. Asking the crews' question of it let go of every Rival picked while crews were off, while
-  // They Will Remember sent the gangs' people (CBHitSquadsOn is false then), or once their gang had stopped being
-  // hostile to V, so with any of those no Rival ever came (2.0.0 to 2.4.2).
+  // And the gang a crew or apex lane is holding, the same way: switched off, crews switched off, or no longer hostile
+  // since it was picked.
   let laneGang = sys.GetLaneTarget(lane);
   if lane != CBLaneRival() && NotEquals(laneGang, n"") && !CBGangMaySend(sys, laneGang) {
     CBLog.Info(n"Spawn", s"\(CBLaneLabel(lane)) lane let go of \(NameToString(laneGang)): they no longer send anybody.");
@@ -491,9 +394,8 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     return;
   }
   if sys.GetLaneTicks(lane) > 0 || NotEquals(sys.GetLaneTarget(lane), n"") || sys.GetLaneRivalId(lane) > 0 {
-    // With everybody resting together, somebody already lined up waits out the rest of another lane's fight too, instead of
-    // following it straight in (2.7.1). Their clock has not been told to anybody yet: only the Hub shows it. A Rival who has
-    // already texted that they are coming keeps their word.
+    // With everybody resting together, somebody already lined up waits out the rest of another lane's fight too,
+    // instead of following it straight in. Their clock has not been told to anybody yet: only the Hub shows it.
     let warnedRival = lane == CBLaneRival() && sys.GetRivalWarned() > 0 && sys.GetRivalWarned() == sys.GetLaneRivalId(lane);
     if CBRestTogether() && !warnedRival && CBLaneRestLeft(sys, lane) > 0 {
       return;
@@ -511,10 +413,6 @@ func CBLaneTick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
 }
 
 // Choose who has most earned this lane's next turn, and start their clock.
-//
-// Scored rather than cycled, so the order means something: a gang that has sworn a vendetta
-// outranks one that merely dislikes you, and a Rival who has got away from you repeatedly
-// outranks a new one. Scoring is within the lane only, so the three never compete.
 func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt provokedOnly: Bool) -> Void {
   let score = sys.GetScore();
   if !IsDefined(score) {
@@ -528,18 +426,13 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
   let turf = CBTurfGangsHere(sys);
 
   if lane == CBLaneRival() {
-    // No Rival is picked while V is on home ground, under either Quiet setting (2.7.1, Spawn/HomeGround.reds).
+    // No Rival is picked while V is on home ground, under either Quiet setting (Spawn/HomeGround.reds).
     if !CBRivalsOn() || CBHomeKeepsOut(sys) {
       return;
     }
     for r in sys.GetRivals() {
-      // huntTicks is this Rival's own cooldown now rather than their scheduler: it is set when
-      // you escape one, so somebody you just shook cannot be picked again straight away.
-      // Without honouring it here, escaping would have gone back to meaning nothing, which is
-      // the bug that hollowed out the Rivals' loop in the first place.
-      // And the one test the lane's re-check asks (CBRivalQueueable), so nobody is picked who would be
-      // let go again on the next tick.
-      // And whose own patience has run out (2.6.5, CBRivalReady).
+      // huntTicks is this Rival's own cooldown: set when you escape one, so
+      // somebody you just shook cannot be picked again straight away.
       if IsDefined(r) && r.huntTicks <= 0 && CBRivalQueueable(sys, r.id) && CBRivalReady(sys, game, r) {
         let s = CBConfig.QueueScoreRival()
               + Cast<Float>(r.rank) * 8.0
@@ -574,11 +467,8 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
       return;
     }
     for fs in sys.GetFactionStates() {
-      // The law is not a gang and does not send crews; it has heat and MaxTac for that.
-      // An apex squad is built from the gang's apex records (CBApexRecordFor), which CBApexEligible
-      // already asks for. Demanding the crew template as well kept a gang the Hub called ready out
-      // of the apex lane for good whenever it had no crew template on file.
-      // On home ground under Quiet except a vendetta, only a gang at Vendetta is picked (2.7.1, CBHomeHolds).
+      // The law is not a gang and does not send crews; it has heat and MaxTac for that. An apex squad is built from the
+      // gang's apex records (CBApexRecordFor), which CBApexEligible already asks for.
       if IsDefined(fs) && CBFactionFieldsSquads(fs.id) && !CBHomeHolds(sys, fs.id)
          && (lane == CBLaneApex() || TDBID.IsValid(fs.sampleRecord)) {
         let posture = score.GetPosture(fs.id);
@@ -589,12 +479,12 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
             s = CBConfig.QueueScoreApex() + hate * 20.0;
           }
         } else {
-          // Their patience run out (2.6.5, CBGangReady: their grudge, a fresh wound, how broken they are, their fear of V,
+          // Their patience run out (CBGangReady: their grudge, a fresh wound, how broken they are, their fear of V,
           // their own war, distance, a mask, their code, the hour), or V has just provoked them.
           let offCooldown = CBGangReady(sys, game, fs) || Equals(fs.id, sys.GetProvoked());
           // A crew needs a reason to come today, not only a grudge (CBCrewReason).
           let reason = CBCrewReason(sys, fs, posture, ArrayContains(turf, fs.id), now);
-          // Knowing V well enough to send people is a given for a gang set by hand to come for V (2.1.0).
+          // Knowing V well enough to send people is a given for a gang set by hand to come for V.
           let knowsV = fs.renown >= CBConfig.HitSquadMinRenown() || CBGangViewHunts(fs.id);
           if offCooldown && knowsV && reason >= 0.0
              && (!provokedOnly || Equals(fs.id, sys.GetProvoked())) {
@@ -622,22 +512,6 @@ func CBLanePick(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32, opt 
   }
 
   // Nobody on the books. Make somebody, rather than going quiet.
-  //
-  // Rivals exist only once enemies have escaped V or been spared, so a fresh save - or one
-  // whose state was reset by a mod update - has none at all, and the Rival lane then sits
-  // silent through the whole opening of a playthrough. From the player's side that is a mod
-  // that does nothing, and it is exactly what happened here: six state resets in an afternoon
-  // left an empty roster every time and the lane had nobody to pick.
-  //
-  // So when the lane's turn comes and the roster cannot supply anyone, the gang V has actually
-  // been fighting supplies one instead. It uses the record already sampled from a real enemy
-  // of theirs, so the person who turns up is somebody that gang would plausibly send, and it
-  // needs nothing the player has not already done: hit a gang once and they can answer.
-  //
-  // Only for a roster that is really empty. This ran whenever nobody could be picked, and the usual
-  // reason nobody can be picked is that every Rival V has is on their cooldown after their last fight
-  // (RivalAfterEscapeTicks): so a player with five Rivals got a sixth, a stranger who had never met V,
-  // every time the lane came due during that quarter of an hour, until the roster was full of them.
   if bestScore <= 0.0 && lane == CBLaneRival() && sys.CountActiveRivals() == 0 {
     let seeded = CBSeedRivalFromFactions(sys, game);
     if IsDefined(seeded) {
@@ -707,9 +581,8 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
 
   if lane == CBLaneRival() {
     let r = sys.FindRivalById(sys.GetLaneRivalId(lane));
-    // They tell you first, and you get a little time. The lane's clock runs again for the
-    // warning, and the arrival is the next time it reaches zero.
-    // Now and then they name a place instead of coming (Rivals/RivalLife.reds, 1.9.9).
+    // They tell you first, and you get a little time. The lane's clock runs again for the warning, and the arrival is
+    // the next time it reaches zero. Now and then they name a place instead of coming (Rivals/RivalLife.reds).
     if IsDefined(r) && sys.GetRivalWarned() != r.id && CBRivalMayCallOut(sys, game, r) {
       return;
     }
@@ -721,10 +594,8 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
       CBRivalWarning(sys, game, r);
       return;
     }
-    // Due, and V is already in a fight: they wait it out and come when it is over (2.7.6), the way a crew's arrival always
-    // has (Spawn/HitSquad.reds). A Rival arriving was the one thing sent into the middle of whatever V was fighting, from
-    // behind, with nobody announcing it again ("rivals just appear behind V during fights"). The lane holds them at zero; the
-    // Hub says why (CBHoldInCombat, Spawn/RivalEncounter.reds).
+    // Due, and V is already in a fight: they wait it out and come when it is over, the way a crew's arrival always has
+    // (Spawn/HitSquad.reds).
     let pr = GetPlayer(game);
     if IsDefined(r) && IsDefined(pr) && pr.IsInCombat() {
       return;
@@ -732,13 +603,6 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
     sys.SetRivalWarned(0);
     if !IsDefined(r) || !CBSpawnRival(sys, game, r, now) {
       // Could not be placed. Put this one on their own cooldown and let the lane go.
-      //
-      // It used to keep their turn and retry on the spot, which is fine when the refusal is
-      // momentary and a trap when it is not: a Rival the world will not accept held the lane
-      // indefinitely, the Hub said "any moment" the whole time, and every other Rival sat
-      // behind them saying they were waiting their turn. Releasing the lane lets the picker
-      // choose somebody else next tick, and it skips this one while their cooldown runs, so
-      // the queue keeps moving. If nobody else can go either, the same one comes back round.
       if IsDefined(r) {
         r.huntTicks = CBConfig.RivalHuntRetryTicks();
       }
@@ -746,25 +610,20 @@ func CBLaneFire(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> V
       return;
     }
     sys.SetLaneLastRival(sys.GetLaneRivalId(lane));
-    CBRivalBringPartners(sys, game, r, now);   // sometimes not alone (1.9.0, experimental)
+    CBRivalBringPartners(sys, game, r, now);   // sometimes not alone (experimental)
     CBSpendSlot(sys, game, lane);
     sys.NoteLaneSent(lane, CBGameDay(game));
     sys.SetLaneFired(lane);
   } else {
-    // Zero ticks and then run the dispatch straight away, in this same tick, so they arrive
-    // the moment the clock reaches zero rather than a second or two later. The dispatch keeps
-    // all its own handling for cars, interiors, quiet jobs and giving up; this only removes
-    // the hand-off delay, which served no purpose except to make a finished timer look stuck.
-    // On their way, with a warning and a countdown, rather than standing behind V the moment
-    // the clock runs out. The pending countdowns already hold for a safe area, a quiet job or a
-    // fight in progress, and bring them in when they reach zero.
+    // Zero ticks and then run the dispatch straight away, in this same tick, so they arrive the moment the clock
+    // reaches zero rather than a second or two later.
     CBHuntBegin(sys, game, faction);
     if lane == CBLaneApex() {
       sys.SetPendingApex(faction, CBArrivalTicks(sys, game, faction, CBConfig.ApexWarningTicks()));
       sys.SetHuntGrade(CBT(n"Cyberbane-Queue-APEXSQUAD"));
       sys.ClearCrewBeaten(faction);   // the beaten crew has been answered
       CBApexOnTheWay(sys, game, faction);
-      CBSlipBegin(sys, game, faction);   // what V does before they get here counts (2.7.1, Spawn/Slip.reds)
+      CBSlipBegin(sys, game, faction);   // what V does before they get here counts (Spawn/Slip.reds)
     } else {
       // A gang that does not know where V is may send one person to look first (Spawn/Hunt.reds).
       // The crew then only comes if the scout finds V.
@@ -799,20 +658,12 @@ public func CBHitSquadsOn() -> Bool {
   if IsDefined(rt) && rt.HasSettings() && !rt.GetSettings().hitSquads {
     return false;
   }
-  // Only for a mod that sends crews of its own (2.6.7): Night City Remembers sends nobody, and standing down for it would have
+  // Only for a mod that sends crews of its own: Night City Remembers sends nobody, and standing down for it would have
   // left nobody coming after V at all.
   return !CBRememberSendsCrews();
 }
 
 // How many encounters this lane is allowed to send in one in-game day.
-//
-// This is the real pacing control. Before it, a lane sent somebody every time its gap elapsed
-// and kept doing so for ever, so the only thing deciding how busy a day was was how long the
-// player stayed in one. A day now has a shape: a few Rivals, a couple of crews, a couple of
-// apex squads, and once a lane has spent its allowance it is quiet until tomorrow. The gap
-// below still applies on top, so the day's allowance cannot all arrive at once.
-// No day's allowance any more (2.6.5, Spawn/Grudge.reds): every gang and Rival comes on its own grudge's clock. Kept for
-// the places that ask whether a kind is on at all: more than zero when it is, zero when it is switched off.
 public func CBLaneDailyCap(lane: Int32) -> Int32 {
   if lane == CBLaneRival() { return CBRivalsOn() ? 99 : 0; }
   if lane == CBLaneApex() { return CBHitSquadsOn() && CBApexOnSetting() ? 99 : 0; }
@@ -825,16 +676,6 @@ public func CBLaneBudgetLeft(sys: ref<CyberbaneSystem>, game: GameInstance, lane
 
 // How long this lane still has to rest before it may pick anybody, in ticks. Zero when it is
 // free to go.
-//
-// The stamp and the tick counter both start at zero on a fresh session, so the old arithmetic
-// read "nothing has happened for no time at all" as "this lane finished an encounter a moment
-// ago" and sat out the full gap - ten real minutes of silence after every single load, in all
-// three lanes, with the Hub reporting that the lane was due and nobody qualified while eleven
-// Rivals waited their turn. A lane that has never been busy has nothing to rest from.
-// Everybody rests after a fight (2.7.1, on by default): every lane rests from the end of the last fight of any kind, and,
-// because a busy lane is stamped every tick it is busy (CyberbaneSystem.MarkLaneBusy), nobody new is lined up while any
-// fight is on. "I set it to max and they still hunt me one after another (rival, apex) without rest": each lane rested
-// only from its own last fight.
 public func CBLaneRestLeft(sys: ref<CyberbaneSystem>, lane: Int32) -> Int32 {
   if !IsDefined(sys) {
     return 0;
@@ -867,29 +708,10 @@ public func CBRivalsOn() -> Bool {
 
 // ---- What it takes ----------------------------------------------------------------
 //
-// "It feels like an arbitrary timer." The day's timetable says when the city has time for V; it
-// should not be the reason anybody comes. These are the reasons.
-//
-// A crew comes from a gang that is hostile, knows V well enough (HitSquadMinRenown), has not sent
-// one in the last couple of days, and has a reason today:
-//   - a vendetta, which is a standing reason;
-//   - V provoked them (a witnessed kill of their people, Model/Reputation.reds);
-//   - V has been hanging around on their turf and a lookout called it in (CBTurfWatchTick);
-//   - V has hurt them recently (CrewReasonHours).
-// A gang that hates V but has not seen or heard of V in a day keeps its people at home.
-//
-// An apex squad is the gang's answer to V beating its people: it comes from a hostile gang that
-// has lost enough of its own since its last apex (ApexKillThreshold), after V has beaten one of
-// its crews, or with no crew in between once the bodies reach a massacre
-// (ApexMassacreMultiplier times the threshold). The beaten crew is remembered for the session.
-// So the ladder reads: hurt a gang and get seen, a crew comes; beat the crew, their best comes.
+// The day's timetable says when the city has time for V; it should not be the reason anybody comes. These are the
+// reasons.
 
 // The gangs whose turf V is standing on. Usually one, sometimes two, often none.
-//
-// With turf wars on, that is whoever actually holds a share of the district now
-// (Model/Territory.reds): a gang V has broken is pushed off its own streets, and a gang that moved
-// in on them is on its streets there. Every question about turf - whose lookouts watch V, whose
-// crew knows where V is, whose vendors know where V stands - goes through here, so they all agree.
 public func CBTurfGangsHere(sys: ref<CyberbaneSystem>) -> array<CName> {
   let out: array<CName>;
   if !IsDefined(sys) {
@@ -922,12 +744,12 @@ public func CBCrewReason(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, pos
   if !IsDefined(sys) || !IsDefined(fs) {
     return -1.0;
   }
-  // A corporation sends nobody of its own: it puts a price on V and hires the ladder (Spawn/Bounty.reds, 2.4.3).
+  // A corporation sends nobody of its own: it puts a price on V and hires the ladder (Spawn/Bounty.reds).
   if CBCorpHiresKillers(fs.id) {
     return -1.0;
   }
   // Where V put a pile of their people in the ground, recently: they are slow to come back there
-  // (Model/StreetBook.reds, 2.3.1).
+  // (Model/StreetBook.reds).
   if CBGangAvoidsHere(sys, sys.GetGameInstance(), fs.id) {
     return -1.0;
   }
@@ -936,7 +758,7 @@ public func CBCrewReason(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, pos
     return -1.0;
   }
   // A gang that cannot pay anybody, or has nobody left, sends nobody; and nobody comes onto V's own streets
-  // (Economy/War.reds, 2.4.0). A stance set by hand to come for V is the player's word, and the money does not argue.
+  // (Economy/War.reds). A stance set by hand to come for V is the player's word, and the money does not argue.
   if !CBGangViewHunts(fs.id) && !CBWarCanSend(sys.GetGameInstance(), fs.id) {
     return -1.0;
   }
@@ -945,9 +767,8 @@ public func CBCrewReason(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, pos
   }
   let bonus = 0.0;
   let reason = false;
-  // A gang V has broken (1.9.5) has nobody to spare for a standing grudge or for V walking its streets:
-  // it sends people when V has just hurt it or provoked it, and otherwise keeps its head down. Its
-  // people said as much ("there's hardly any of us left") while it went on sending a crew a day.
+  // A gang V has broken has nobody to spare for a standing grudge or for V walking its streets: it sends people when V
+  // has just hurt it or provoked it, and otherwise keeps its head down.
   let broken = CBGangBroken(sys, fs.id);
   if Equals(posture, ECBPosture.Vendetta) && !broken {
     reason = true;
@@ -955,7 +776,7 @@ public func CBCrewReason(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, pos
   if Equals(fs.id, sys.GetProvoked()) {
     reason = true;
   }
-  // A gang with a tracker on V, or in open season, always knows where to send (Spawn/HuntGrows.reds, 2.4.2).
+  // A gang with a tracker on V, or in open season, always knows where to send (Spawn/HuntGrows.reds).
   if Equals(fs.id, CBTrackerGang(sys.GetGameInstance())) || CBOpenSeasonFor(sys.GetGameInstance(), fs.id) {
     reason = true;
   }
@@ -990,13 +811,8 @@ public func CBApexRecordFor(fs: ref<CBFactionState>) -> TweakDBID {
   return CBApexRosterRecord(fs.id, 0);
 }
 
-// Has this gang earned the right to send its best? One test for the lane, the warning text and
-// the Hub, so none of them can promise an apex squad another will not send.
-// May this gang still send anybody after V at all: crews on, the gang fielding people (not the law, not
-// switched off), and still hostile. Asked of whatever a gang already has queued or counting down - a lane
-// holding them, a crew or apex squad warned and on the clock, an informant's set-up - so nothing goes out
-// for a gang that has since been paid off, come round to V, or been switched off. Picking (CBLanePick,
-// CBApexEligible) asks more than this; this is what must still hold once they have been picked.
+// Has this gang earned the right to send its best? One test for the lane, the warning text and the Hub, so none of them
+// can promise an apex squad another will not send.
 public func CBGangMaySend(sys: ref<CyberbaneSystem>, faction: CName) -> Bool {
   if !IsDefined(sys) || Equals(faction, n"") || !CBHitSquadsOn() || !CBFactionFieldsSquads(faction)
      || CBCorpHiresKillers(faction) {
@@ -1023,12 +839,12 @@ public func CBApexEligible(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -
   if NotEquals(posture, ECBPosture.Hostile) && NotEquals(posture, ECBPosture.Vendetta) {
     return false;   // a gang V is square with does not send its best
   }
-  // Set by hand to Vendetta (How gangs see you, 2.1.0): their best come on their own, within How often they come.
-  // The kills that earn an apex squad are how Earned in play, and a Hostile set by hand, decide it.
+  // Set by hand to Vendetta (How gangs see you): their best come on their own, within How often they come. The kills
+  // that earn an apex squad are how Earned in play, and a Hostile set by hand, decide it.
   if CBGangViewVendetta(fs.id) {
     return true;
   }
-  // Not after a merc they have barely heard of (2.7.0, Before you're known).
+  // Not after a merc they have barely heard of (Before you're known).
   if CBTooUnknownForApex(sys.GetGameInstance()) {
     return false;
   }
@@ -1036,7 +852,7 @@ public func CBApexEligible(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -
   if !CBCodeSendsApex(fs.id) || !CBCodeAtHome(sys, fs.id) {
     return false;
   }
-  // Their best cost money (Economy/War.reds, 2.4.0).
+  // Their best cost money (Economy/War.reds).
   if !CBWarCanSendApex(sys.GetGameInstance(), fs.id) {
     return false;
   }
@@ -1048,11 +864,7 @@ public func CBApexEligible(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -
       || since >= CBConfig.ApexKillThreshold() * CBConfig.ApexMassacreMultiplier();
 }
 
-// Every gang set by hand to come for V has what it takes to send people (How gangs see you, 2.1.0). A gang V has
-// never crossed has no record on the books at all (only a kill or a pay-off files one), so the lanes, which go
-// through the gangs on the books, never looked at it; and none of its people on file to build a crew from. Its
-// record is opened, and its crew template is its own rank and file, the same fallback the session start gives any
-// gang left without one (Rivals/RivalSystem.reds, CBPruneUniqueRivals). Gangs on Earned in play are not touched.
+// Every gang set by hand to come for V has what it takes to send people (How gangs see you).
 public func CBEnsureHuntingGangs(sys: ref<CyberbaneSystem>) -> Void {
   let content = IsDefined(sys) ? sys.GetContent() : null;
   if !IsDefined(content) {
@@ -1070,8 +882,8 @@ public func CBEnsureHuntingGangs(sys: ref<CyberbaneSystem>) -> Void {
 
 // What the Hub says about this gang's apex squad when nothing is on its way.
 public func CBApexProgressLine(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> String {
-  // Nothing to count towards when Cyberbane sends nobody (crews off, or They Will Remember sending the gangs'
-  // people): the Gangs screen said "apex squad in 20 kills" for a squad that was never coming (2.4.2).
+  // Nothing to count towards when Cyberbane sends nobody (crews off, or They Will Remember sending the gangs' people):
+  // the Gangs screen said "apex squad in 20 kills" for a squad that was never coming.
   if !IsDefined(sys) || !IsDefined(fs) || !CBHitSquadsOn() {
     return "";
   }
@@ -1080,11 +892,11 @@ public func CBApexProgressLine(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState
   if NotEquals(posture, ECBPosture.Hostile) && NotEquals(posture, ECBPosture.Vendetta) {
     return "";
   }
-  // A corporation sends nobody: it pays the ladder (Spawn/Bounty.reds, 2.4.3).
+  // A corporation sends nobody: it pays the ladder (Spawn/Bounty.reds).
   if CBCorpHiresKillers(fs.id) {
     return CBT(n"Cyberbane-Queue-TheyHireKillersInsteadOfSending");
   }
-  // Nothing to count towards for a gang with no best to send (2.7.0): one whose code never sends them (the Mox), one with no
+  // Nothing to count towards for a gang with no best to send: one whose code never sends them (the Mox), one with no
   // apex records, or with Apex squads off. Each of them was promised "apex squad in 20 kills".
   if !CBApexOnSetting() || !CBCodeSendsApex(fs.id) || !CBFactionFieldsSquads(fs.id) || !TDBID.IsValid(CBApexRecordFor(fs)) {
     return "";
@@ -1115,7 +927,7 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
   if !IsDefined(sys) || Equals(faction, n"") {
     return;
   }
-  CBCrewCounterBeaten(sys, game, faction);   // a counterattack on the crew's corners held (2.7.7)
+  CBCrewCounterBeaten(sys, game, faction);   // a counterattack on the crew's corners held
   // Their apex squad came with them and is down too: nobody else of it walks into a fight that
   // is over. Read before the line below, which forgets that it came.
   let cameWithApex = sys.ActiveSquadHasApex();
@@ -1127,10 +939,7 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
   if !IsDefined(fs) {
     return;
   }
-  // A crew that came with its apex squad has had its answer (2.7.8). Sending them spent the gang's kills and cleared the
-  // beaten crew (Spawn/HitSquad.reds); beating them marked it again, and with the kills made in that same fight (22
-  // bodies in the play log) their best were due straight after the best V had just put down, and the gang said so.
-  // A crew that came alone is what calls the apex squad, as it always was.
+  // A crew that came with its apex squad has had its answer.
   if !cameWithApex {
     sys.NoteCrewBeaten(faction);
   }
@@ -1144,9 +953,8 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
   let crewLabel = CBFactionLabel(faction);
   CBPayBounty(sys, game, faction, RoundF(Cast<Float>(CBConfig.BountyCrew()) * CBLootLevelScale(game) / 50.0) * 50,
               StrLen(crewLabel) > 0 ? CBTf(n"Cyberbane-Queue-HeardYouDealtWithThatCrew", [s"\(crewLabel)"]) : CBT(n"Cyberbane-Queue-HeardYouDealtWithThatCrew-2"));
-  // Only promise what can follow: a gang that fields an apex, while the apex lane is on and
-  // nothing is already on its way.
-  // Nor from a gang whose code never sends its best, or with Apex squads off (2.7.0).
+  // Only promise what can follow: a gang that fields an apex, while the apex lane is on and nothing is already on its
+  // way. Nor from a gang whose code never sends its best, or with Apex squads off.
   if !CBToastsOn() || !CBHitSquadsOn() || CBLaneDailyCap(CBLaneApex()) <= 0 || !CBApexOnSetting() || !CBCodeSendsApex(faction)
      || !TDBID.IsValid(CBApexRecordFor(fs)) || NotEquals(sys.GetPendingApexFaction(), n"") {
     return;
@@ -1160,12 +968,6 @@ public func CBOnCrewBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, factio
 }
 
 // Hanging around on a hostile gang's streets gets noticed.
-//
-// The NCPD half of being hunted: do something, or simply be somewhere you should not, and
-// somebody calls it in. After TurfLingerTicks on the turf of a gang that wants V dead, out in the
-// open and not sneaking, a lookout calls it in, which provokes that gang (Spawn/Hunt.reds) and
-// lets its crew come off the timetable. One lookout per TurfSpotCooldownTicks at most. Called
-// every five ticks.
 public func CBTurfWatchTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) || !CBHitSquadsOn() || !CBWorldStable(game) {
     return;
@@ -1217,7 +1019,6 @@ public func CBTurfWatchTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     }
     return;
   }
-  // Their lookout dealt with: nothing gets reported, and the street is quiet for a while.
   if IsDefined(turfBook) && CBLookoutDealt(game, turfBook.lookoutId) {
     CBTurfWatchLetGo(game);
     sys.SetTurfSpotNext(now + CBConfig.TurfSpotCooldownTicks());
@@ -1240,10 +1041,8 @@ public func CBTurfWatchTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
 
 // ---- Pacing without a clock ------------------------------------------------------
 //
-// "I eventually kept a mental clock in my head." Three things fed that clock: windows on a daily
-// timetable, countdowns that were the same length every time, and the exact times on the Hub and
-// the HUD. The windows are now one of three pacing modes, every countdown and warning varies, and
-// the times can be turned into words (UI/Hud.reds, CBTimeText).
+// Three things fed that clock: windows on a daily timetable, countdowns that were the same length every time, and the
+// exact times on the Hub and the HUD.
 
 public func CBPacing() -> ECBPacing {
   return ECBPacing.Timetable;
@@ -1257,9 +1056,8 @@ public func CBPacingSetting() -> ECBPacing {
   return ECBPacing.Timetable;
 }
 
-// Is this lane allowed to pick somebody this tick? The day's allowance, the rest between
-// encounters and the reasons a gang needs are all still checked by the caller.
-// Is anybody's grudge ready for this lane (2.6.5)? Asked every few ticks, not every one: it walks every gang.
+// Is this lane allowed to pick somebody this tick? The day's allowance, the rest between encounters and the reasons a
+// gang needs are all still checked by the caller. Is anybody's grudge ready for this lane?
 public func CBPacingDue(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> Bool {
   if sys.GetTickCount() % 5 != lane % 5 {
     return false;
@@ -1269,7 +1067,6 @@ public func CBPacingDue(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int
   return CBGrudgeNextIn(sys, game, lane, who, rid) == 0.0;
 }
 
-// The timetable's own test (until 2.6.5), kept for reference and no longer asked.
 public func CBPacingDueOld(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32) -> Bool {
   let mode = CBPacing();
   if Equals(mode, ECBPacing.Timetable) {
@@ -1327,10 +1124,8 @@ public func CBWarningTicks(base: Int32) -> Int32 {
        + CBWatchExtraTicks();   // somebody V paid to keep watch sees them sooner (Reactions/StreetPay.reds)
 }
 
-// How far they have to come (2.6.1): the warning before a gang's people arrive, by how many districts lie between V
-// and the nearest streets that gang holds. On their own turf they are round the corner (Barghest in Dogtown); a gang
-// from across the city takes a while to get there (the same Barghest with V in the City Center). A gang with no streets
-// anywhere (a corporation) comes in the usual time.
+// How far they have to come: the warning before a gang's people arrive, by how many districts lie between V and the
+// nearest streets that gang holds.
 public func CBArrivalTicks(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName, base: Int32) -> Int32 {
   let hops = CBGangHopsToV(sys, game, faction);
   return Max(1, RoundF(Cast<Float>(CBWarningTicks(base)) * CBArrivalDistanceMult(hops)));
@@ -1339,8 +1134,8 @@ public func CBArrivalTicks(sys: ref<CyberbaneSystem>, game: GameInstance, factio
 // A Rival comes from their own district, where they keep their place.
 public func CBRivalArrivalTicks(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, base: Int32) -> Int32 {
   let hops = IsDefined(r) && IsDefined(sys) ? CBDistrictHops(game, r.origin, sys.GetCurrentDistrict()) : -1;
-  // Nowhere known at either end is no distance at all, never "here" (2.6.3): CBDistrictHops reads an unknown district as
-  // the same one, so a Rival sent while V's district was not yet known after a load arrived at home-turf speed.
+  // Nowhere known at either end is no distance at all, never "here": CBDistrictHops reads an unknown district as the
+  // same one, so a Rival sent while V's district was not yet known after a load arrived at home-turf speed.
   if !IsDefined(r) || !IsDefined(sys) || CBDistrictIndex(r.origin) < 0 || CBDistrictIndex(sys.GetCurrentDistrict()) < 0 {
     hops = -1;
   }
@@ -1391,9 +1186,8 @@ public func CBGangHopsToV(sys: ref<CyberbaneSystem>, game: GameInstance, faction
 
 // ---- Being tracked -----------------------------------------------------------------
 //
-// "If it warned me I was being actively tracked." Before anybody sets off, somebody starts asking
-// around about V. Either the local broker texts, or V overhears it, never both. The HUD line
-// shows TRACKED while it lasts. It says nothing about how long.
+// Before anybody sets off, somebody starts asking around about V. Either the local broker texts, or V overhears it,
+// never both. The HUD line shows TRACKED while it lasts. It says nothing about how long.
 public func CBTrackingNotice(sys: ref<CyberbaneSystem>, game: GameInstance, lane: Int32,
                              faction: CName, rivalId: Int32) -> Void {
   if !IsDefined(sys) || !CBToastsOn() || !sys.TakeTrackNotice(lane, CBConfig.TrackNoticeGapTicks()) {
@@ -1426,9 +1220,7 @@ public func CBTrackingNotice(sys: ref<CyberbaneSystem>, game: GameInstance, lane
       }
     }
   }
-  // Overheard only with Whispers on, and only now and then (1.9.1). Overheard is a line drawn on the
-  // screen, so a player who set messages to go to the phone and switched the overheard lines off
-  // still had four in ten of these put up as a subtitle.
+  // Overheard only with Whispers on, and only now and then.
   if !CBWhispersOn() || RandF() < 0.6 || NotEquals(CBMessageDelivery(), ECBMessageDelivery.Phone) {
     let district = sys.GetCurrentDistrict();
     if NotEquals(district, n"") {
@@ -1460,7 +1252,7 @@ public func CBCrewSizeFor(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, in
   if infamous {
     size += 1;
   }
-  size += CBCrewAnswerSize(sys, fs.id);   // a crew of V's own is answered with a bigger one (Reactions/Crew.reds, 2.5.0)
+  size += CBCrewAnswerSize(sys, fs.id);   // a crew of V's own is answered with a bigger one (Reactions/Crew.reds)
   let score = sys.GetScore();
   let posture = IsDefined(score) ? score.GetPosture(fs.id) : ECBPosture.Neutral;
   if Equals(posture, ECBPosture.Vendetta) && CBVendettaSquadsOn() {
@@ -1472,8 +1264,8 @@ public func CBCrewSizeFor(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, in
       size = scaled;
     }
   }
-  // A gang V has bled sends fewer of its people (1.9.5): from the whole crew at full strength down to
-  // about three in five of it at the floor. Strength is 100 whenever turf wars are off.
+  // A gang V has bled sends fewer of its people: from the whole crew at full strength down to about three in five of it
+  // at the floor. Strength is 100 whenever turf wars are off.
   let strength = ClampF(CBGangStrength(sys, fs.id), 0.0, 100.0);
   if strength < 100.0 {
     size = Max(2, RoundF(Cast<Float>(size) * (CBConfig.CrewStrengthFloorShare()
@@ -1483,14 +1275,12 @@ public func CBCrewSizeFor(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, in
   size = Max(2, size - CBConfig.DifficultyCrewTrim() * CBDifficultyLevel());
   // How many this gang sends at all (Data/GangCodes.reds): the Mox and the Voodoo Boys few, Barghest more.
   size = Max(2, RoundF(Cast<Float>(size) * CBCodeCrew(fs.id)));
-  // And how many it can pay for and still has (Economy/War.reds, 2.4.0).
+  // And how many it can pay for and still has (Economy/War.reds).
   size = Max(2, RoundF(Cast<Float>(size) * CBWarCrewMult(GetGameInstance(), fs.id)));
-  // Never more than can actually be in the world at once (CBSpawnGroup's ceiling), leaving the
-  // apex squad's four chairs free when crews bring it. The vendetta slider goes past the ceiling,
-  // so the text could promise twenty and eighteen at most could ever turn up; this is the one
-  // number both the text and the spawn use, so it is the number that arrives.
+  // Never more than can actually be in the world at once (CBSpawnGroup's ceiling), leaving the apex squad's four chairs
+  // free when crews bring it.
   size += sys.WornPerk().crewDelta;
-  // And V's own crew's places, kept free while they could be called (2.6.3, CBCrewRoomKept).
+  // And V's own crew's places, kept free while they could be called (CBCrewRoomKept).
   let ceiling = CBConfig.MaxLiveSpawns() - (CBCrewApexOn() ? CBConfig.ApexStrikeTeamSize() : 0) - CBCrewRoomKept(GetGameInstance());
   return Min(size, Max(2, ceiling));
 }
@@ -1527,11 +1317,8 @@ public func CBNumberWord(n: Int32) -> String {
   }
 }
 
-// Why this gang's apex squad is not coming right now, in a few words, or "" when nothing stands in
-// the way but the timetable (1.8.4). The lane's own checks, in the lane's order (CBLaneTick,
-// CBLanePick): "ready to send their best" was shown on the gang's eligibility alone, so a player
-// with 320 kills was told 6th Street was ready while crews were off, They Will Remember had the
-// gangs, the day's squads were spent or V was standing on a job.
+// Why this gang's apex squad is not coming right now, in a few words, or "" when nothing stands in the way but the
+// timetable.
 public func CBApexBlocker(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFactionState>) -> String {
   if !IsDefined(sys) || !IsDefined(fs) {
     return "";
@@ -1539,7 +1326,7 @@ public func CBApexBlocker(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref
   if !CBHitSquadsOn() {
     return CBRememberSendsCrews() ? CBTf(n"Cyberbane-Queue-SendsTheGangs", [CBRememberModName()]) : CBT(n"Cyberbane-Queue-CrewsAreOffInModSettings");
   }
-  // The switch as well as the per-day slider (2.7.0): with Apex squads off the Hub still said "ready to send their best".
+  // The switch as well as the per-day slider: with Apex squads off the Hub still said "ready to send their best".
   if !CBApexOnSetting() || CBLaneDailyCap(CBLaneApex()) <= 0 {
     return CBT(n"Cyberbane-Queue-ApexSquadsAreOffInMod");
   }

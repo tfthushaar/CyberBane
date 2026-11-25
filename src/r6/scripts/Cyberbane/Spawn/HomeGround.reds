@@ -1,35 +1,7 @@
-// Cyberbane - Home ground, and a night at home (2.7.1)
+// Cyberbane - Home ground, and a night at home
 //
-// "Possible to reduce spawn rate in the H10 building? The amount of bodies, especially from apex squads, I dropped is
-// countless. H10 is no longer a safe place for my V other than the apartment itself." And: "I just want to have a moment of
-// peace sometimes."
-//
-// The apartment itself has always been the sanctuary's (Spawn/Sanctuary.reds): a safe area, nobody follows V through the
-// door. The building around it was ordinary ground, so a crew could be placed in the lobby or the car park and walk up the
-// corridor, and a megabuilding is where V spends half the game.
-//
-// Home ground is the building round each of V's apartments: within HomeRadius of it, flat on the map, at any height, so the
-// lobby, the corridors, the car park and the street at the door. While V is on it (Home ground: Quiet):
-//   - nobody is picked to come for V, and no countdown runs (CBArrivalsHeld);
-//   - nobody of Cyberbane's against V is placed on it (CBSafeAreaBlocksSpawn), and none of the street's own life starts
-//     there (bagmen, gatherings, clashes, patrols, wannabes, hangouts, bounty hunters: CBHomeKeepsOut);
-//   - people already looking for V do not find V there: they hold, the way they do at a job (CBHuntTick);
-//   - a fight that followed V in goes on: it started outside.
-// Quiet except a vendetta lets a gang at Vendetta still come for V there, and nobody else.
-//
-// Where home is, learned rather than typed: the game keeps a district of its own for each of V's apartments (the districts
-// tweak: LittleChina_VApartment for H10, JapanTown_Apartment, Northside_Apartment, Glen_Apartment, CorpoPlaza_Apartment),
-// and the prevention system names the one V is standing in, the read CBCurrentDistrict makes before folding it into the
-// eight districts. The first time V is inside one, the spot is kept. So is the spot of any bed V sleeps in, the game's own
-// Rested effect (HousingStatusEffect.Rested, player_housing.tweak) being what a night in one of V's beds leaves, in case a
-// flat answers to no district of its own. A bought apartment, a later one, one from another mod with a bed: all the same.
-//
-// A night at home: when Rested first shows on V, nobody is sent for Quiet after a night at home game hours. Anybody already
-// on their way still comes; it only stops new ones being picked.
-//
-// The book also keeps, for each home, where V comes out of the flat into the building and where V last left a car on home
-// ground: the posts V's crew will stand at when they watch the house (plan, group 4). Kept from now so the book's saved
-// shape never has to change.
+// Nobody is placed in or sent into the building around V's apartments, lobby and car park included, and a night in V's
+// own bed buys some hours of quiet.
 
 public func CBHomeGroundMode() -> ECBHomeGround {
   let rt = CyberbaneRuntime.Get();
@@ -57,8 +29,8 @@ public func CBHomeKindOf(districtName: String) -> Int32 {
   return 0;
 }
 
-// The district of the game's V is standing in, by its enum name, unfolded: "" when the game has not said.
-// The game's own name for the part of a district V stands in ("Rocky Ridge"), in the player's language; "" when none.
+// The district of the game's V is standing in, by its enum name, unfolded: "" when the game has not said. The game's
+// name for the part of a district V stands in ("Rocky Ridge"), in the player's language; "" when none.
 public func CBSubDistrictLabel(game: GameInstance) -> String {
   let prev = CBGetSystem(game, n"PreventionSystem") as PreventionSystem;
   let district = IsDefined(prev) ? prev.GetCurrentDistrict() : null;

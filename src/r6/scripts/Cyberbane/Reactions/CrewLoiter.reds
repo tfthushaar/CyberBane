@@ -1,9 +1,9 @@
-// Cyberbane - Your crew on your corners (2.7.7)
+// Cyberbane - Your crew on your corners
 //
-// In a district V's crew holds, a member or two who are free hang out on a corner near V when the crew is not out with V:
-// on V's side, standing where they were put, there to talk to the way the watch at home is (Reactions/CrewHome.reds). They
-// go when V leaves the district, calls the crew, a fight starts, or the story needs the street. Their own tag (CB_Loiter),
-// counted on V's side (CBOnVsSide); a body that goes down is hurt, never lost, as the watch's is.
+// In a district V's crew holds, a member or two who are free hang out on a corner near V when the crew is not out with
+// V: on V's side, standing where they were put, there to talk to the way the watch at home is
+// (Reactions/CrewHome.reds). They go when V leaves the district, calls the crew, a fight starts, or the story needs the
+// street.
 
 public class CBLoiterBook extends ScriptableSystem {
   public let bodies: array<EntityID>;

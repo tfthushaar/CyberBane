@@ -1,24 +1,10 @@
-// Cyberbane - How the people Cyberbane sends fight (1.8.5)
+// Cyberbane - How the people Cyberbane sends fight
 //
-// "I want everyone to be more tactical." Once a fight starts, Cyberbane's own orders are dropped
-// (every move order is ignoreInCombat), so how anybody fights is the game's combat AI, and that AI
-// picks its tactics from abilities: prefer cover, use shooting spots, shoot on the move, block and
-// parry, throw a grenade, hack. A record only does what its abilities allow, and a crew sampled from
-// whoever V last killed got almost none of them on top of what the record carried.
-//
-// Much Better AI (Nexus 31402, cshiai) was the reference for the approach: abilities handed out by
-// what the NPC actually is, read from its archetype, applied through the ability's own gameplay
-// package and only when that package is not already on the NPC, and never a hand-to-hand ability for
-// a machine or a cyberpsycho. Nothing here is its code, and the parts of it that shape spacing, aim
-// and netrunner cadence are its job and stay out of Cyberbane. When it, or New Game Plus, is
-// installed (CBAiKitOwner), none of this runs.
-//
-// Behaviour only, every line of it, through CBGrantAbility. No health, no armour, and never the
-// chrome that drives effects on records never authored for it (Sandevistan, Kerenzikov, camo,
-// berserk), the line the apex kit has held since 1.5.0. Grenades and hacks make game effects, so they
-// are rationed: one grenadier per crew, and hacks only on records the game made netrunners.
+// Once a fight starts, Cyberbane's own orders are dropped (every move order is ignoreInCombat), so how anybody fights
+// is the game's combat AI, and that AI picks its tactics from abilities: prefer cover, use shooting spots, shoot on the
+// move, block and parry, throw a grenade, hack.
 
-// What a record is, for this file's purposes. Read from the game's own archetype (CBRecordArchetype).
+// What a record is, for this file's purposes. Read from the game's archetype (CBRecordArchetype).
 public enum ECBFightStyle {
   Other = 0,
   Rifle = 1,
@@ -77,9 +63,8 @@ func CBFightsLikeAPerson(npc: ref<NPCPuppet>) -> Bool {
   return IsDefined(npc) && !npc.IsMechanical() && !NPCManager.HasTag(npc.GetRecordID(), n"Cyberpsycho");
 }
 
-// The tactical layer, by fighting style. `elite` is the apex squad and the Rivals: they get a little
-// more, so the gap between them and a crew still means something. Called from the kits, which have
-// already checked CBAiKitOwner and guarded against kitting anybody twice.
+// The tactical layer, by fighting style. `elite` is the apex squad and the Rivals: they get a little more, so the gap
+// between them and a crew still means something.
 public func CBApplyTactics(npc: ref<NPCPuppet>, elite: Bool) -> Void {
   if !IsDefined(npc) || !npc.IsAttached() || npc.IsDead() {
     return;
@@ -136,17 +121,7 @@ public func CBApplyTactics(npc: ref<NPCPuppet>, elite: Bool) -> Void {
   };
 }
 
-// The hacks a netrunner may use on V (1.8.5).
-//
-// A netrunner's hacks are not a list on the record. The game's own netrunner AI chooses from every
-// hack it knows (HackActionSelector, ai/actions/library/netrunneractions.tweak) and offers each one
-// only to a netrunner holding that hack's ability, with the hack's own cooldown and tier requirements.
-// Most of the city's netrunners hold Overheat and little else, which is why they felt like one trick.
-// Granting the abilities lets the game's AI use the rest of what it already knows, under its own rules.
-//
-// Only ever for a record the game made a netrunner: hacking on a record never authored for it is what
-// 1.5.0 took out of every kit. Never the hacks that kill outright or take V over: Death, Suicide,
-// Detonate Grenade, Madness, Control.
+// The hacks a netrunner may use on V.
 public func CBGiveNetrunnerHacks(npc: ref<NPCPuppet>) -> Void {
   if !IsDefined(npc) || !CBRecordIsNetrunner(npc.GetRecordID()) {
     return;
@@ -160,9 +135,8 @@ public func CBGiveNetrunnerHacks(npc: ref<NPCPuppet>) -> Void {
   CBGrantAbility(npc, t"Ability.CanOverloadQuickHack");
 }
 
-// One of a crew carries grenades, to get V out from behind cover so the others can reach. One, not
-// every one of them: a crew of eight throwing at once is a wall of effects and no fight. The same two
-// kinds the apex squad's shooter has always carried.
+// One of a crew carries grenades, to get V out from behind cover so the others can reach. One, not every one of them: a
+// crew of eight throwing at once is a wall of effects and no fight.
 public func CBMakeGrenadier(npc: ref<NPCPuppet>) -> Void {
   if !IsDefined(npc) || !npc.IsAttached() || npc.IsDead() {
     return;
@@ -182,9 +156,7 @@ public func CBCanBeGrenadier(npc: ref<NPCPuppet>) -> Bool {
       || Equals(style, ECBFightStyle.Other);
 }
 
-// The netrunner who comes with a crew (1.8.5). The one of that gang's netrunners V has actually met,
-// which is how another mod's netrunners - More Netrunners - come with the crews too; otherwise the
-// gang's own from the base game, for the gangs that have one; otherwise nobody.
+// The netrunner who comes with a crew.
 public func CBNetrunnerSeatRecord(fs: ref<CBFactionState>) -> TweakDBID {
   if !IsDefined(fs) {
     return TDBID.None();
@@ -201,7 +173,7 @@ public func CBNetrunnerSeatRecord(fs: ref<CBFactionState>) -> TweakDBID {
   return TDBID.None();
 }
 
-// The base game's own netrunner for the gangs that have one (factions/*.tweak, archetype Netrunner).
+// The base game's netrunner for the gangs that have one (factions/*.tweak, archetype Netrunner).
 func CBGangNetrunnerRecord(faction: CName) -> TweakDBID {
   if Equals(faction, n"TygerClaws") {
     return t"Character.tygerclaw_gangster3_netrunner_nue_wa_rare";

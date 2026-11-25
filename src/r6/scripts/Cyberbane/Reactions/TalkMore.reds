@@ -1,4 +1,4 @@
-// Cyberbane - More to talk about (2.7.7)
+// Cyberbane - More to talk about
 //
 // The street knows what V is worth and who is paying for it (the bounty board, asked of anybody who talks), and it talks
 // about what V has done lately: the crew's last war, a district the crew took, a Rival V put down. At home, one of V's
@@ -129,6 +129,6 @@ public func CBCrewOtherAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, t: 
   return CBTalkSay(line, n"");
 }
 
-// Which of the others a member at home was last asked about (2.7.7): the next ask is about the next one.
+// Which of the others a member at home was last asked about: the next ask is about the next one.
 @addField(ScriptedPuppet)
 public let cbCrewAskTurn: Int32;

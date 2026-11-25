@@ -1,46 +1,8 @@
-// Cyberbane - Hunting a Rival down (1.6.2)
+// Cyberbane - Hunting a Rival down
 //
-// "It would be peak to track my Rival down and go ambush them. Like they do with us." Rivals come for
-// V on their own timetable; this is the other direction. Somebody who got away from V is seen
-// somewhere afterwards, the street or a gang that hates theirs tells V where, and if V goes there
-// on foot the Rival is there, not expecting anybody. Catch them unawares and the street hears
-// about it.
-//
-// The pieces, in the order they happen:
-//   Seen       When a Rival walks away from an encounter alive - V lost them, they ran, V spared
-//              them - the spot they were standing on is written down. It is standing room by
-//              construction: Cyberbane placed them and they walked there.
-//   Tip        Now and then, a gang at war with theirs, or somebody on the street, texts V where
-//              the Rival was seen and a pin goes on the map. One lead at a time; it goes stale
-//              after a day, because people move on.
-//   Waiting    V comes to the pin. Inside LairPlaceDistance, on foot, out of combat, with the
-//              world settled and nothing else of Cyberbane's out or on its way, the Rival is put
-//              there - at the place or round it, somewhere V cannot see (1.7.1), idle, given no
-//              orders at all, and tagged CB_Lair instead of CB_Rival.
-//   The fight  The moment they are in combat or V has hurt them, the tag becomes CB_Rival and
-//              from then on it is an ordinary Rival encounter, run entirely by the code that
-//              already runs every other one: the hunt, the escape, the mercy, the death.
-//   Ambush     Put down before they ever got into the fight, it counts as an ambush: extra
-//              renown, a line in the street's file, and word back from whoever tipped V off.
-//
-// Why it is built like this. Crash safety first:
-//   - Nothing new reaches the engine. The body is placed through the same checks and the same
-//     CreateEntity call as every arrival (Spawn/Spawner.reds), torn down through
-//     CBDeleteTaggedSafe, marked through the same mappin system. The one call this mod had not
-//     made before is MappinSystem.RegisterMappin with a position, which both 2.31 and 2.5 have
-//     and which the game's own drop points use. The game's own systems register those pins again
-//     on every load (DropPointSystem.OnRestored), so they are not kept in the save, and a pin left
-//     over from another session cannot exist.
-//   - The arrival is placed only when V is on foot and has been calm for several settled ticks.
-//     A car or a fast travel is exactly when the world streams hardest, which is where the mod's
-//     crashes have always come from, so those are the moments it refuses.
-//   - One waiting Rival at a time, never while anything else of ours is out or on its way, and
-//     never more bodies than the live ceiling allows.
-//   - While waiting they carry their own tag, so the hunt, the chase give-up, the retire sweep
-//     and the lanes - everything that would otherwise send them off after V or declare them lost
-//     - cannot see them. Leaving the hunt's state machine untouched was the point.
-// And no save changes shape: where Rivals were seen lives in the global service (see
-// CBSighting); what is going on right now lives in session fields on the system.
+// Rivals come for V on their own timetable; this is the other direction. Somebody who got away from V is seen somewhere
+// afterwards, the street or a gang that hates theirs tells V where, and if V goes there on foot the Rival is there, not
+// expecting anybody. Catch them unawares and the street hears about it.
 
 // ---- On or off ------------------------------------------------------------------------------
 
@@ -58,10 +20,8 @@ public func CBHideoutsOn() -> Bool {
 
 // ---- Where they were seen -------------------------------------------------------------------
 
-// Could anybody be waiting here later? Point tests only. CBSafeAreaBlocksSpawn asks the same
-// questions but also writes down why it refused, for the Hub's "why has nobody come" line, and
-// noting a sighting is not an arrival. Stricter than an arrival on purpose: a hideout is never in a
-// safe area, whatever the safe-area setting says.
+// Could anybody be waiting here later? Point tests only. CBSafeAreaBlocksSpawn asks the same questions but also writes
+// down why it refused, for the Hub's "why has nobody come" line, and noting a sighting is not an arrival.
 func CBLairPointUsable(sys: ref<CyberbaneSystem>, game: GameInstance, at: Vector4) -> Bool {
   if !IsDefined(sys) || sys.NearQuestPins(at, CBConfig.QuestSpawnClearance()) {
     return false;
@@ -74,21 +34,13 @@ func CBLairPointUsable(sys: ref<CyberbaneSystem>, game: GameInstance, at: Vector
   if IsDefined(sam) && sam.IsPointInSafeArea(at) {
     return false;
   }
-  // Nor V's own building (2.7.1, Spawn/HomeGround.reds).
+  // Nor V's own building (Spawn/HomeGround.reds).
   return !CBHomePointKept(game, at);
 }
 
 // This Rival was standing here, alive, as an encounter ended. Called from the places where one
 // ends that way (CBRivalEscapedByPlayer, CBHandleEscape, CBHandleSpared, a crew survivor in
 // CBChaseGiveUp), all on settled ticks.
-//
-// "I'm not getting tips to hunt my rivals." This asked only the body, and only a body that was
-// still attached. The usual way a Rival walks away alive is V outrunning them, and the hunt only
-// gives up once every hunter is well over a hundred metres off and has stayed there - which is
-// exactly where a body streams out. So the commonest escape wrote nothing down, and with nothing
-// written down there was nothing for anybody to tip V off about. Where the Rival was last seen
-// standing is kept as they move (CBTrackRivalWhereabouts), and that is used when the body cannot
-// answer for itself.
 public func CBNoteRivalSeen(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>,
                             body: wref<ScriptedPuppet>) -> Void {
   if !IsDefined(sys) || !IsDefined(r) || !CBWorldStable(game) {
@@ -234,18 +186,11 @@ func CBPickTipster(sys: ref<CyberbaneSystem>, faction: CName) -> CName {
 
 // Can this Rival be the subject of a tip right now? Not while they are on their way to V, out
 // there already, or waiting at their place.
-//
-// Merely being next in the Rival lane's queue does not count as on their way. It used to: the
-// lane picks whoever has got away from V most, which is almost always the Rival V has just lost,
-// so the one Rival there was a sighting of was the one Rival nobody would tip V off about. Until
-// they text V that they are coming they are only asking around about V, somewhere - and that
-// somewhere is what the tip is about. If V finds them first, the lane lets them go
-// (CBLairTryPlace).
 func CBTipEligible(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>) -> Bool {
   if r.id == sys.GetActiveRivalId() || r.id == sys.GetRivalWarned() || r.id == sys.GetRivalCarPending() {
     return false;
   }
-  // Nobody tips V off about a faction switched off in Mod Settings (1.9.1): a tip ends in a fight.
+  // Nobody tips V off about a faction switched off in Mod Settings: a tip ends in a fight.
   if !CBFactionOn(r.faction) {
     return false;
   }
@@ -263,7 +208,7 @@ func CBTipEligible(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
 
 public func CBPlacePhrase(district: CName, opt at: Vector4) -> String {
   let place = CBDistrictLabel(district);
-  // Out in the Badlands, a place by its own name (2.7.4): "out past Rocky Ridge" rather than "in the Badlands", one huge
+  // Out in the Badlands, a place by its own name: "out past Rocky Ridge" rather than "in the Badlands", one huge
   // district with twenty named parts. The game names only where V stands, so it is said only of a spot near V.
   if Equals(district, n"Badlands") && (at.X != 0.0 || at.Y != 0.0) {
     let game = GetGameInstance();
@@ -324,9 +269,7 @@ public func CBTipTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if ArraySize(picks) == 0 {
     return;
   }
-  // Word gets round. The longer somebody has been seen and nobody has said, the likelier it is
-  // that somebody does: a flat chance an hour could leave a sighting untold until the Rival had
-  // come back for V anyway, which is the other half of why tips felt like they never came.
+  // Word gets round.
   let overHours = (oldest - minAge) / CBConfig.SecondsPerHour();
   let chance = ClampF(CBConfig.TipChancePerHour() + CBConfig.TipChanceRisePerHour() * overHours, 0.0, 1.0);
   if RandF() >= chance {
@@ -341,8 +284,6 @@ public func CBTipTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   pick.tippedAt = now;
   pick.tipFaction = tipster;
   sys.SetLastTipAt(now);
-  // The text is the only part a player can switch off; the lead, the pin and the Hub's file stand
-  // either way, so silence costs being told and nothing else.
   let name = CBRivalDisplayName(sys.GetContent(), rival);
   let line = CBTipLine(name, CBPlacePhrase(pick.district), IsNameValid(tipster), CBMapMarkersOn());
   if IsNameValid(tipster) {
@@ -397,28 +338,6 @@ func CBLeadPinTick(sys: ref<CyberbaneSystem>, game: GameInstance, on: Bool) -> V
   }
   let data: MappinData;
   // A pin for a place, wearing Cyberbane's own mark (UI/RivalPin.reds).
-  //
-  // It has been wrong twice. Up to 1.6.4 it was the gang-business variant the Rival markers used,
-  // which the game draws as an NCPD scanner hustle (map_bounty, mappinUtils.script): on the map
-  // it was one more hustle among dozens, and the minimap never drew it at all.
-  //
-  // 1.6.5 to 1.7.0 used CustomPositionVariant, and a player on 1.7.0 still found nothing but the
-  // NCPD icons where the text said to look. That variant is not a look, it is a role: the one
-  // waypoint the player drops on the map. The game keeps exactly one pin in that role and finds
-  // it by variant. The map writes to whichever one it finds - another mod that registered a
-  // second one saw its pin moved to a spot nobody chose (spuddeh's NC Zoning District Guide,
-  // WorldActions.reds) - and on 2.31 the auto-drive deletes any tracked pin of that variant when it
-  // arrives (autoDriveSystem.script, OnStopAutoDriveOnDestinationReachedRequest). So the pin was
-  // not where the Rival was, and Cyberbane, which owns neither of those, could not keep it there.
-  //
-  // Now the variant only decides where the pin may live, never what it looks like. ApartmentVariant:
-  // the world map draws it, no 2.31 or 2.5 script reads it, it is not a quest pin so it can be
-  // tracked for a route, and its filter is Your Property, with the player's own waypoint and cars,
-  // which is on unless the player turns it off. The caption carries Cyberbane's tag and the Rival's
-  // name, and every controller that draws a pin with that tag draws Cyberbane's gold mark and the
-  // Rival's name instead of an apartment. Through walls, as a destination is: the reason the people
-  // markers stay off that does not apply to a place.
-  // With TweakXL (2.5.0) the pin is Cyberbane's own and sits under the map's CYBERBANE box (UI/MapPins.reds).
   data = CBPlacePinData(CBRivalPinCaption(CBRivalDisplayName(sys.GetContent(), CBSightingRival(sys, lead))));
   CBTrace("map: pin on a rival's last known place");
   let id = ms.RegisterMappin(data, CBSightingPos(lead));
@@ -470,7 +389,7 @@ func CBLeadExpiryTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   }
   let k = 0;
   while k < ArraySize(staleName) {
-    // The place by its name (2.7.7): the phrase brings its own "in", and the line read "moved on from in Pacifica".
+    // The place by its name: the phrase brings its own "in", and the line read "moved on from in Pacifica".
     let staleLabel = CBDistrictLabel(staleWhere[k]);
     let line = CBTf(n"Cyberbane-Whereabouts-MovedOnFromTookTooLong", [s"\(staleName[k])", StrLen(staleLabel) > 0 ? staleLabel : CBT(n"Cyberbane-Whereabouts-WhereTheyWere")]);
     if IsNameValid(staleFrom[k]) {
@@ -503,7 +422,7 @@ public func CBWhereaboutsTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   }
   if tick % 3 == 0 {
     CBLeadPinTick(sys, game, on);
-    CBLeadWitnessTick(sys, game, player);   // somebody who saw them, on the way there (2.6.5, Spawn/StreetStories.reds)
+    CBLeadWitnessTick(sys, game, player);   // somebody who saw them, on the way there (Spawn/StreetStories.reds)
   }
   // Calm: on foot, out of combat, nowhere the story or a job has the stage, a settled world.
   let calm = on && CBWorldStable(game) && !IsDefined(player.GetMountedVehicle()) && !player.IsInCombat()
@@ -522,11 +441,8 @@ public func CBWhereaboutsTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   }
 }
 
-// Keep note of where the Rival out in the world is standing, while they are standing, so the
-// street can say where they were last seen even once their body has streamed out of reach
-// (CBNoteRivalSeen). One read of a position every other tick, on our own recorded body only.
-// Every Rival of the encounter, the one leading and anybody who came with them (1.9.0): one of a team
-// who got away left no sighting behind, because only the lead's position was ever noted.
+// Keep note of where the Rival out in the world is standing, while they are standing, so the street can say where they
+// were last seen even once their body has streamed out of reach (CBNoteRivalSeen).
 func CBTrackRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if sys.GetActiveRivalId() > 0 {
     CBTrackOneRivalWhereabouts(sys, game, sys.GetActiveRivalId());
@@ -548,14 +464,12 @@ func CBTrackOneRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance, i
   }
 }
 
-// When the body at the place was last seen down, so one V put down gets time to be logged as a
-// mercy before the place lets go of it (CBLairWatch, 1.9.3).
+// When the body at the place was last seen down, so one V put down gets time to be logged as a mercy before the place
+// lets go of it (CBLairWatch).
 @addField(ScriptedPuppet)
 public let cbLairDownTick: Int32;
 
-// The place lets go of somebody lying there whom nothing is going to settle. They were found, so
-// the tip is spent: the sighting and its pin go, the body stops being a Rival's (V finishing them
-// later still counts, CBRetireRivalBody), and they lie low as after any other meeting.
+// The place lets go of somebody lying there whom nothing is going to settle.
 func CBLairGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, body: ref<ScriptedPuppet>) -> Void {
   CBUntrackOnMap(game, body);
   CBRetireRivalBody(sys, game, body, r);
@@ -574,8 +488,7 @@ func CBLairGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
   CBLog.Info(n"Rivals", s"Rival \(r.id) was left lying at their place; the lead is spent.");
 }
 
-// Is anybody still breathing at a Rival's place? One body at a time: nobody new is put there while
-// somebody is (1.9.3).
+// Is anybody still breathing at a Rival's place? One body at a time: nobody new is put there while somebody is.
 func CBLairBodyAround(game: GameInstance, des: ref<DynamicEntitySystem>) -> Bool {
   if !IsDefined(des) || !des.IsPopulated(n"CB_Lair") {
     return false;
@@ -599,7 +512,7 @@ public func CBLairMissNone() -> Int32 = 0
 public func CBLairMissNotCalm() -> Int32 = 1
 public func CBLairMissBusy() -> Int32 = 2
 public func CBLairMissNoSpot() -> Int32 = 3
-public func CBLairMissDaytime() -> Int32 = 4   // they keep hours, and are out by day (2.4.4, [U10])
+public func CBLairMissDaytime() -> Int32 = 4   // they keep hours, and are out by day ([U10])
 
 // V is standing at the pin and nobody is there. Said once per Rival, after a fair wait, with the
 // reason, because an empty place with no word read as a coin toss ("is it chance-based?").
@@ -640,11 +553,7 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
   }
   let center = CBSightingPos(lead);
   let ppos = player.GetWorldPosition();
-  // Anywhere within reach of the place, the place itself included. This used to refuse V closer
-  // than 30 m, and getting out of a car at the pin, or walking straight up to it, is exactly
-  // that: so the place was empty when V arrived, and the Rival was only put there once V had
-  // wandered back out past 30 m looking for them - into whatever V had just turned away from.
-  // How close a spot may be to V is now a test on the spot, below.
+  // Anywhere within reach of the place, the place itself included.
   if Vector4.Distance(ppos, center) > CBConfig.LairPlaceDistance() {
     return CBLairMissNone();
   }
@@ -654,7 +563,7 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
      || CBRivalHoldPlaced(game, r.id) {
     return CBLairMissNone();
   }
-  // Somebody with a chair keeps hours: home by night, out by day, unless they named the place for V (2.4.4, [U10]).
+  // Somebody with a chair keeps hours: home by night, out by day, unless they named the place for V ([U10]).
   if CBRivalKeepsHours(game, r) && !CBIsNight(game) {
     return CBLairMissDaytime();
   }
@@ -674,14 +583,7 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
   let fwd = player.GetWorldForward();
   let inner = CBConfig.LairSearchRadius();
   let outer = CBConfig.LairOuterSearchRadius();
-  // The spot itself, then six round it, then six further out between those. Every test is one
-  // an ordinary arrival passes - a floor under them, on the navmesh, not at a job or in a safe
-  // area, a path to V - except the one about being seen. Somebody who is going to stand still
-  // where V is looking for them has to be put where V cannot see them at all, whichever way V
-  // turns while the body streams in (CBPointHiddenFrom); the walk-in test let a point merely
-  // behind V through. The cheap rays go before the path query. The first spot that passes is
-  // used; none passing means not this time, and the next try is three seconds off.
-  // A third ring further out (1.9.3): on an open lot both nearer rings can be in plain view.
+  // The spot itself, then six round it, then six further out between those.
   let k = 0;
   while k < 19 {
     let px = center.X;
@@ -734,7 +636,7 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
           alarmBook.ResetLairAlarm();   // nobody has seen V yet at this place
         }
         CBLog.Info(n"Rivals", s"Rival \(r.id) is waiting at their place.");
-        // Their people with them (Rivals/RivalLife.reds, 1.9.9).
+        // Their people with them (Rivals/RivalLife.reds).
         CBLairGuards(sys, game, des, r, at);
       }
       return CBLairMissNone();
@@ -758,27 +660,12 @@ func CBLairWatch(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
     sys.ClearLair();   // the death handler has it
     return;
   }
-  // On their way in or out of the world: nothing is read from them, and nothing decided, until they are one or
-  // the other (2.4.2). Taken as not standing, a body caught streaming was let go as if left lying there, and the
-  // lead was spent.
+  // On their way in or out of the world: nothing is read from them, and nothing decided, until they are one or the
+  // other. Taken as not standing, a body caught streaming was let go as if left lying there, and the lead was spent.
   if IsDefined(body) && !body.IsAttached() {
     return;
   }
-  // Down but breathing: never removed from here. If V put them down, the mercy path settles it
-  // within seconds (CBHandleSpared closes the encounter, which forgets the body, and the check
-  // above clears this on the next tick); taking the body first would leave it nobody to settle.
-  // If somebody else did, nothing ever will, so let go of them now and leave the body to the
-  // stray sweep, rather than hold the Rival lane on somebody lying in the street.
-  //
-  // And if V did, but the record that settles it is gone - pushed out, or settled without closing
-  // anything because the Rivals switch went off in between - nothing ever will either. That held
-  // the Rival lane, and the marker on the body, for the rest of the session.
-  //
-  // 1.9.3: letting go used to leave the tip standing. A takedown is a scene of its own, so for its
-  // first seconds the body is down and the mercy path has not logged it yet; this let go at once,
-  // and with the lead still live the next pass put a second body of the same Rival at the place.
-  // A player knocked one out, then the next, then the next. So a body V put down is given time to
-  // be logged, and letting go now ends the lead too (CBLairGiveUp).
+  // Down but breathing: never removed from here.
   if IsDefined(body) && !CBStillStanding(body) {
     if body.cbSparedLogged && sys.HasEscapee(body.GetEntityID()) {
       return;   // the mercy path has it
@@ -794,19 +681,19 @@ func CBLairWatch(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
     CBLairGiveUp(sys, game, r, body);
     return;
   }
-  // Or one of their people (2.5.7): waiting calm, a guard V shot left the Rival standing there calm beside them.
+  // Or one of their people: waiting calm, a guard V shot left the Rival standing there calm beside them.
   if IsDefined(body) && CBNpcSafe(sys, body) && (CBNpcInCombat(body) || body.cbDamagedByPlayer || CBLairGuardHit(sys, game)) {
     CBLairPromote(sys, game, r, body);
     return;
   }
-  // Walked up to openly, with a facedown owed (2.5.7): they step out to face V, and the facedown opens from the Rival's
-  // own tick (Rivals/RivalMoments.reds). Crouched, V is sneaking up, and it stays an ambush.
+  // Walked up to openly, with a facedown owed: they step out to face V, and the facedown opens from the Rival's own
+  // tick (Rivals/RivalMoments.reds). Crouched, V is sneaking up, and it stays an ambush.
   if IsDefined(body) && CBNpcSafe(sys, body) && body.cbFacedownWait && !player.IsInCombat() && !CBPlayerCrouched(game)
      && Vector4.Distance(body.GetWorldPosition(), player.GetWorldPosition()) <= CBConfig.FacedownRange() {
     CBLairPromote(sys, game, r, body);
     return;
   }
-  // One of their people has seen V and run to warn them (2.5.0, [U10]): they move before V gets there.
+  // One of their people has seen V and run to warn them ([U10]): they move before V gets there.
   if IsDefined(body) && CBLairAlarm(sys, game, player, r) {
     return;
   }
@@ -835,9 +722,9 @@ func CBLairPromote(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
     return;
   }
   let id = body.GetEntityID();
-  // Their people waiting calm for a facedown step out with them as the Rival's escorts (2.5.7), so the facedown holds
-  // them, lets them go and turns them on V as it does any Rival's people; and every wait counts from now, not from when
-  // they were put at the place. Those spawned hostile stay as they were.
+  // Their people waiting calm for a facedown step out with them as the Rival's escorts, so the facedown holds them,
+  // lets them go and turns them on V as it does any Rival's people; and every wait counts from now, not from when they
+  // were put at the place.
   let tickNow = Max(sys.GetTickCount(), 1);
   let lairIds = des.GetTaggedIDs(n"CB_Lair");
   for gid in lairIds {
@@ -856,7 +743,7 @@ func CBLairPromote(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
   des.UnassignTag(id, n"CB_Lair");
   des.AssignTag(id, n"CB_Rival");
   sys.ClearLair();
-  // Their marker said they were at their place; now they are after V (UI/Tracking.reds, 2.5.4).
+  // Their marker said they were at their place; now they are after V (UI/Tracking.reds).
   if body.cbMapped {
     CBUntrackOnMap(game, body);
     CBTrackOnMap(game, body);
@@ -897,7 +784,7 @@ func CBLairPromote(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
   CBLog.Info(n"Rivals", s"Rival \(r.id) was found at their place; the fight is on.");
 }
 
-// One of the people waiting at a Rival's place hurt by V, or fighting (2.5.7). Our own field first, then the per-NPC gate.
+// One of the people waiting at a Rival's place hurt by V, or fighting. Our own field first, then the per-NPC gate.
 func CBLairGuardHit(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) || !des.IsPopulated(n"CB_Lair") {
@@ -928,9 +815,8 @@ public func CBLairStandDown(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   CBDeleteTaggedSafe(game, n"CB_Lair", true, true);
 }
 
-// A body that was waiting at somebody's place and is nobody's encounter any more: spared and left
-// lying there, say. Removed once V is well away and cannot see it. The dead are the remains
-// sweep's, as they are for every other body of ours.
+// A body that was waiting at somebody's place and is nobody's encounter any more: spared and left lying there, say.
+// Removed once V is well away and cannot see it.
 func CBSweepStrayLairBodies(sys: ref<CyberbaneSystem>, game: GameInstance, ppos: Vector4) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) || !des.IsPopulated(n"CB_Lair") || !CBWorldStable(game) {
@@ -986,11 +872,9 @@ public func CBLairAmbushed(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref
   CBLog.Info(n"Rivals", s"Rival \(r.id) ambushed at their place.");
 }
 
-// ---- Buying it (the Hub's Ambush button, 1.8.2) ------------------------------------------------
+// ---- Buying it (the Hub's Ambush button) ------------------------------------------------
 //
-// The other way to a lead: instead of waiting for somebody to text it, V pays for it. Everything after
-// the purchase is the system above, untouched - the pin, the waiting Rival, the ambush - so this only
-// has to produce a tipped sighting, which is exactly what CBTipTick produces.
+// The other way to a lead: instead of waiting for somebody to text it, V pays for it.
 
 public func CBWhereaboutsPrice(r: ref<CBRival>) -> Int32 {
   if !IsDefined(r) {
@@ -1007,7 +891,7 @@ public func CBWhereaboutsForSale(sys: ref<CyberbaneSystem>, game: GameInstance, 
      || (r.state != EnumInt(ECBRivalState.Active) && r.state != EnumInt(ECBRivalState.Hunting)) {
     return 4;
   }
-  // Their faction is switched off in Mod Settings (1.9.1).
+  // Their faction is switched off in Mod Settings.
   if !CBFactionOn(r.faction) {
     return 5;
   }
@@ -1018,7 +902,7 @@ public func CBWhereaboutsForSale(sys: ref<CyberbaneSystem>, game: GameInstance, 
     return 3;
   }
   // Right here: in V's encounter, or their body in the world (down at V's feet, standing for a facedown). Nobody can
-  // sell where they are hiding. A Rival V had put down and was talking to gave up "where they were lying low" (2.6.0).
+  // sell where they are hiding. A Rival V had put down and was talking to gave up "where they were lying low".
   if r.id == sys.GetActiveRivalId() || CBRivalBodyPresent(game, r) {
     return 3;
   }
@@ -1055,10 +939,8 @@ func CBWhereaboutsSpot(sys: ref<CyberbaneSystem>, game: GameInstance, player: re
   return false;
 }
 
-// Where a Rival is holed up, ready to be told to V: where they were last seen, when that still holds,
-// or else somewhere near V they are tracked down to (CBWhereaboutsSpot). Null when there is nowhere they
-// could be put. Shared by a purchase on the Hub and by an informant V leans on in the street
-// (Reactions/StreetTalk.reds, 1.9.5), so the two can never disagree about where somebody is.
+// Where a Rival is holed up, ready to be told to V: where they were last seen, when that still holds, or else somewhere
+// near V they are tracked down to (CBWhereaboutsSpot). Null when there is nowhere they could be put.
 public func CBRivalHideout(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>,
                            r: ref<CBRival>) -> ref<CBSighting> {
   let svc = sys.GetPlayService();
@@ -1092,8 +974,6 @@ public func CBMarkLeadTold(sys: ref<CyberbaneSystem>, s: ref<CBSighting>, tipste
 }
 
 // Carry out a purchase chosen on the Hub, from the settled tick (CyberbaneSystem.ServiceHubActions).
-// Nothing is paid unless there is a place to sell: where they were last seen, when that still holds,
-// or else somewhere the seller tracks them down near V.
 public func CBBuyRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int32,
                                   opt agreedPrice: Int32, opt dealTipster: CName, opt dealSender: String) -> Bool {
   if !IsDefined(sys) || !CBWorldStable(game) {
@@ -1143,16 +1023,13 @@ public func CBBuyRivalWhereabouts(sys: ref<CyberbaneSystem>, game: GameInstance,
     }
   }
   CBLog.Info(n"Rivals", s"Bought rival \(id)'s whereabouts for \(price)eb: \(NameToString(s.district)).");
-  CBUiSound(game, n"ui_hacking_access_granted", n"LeadBought", 3.0);   // 2.7.7
+  CBUiSound(game, n"ui_hacking_access_granted", n"LeadBought", 3.0);
   return true;
 }
 
-// ---- A lead as a deal by text (1.9.7) ----
+// ---- A lead as a deal by text ----
 //
-// "Find them" on the Hub used to take the money and hand over the place in one go. With phone deals on,
-// it puts the word out instead: whoever would sell it (the tipster CBPickTipster picks, or the broker for
-// this part of town) texts V a price, and V answers in the thread: deal, too much, or forget it
-// (UI/RealPhone.reds). The money and the place still go through CBBuyRivalWhereabouts.
+// "Find them" on the Hub used to take the money and hand over the place in one go.
 
 public func CBPhoneDealsReady() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -1201,19 +1078,16 @@ public func CBOfferRivalLead(sys: ref<CyberbaneSystem>, game: GameInstance, id: 
     case 1: line = CBTf(n"Cyberbane-Whereabouts-WeKnowWhereEbAndYou", [s"\(name)", s"\(price)"]); break;
     default: line = CBTf(n"Cyberbane-Whereabouts-WordIsYouWantEbBuys", [s"\(name)", s"\(price)"]); break;
   }
-  // The lead opens under the text as it lands (2.6.8, CBPhonePost).
+  // The lead opens under the text as it lands (CBPhonePost).
   CBPhonePost(game, sender, line, CBHudCyan(), false, 3, tipster, r.id, price);
   CBLog.Info(n"Rivals", s"Put the word out for rival \(id); offered for \(price)eb by text.");
   return true;
 }
 
-// ---- [U10] A lookout who gets away (2.5.0) --------------------------------------------------------------------------
+// ---- [U10] A lookout who gets away --------------------------------------------------------------------------
 //
 // One of a Rival's people at their place who has V in sight for a few seconds, before anybody has fired, runs to warn
-// them, saying so. Stop them (down or dead) within a few seconds and nothing changes. If they get away, the Rival and
-// their people leave, the place moves a short way off, and whoever told V where to look says so. The fight starting
-// first settles it the other way: that is the ordinary encounter (CBLairPromote). One order to each, the run; every
-// body taken out of the world only once V cannot see it.
+// them, saying so. Stop them (down or dead) within a few seconds and nothing changes.
 
 // True when the place has just moved, and there is nothing left here to watch.
 func CBLairAlarm(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, r: ref<CBRival>) -> Bool {
@@ -1237,7 +1111,7 @@ func CBLairAlarm(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
     }
     return false;
   }
-  // The witness showed V the way in nobody watches, or was paid to forget V (2.6.5): nobody here sees V coming.
+  // The witness showed V the way in nobody watches, or was paid to forget V: nobody here sees V coming.
   if book.lairQuiet {
     book.lairSeen = 0;
     return false;
@@ -1245,7 +1119,7 @@ func CBLairAlarm(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Play
   // Does any of them have V in sight?
   let ppos = player.GetWorldPosition();
   // A mask, or their own gang's colours, gets V past them as it gets V past anybody on the street: only one of their
-  // officers who looks long enough knows V (Reactions/Director.reds, CBSeesThroughDisguise) (2.5.0).
+  // officers who looks long enough knows V (Reactions/Director.reds, CBSeesThroughDisguise).
   let covered = CBPlayerMasked(game) || (Equals(r.faction, sys.GetDisguiseFaction()) && sys.GetDisguiseStrength() > 0.0);
   let spotter: ref<ScriptedPuppet>;
   for gid in intel.GuardIds() {
@@ -1357,12 +1231,10 @@ func CBLairSecondPlace(sys: ref<CyberbaneSystem>, game: GameInstance, from: Vect
   return false;
 }
 
-// ---- [U9] Caught in the chair (2.5.0) -------------------------------------------------------------------------------
+// ---- [U9] Caught in the chair -------------------------------------------------------------------------------
 //
 // A Rival who went under the knife (Rivals/RivalMoments.reds, CBRivalChromeTick) is, for a while, in a ripperdoc's
-// chair: the ripperdoc nearest where they were last seen, from the game's own map (its ripperdoc pins). It is a lead
-// like any tip: one at a time, a pin, the place keeping hours. True when there is one.
-// A usable spot in the street by a door: two rings round it, the nearer first.
+// chair: the ripperdoc nearest where they were last seen, from the game's map (its ripperdoc pins).
 func CBSpotOutside(sys: ref<CyberbaneSystem>, game: GameInstance, door: Vector4, out to: Vector4) -> Bool {
   let k = 0;
   while k < 16 {
@@ -1402,9 +1274,7 @@ public func CBRipperdocLead(sys: ref<CyberbaneSystem>, game: GameInstance, r: re
     near = player.GetWorldPosition();
     nearDistrict = sys.GetCurrentDistrict();
   }
-  // The clinics on the map, nearest first. A clinic is mostly a safe area, where no lead may be (CBLairPointUsable:
-  // tips, bought whereabouts and the place itself all ask it), so the lead is the street outside the nearest one
-  // that has a usable spot by its door (CBSpotOutside), a few of the nearest tried.
+  // The clinics on the map, nearest first.
   let pins: array<ref<IMappin>>;
   ms.GetMappins(gamemappinsMappinTargetType.Map, pins);
   let clinics: array<Vector4>;

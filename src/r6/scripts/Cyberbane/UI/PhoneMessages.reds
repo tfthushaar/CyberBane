@@ -1,59 +1,15 @@
 // Cyberbane - Messages instead of popups (spec §12.2)
 //
-// Every player report about this mod's presentation said the same thing in different words:
-// "can the gang messages be actual text messages instead of showing on the HUD", "the constant
-// popups ruin it", "it doesn't feel immersive with the popups". A line of white text across the
-// middle of the screen is a mod talking to you. A text from somebody is the city talking to you,
-// and this mod is entirely about the city noticing you.
-//
-// ---- Where the messages go ----
-//
-// Into the phone V already carries. Each sender is a contact in the phone's own Messages list:
-// the gang that is coming for you, the broker who works the district you are in, an unknown
-// number. A new message arrives through the game's own incoming-SMS notification, with the
-// game's own tone, and pressing it opens the thread in the phone. The thread is drawn by the
-// phone's own messenger panel, bubble by bubble. UI/RealPhone.reds is the hook that does that.
-//
-// Two fallbacks, both reachable from Mod Settings without the phone:
-//   - Cards: Cyberbane draws the message itself on the left of the screen, where the game puts
-//     an incoming SMS. Nothing of Cyberbane's goes into the phone in this mode, so if the phone
-//     hook ever misbehaves on somebody's setup this switch takes it out completely.
-//   - Notices: the old line across the middle of the screen.
-//
-// ---- Why these are not journal entries ----
-//
-// The reference mod the user supplied (Judy Romance Messages 4.0.6.1) sends real journal
-// messages. Its redscript only listens to two quest facts; the messages are an authored
-// `.journal` and `.questphase` injected by ArchiveXL, with every string fixed when the archive
-// was built. Cyberbane's messages are put together at runtime out of a gang's name, a Rival's
-// name, a district and a price, and a journal entry cannot hold "the Valentinos want 14,500eb
-// to call it off". So the phone gets Cyberbane contacts whose threads Cyberbane draws, which
-// keeps every word dynamic and needs no archive.
-//
-// Putting the words in a real character's mouth was considered and refused. A fixer the story
-// wrote texting "the Animals have sent a crew" reads as a real lead, and a player cannot tell it
-// apart from a gig. Cyberbane's contacts are its own: the gang itself, district brokers, unknown
-// numbers. Nobody the base game has written.
-//
-// ---- Session only ----
-//
-// The threads start empty after a load. Keeping them in the save needs a new `persistent let`,
-// and adding one wipes every player's saved Cyberbane state (see the warning at the top of
-// STATUS.md). An inbox that starts empty is a far smaller cost than a wiped reputation.
-//
-// Crash safety: Send only pushes onto arrays, so it is safe from any hook. Everything that
-// touches a widget or the phone runs from Update, which the fast tick only reaches once it has
-// passed the world-stable gate. Nothing here holds an entity handle; the phone controller and
-// the open messenger panel are held weakly and re-checked on every use.
+// A line of white text across the middle of the screen is a mod talking to you. A text from somebody is the city
+// talking to you, and this mod is entirely about the city noticing you.
 
 // ---- Who is texting -------------------------------------------------------
 //
-// Handles rather than names, for the reason above. A player should read these as somebody on
-// the street who knows things, never as a quest-giver. Written the way the phone writes a
-// contact's name; the cards put them in capitals themselves.
+// Handles rather than names, for the reason above. Written the way the phone writes a contact's name; the cards put
+// them in capitals themselves.
 
 // The sender a message has when nobody in particular sent it. One function, so whatever compares a sender with it
-// agrees with whatever wrote it, in any language (2.7.1).
+// agrees with whatever wrote it, in any language.
 public func CBPhoneUnknownSender() -> String {
   return CBT(n"Cyberbane-PhoneMessages-UnknownNumber");
 }
@@ -64,9 +20,7 @@ public func CBPhoneGangSender(faction: CName) -> String {
   return StrLen(name) > 0 ? name : CBPhoneUnknownSender();
 }
 
-// The local information broker, one per district, so the same handle keeps turning up in the
-// same part of town. This is what makes the grapevine read as people rather than as a feed:
-// word out of Watson arrives from the person who works Watson.
+// The local information broker, one per district, so the same handle keeps turning up in the same part of town.
 public func CBPhoneDistrictSender(district: CName) -> String {
   if Equals(district, n"Watson") { return CBT(n"Cyberbane-PhoneMessages-Salt"); }
   if Equals(district, n"Westbrook") { return CBT(n"Cyberbane-PhoneMessages-Mira"); }
@@ -79,9 +33,8 @@ public func CBPhoneDistrictSender(district: CName) -> String {
   return CBPhoneUnknownSender();
 }
 
-// For word that is not about anywhere in particular: the broker who works where V is (2.7.7), or, between districts, the
-// last one who did. A broker always has a name, and the same story keeps the same one: a random pick each time the word
-// was passed on sent one rumour from "Broker", then "Unknown Number", then "No Caller ID". `seed` is kept for callers.
+// For word that is not about anywhere in particular: the broker who works where V is, or, between districts, the last
+// one who did.
 public func CBPhoneStreetSender(seed: Int32) -> String {
   let sys = CyberbaneSystem.Get(GetGameInstance());
   let here = IsDefined(sys) ? sys.GetCurrentDistrict() : n"";
@@ -109,18 +62,6 @@ public func CBMessageDelivery() -> ECBMessageDelivery {
 }
 
 // Whether Cyberbane says anything on screen at all.
-//
-// Two settings can silence it and they mean the same thing, so they are answered in one place:
-// the Toasts switch under Messages and HUD, and Off on "Where messages go". The second exists because
-// it is the one a player actually opens when they want quiet - "Toasts" is not a word anybody
-// goes looking for. Either one off means every surface is off: no phone thread filed, no card
-// drawn, no notice, no overheard line, and no message tone.
-//
-// What it deliberately does not touch: the HUD line (its own setting), the Hub, and the replies
-// to something V just did in a menu (CBMenuNote). Nothing about the gameplay changes either -
-// they still come, and the Hub still brokers peace - so silence costs the player nothing except
-// being told, which is the point.
-// Message size, as a scale (2.6.5): 1.0 at 100.
 public func CBMessageSize() -> Float {
   let rt = CyberbaneRuntime.Get();
   let pct = IsDefined(rt) && rt.HasSettings() ? rt.GetSettings().messageSize : 100;
@@ -188,8 +129,8 @@ public class CBPhone {
   // The gang whose offer V can answer in this thread, or n"" when there is nothing to answer.
   // Only ever a gang V can actually buy off, and re-checked every time the thread is drawn.
   private let m_thOffer: array<CName>;
-  // A Rival's whereabouts offered for sale in this thread (1.9.7): the Rival (0 none), the price, the gang
-  // selling (n"" for a broker), and whether V has already pushed back on the price once.
+  // A Rival's whereabouts offered for sale in this thread: the Rival (0 none), the price, the gang selling (n"" for a
+  // broker), and whether V has already pushed back on the price once.
   private let m_thLead: array<Int32>;
   private let m_thLeadPrice: array<Int32>;
   private let m_thLeadTipster: array<CName>;
@@ -223,11 +164,8 @@ public class CBPhone {
   // When V last answered each thread (game seconds), -1 when what it last said is still unanswered.
   private let m_thAnsweredAt: array<Float>;
 
-  // Texts on their way to V (2.6.8). "The texts happen instantly, so it kinda defeats immersiveness": a Rival's answer
-  // landed the second V's reply went, a gang's threat the second V killed one of theirs, two contacts at once. Every text
-  // now takes the time somebody takes to read what happened and thumb out an answer (CBPhonePost), and two never land
-  // together. Sim seconds, so a menu holds them; session only, like the threads. What a text opens or closes in its
-  // thread (V's answers to it) travels with it and happens when it lands, never before it.
+  // Texts on their way to V. "The texts happen instantly, so it kinda defeats immersiveness": a Rival's answer landed
+  // the second V's reply went, a gang's threat the second V killed one of theirs, two contacts at once.
   private let m_postSender: array<String>;
   private let m_postBody: array<String>;
   private let m_postAccent: array<HDRColor>;
@@ -239,34 +177,28 @@ public class CBPhone {
   private let m_postPrice: array<Int32>;
   private let m_postLastDue: Float;
 
-  // Word that has not reached V yet (Hearsay). Anything a third party tells V about what V did -
-  // a body, a Rival in the ground, a crew taking over, a payout - used to arrive in the same tick
-  // as the deed, so the city knew before the smoke cleared, and a long fight filed one copy per
-  // encounter. It waits here for an in-game delay, is let out no faster than one every so many
-  // real seconds, and a story that is already waiting or was told recently is not told again.
-  // Session only, like the threads: a story still on its way when the game is loaded was never
-  // told, which is how word that had not got round yet should behave.
+  // Word that has not reached V yet (Hearsay).
   private let m_hsSender: array<String>;
   private let m_hsBody: array<String>;
   private let m_hsAccent: array<HDRColor>;
   private let m_hsKey: array<CName>;
   private let m_hsFaction: array<CName>;   // a gang whose message carries a peace offer, or n""
   private let m_hsDue: array<Float>;       // game seconds: when word has got round where it happened
-  // Where it happened and how long word takes to get round there (2.6.1): from there it travels a district at a time
-  // to wherever V is when it is due (ReleaseWord, CBDistrictHops).
+  // Where it happened and how long word takes to get round there: from there it travels a district at a time to
+  // wherever V is when it is due (ReleaseWord, CBDistrictHops).
   private let m_hsFrom: array<CName>;
   private let m_hsSpan: array<Float>;
-  private let m_hsQueuedReal: array<Float>;   // real seconds when it was queued (2.7.7): nothing waits past a few minutes
+  private let m_hsQueuedReal: array<Float>;   // real seconds when it was queued: nothing waits past a few minutes
   // Sim seconds V was last in a fight: nobody's news reaches V in the middle of one.
   private let m_lastFightReal: Float;
   // Stories already told, and when (game seconds), for the repeat window.
   private let m_toldKey: array<CName>;
   private let m_toldAt: array<Float>;
   private let m_lastWordReal: Float;       // sim seconds the last story was let out
-  // Chatter let through lately (2.6.5, How much you hear): game seconds each was queued, and when V last overheard anything.
+  // Chatter let through lately (How much you hear): game seconds each was queued, and when V last overheard anything.
   private let m_chatterAt: array<Float>;
   private let m_lastOverheard: Float;
-  // The size the cards were last laid out at (2.6.5, Message size), so a change in Mod Settings shows at once.
+  // The size the cards were last laid out at (Message size), so a change in Mod Settings shows at once.
   private let m_laidSize: Float;
   private let m_laidScale: Float;
 
@@ -275,18 +207,8 @@ public class CBPhone {
   private let m_phoneCtrl: wref<NewHudPhoneGameController>;
   private let m_openDialog: wref<MessengerDialogViewController>;
 
-  // Something V overheard on the street. Not a text: nobody sent it, V was standing near the
-  // person who said it. It is a line of the game's own subtitles (1.9.5), and it never goes into
-  // the phone. One at a time; a newer line replaces an older one, which is how overheard speech works.
-  //
-  // Until 1.9.5 it was a line of Cyberbane's own, drawn on the HUD layer well above where the game
-  // puts its subtitles so the two never overlapped: it read as text floating in the middle of the
-  // screen, in a font and size of its own. It now goes through the game's subtitle system, the way a
-  // line of dialogue does, so it is where subtitles are, looks like them and follows the player's own
-  // subtitle settings (size, background). With the game's subtitles switched off there is nothing to
-  // follow, so Cyberbane's own line is drawn instead, in the same place.
-  // Which of our two subtitle ids is on screen; -1 none. Build sets -1: a field default cannot be
-  // negative in redscript, and before Build a 0 here only ever hides an id that is ours anyway.
+  // Something V overheard on the street. Not a text: nobody sent it, V was standing near the person who said it. It is
+  // a line of the game's subtitles, and it never goes into the phone.
   private let m_subNativeSlot: Int32;
   private let m_subRoot: ref<inkCanvas>;
   private let m_subSpeaker: ref<inkText>;
@@ -318,17 +240,13 @@ public class CBPhone {
   }
 
   private func Build(win: wref<inkCompoundWidget>) -> Void {
-    // Cards left behind by an earlier session, first (1.9.1). The HUD layer outlives a load, and so
-    // does everything drawn on it: a card that was on screen when V died stayed there through the
-    // reload, frozen where it was, with nothing left that knew it existed. "A Rival is hunting me
-    // message that is stuck and won't go", from a player on the phone who never had cards at all.
-    // Ours are not built yet, so every card and subtitle line of this name on the layer is a stray.
+    // Cards left behind by an earlier session, first.
     let strays = CBHideStrayHudWidgets(win, n"cyberbanePhoneCard", n"cyberbaneOverheard");
     if strays > 0 {
       CBLog.Info(n"UI", s"Took \(strays) message cards left over from an earlier session off the screen.");
     }
-    // And a subtitle line of ours an earlier session may have left up (1.9.5). The ids are fixed, so
-    // taking them down is safe whether or not anything is showing.
+    // And a subtitle line of ours an earlier session may have left up. The ids are fixed, so taking them down is safe
+    // whether or not anything is showing.
     CBHideGameSubtitle(this.m_game, 0);
     CBHideGameSubtitle(this.m_game, 1);
     CBHideGameSubtitle(this.m_game, 2);   // and 4
@@ -419,8 +337,8 @@ public class CBPhone {
     this.LayOut();
   }
 
-  // Where each card sits and how big, by the screen's scale and Message size (2.6.5). The cards stack down from under
-  // the health bar, so a bigger card pushes the next one further down.
+  // Where each card sits and how big, by the screen's scale and Message size. The cards stack down from under the
+  // health bar, so a bigger card pushes the next one further down.
   private func LayOut() -> Void {
     let scale = CBHudScale(this.m_game);
     let size = CBMessageSize();
@@ -444,8 +362,8 @@ public class CBPhone {
     }
   }
 
-  // Cyberbane's own subtitle line, for when the game's subtitles are switched off (1.9.5): a speaker
-  // label over the words, centred where the game draws its subtitles.
+  // Cyberbane's own subtitle line, for when the game's subtitles are switched off: a speaker label over the words,
+  // centred where the game draws its subtitles.
   private func BuildOverheard(win: wref<inkCompoundWidget>, font: String, scale: Float) -> Void {
     let width = CBConfig.OverheardWidth();
     let root = new inkCanvas();
@@ -494,7 +412,7 @@ public class CBPhone {
     if StrLen(line) == 0 {
       return;
     }
-    // In passing, at most every so often (2.6.5, How much you hear). A line said to V as it happens always comes.
+    // In passing, at most every so often (How much you hear). A line said to V as it happens always comes.
     if !important {
       let amount = CBMessageAmount();
       let gap = Equals(amount, ECBMessageAmount.Rarely) ? CBConfig.OverheardGapQuiet()
@@ -554,7 +472,7 @@ public class CBPhone {
     CBLog.Info(n"UI", s"Message from \(sender): \(body)");
   }
 
-  // ---- Texts on their way (2.6.8) ----------------------------------------------
+  // ---- Texts on their way ----------------------------------------------
 
   // Which thread is this sender's, without starting one.
   private func FindThread(sender: String) -> Int32 {
@@ -568,9 +486,7 @@ public class CBPhone {
     return -1;
   }
 
-  // A text is written now and lands a little later. An answer to what V just said takes the time to type it, longer for a
-  // longer one; anything else the time it takes to hear what happened and react; a warning that something is on V right
-  // now (urgent) only a moment. Each lands a few seconds after the one before it, never on top of it.
+  // A text is written now and lands a little later.
   public func Post(game: GameInstance, sender: String, body: String, accent: HDRColor, urgent: Bool, then: Int32,
                    faction: CName, rival: Int32, price: Int32) -> Void {
     this.m_game = game;
@@ -594,7 +510,7 @@ public class CBPhone {
       }
     }
     let due = now + delay;
-    // Somebody typing (2.7.7): the game's own sound while a text that takes a while is on its way.
+    // Somebody typing: the game's sound while a text that takes a while is on its way.
     if !urgent && delay >= 3.0 && CBMessagesOn() {
       CBUiSound(game, n"ui_messenger_typing", n"Typing", 12.0);
     }
@@ -669,10 +585,7 @@ public class CBPhone {
 
   // ---- Word getting around ------------------------------------------------
 
-  // Somebody will tell V about this, once it has had time to get round. Safe from any hook: it
-  // only touches our own arrays. `key` names the story; a second one with the same key while
-  // the first is still waiting, or soon after it was told, is the same story and is dropped.
-  // n"" means this one never merges with anything.
+  // Somebody will tell V about this, once it has had time to get round.
   public func Hearsay(game: GameInstance, sender: String, body: String, accent: HDRColor,
                       key: CName, offerFaction: CName, opt from: CName) -> Void {
     this.m_game = game;
@@ -697,7 +610,7 @@ public class CBPhone {
         t += 1;
       }
     }
-    // Chatter, word with nothing in it for V to answer, spaced out by How much you hear (2.6.5): a couple an in-game hour on
+    // Chatter, word with nothing in it for V to answer, spaced out by How much you hear: a couple an in-game hour on
     // Less chatter, one every two on Rarely, never none. A gang's offer or demand always comes.
     if !IsNameValid(offerFaction) {
       let amount = CBMessageAmount();
@@ -764,8 +677,8 @@ public class CBPhone {
       return;
     }
     let simNow = EngineTime.ToFloat(tsNow.GetSimTime());
-    // Nobody's news reaches V in the middle of a fight, nor straight after one (2.6.1): it waits, and the fight it
-    // might be about has to be over before the word can start going round anyway.
+    // Nobody's news reaches V in the middle of a fight, nor straight after one: it waits, and the fight it might be
+    // about has to be over before the word can start going round anyway.
     let player = GetPlayer(game);
     if IsDefined(player) && player.IsInCombat() {
       this.m_lastFightReal = simNow;
@@ -774,11 +687,8 @@ public class CBPhone {
        && (simNow - this.m_lastFightReal) < CBConfig.WordCalmSeconds() {
       return;
     }
-    // News that has waited too long (2.7.7). "Alejandro went under the knife" arrived twenty minutes after it was queued,
-    // when it no longer felt connected to anything: a queue let out one at a time behind the inbox gap and the fight
-    // calm. Word waits a few minutes at most, then comes even inside the gap; word stale past three times that (held
-    // through a long run of fights, say) is let go, unless it carries a gang's offer, which always comes.
-    // Stale ones out first, from the end so nothing moves under the walk; then the oldest overdue one, found afresh.
+    // News that has waited too long. "Alejandro went under the knife" arrived twenty minutes after it was queued, when
+    // it no longer felt connected to anything: a queue let out one at a time behind the inbox gap and the fight calm.
     let o = ArraySize(this.m_hsBody) - 1;
     while o >= 0 {
       let queued = o < ArraySize(this.m_hsQueuedReal) ? this.m_hsQueuedReal[o] : 0.0;
@@ -817,12 +727,12 @@ public class CBPhone {
       // stops mattering.
       let hops = i < ArraySize(this.m_hsFrom) ? Min(CBDistrictHops(game, this.m_hsFrom[i], here), CBConfig.WordMaxHops()) : 0;
       // Either end unknown (V's district right after a load, or news from nowhere on the map) is one district's travel,
-      // never none (2.6.3): CBDistrictHops reads an unknown district as the same one.
+      // never none: CBDistrictHops reads an unknown district as the same one.
       if i < ArraySize(this.m_hsFrom) && (CBDistrictIndex(this.m_hsFrom[i]) < 0 || CBDistrictIndex(here) < 0) {
         hops = 1;
       }
       let span = i < ArraySize(this.m_hsSpan) ? this.m_hsSpan[i] : 0.0;
-      // Where V is when it happened (2.7.7): the people round V tell V first, in half the time.
+      // Where V is when it happened: the people round V tell V first, in half the time.
       let due = hops == 0 ? this.m_hsDue[i] - span * 0.5 : this.m_hsDue[i] + span * Cast<Float>(hops);
       if due <= now && (pick < 0 || due < pickDue) {
         pick = i;
@@ -860,16 +770,15 @@ public class CBPhone {
     if IsNameValid(key) {
       this.NoteTold(key, now);
     }
-    // Through the ordinary door, so the silence switches and the delivery mode are asked about
-    // now, when it arrives, not back when it was queued.
-    // It has had its own time getting round, so it lands now (CBPhoneDeliverNow), not after a second wait.
+    // Through the ordinary door, so the silence switches and the delivery mode are asked about now, when it arrives,
+    // not back when it was queued.
     CBPhoneDeliverNow(game, sender, IsNameValid(faction) ? CBPhoneDemandText(game, faction, body, false) : body, accent, false);
     if IsNameValid(faction) {
       CBPhoneOfferPeace(game, faction);
     }
   }
 
-  // One story out of the queue, every list with it (2.7.7).
+  // One story out of the queue, every list with it.
   private func DropWord(i: Int32) -> Void {
     if i < 0 || i >= ArraySize(this.m_hsBody) {
       return;
@@ -960,16 +869,13 @@ public class CBPhone {
     return false;
   }
 
-  // Has V answered the last thing this thread said? A Rival's answer to V's reply comes in the same moment as the
-  // reply and does not open it again; anything they send later does (Send). Until 2.5.0 the same three answers stayed
-  // under a Rival's thread for good, so V could send "Come and find me" after every one of their answers (2.5.0).
+  // Has V answered the last thing this thread said? A Rival's answer to V's reply comes in the same moment as the reply
+  // and does not open it again; anything they send later does (Send).
   public func ThreadAwaitsAnswer(i: Int32) -> Bool {
     return i >= 0 && i < ArraySize(this.m_thAnsweredAt) && this.m_thAnsweredAt[i] < 0.0;
   }
 
-  // What this sender just said asks nothing back (2.5.6, CBPhoneSendAside): an offer, thanks, a warning on V's side.
-  // Every text from a Rival still at large opened the Rival's answers, so a power struggle's offer to V read
-  // "Come and find me", "Name the place" and "You'll lose again" under "Kill them and I'll remember who helped".
+  // What this sender just said asks nothing back (CBPhoneSendAside): an offer, thanks, a warning on V's side.
   public func Settle(game: GameInstance, sender: String) -> Void {
     let i = 0;
     while i < ArraySize(this.m_thName) {
@@ -1198,10 +1104,7 @@ public class CBPhone {
     this.m_phoneCtrl = ctrl;
   }
 
-  // A phone on its way out lets go of itself, and only of itself (1.9.1). Clearing whatever was held
-  // meant that when a load or a fast travel tore the old phone down after the new one had already
-  // attached, the new one was forgotten, and every text for the rest of the session fell back to a
-  // card on the screen - with "Where messages go" set to Phone.
+  // A phone on its way out lets go of itself, and only of itself.
   public func ReleasePhoneController(ctrl: ref<NewHudPhoneGameController>) -> Void {
     if this.m_phoneCtrl == ctrl {
       this.m_phoneCtrl = null;
@@ -1219,9 +1122,8 @@ public class CBPhone {
     }
   }
 
-  // Everything of ours off the screen, without forgetting any of it (1.9.1). Called while V is down:
-  // the tick stands still then, so whatever was showing would otherwise freeze there, and if a load
-  // follows, stay there. The next settled tick draws whatever is still due.
+  // Everything of ours off the screen, without forgetting any of it. Called while V is down: the tick stands still
+  // then, so whatever was showing would otherwise freeze there, and if a load follows, stay there.
   public func Conceal() -> Void {
     if IsDefined(this.m_subRoot) {
       this.m_subRoot.SetVisible(false);
@@ -1240,27 +1142,21 @@ public class CBPhone {
 
   // Once per fast tick. Delivers anything waiting, then ages the cards, slides the new ones
   // in and fades the dying ones out.
-  //
-  // Driven off the simulation clock rather than counting ticks, because the tick interval is a
-  // setting and a card's life is in seconds the player can read.
   public func Update(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     this.m_game = game;
-    this.ReleasePosts(game);  // texts whose time has come (2.6.8)
+    this.ReleasePosts(game);  // texts whose time has come
     this.ReleaseWord(game);   // before Deliver, so a story let out this tick is shown this tick
     this.Deliver(game);
-    // Built on the first settled tick of a session whether or not a card is ever shown, because
-    // building is what clears away the cards an earlier session left on the HUD layer (Build). In
-    // Phone mode no card is ever shown, and the strays stayed for good.
+    // Built on the first settled tick of a session whether or not a card is ever shown, because building is what clears
+    // away the cards an earlier session left on the HUD layer (Build).
     if !this.m_built {
       this.EnsureBuilt();
     }
     if ArraySize(this.m_sender) == 0 && this.m_subLeft <= 0.0 {
       return;
     }
-    // The cards stand back while the Hub page is up. It is a page of the pause menu now, which
-    // hides the HUD by itself, so this is belt and braces. Cards keep ageing while hidden, so
-    // closing the Hub does not hand back a stack of stale ones, and every one of them is still in
-    // the phone.
+    // The cards stand back while the Hub page is up. It is a page of the pause menu now, which hides the HUD by itself,
+    // so this is belt and braces.
     let hubOpen = IsDefined(sys) && sys.IsHubOpen();
     let ts = GameInstance.GetTimeSystem(game);
     if !IsDefined(ts) {
@@ -1322,9 +1218,7 @@ public class CBPhone {
           row.sender.SetTintColor(this.m_accent[r]);
         }
         if IsDefined(row.root) {
-          // In from the left over a fifth of a second, out over the last of its life. Done by
-          // hand rather than through PlayLibraryAnimation, which needs an animation authored in
-          // a widget library - and there is no library here, the widgets are built from script.
+          // In from the left over a fifth of a second, out over the last of its life.
           let inT = ClampF(this.m_shown[r] / CBConfig.PhoneSlideSeconds(), 0.0, 1.0);
           let outT = ClampF(this.m_left[r] / CBConfig.PhoneFadeSeconds(), 0.0, 1.0);
           row.root.SetOpacity(MinF(inT, outT));
@@ -1340,7 +1234,7 @@ public class CBPhone {
     }
   }
 
-  // Age the subtitle line and fade it in and out. A line of the game's own subtitles fades by itself;
+  // Age the subtitle line and fade it in and out. A line of the game's subtitles fades by itself;
   // it only has to be taken down when its time is up.
   private func TickOverheard(dt: Float, hubOpen: Bool) -> Void {
     if this.m_subLeft <= 0.0 {
@@ -1374,8 +1268,6 @@ public class CBPhone {
   }
 
   // Put the newest overheard line up: in the game's subtitles when they are on, otherwise in ours.
-  // Two ids taken in turn, so the line going up never shares an id with the one coming down; the
-  // game's controller skips a line whose id it is still showing.
   private func ShowOverheardLine(game: GameInstance) -> Void {
     let previous = this.m_subNativeSlot;
     this.m_subNativeSlot = -1;
@@ -1399,8 +1291,8 @@ public class CBPhone {
 
   // Hand everything waiting to whichever surface is in use. Runs on a settled tick only.
   private func Deliver(game: GameInstance) -> Void {
-    // Silenced since these were filed (2.5.1): they stay in their threads and are not announced, the way a message
-    // sent after the switch is never sent. Switching messages off used to let the last few through.
+    // Silenced since these were filed: they stay in their threads and are not announced, the way a message sent after
+    // the switch is never sent. Switching messages off used to let the last few through.
     if !CBMessagesOn() {
       this.m_subDirty = false;
       ArrayClear(this.m_pendThread);
@@ -1408,9 +1300,8 @@ public class CBPhone {
       ArrayClear(this.m_pendAccent);
       return;
     }
-    // Nothing talks over a conversation (1.9.6). While one of the game's dialogues is on screen, or a
-    // scene is playing, the overheard line and the texts wait; while V is talking to somebody through
-    // street talk, the texts wait. Waiting loses nothing: every text is already filed in its thread.
+    // Nothing talks over a conversation. While one of the game's dialogues is on screen, or a scene is playing, the
+    // overheard line and the texts wait; while V is talking to somebody through street talk, the texts wait.
     let gameTalk = CBGameDialogueUp(game) || CBPlayerInScene(game);
     let sysTalk = CyberbaneSystem.Get(game);
     let talk = IsDefined(sysTalk) ? sysTalk.GetStreetTalk() : null;
@@ -1439,14 +1330,7 @@ public class CBPhone {
     // so the phone and the cards agree about what "a moment ago" means.
     let tsNow = GameInstance.GetTimeSystem(game);
     let nowReal = IsDefined(tsNow) ? EngineTime.ToFloat(tsNow.GetSimTime()) : 0.0;
-    // Phone mode and no phone to hand them to yet: they wait for one (1.9.1).
-    //
-    // They used to fall back to a card. The phone attaches a moment after a load, and the first
-    // settled tick after dying and reloading is exactly when the death ledger has news, so a player
-    // who had chosen the phone, and nothing but the phone, saw one card on the left and then the rest
-    // as texts. Every one of these is already filed in its thread (Send), so nothing is lost by
-    // waiting; if no phone turns up at all, the notifications are let go and the lines stay in the
-    // threads. Cards mode is the way out for a phone that never works.
+    // Phone mode and no phone to hand them to yet: they wait for one.
     if phoneMode && !usePhone {
       if this.m_phoneWaitSince <= 0.0 || nowReal < this.m_phoneWaitSince {
         this.m_phoneWaitSince = MaxF(nowReal, 0.001);
@@ -1473,10 +1357,6 @@ public class CBPhone {
       // The phone, when there is one to hand it to and the message has a thread to open.
       // Anything else falls back to a card rather than being lost.
       // Is this one allowed to announce itself?
-      //
-      // Either guard only suppresses the notification. The line is already filed in its thread
-      // (Send -> File) and the thread is already marked unread, so nothing is lost: the player
-      // sees it on the contact the next time they look at their phone.
       let repeat = Equals(body, this.m_lastNotifyBody) && thread == this.m_lastNotifyThread
                 && nowReal > 0.0 && this.m_lastNotifyAt > 0.0
                 && (nowReal - this.m_lastNotifyAt) < CBConfig.PhoneRepeatGuardSeconds();
@@ -1650,14 +1530,10 @@ public func CBPhoneHoldSeconds() -> Float {
   return MaxF(CBConfig.PhoneHoldSeconds() * CBMessageHold(), CBConfig.PhoneHoldFloor());
 }
 
-// ---- The game's own subtitles (1.9.5) -------------------------------------
+// ---- The game's subtitles -------------------------------------
 //
-// The game draws subtitles from lines put on the UIGameData blackboard (ShowDialogLine) and takes
-// them down by id (HideDialogLine): baseSubtitlesControllers.script, SubtitlesGameController. A line
-// of type Regular is drawn by the bottom-of-screen controller as long as it names somebody saying it
-// (IsMainDialogLine), and it shows the speaker name it is given. V is named as the one it is heard
-// by: the person who said it may be gone by the time the line goes up, and a line whose speaker is
-// gone is not drawn. Nothing here touches the controller or its widgets.
+// The game draws subtitles from lines put on the UIGameData blackboard (ShowDialogLine) and takes them down by id
+// (HideDialogLine): baseSubtitlesControllers.script, SubtitlesGameController.
 
 // Is the player showing the game's subtitles? The same setting the subtitles controller reads.
 public func CBGameSubtitlesOn(game: GameInstance) -> Bool {
@@ -1669,13 +1545,8 @@ public func CBGameSubtitlesOn(game: GameInstance) -> Bool {
   return !IsDefined(cinematic) || cinematic.GetValue();
 }
 
-// Cyberbane's subtitle line ids: 0 and 1 for what V overhears, taken in turn, 2 for V's own line in a
-// street exchange and 3 for the answer (Reactions/StreetTalk.reds). Fixed, so a line left over from
-// another session can always be taken down; far from anything the game hashes for its own lines.
-//
-// 2 and 3 are channels with two ids each from 2.1.0 (4 is 2's other, 5 is 3's), taken in turn the way the
-// overheard lines always were: the game's controller skips a line whose id it is still showing, so a line
-// left up in 3 swallowed the next answer, which never appeared.
+// Cyberbane's subtitle line ids: 0 and 1 for what V overhears, taken in turn, 2 for V's own line in a street exchange
+// and 3 for the answer (Reactions/StreetTalk.reds).
 public func CBSubtitleIdCount() -> Int32 = 6
 
 func CBSubtitleLineId(slot: Int32) -> CRUID {
@@ -1697,12 +1568,7 @@ func CBSubtitleLineId(slot: Int32) -> CRUID {
   return CreateCRUID(7310582093516161001ul);
 }
 
-// A line's own take-down. The game draws a subtitle until it is told to take it down: the duration it is
-// given only paces the text as it types out (baseSubtitlesControllers.script, SubtitlesGameController,
-// RemoveLine on HideDialogLine). Every line used to rely on whoever showed it to take it down again, and only
-// street talk's own two did, so a line from a grab, a downed ganger, a Rival's announcement or a surrender
-// stayed at the bottom of the screen until another of ours replaced it. Now every line takes itself down,
-// and only itself: a newer line under the same id carries a newer count.
+// A line's own take-down.
 public class CBSubtitleHideCallback extends DelayCallback {
   public let game: GameInstance;
   public let id: Int32;
@@ -1732,8 +1598,8 @@ public func CBShowGameSubtitle(game: GameInstance, slot: Int32, speaker: String,
   // that is comes down (see CBSubtitleLineId).
   let id = slot;
   let rt = CyberbaneRuntime.Get();
-  // The answer goes up and V's own line comes down (2.6.3): with lines held for as long as they take to read, the two
-  // would otherwise share the space.
+  // The answer goes up and V's own line comes down: with lines held for as long as they take to read, the two would
+  // otherwise share the space.
   if slot == 3 {
     CBHideGameSubtitle(game, 2);
   }
@@ -1787,10 +1653,7 @@ func CBHideSubtitleId(game: GameInstance, slot: Int32) -> Void {
   bb.SetVariant(GetAllBlackboardDefs().UIGameData.HideDialogLine, ToVariant(ids), true);
 }
 
-// How long a spoken line stays up (2.6.3): long enough to read it, times How long words stay on screen. The old fixed
-// times are the floor (2.4 s for V's line, 4 for an answer), and a long answer gets about a second for every sixteen
-// letters. Conversations and the street's intel held their lines for the fixed time whatever was in them, and ignored the
-// setting altogether: "I couldn't even read the info I got out of them."
+// How long a spoken line stays up: long enough to read it, times How long words stay on screen.
 public func CBTalkReadSeconds(text: String, base: Float) -> Float {
   let read = CBConfig.ReadSecondsBase() + Cast<Float>(StrLen(text)) * CBConfig.ReadSecondsPerChar();
   return MaxF(base, read) * CBMessageHold();
@@ -1821,16 +1684,12 @@ public func CBOverheard(game: GameInstance, speaker: String, line: String, opt i
 // ---- The one door everything goes through ---------------------------------
 
 // Send a message from a particular contact.
-//
-// This is what the call sites that used to shout across the middle of the screen call now.
-// Each one says who is speaking and what they are saying; what the presentation does with it
-// is settled in one place.
 public func CBPhoneSend(game: GameInstance, sender: String, body: String) -> Void {
   CBPhoneSendTinted(game, sender, body, CBHudCyan());
 }
 
 // As above, with the accent a card uses to say what kind of message this is. Written now, it lands a little later
-// (2.6.8, CBPhone.Post): nobody texts back the instant something happens.
+// (CBPhone.Post): nobody texts back the instant something happens.
 public func CBPhoneSendTinted(game: GameInstance, sender: String, body: String,
                               accent: HDRColor) -> Void {
   CBPhonePost(game, sender, body, accent, false, 0, n"", 0, 0);
@@ -1841,11 +1700,10 @@ public func CBPhoneSendUrgent(game: GameInstance, sender: String, body: String, 
   CBPhonePost(game, sender, body, accent, true, 0, n"", 0, 0);
 }
 
-// Every text goes through here (2.6.8), with what it opens or closes in its thread when it lands: `then` 1 asks nothing
-// back, 2 a gang's price on V (`faction`), 3 a lead on a Rival (`rival`, `price`, the tipster in `faction`).
+// Every text goes through here, with what it opens or closes in its thread when it lands: `then` 1 asks nothing back, 2
+// a gang's price on V (`faction`), 3 a lead on a Rival (`rival`, `price`, the tipster in `faction`).
 public func CBPhonePost(game: GameInstance, sender: String, body: String, accent: HDRColor, urgent: Bool, then: Int32,
                         faction: CName, rival: Int32, price: Int32) -> Void {
-  // Either silence switch covers every surface, so a player who wants quiet gets it.
   if !CBMessagesOn() {
     return;
   }
@@ -1875,25 +1733,22 @@ public func CBPhoneDeliverNow(game: GameInstance, sender: String, body: String, 
   sys.GetPhone().Send(game, sender, body, accent, isAnswer);
 }
 
-// A text that asks nothing back (2.5.6): filed and shown as any other, and the thread offers no answers under it.
-// For somebody whose other texts can be answered, a Rival above all, when this one is not a threat.
+// A text that asks nothing back: filed and shown as any other, and the thread offers no answers under it. For somebody
+// whose other texts can be answered, a Rival above all, when this one is not a threat.
 public func CBPhoneSendAside(game: GameInstance, sender: String, body: String, accent: HDRColor) -> Void {
-  CBPhonePost(game, sender, body, accent, false, 1, n"", 0, 0);   // settled as it lands (2.6.8)
+  CBPhonePost(game, sender, body, accent, false, 1, n"", 0, 0);   // settled as it lands
 }
 
-// The gang is talking to you. Red, because they are not getting in touch to be friendly. Nothing to answer: news,
-// a grudge, an answer to something V said (2.5.0). Until 2.5.0 every red message opened the buy-off answers, so a
-// Rival's birth or "our people wear plate now" offered "Pay to call it off" and "Not paying" to a demand nobody made.
+// The gang is talking to you. Red, because they are not getting in touch to be friendly. Nothing to answer: news, a
+// grudge, an answer to something V said.
 public func CBPhoneFromGang(game: GameInstance, faction: CName, body: String) -> Void {
   CBPhoneSendTinted(game, CBPhoneGangSender(faction), body, CBHudRed());
 }
 
 // A threat V can answer from the phone (UI/RealPhone.reds): pay what they want, haggle, stall, threaten back, insult
-// them or refuse; the same peace the Hub brokers, at the same price, through the same function. The price is said in
-// the message (CBPhoneDemandText), so every answer under it answers something they said. `priced`: the body names
-// the price already.
+// them or refuse; the same peace the Hub brokers, at the same price, through the same function.
 public func CBPhoneDemandFromGang(game: GameInstance, faction: CName, body: String, opt priced: Bool) -> Void {
-  // The answers open under it as it lands (2.6.8), not under whatever the thread said before.
+  // The answers open under it as it lands, not under whatever the thread said before.
   CBPhonePost(game, CBPhoneGangSender(faction), CBPhoneDemandText(game, faction, body, priced), CBHudRed(), false, 2, faction, 0, 0);
 }
 
@@ -1951,9 +1806,6 @@ public func CBPhoneFromStreet(game: GameInstance, body: String) -> Void {
 
 // Cyberbane itself is talking to you, and there is no pretending otherwise: a tracker pinged, a fatal flaw found, a
 // scan's find, a hint. On the old channel, because a text message from nobody about it is worse than a line of text.
-// It obeys the silence switches (2.5.1), as every other surface does: "I turned off all notifications and blue text
-// still pops up". It was left out of them so a reply to a menu could always be seen, and by 2.5.0 a dozen of the
-// world's own messages had come to use it, so Toasts off and "Where messages go: Off" still put them on screen.
 public func CBSystemNote(game: GameInstance, body: String, duration: Float) -> Void {
   if !CBMessagesOn() {
     return;
@@ -1961,20 +1813,15 @@ public func CBSystemNote(game: GameInstance, body: String, duration: Float) -> V
   CBShowMessage(game, CBTf(n"Cyberbane-PhoneMessages-Cyberbane", [body]), duration);
 }
 
-// The answer to something V just did in a menu (the Hub's buttons, Mod Settings): a reputation wiped, Rivals
-// forgotten, a lead that could not be bought. Shown whatever the silence switches say, because it is the only sign
-// the button did anything (2.5.1, split from CBSystemNote).
+// The answer to something V just did in a menu (the Hub's buttons, Mod Settings): a reputation wiped, Rivals forgotten,
+// a lead that could not be bought.
 public func CBMenuNote(game: GameInstance, body: String, duration: Float) -> Void {
-  CBShowMessage(game, CBTf(n"Cyberbane-PhoneMessages-Cyberbane", [body]), duration, true);   // first in line, never dropped (2.6.3)
+  CBShowMessage(game, CBTf(n"Cyberbane-PhoneMessages-Cyberbane", [body]), duration, true);   // first in line, never dropped
 }
 
 // ---- Word that has to get round first --------------------------------------
 //
-// The same senders as above, for anything that is somebody passing on what V did. It reaches the
-// phone after an in-game delay ("Word travels" in Mod Settings), no closer together than the
-// inbox gap, and a story already on its way is not queued twice (see CBPhone.Hearsay). Messages
-// that are somebody speaking to V in the moment - a crew on the road, a scout with eyes on V, a
-// Rival's own voice - stay on the doors above.
+// The same senders as above, for anything that is somebody passing on what V did.
 
 public func CBWordTravelSeconds() -> Float {
   let rt = CyberbaneRuntime.Get();

@@ -3,9 +3,6 @@
 // All logging goes through CBLog so the underlying call site is isolated in one
 // place. If the game's log function name/signature needs adjusting after a compile
 // against the target game version, only CBWriteLog below changes.
-//
-// Categories (CName): Core, Signals, Model, Director, Crowd, Gang, Morale,
-// Police, Vendor, Rivals, Ledger, UI, Safety.
 
 public func CBLogLevelOff() -> Int32 = 0
 public func CBLogLevelInfo() -> Int32 = 1
@@ -49,6 +46,6 @@ func CBWriteLog(level: Int32, category: CName, message: String) -> Void {
 
 func CBEmitLogLine(category: CName, message: String) -> Void {
   // FTLog reaches a file wherever Cyber Engine Tweaks is installed: bin\x64\plugins\cyber_engine_tweaks\gamelog.log
-  // (2.5.7, found in play). Codeware's ModLog, tried in 2.5.7, wrote every line there a second time.
+  // (found in play).
   FTLog(s"[Cyberbane][\(NameToString(category))] \(message)");
 }

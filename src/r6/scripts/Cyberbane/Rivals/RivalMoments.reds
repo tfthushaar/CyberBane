@@ -1,35 +1,7 @@
-// Cyberbane - The Rivals' moments (2.4.4)
+// Cyberbane - The Rivals' moments
 //
-//   [53] [54] the facedown    when a Rival comes close and nobody has fired yet, everyone stops: the Rival and their
-//                             people hold, and V can talk to the Rival. [Stare them down] (Cool and renown against
-//                             their rank and nerve: win and some of their people run and the Rival fights shaken,
-//                             lose and they are emboldened), [Draw] (V gets the drop), [Walk away] (they let V go,
-//                             once, and the street hears), [Just you and me] (their people hold back while the Rival
-//                             fights alone, until V breaks the terms with a grenade, a hack or a shot at them)
-//   [64] on their feet        a Rival who owes V or is afraid gets three more lines there: [Call it even], [Where's
-//                             (another Rival)?] and [Get out of Night City]
-//   [55] humiliation          a fourth line at mercy: they lose a rank and get a mocking name, and either quit or come
-//                             back obsessed; their gang fears V more
-//   [56] back from the dead   rarely, a Rival V killed comes back weeks later, rebuilt: never one finished with a
-//                             finisher or a fatal flaw
-//   [57] Rivals at war        Rivals of gangs at war go after each other between V's fights, and one can kill the
-//                             other off screen; V can set one on another from mercy, with the other's whereabouts
-//   [58] bonds                two Rivals of a gang can be bound (a mentor and a protégé, lovers, partners): killing
-//                             one moves the other, sparing one can put the other in V's debt
-//   [60] trophies             a named Rival killed by V gives up the weapon their record carries, into V's pockets
-//   [61] where they ended up  a Rival who left Night City is heard from again, weeks later: a tip, a warning, or an
-//                             invitation to finish it
-//   [62] places with meaning  a Rival calling V out names the place V first beat them, or where their kin fell
-//   [63] last words           a dying Rival says something of their own, from their history with V
-//   [U9] Rival chrome         every climb can come with an implant, answering how V hurt them: stats and the game's
-//                             own behaviour abilities, said on their page and in the scanner, and by the street
-//   [U11] tactics by kind     a Survivor keeps their distance, a Killer pushes, an Avenger closes, a Hunter sees
-//                             through smoke and camo
-//   [L4] Rivals' lines        taunts mid-fight, and texts that remember the scars, the escapes and the kin
-//
-// Saved in the Rival book (Rivals/RivalBook.reds); the facedown is session state on it. Every order goes through the
-// helpers the rest of the mod uses (CBTalkHold, CBOrderFlee, CBOrderPursue), every attitude change through the
-// player's own agent, and every native read of a body behind CBNpcSafe.
+// Facedowns, Rivals back on their feet, humiliation, coming back from the dead, Rivals at war with each other, bonds,
+// trophies, where they ended up, places with meaning, last words, Rival chrome and tactics by kind.
 
 public func CBRivalChromeOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -160,7 +132,7 @@ public func CBRivalImplantTerms(r: ref<CBRival>, out health: Float, out armour: 
   if CBMaskHas(mask, 4) { crit += CBConfig.RivalTraitCrit() * 0.5; }
 }
 
-// And the game's own behaviour abilities, where an implant has one ([U9]), with how their kind fights ([U11]).
+// And the game's behaviour abilities, where an implant has one ([U9]), with how their kind fights ([U11]).
 public func CBKitRivalImplants(npc: ref<NPCPuppet>, r: ref<CBRival>) -> Void {
   if !IsDefined(npc) || !IsDefined(r) || CBAiKitOwner() {
     return;
@@ -197,7 +169,7 @@ public func CBKitRivalImplants(npc: ref<NPCPuppet>, r: ref<CBRival>) -> Void {
     CBGrantAbility(npc, t"Ability.CanSeeThroughOpticalCamos");
     CBGrantAbility(npc, t"Ability.CanSeeThroughSmoke");
   }
-  // One of V's own who turned has fought beside V and knows how V moves (Reactions/Crew.reds, 2.5.0).
+  // One of V's own who turned has fought beside V and knows how V moves (Reactions/Crew.reds).
   if r.source == EnumInt(ECBRivalSource.Betrayer) {
     CBGrantAbility(npc, t"Ability.CanCatchUp");
     CBGrantAbility(npc, t"Ability.CanSeeThroughSmoke");
@@ -312,7 +284,7 @@ public func CBFacedownAwaits(sys: ref<CyberbaneSystem>, game: GameInstance) -> B
   return CBFacedownAwaitsFor(sys, game, sys.FindRivalById(sys.GetActiveRivalId()));
 }
 
-// The same for one Rival in particular (2.5.7): the one waiting at their place, who is nobody's active Rival yet.
+// The same for one Rival in particular: the one waiting at their place, who is nobody's active Rival yet.
 public func CBFacedownAwaitsFor(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>) -> Bool {
   if !CBFacedownOn() || !IsDefined(sys) || !IsDefined(r) {
     return false;
@@ -335,9 +307,7 @@ func CBFacedownWaitTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref
   let tags: array<CName> = [n"CB_Rival", n"CB_Escort"];
   let waiting = 0;
   let over = !CBFacedownOn() || book.fdState != 0;
-  // V in a fight that is not theirs (2.5.7): they are calm, so whoever V is fighting is somebody else. The facedown
-  // cannot open in the middle of it, and its wait ran on regardless, so a Rival who walked up while V was busy turned
-  // hostile without a word. The wait holds while V is busy, up to FacedownWaitMaxTicks in all.
+  // V in a fight that is not theirs: they are calm, so whoever V is fighting is somebody else.
   let player = GetPlayer(game);
   let busy = IsDefined(player) && player.IsInCombat();
   for tag in tags {
@@ -396,7 +366,7 @@ func CBFacedownTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
         return;
       }
       // V fired first, hit one of them, or took too long: it is a fight. Not too long while V is talking to them
-      // (2.5.1, CBTalkEngaged): the clock holds while the words go back and forth.
+      // (CBTalkEngaged): the clock holds while the words go back and forth.
       if CBTalkEngaged(sys, body) {
         book.fdTick = tick;
       }
@@ -406,11 +376,10 @@ func CBFacedownTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
       }
       return;
     }
-    // Just you and me: over when the Rival is down or gone; their people step in if V breaks the terms, or when the Rival is
-    // all but beaten (2.6.7): "I told him to leave his people out of it, he said okay, and his bodyguards still started
-    // shooting." They were held neutral, and the game turned them anyway the moment their boss was hurt in front of them
-    // (AIActionHelper.TryChangingAttitudeToHostile, squad mate in danger), which now leaves alone anybody held out of a
-    // fight (CBHeldOutOfFight). Their word holds until the Rival is nearly finished; then they cannot stand and watch.
+    // Just you and me: over when the Rival is down or gone; their people step in if V breaks the terms, or when the
+    // Rival is all but beaten: They were held neutral, and the game turned them anyway the moment their boss was hurt
+    // in front of them (AIActionHelper.TryChangingAttitudeToHostile, squad mate in danger), which now leaves alone
+    // anybody held out of a fight (CBHeldOutOfFight).
     if !CBNpcSafe(sys, body) || !CBStillStanding(body) {
       CBFacedownDuelOver(sys, game, book, r, IsDefined(body) && CBIsDown(body));
       return;
@@ -470,12 +439,12 @@ func CBFacedownOpen(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBR
     }
   }
   body.cbFacedownOpen = true;
-  // Everybody else of theirs nearby holds too, the ones walking up included (2.6.7, Reactions/TalkTruce.reds): "a Rival
-  // was offering to talk but his bodyguards started shooting". Only the escorts standing close at the start held.
+  // Everybody else of theirs nearby holds too, the ones walking up included (Reactions/TalkTruce.reds): "a Rival was
+  // offering to talk but his bodyguards started shooting". Only the escorts standing close at the start held.
   sys.GetTruce().Begin(sys, game, CBTruceFacedown(), r.faction, body);
   let name = CBRivalDisplayName(sys.GetContent(), r);
   CBIntelSay(game, 3, name, CBFacedownOpener(sys, game, r), 4.0);
-  CBVoice(sys, game, body, n"start_combat", n"RivalFacedown", 30.0);   // their own voice first (2.7.7)
+  CBVoice(sys, game, body, n"start_combat", n"RivalFacedown", 30.0);   // their own voice first
   if CBToastsOn() && !book.fdHinted {
     book.fdHinted = true;
     CBSystemNote(game, CBTf(n"Cyberbane-RivalMoments-WantsALookAtYouFirst", [s"\(name)"]), 5.0);
@@ -508,13 +477,13 @@ func CBFacedownOpener(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRi
                        CBT(n"Cyberbane-RivalMoments-EverybodyStopIWantToSee"));
 }
 
-// Somebody stops where they are and holds off V for a moment: their attitude to V alone, and one hold order.
-// Walking up calm for a facedown (Spawn/Spawner.reds, CBApplySpawnSetup), and since when (2.5.0).
+// Somebody stops where they are and holds off V for a moment: their attitude to V alone, and one hold order. Walking up
+// calm for a facedown (Spawn/Spawner.reds, CBApplySpawnSetup), and since when.
 @addField(ScriptedPuppet)
 public let cbFacedownWait: Bool;
 @addField(ScriptedPuppet)
 public let cbFacedownWaitTick: Int32;
-// How much of that wait was held while V fought somebody else, and when it was last looked at (2.5.7).
+// How much of that wait was held while V fought somebody else, and when it was last looked at.
 @addField(ScriptedPuppet)
 public let cbFacedownWaitHeld: Int32;
 @addField(ScriptedPuppet)
@@ -531,12 +500,12 @@ func CBFacedownCalm(game: GameInstance, p: ref<ScriptedPuppet>) -> Void {
     CBTrace("attitude: a Rival and their people hold for a facedown");
     agent.SetAttitudeTowards(pagent, EAIAttitude.AIA_Neutral);
   }
-  // And V's companions, or they open fire on people holding still (2.5.0). Hostile again with V (CBFacedownHostile).
+  // And V's companions, or they open fire on people holding still. Hostile again with V (CBFacedownHostile).
   CBCalmTowardCompanions(CyberbaneSystem.Get(game), p);
   p.cbFacedownHeld = true;
   p.cbFacedownWait = false;
   CBCancelMove(p);
-  // As long as a facedown can wait for V, as the hold always was: a conversation's own holds are short now (2.5.1).
+  // As long as a facedown can wait for V, as the hold always was: a conversation's own holds are short now.
   CBTalkHold(p, CBConfig.FacedownHoldSeconds());
 }
 
@@ -562,10 +531,7 @@ func CBFacedownEscortHit(game: GameInstance, book: ref<CBRivalBook>) -> Bool {
   return false;
 }
 
-// The Rival's people still walking up calm who were not close enough to be held when it opened (2.6.7). Whatever the
-// facedown does with the people it holds, it does with them too: they turned on V once their wait ran out, which in a
-// fight held for as long as V was fighting (CBFacedownWaitTick), so they stood calm through it, and after V was let go
-// or won the duel they turned hostile later on their own.
+// The Rival's people still walking up calm who were not close enough to be held when it opened.
 func CBFacedownStragglers(game: GameInstance, book: ref<CBRivalBook>) -> array<EntityID> {
   let out: array<EntityID>;
   let des = GameInstance.GetDynamicEntitySystem();
@@ -665,7 +631,7 @@ func CBFacedownStandDown(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref
   }
 }
 
-// The Rival is nearly finished in a fair fight (2.6.7): their people break their word and come in, all of them at once, the
+// The Rival is nearly finished in a fair fight: their people break their word and come in, all of them at once, the
 // ones standing further off included, and say so.
 func CBFacedownStepIn(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRivalBook>, r: ref<CBRival>) -> Void {
   let stragglers = CBFacedownStragglers(game, book);
@@ -889,7 +855,7 @@ func CBStareChance(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Pl
   return ClampF(chance, 0.05, 0.9);
 }
 
-// An aim modifier for a while, added and taken off with the same data (the game's own effector pattern; [44]).
+// An aim modifier for a while, added and taken off with the same data (the game's effector pattern; [44]).
 public func CBAimFor(game: GameInstance, puppet: ref<ScriptedPuppet>, mult: Float, seconds: Float) -> Void {
   let stats = GameInstance.GetStatsSystem(game);
   let ds = GameInstance.GetDelaySystem(game);
@@ -925,7 +891,7 @@ func CBRivalTauntTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
   book.tauntTick = tick;
   if RandF() < CBConfig.TauntChance() {
     CBIntelSay(game, 3, CBRivalDisplayName(sys.GetContent(), r), CBRivalTaunt(r), 3.0);
-    // And in their own voice (2.7.7): a battle cry from the body in the fight.
+    // And in their own voice: a battle cry from the body in the fight.
     if IsDefined(body) {
       CBVoice(sys, game, body, n"battlecry_curse", n"RivalTaunt", 25.0, n"start_combat");
     }
@@ -1023,10 +989,10 @@ public func CBRivalFell(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: r
   }
   if byV {
     CBRivalTrophy(sys, game, book, puppet, r);
-    CBGiveStreetCred(game, CBConfig.CredRivalBase() + CBConfig.CredRivalPerRank() * r.rank);   // [87], 2.4.6
+    CBGiveStreetCred(game, CBConfig.CredRivalBase() + CBConfig.CredRivalPerRank() * r.rank);   // [87]
   }
   CBBondOnDeath(sys, game, book, r, byV);
-  CBEmit(n"Cyberbane/RivalSlain", r.faction, Cast<Float>(r.rank));   // [91], 2.4.6
+  CBEmit(n"Cyberbane/RivalSlain", r.faction, Cast<Float>(r.rank));   // [91]
 }
 
 // The weapon their record carries, the way the game itself works out what an NPC holds.
@@ -1056,9 +1022,7 @@ func CBRivalTrophy(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRi
   }
 }
 
-// One of a bond is dead: the other answers it, by what they were to them.
-// `byV` (2.5.6): only a death V caused is avenged on V. The one bound to them texted "You killed [name]" and came for V
-// whoever had killed them, the NCPD or another gang included.
+// One of a bond is dead: the other answers it, by what they were to them. `byV`: only a death V caused is avenged on V.
 func CBBondOnDeath(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBRivalBook>, dead: ref<CBRival>, byV: Bool) -> Void {
   let otherId = book.BondWith(dead.id);
   let other = otherId > 0 ? sys.FindRivalById(otherId) : null;
@@ -1377,7 +1341,7 @@ func CBRivalChromeTick(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
         }
         if StrLen(fresh) > 0 {
           CBFileLog(sys, n"UnderTheKnife", CBGameSeconds(game), CBEventDistrict(sys, game), r.faction, Cast<Float>(r.id));
-          // Still in the chair, and somebody knows which (Rivals/Whereabouts.reds, [U9], 2.5.0); or only the news.
+          // Still in the chair, and somebody knows which (Rivals/Whereabouts.reds, [U9]); or only the news.
           if !CBRipperdocLead(sys, game, r, fresh) && CBMessagesOn() {
             CBHearsayFromStreet(game, CBTf(n"Cyberbane-RivalMoments-WentUnderTheKnifeAndThey", [s"\(CBRivalDisplayName(sys.GetContent(), r))", s"\(CBCapFirst(fresh))"]), n"");
           }
@@ -1401,9 +1365,8 @@ public func CBRivalKeepsHours(game: GameInstance, r: ref<CBRival>) -> Bool {
 
 // ---- [62] Places with meaning ---------------------------------------------------------------------------------------
 
-// Somewhere that matters for a Rival calling V out: where their kin fell, or where V first beat them, when it is
-// still a place a Rival can be put and close enough to go to. Noted as their sighting there, which the hideout
-// machinery then uses as it would any other; and why it matters, for their text.
+// Somewhere that matters for a Rival calling V out: where their kin fell, or where V first beat them, when it is still
+// a place a Rival can be put and close enough to go to.
 public func CBRivalMeaningfulPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, r: ref<CBRival>,
                                    out why: String) -> ref<CBSighting> {
   let book = CBRivalBook.Get(game);

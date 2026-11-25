@@ -1,18 +1,7 @@
-// Cyberbane - The moment ([3], [4], [5], 2.3.1)
+// Cyberbane - The moment ([3], [4], [5])
 //
-// What the street can see about right now, on top of what it knows about V: the hour and the rain,
-// whether V is bleeding, whether V has just come out of a fight. One reader for each, asked by the systems
-// that already make each decision, so the crowd, recognition, witnesses, the nerve of a ganger and the
-// lines all agree about the same moment:
-//
-//   night and rain   harder to see a face (recognition) and fewer eyes on a kill (witnesses); the rain also
-//                    shortens hunters' and scouts' sight (CBHuntSenseScale), which already counted the dark
-//   V wounded        the crowd sees the blood and backs off; a ganger sees a chance and holds less
-//   fresh from it    the crowd keeps its distance; the lines say what everybody can see
-//
-// Off (Mod Settings, The crowd: "Night, rain and blood"), every reader answers as if it were midday, dry,
-// and V had not been in a fight, which is how everything behaved before 2.3.1. The night is the lanes' own
-// (CBIsNight, Spawn/Queue.reds), so crews by night and the hunt's sense of the dark are never touched by it.
+// What the street can see about right now, on top of what it knows about V: the hour and the rain, whether V is
+// bleeding, whether V has just come out of a fight.
 
 public func CBMomentOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -24,8 +13,8 @@ public func CBMomentNight(game: GameInstance) -> Bool {
   return CBMomentOn() && CBIsNight(game);
 }
 
-// 0 dry, 1 light rain, 2 heavy rain. The weather system is the game's own read (WeatherSystem, the same one
-// the time-skip screen asks), never anybody's puppet.
+// 0 dry, 1 light rain, 2 heavy rain. The weather system is the game's read (WeatherSystem, the same one the time-skip
+// screen asks), never anybody's puppet.
 public func CBRainLevel(game: GameInstance) -> Int32 {
   if !CBMomentOn() {
     return 0;
@@ -88,9 +77,8 @@ public func CBVFreshFromFight(sys: ref<CyberbaneSystem>, game: GameInstance) -> 
   return at > 0.0 && now >= at && (now - at) < CBConfig.FreshFightSeconds();
 }
 
-// How much more the crowd fears V right now than V's name alone would make it: the district's temper
-// ([6]), the blood, a fight just over. Multiplies the crowd's intensity wherever the crowd's fear is worked
-// out (the Director, the Hub's "right now", talk), so the three never disagree.
+// How much more the crowd fears V right now than V's name alone would make it: the district's temper ([6]), the blood,
+// a fight just over.
 public func CBCrowdMomentMult(sys: ref<CyberbaneSystem>, game: GameInstance) -> Float {
   if !IsDefined(sys) {
     return 1.0;

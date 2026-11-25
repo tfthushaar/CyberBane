@@ -4,8 +4,6 @@
 // read Cyberbane's live reputation values. Content registration goes through the
 // global content service (no GameInstance needed); read queries take a
 // GameInstance because reputation is per-save.
-//
-// RegisterDeed / RegisterTitle are added alongside the deed and title registries.
 
 // Whoever put V down, promoted now.
 //
@@ -41,9 +39,9 @@ public func CBPromoteKiller(game: GameInstance, faction: CName, killerRecordID: 
        && (byBody.state == EnumInt(ECBRivalState.Active) || byBody.state == EnumInt(ECBRivalState.Hunting)) {
       who = byBody;
     }
-    // Not a Rival's body, but the same face as a Killer Rival already out (1.9.1): the game's own NPC
-    // who killed V once has killed V again. Without this a death alternative such as Fenix Rebirth,
-    // which carries V on without a reload, made a second Rival of them with a name of their own.
+    // Not a Rival's body, but the same face as a Killer Rival already out: the game's NPC who killed V once has killed
+    // V again. Without this a death alternative such as Fenix Rebirth, which carries V on without a reload, made a
+    // second Rival of them with a name of their own.
     if !IsDefined(who) {
       who = CBKillerRivalLike(sys, faction, killerRecordID, killerLook);
     }
@@ -73,9 +71,8 @@ public func CBPromoteKiller(game: GameInstance, faction: CName, killerRecordID: 
     who.scarMask = CBMaskSet(who.scarMask, scar);
   }
 
-  // The gang saw it done. Standing is V's footing with them, and somebody who has put V down
-  // is harder to frighten.
-  // Not with reputation frozen (2.4.2), which every other change to standing already respected.
+  // The gang saw it done. Standing is V's footing with them, and somebody who has put V down is harder to frighten. Not
+  // with reputation frozen, which every other change to standing already respected.
   let fs = sys.FindFaction(faction);
   if IsDefined(fs) && !CBReputationFrozen() {
     fs.standing = ClampF(fs.standing - CBConfig.DeathStandingDrop(), -100.0, 100.0);
@@ -126,15 +123,6 @@ public abstract class CyberbaneAPI {
   // for it when dying means reloading, and the wrong place when it does not: a death
   // alternative brings V back in the same session, so nothing in Cyberbane ever noticed. This
   // is the same promotion, applied now.
-  //
-  // `killerAffiliation` is the game's own affiliation enum name, the value of
-  // `Character_Record.Affiliation().EnumName()`, which is what Cyberbane maps its own factions
-  // from. `weaponCategory` is the `gamedataItemType` name and may be left empty. Returns true
-  // if a Rival was created or promoted.
-  //
-  // Safe to call at any time and from any mod: everything it touches is checked, the player's
-  // settings are honoured, and the Rival cap and the story-character guard both still apply,
-  // so this can never conjure a Rival the player's own settings forbid.
   public static func ReportPlayerKilledBy(game: GameInstance, killerRecordID: TweakDBID,
                                           killerAffiliation: CName, weaponCategory: CName) -> Bool {
     let rt = CyberbaneRuntime.Get();
@@ -237,7 +225,7 @@ public abstract class CyberbaneAPI {
     return false;
   }
 
-  // ---- Extension API, level 1 (2.7.4) -------------------------------------
+  // ---- Extension API, level 1 -------------------------------------
   //
   // Guard every call below with @if(ModuleExists("Cyberbane.Api")). An API function is never removed or renamed; a
   // later level adds its own marker module (Cyberbane.Api2 ...). See README, "For mod authors".
@@ -409,7 +397,7 @@ public abstract class CyberbaneAPI {
     if IsDefined(run) {
       return run.state;
     }
-    // Off the road now: done if it is remembered, -1 for a handle it never had or lost with a load (2.7.5).
+    // Off the road now: done if it is remembered, -1 for a handle it never had or lost with a load.
     return IsDefined(reg) && reg.Outcome(handle) != CBConvoyOutcomeUnknown() ? CBConvoyDone() : -1;
   }
 
@@ -468,7 +456,7 @@ public abstract class CyberbaneAPI {
     return CBApiStartEvent(game, kind, side, at, inGameSeconds);
   }
 
-  // ======== API level 2 (2.7.5): guard each call with @if(ModuleExists("Cyberbane.Api2")) ========
+  // ======== API level 2: guard each call with @if(ModuleExists("Cyberbane.Api2")) ========
 
   // ---- Clocks and the world. OnTick on CBListener comes every couple of seconds on the settled tick.
   public static func WorldStable(game: GameInstance) -> Bool {

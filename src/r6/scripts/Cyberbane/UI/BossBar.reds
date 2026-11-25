@@ -3,27 +3,8 @@
 // When the game fights a boss it puts a long red bar across the top of the screen with the
 // name above it. An apex squad should get that treatment, because that bar is how the game
 // tells you this one is different.
-//
-// Getting there took some finding out. The bar belongs to `BossHealthBarGameController`, and
-// the obvious routes are all closed:
-//   - NPC rarity is what the game keys the bar off, and there is no setter for it: a puppet's
-//     rarity comes from its character record and cannot be changed on a live NPC.
-//   - The record cannot be cloned and edited either; `TweakDBManager` is a RED4ext API and is
-//     not reachable from redscript.
-// What is reachable is the controller's own `AddBoss(ref<NPCPuppet>)`. So Cyberbane keeps hold
-// of the controller when the HUD builds it, and hands it each apex as they arrive.
-//
-// Crash safety: the reference is weak and re-checked on every use, because the controller is
-// rebuilt on load, fast travel and every HUD teardown. A missing controller means no bar, and
-// no bar means the fight is slightly less dramatic, which is the correct way for this to fail.
 
 // Put this one on the bar.
-//
-// This used to hand the puppet to the game's own `BossHealthBarGameController.AddBoss` whenever
-// that controller was reachable, and only fall back to Cyberbane's own bar when it was not.
-// The controller is reachable essentially always, and `AddBoss` opens by rejecting anybody who
-// is not a boss by record, so the call did nothing and the fallback never ran. That is the
-// whole reason no bar was ever seen. The plumbing that held the controller is gone with it.
 public func CBShowBossBar(npc: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(npc as NPCPuppet) || !CBThreatBarOn() {
     return;
@@ -48,9 +29,7 @@ public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
     return;
   }
   let id = npc.GetEntityID();
-  // A Rival is a person, so they get their name. An apex squad member is one of four, so what
-  // matters is which one - the same way a MaxTac drop is legible as a heavy, a blade, a
-  // netrunner and a shooter rather than four interchangeable enemies.
+  // A Rival is a person, so they get their name.
   let label = CBT(n"Cyberbane-BossBar-HUNTINGYOU");
   // The gang, always. Three lanes can fire for three different gangs, so without this a Scav
   // apex squad arriving while a Valentinos crew is still on you reads as one mixed squad.
@@ -60,12 +39,8 @@ public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
   }
   if des.IsTagged(id, n"CB_Apex") {
     let role: ECBApexRole;
-    // The chair they were actually given, which is what their kit came from. Falling back to
-    // the record's own archetype only when there is no seat on file. Reading the archetype first
-    // was wrong in the common case: the
-    // role records are only captured from killing an enemy of exactly that kind, so a gang V
-    // has only fought shooters fills all four chairs with shooter records, and four bars read
-    // SHOOTER above a heavy, a shooter, a blade and a netrunner.
+    // The chair they were actually given, which is what their kit came from. Falling back to the record's own archetype
+    // only when there is no seat on file.
     if !CBApexSeatRole(npc, role) {
       if !CBArchetypeRole(CBRecordArchetype(npc.GetRecordID()), role) {
         role = ECBApexRole.Assault;
@@ -73,8 +48,8 @@ public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
     }
     label = StrUpper(CBRoleName(role));
   }
-  // One of the hunters' ladder by what they are and their own name (2.5.5): the bar read "HUNTING YOU" over the game's
-  // name for their record, a stranger's, when the HUD line and the scanner already called them by theirs.
+  // One of the hunters' ladder by what they are and their own name: the bar read "HUNTING YOU" over the game's name for
+  // their record, a stranger's, when the HUD line and the scanner already called them by theirs.
   if des.IsTagged(id, n"CB_Bounty") {
     label = CBT(n"Cyberbane-Bounty-BOUNTYHUNTER");
     let hunter = CBBountyScannerName(npc);
@@ -84,7 +59,7 @@ public func CBShowThreatBar(npc: ref<ScriptedPuppet>) -> Void {
   }
   if des.IsTagged(id, n"CB_Rival") {
     label = CBT(n"Cyberbane-Whereabouts-RIVAL");
-    // Whose body it is, first: a Rival who came with the active one carries their own name (1.9.0).
+    // Whose body it is, first: a Rival who came with the active one carries their own name.
     let who = CBFindRivalByBody(sys, id);
     if !IsDefined(who) {
       who = sys.FindRivalById(sys.GetActiveRivalId());

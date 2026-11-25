@@ -1,20 +1,9 @@
-// Cyberbane - Sounds (2.7.7)
+// Cyberbane - Sounds
 //
 // Cyberbane can only use sounds the game already has, and plays them the ways the game does: an interface sound through
 // the audio system with no entity (the phone's typing, a pin on the map, loot, a perk bought), a voice line from
 // a person's own voiceset (GameObject.PlayVoiceOver, so each sounds like who they are; a line their voiceset lacks stays
 // silent), and a car's own horn (VehicleObject.ToggleHorn, on and off a moment later).
-//
-// Rules for all of it:
-//   - only sounds that end on their own (CBSoundLoopsUntilStopped);
-//   - each sound has a key and a cooldown, so a big fight never turns into a choir;
-//   - nothing plays during a scene or while the story has the stage;
-//   - voices answer to "Voices for the moments", everything else to "Sounds".
-//
-// Why not the MaxTac AV horn any more: av_maxtac_descent_horn is authored against an AV's own emitter (the game plays it
-// only on the AV, psychoSquadAVSystem.script), and played on V with no AV in the world it was silent; nobody ever heard an
-// apex squad arrive. The warning is the game's own sting for being marked for MaxTac now, which plays from anywhere, and
-// the squad's car sounds its horn as it pulls up.
 
 public func CBSoundsOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -53,11 +42,9 @@ public func CBSoundMay(game: GameInstance, key: CName, cooldown: Float) -> Bool 
   return true;
 }
 
-// The game's interface sounds that keep playing until the game sends their stop: each is started by something that
-// ends later (a call coming in, a map time skip, a loading bar, a scroll) and stopped by that end, the ring by
-// ui_phone_incoming_call_stop when the call is picked up, refused or over (phoneSystem.script, OnPickupPhone). Played
-// with nothing behind it, nothing ever stops it: 2.7.7's first build rang the phone for big news, and it rang until V
-// opened the phone. Every name the game's scripts pair with a _stop event, or end with AudioSystem.Stop.
+// The game's interface sounds that keep playing until the game sends their stop: each is started by something that ends
+// later (a call coming in, a map time skip, a loading bar, a scroll) and stopped by that end, the ring by
+// ui_phone_incoming_call_stop when the call is picked up, refused or over (phoneSystem.script, OnPickupPhone).
 public func CBSoundLoopsUntilStopped(name: CName) -> Bool {
   return Equals(name, n"ui_phone_incoming_call") || Equals(name, n"ui_phone_initiation_call")
       || Equals(name, n"ui_loading_bar") || Equals(name, n"ui_main_menu_loop")

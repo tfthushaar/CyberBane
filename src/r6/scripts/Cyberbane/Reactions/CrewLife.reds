@@ -1,15 +1,6 @@
-// Cyberbane - Your crew's own lives (2.7.7)
+// Cyberbane - Your crew's own lives
 //
-// The crew has numbers and a roster; this is what makes each of them somebody. Every member keeps a short story (where
-// they joined, the scars, the ranks, the wars), counts the people they put down, and has a temperament from the same seed
-// as their name: a hothead, the careful one, the one who still feels for the old gang, the one in it for the money. It
-// shows in their texts and in what makes their loyalty move. Now and then one of them asks V for something. When one
-// dies the crew buries them a day later in their home district, and notices who came. One of them can be V's second,
-// who speaks for the crew and leads its wars.
-//
-// Saved in its own book (CBCrewLifeBook), never as fields on CBCrewMember: a new persistent field on a saved class wipes
-// that class's saved data, and a saved class holding an array crashed the game before (schema 2 and 3). So every list
-// here is a flat parallel array on the book itself, keyed by member id, and read up to the shortest of them.
+// The crew has numbers and a roster; this is what makes each of them somebody.
 
 // What a line in a member's story is.
 public func CBLifeJoined() -> Int32 = 1
@@ -67,16 +58,16 @@ public class CBCrewLifeBook extends ScriptableSystem {
   private persistent let m_homeY: Float;
   private persistent let m_homeZ: Float;
   private persistent let m_homeDistrict: CName;
-  // The street tax the shops in the crew's districts owe, paid to V in person (2.7.7): the district and what it owes.
+  // The street tax the shops in the crew's districts owe, paid to V in person: the district and what it owes.
   private persistent let m_taxDistrict: array<CName>;
   private persistent let m_taxOwed: array<Int32>;
-  // A counterattack on the crew's corners, told ahead (2.7.7): where, who, when, and how it stands (0 none, 1 coming,
-  // 2 under way with V there, 3 held, 4 lost).
+  // A counterattack on the crew's corners, told ahead: where, who, when, and how it stands (0 none, 1 coming, 2 under
+  // way with V there, 3 held, 4 lost).
   private persistent let m_caDistrict: CName;
   private persistent let m_caGang: CName;
   private persistent let m_caAt: Float;
   private persistent let m_caState: Int32;
-  // V's part in the crew's wars (2.7.7): the gang, and how many of theirs V put down while the war on them was on.
+  // V's part in the crew's wars: the gang, and how many of theirs V put down while the war on them was on.
   private persistent let m_warHelpGang: array<CName>;
   private persistent let m_warHelpKills: array<Int32>;
   // Said once a war, when V walks onto the war's streets.
@@ -91,7 +82,7 @@ public class CBCrewLifeBook extends ScriptableSystem {
   public let batchAt: array<Int32>;
   public let funeralCalled: Bool;
   public let lastKillMember: Int32;   // whose hit downed the last enemy, this fight
-  // The pins on the world map for the crew's war fronts and a counterattack coming (2.7.7): what each stands for, by key.
+  // The pins on the world map for the crew's war fronts and a counterattack coming: what each stands for, by key.
   public let frontKey: array<CName>;
   public let frontPin: array<NewMappinID>;
 
@@ -575,7 +566,7 @@ func CBCrewStoryLine(sys: ref<CyberbaneSystem>, kind: Int32, place: CName, value
   return "";
 }
 
-// Their story, oldest first, a line each: "Joined in Heywood." "Won 4 fights." "Took a scar in Westbrook." "Made Soldier."
+// Their story, oldest first, a line each: "Joined in Heywood." "Won 4 fights." "Made Soldier."
 public func CBCrewStoryLines(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>) -> array<String> {
   let out: array<String>;
   if !IsDefined(m) {
@@ -599,7 +590,6 @@ public func CBCrewStoryLines(sys: ref<CyberbaneSystem>, game: GameInstance, m: r
       i += 1;
     }
   }
-  // A member from before 2.7.7 has no story kept: where they live stands in for where they joined.
   if !joined {
     ArrayInsert(out, 0, CBCrewStoryLine(sys, CBLifeJoined(), m.home, 0));
   }
@@ -627,7 +617,7 @@ public func CBCrewRankGains(rank: Int32) -> String {
 }
 
 // Somebody climbed (a fight won, a training finished): their story, the group chat with what they can do now, and the
-// game's own sound for a perk bought.
+// game's sound for a perk bought.
 public func CBCrewLifePromoted(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>, from: Int32, to: Int32) -> Void {
   if !IsDefined(m) || to <= from {
     return;
@@ -646,9 +636,8 @@ public func CBCrewLifePromoted(sys: ref<CyberbaneSystem>, game: GameInstance, m:
 
 // ---- A fight won, said when it is won ------------------------------------------------------------------------------
 
-// The moment it ends, in the group chat, from whoever was in it (2.7.7): "Clean. Three of theirs down." Before this the
-// win showed only when they went home. And the game's own line in their voice: the one whose hit ended it reports the
-// kill, anyone else says it is over.
+// The moment it ends, in the group chat, from whoever was in it: Before this the win showed only when they went home.
+// And the game's line in their voice: the one whose hit ended it reports the kill, anyone else says it is over.
 public func CBCrewWinLine(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, speaker: ref<CBCrewMember>, downed: Int32) -> Void {
   let lb = CBCrewLifeBook.Get(game);
   let killer = IsDefined(lb) ? lb.lastKillMember : 0;
@@ -693,7 +682,7 @@ public func CBCrewWinLine(sys: ref<CyberbaneSystem>, game: GameInstance, book: r
 
 // ---- Texts that come as one ----------------------------------------------------------------------------------------
 
-// Three pieces of chrome put in one member at once are one text, not three (2.7.7): each is held a moment, and the member's
+// Three pieces of chrome put in one member at once are one text, not three: each is held a moment, and the member's
 // lines go together.
 public func CBCrewBatchText(game: GameInstance, m: ref<CBCrewMember>, line: String) -> Void {
   let lb = CBCrewLifeBook.Get(game);
@@ -1190,7 +1179,7 @@ public func CBCrewLifeFell(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref
     let speaker = CBCrewSecond(game);
     let line = CBTf(n"Cyberbane-CrewLife-FuneralSet", [CBCrewFirst(sys, m), CBClockWordAt(CBConfig.CrewFuneralHour()), CBDistrictLabel(place)]);
     CBCrewText(sys, game, IsDefined(speaker) && speaker.id != m.id ? speaker : null, line, true);
-    CBCrewGroupReplies(sys, game, 3, m.id);   // and the rest answer (2.7.7)
+    CBCrewGroupReplies(sys, game, 3, m.id);   // and the rest answer
   }
 }
 
@@ -1295,8 +1284,8 @@ public func CBCrewHomeHealFactor(game: GameInstance) -> Float {
 
 // ---- The group chat answers itself ---------------------------------------------------------------------------------
 
-// After a war or a death (2.7.7), two or three of them reply to each other in the group chat, each as who they are, rather
-// than one line and silence. `kind`: 1 a war won, 2 a war lost, 3 one of them dead. `skip` is somebody not to speak.
+// After a war or a death, two or three of them reply to each other in the group chat, each as who they are, rather than
+// one line and silence. `kind`: 1 a war won, 2 a war lost, 3 one of them dead. `skip` is somebody not to speak.
 public func CBCrewGroupReplies(sys: ref<CyberbaneSystem>, game: GameInstance, kind: Int32, skip: Int32) -> Void {
   let book = CBCrewBook.Get(game);
   if !IsDefined(book) || !CBMessagesOn() || book.Count() < 2 {

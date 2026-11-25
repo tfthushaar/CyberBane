@@ -1,16 +1,7 @@
-// Cyberbane - Places to find a gang (2.7.2)
+// Cyberbane - Gang homes
 //
-// "Mark hubs on the map for gangs, like Valentino Alley for the Valentinos, near Lizzie's for the Mox, Totentanz for
-// Maelstrom." A gang's home is one of the game's own named places, by the sub-district the game puts there (the Mox at
-// Lizzie's Bar, Maelstrom at Totentanz, and so on), so the place, its name and its language are the game's. The game
-// keeps no position for a sub-district, so Cyberbane learns each home the first time V stands in it, outside the bar
-// itself, the way it learns V's own homes. From then on:
-//   - it has a pin in the map's CYBERBANE box, "Mox: Lizzie's Bar", hidden while that gang is Hostile or at Vendetta
-//     with V, by Cyberbane's standing or They Will Remember's;
-//   - when V comes within GangHomeReach of it and none of the gang are about, a few of them are there to talk to (a
-//     hangout placed at the home instead of near V: Spawn/Hangouts.reds), once a day;
-//   - anybody of theirs on the street will say where it is ("Where do your people hang out?").
-// Gangs the game gives no named place of their own (6th Street, the Scavs, the Badlands clans, Dogtown's) keep none.
+// Each gang has a home at one of the game's named places (the Mox at Lizzie's Bar, Maelstrom at Totentanz and so on),
+// where V can find their people.
 
 public func CBMemGangHome() -> Int32 = 4
 
@@ -88,7 +79,7 @@ public func CBGangHomeBySub(sub: String) -> Int32 {
   return -1;
 }
 
-// The place's name, in the game's own words and language.
+// The place's name, in the game's words and language.
 public func CBGangHomePlace(i: Int32) -> String {
   let rec = TweakDBInterface.GetDistrictRecord(CBGangHomeRecord(i));
   return IsDefined(rec) ? GetLocalizedText(rec.LocalizedName()) : "";
@@ -133,8 +124,7 @@ public func CBGangHomeShown(sys: ref<CyberbaneSystem>, game: GameInstance, gang:
 // ---- Learning one --------------------------------------------------------------------------------------
 
 // On the street tick: V standing in a home's sub-district, outside the bar or the church itself and nowhere a story is
-// being told, is where that home is from now on. Where the game's place is only the inside (a bar the game calls safe),
-// the spot is the street V steps out onto, within GangHomeStepOut of the door and a minute of leaving.
+// being told, is where that home is from now on.
 public func CBGangHomeTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let st = CBHangoutState.Get(game);
   if !IsDefined(sys) || !IsDefined(st) || !CBGangHomesOn() || !CBWorldStable(game) {
@@ -238,7 +228,7 @@ public func CBPlaceAround(sys: ref<CyberbaneSystem>, game: GameInstance, record:
     }
     ring += 1;
   }
-  // Too few hidden round the place: the navmesh's own hidden points near it, one query (2.7.3, Spawn/Spawner.reds).
+  // Too few hidden round the place: the navmesh's own hidden points near it, one query (Spawn/Spawner.reds).
   if placed < want {
     let pts: array<Vector4>;
     if CBPursuitPointsAround(game, ppos, at, want - placed, 3.0, CBConfig.PlaceAroundPursuitMax(), pts) {

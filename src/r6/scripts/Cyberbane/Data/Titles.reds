@@ -4,12 +4,6 @@
 // Living Legend > faction/district > others), hidden (shown as ??? until earned).
 // Konpeki Ghost is earned from The Heist's own quest fact (Data/Deeds.reds, q005_done) or by the
 // unseen-kill count in Model/TitleEngine.reds.
-//
-// Conditions are evaluated in code (Model/TitleEngine.reds). The six district- and
-// faction-parameterised titles keep their generic wording here and are rewritten at display
-// time by Model/TitleNaming.reds, which fills in the actual place or gang ("Butcher of
-// Watson"). The generic strings below are the fallback for when nothing qualifies yet, so
-// they must stay readable on their own.
 
 public func CBSeedTitles(c: ref<CyberbaneContent>) -> Void {
   c.AddTitle(CBMakeTitle(n"T_CYBERBANE",         CBT(n"Cyberbane-Titles-Cyberbane"),                100, true));
@@ -29,13 +23,9 @@ public func CBSeedTitles(c: ref<CyberbaneContent>) -> Void {
   c.AddTitle(CBMakeTitle(n"T_RED_TIDE",          CBT(n"Cyberbane-Titles-RedTide"),                  35, true));
   c.AddTitle(CBMakeTitle(n"T_MAXTAC_PROBLEM",    CBT(n"Cyberbane-Titles-MaxTacSProblem"),          35, true));
   c.AddTitle(CBMakeTitle(n"T_MERCIFUL",          CBT(n"Cyberbane-Titles-TheMerciful"),              35, true));
-  // Dropped from this table once and given a condition in 1.2.0, which nothing could reach with the
-  // title not listed here. The Heist still awarded it, as the raw id: "Heard them calling you
-  // T_KONPEKI_GHOST today."
   c.AddTitle(CBMakeTitle(n"T_KONPEKI_GHOST",     CBT(n"Cyberbane-Titles-KonpekiGhost"),             35, false));
   c.AddTitle(CBMakeTitle(n"T_LANDLORD",          CBT(n"Cyberbane-Titles-FearedLandlord"),           30, true));
   c.AddTitle(CBMakeTitle(n"T_MERC_FROM",         CBT(n"Cyberbane-Titles-TheMercFromTheDistrict"), 20, false));
-  // 2.4.6 ([U15]): the ladder, the war, gang life, trophies and the gang V belongs to (Narrative/Telling.reds).
   c.AddTitle(CBMakeTitle(n"T_NUMBER_ONE",        CBT(n"Cyberbane-Titles-NumberOne"),                70, true));
   c.AddTitle(CBMakeTitle(n"T_WARLORD",           CBT(n"Cyberbane-Titles-Warlord"),                   65, true));
   c.AddTitle(CBMakeTitle(n"T_SEASON_SURVIVOR",   CBT(n"Cyberbane-Titles-OpenSeasonSurvivor"),      45, true));
@@ -59,7 +49,6 @@ func CBPerkOf(c: ref<CyberbaneContent>, id: CName, effect: String) -> ref<CBTitl
 // What each title gets you while you go by it. Mostly good; the big ones cost something. The text is
 // what the player reads, so a number changed here has to be changed in the sentence too.
 func CBSeedTitlePerks(c: ref<CyberbaneContent>) -> Void {
-  // 2.4.6 ([U15]).
   let n1 = CBPerkOf(c, n"T_NUMBER_ONE", CBT(n"Cyberbane-Titles-RewardsForKillsPay25More"));
   n1.bountyMult = 1.25;
   n1.crowdMult = 1.1;

@@ -1,20 +1,7 @@
-// Cyberbane - a convoy that travels (extension API level 1, 2.7.4)
+// Cyberbane - Convoys (extension API)
 //
-// Cyberbane's own cars only ever drive at V (Spawn/Arrival.reds, CBDriveAtPlayer). A convoy drives a route as a group,
-// with the game's own vehicle orders, given the way Cyberbane already gives them (an AICommandEvent and the AI component's
-// first order): the lead on AIVehicleDriveToPointAutonomousCommand from one route point to the next, the escorts on
-// AIVehicleFollowCommand on the lead, six to eighteen metres back. On contact (one of its people fighting V) the escorts
-// turn on V with AIVehicleChaseCommand, ramming if asked, and the lead carries on to its destination or runs for it
-// (AIVehiclePanicCommand). A car that stops lets its people out to fight on foot, as Cyberbane's arrivals do. The numbers
-// follow the game's own chase set-up (dynamicSpawnSystem.script: 3 to 10 metres, a start speed of 10), read, not called.
-//
-// Until V is within reach it is only on paper: a position along its route, by time and speed. Then its cars are put on
-// the ground near that position out of V's sight, its crews seated (MountAIEvent, the way an arrival's crew boards), and
-// it drives. Everything goes through Cyberbane's gates and room, and comes out the safe way: crews unseated first, nobody
-// removed from a seat or in V's sight.
-//
-// For add-ons (CyberbaneAPI.RequestConvoy); Cyberbane's own arrivals are unchanged. Formation at speed on Badlands roads is
-// the nomad expansion's spike S-2: the log says what each convoy did.
+// A group of Cyberbane cars that drives a route together instead of straight at V. Add-ons start one through
+// CyberbaneAPI; the lead car gets the route and the rest follow it, using the same vehicle orders Arrival.reds uses.
 
 public func CBConvoyPaper() -> Int32 = 0
 public func CBConvoyBoarding() -> Int32 = 1
@@ -22,7 +9,7 @@ public func CBConvoyDriving() -> Int32 = 2
 public func CBConvoyContact() -> Int32 = 3
 public func CBConvoyDone() -> Int32 = 4
 
-// How it ended (2.7.5, API level 2, ConvoyOutcome): kept a while after it is off the road.
+// How it ended (API level 2, ConvoyOutcome): kept a while after it is off the road.
 public func CBConvoyOutcomeRunning() -> Int32 = 0
 public func CBConvoyOutcomeArrived() -> Int32 = 1
 public func CBConvoyOutcomeBroken() -> Int32 = 2
@@ -57,7 +44,7 @@ public class CBConvoyRun {
   public let crewSeat: array<CName>;
   public let releasing: Bool;
   public let outcome: Int32;
-  // Ticks V has been out of reach of it while it was in a fight (R4).
+  // Ticks V has been out of reach of it while it was in a fight.
   public let awayTicks: Int32;
 
   public func Tag() -> CName {
@@ -474,7 +461,7 @@ func CBConvoyStep(sys: ref<CyberbaneSystem>, game: GameInstance, reg: ref<CBApiC
     return;
   }
   // Somebody of theirs is fighting: contact, once. Everybody down before any of them fought (one rocket from range) is
-  // the end of it too (2.7.5, R3): it stayed "driving" behind a lead that would never get anywhere.
+  // the end of it too: it stayed "driving" behind a lead that would never get anywhere.
   if run.state == CBConvoyDriving() && CBConvoyCrewAlive(game, run) == 0 {
     CBConvoyFinish(run, CBConvoyOutcomeBroken());
     CBLog.Info(n"Spawn", s"An add-on's convoy lost everybody on board while it drove (handle \(run.handle)).");
@@ -524,7 +511,7 @@ func CBConvoyStep(sys: ref<CyberbaneSystem>, game: GameInstance, reg: ref<CBApiC
     if CBConvoyCrewAlive(game, run) == 0 {
       CBConvoyFinish(run, CBConvoyOutcomeBroken());
     } else {
-      // The two other ways a fight ends (2.7.5, R4): the lead got to its end, or V left it behind.
+      // The two other ways a fight ends: the lead got to its end, or V left it behind.
       let leadC = ArraySize(run.cars) > 0 ? GameInstance.FindEntityByID(game, run.cars[0]) as VehicleObject : null;
       let last = ArraySize(run.spec.route) - 1;
       if IsDefined(leadC) && last >= 0 && Vector4.Distance(leadC.GetWorldPosition(), run.spec.route[last]) <= CBConfig.ConvoyPointReach() {
@@ -590,7 +577,7 @@ func CBConvoyRelease(game: GameInstance, reg: ref<CBApiConvoys>, run: ref<CBConv
   CBLog.Info(n"Spawn", s"An add-on's convoy was taken off the road (handle \(run.handle)).");
 }
 
-// Its people still standing, and their bodies (2.7.5, API level 2: ConvoyAlive, ConvoyBodies).
+// Its people still standing, and their bodies (API level 2: ConvoyAlive, ConvoyBodies).
 public func CBApiConvoyAlive(game: GameInstance, handle: Int32) -> Int32 {
   let reg = CBApiConvoys.Get(game);
   let run = IsDefined(reg) ? reg.Find(handle) : null;

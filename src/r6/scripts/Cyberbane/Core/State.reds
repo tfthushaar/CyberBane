@@ -24,23 +24,19 @@ public class CBFactionState {
   // A real character record of a member V has fought, captured so hit squads spawn
   // faction-appropriate NPCs without hardcoding TweakDB ids (spec §9.9, S-08).
   public persistent let sampleRecord: TweakDBID;
-  // One record per chair on the apex squad, so the team that comes for you is assembled out
-  // of the kinds of member of this gang V has actually fought. Four flat scalars rather than
-  // an array, for the schema-3 reason: nothing nested inside a persisted class.
+  // One record per chair on the apex squad, so the team that comes for you is assembled out of the kinds of member of
+  // this gang V has actually fought.
   public persistent let roleTankRecord: TweakDBID;
   public persistent let roleAssaultRecord: TweakDBID;
   public persistent let roleBladeRecord: TweakDBID;
   public persistent let roleNetrunnerRecord: TweakDBID;
-  // The toughest member of this gang V has actually put down (elite, officer or boss). The
-  // faction apex is built from this, so the heavy they send is their own kind and no story
-  // character is ever involved. Falls back to sampleRecord if V has only fought rank and file.
-  // Scalars, never arrays: nothing nested inside a persisted class (see CBRumor).
+  // The toughest member of this gang V has actually put down (elite, officer or boss). The faction apex is built from
+  // this, so the heavy they send is their own kind and no story character is ever involved.
   public persistent let eliteRecord: TweakDBID;
   // Value of `kills` when this gang last sent its apex, so the next one needs fresh bodies.
   public persistent let apexAtKills: Int32;
-  // Who runs this crew. Rival ids, 0 meaning the slot is empty. Flat scalars rather than an
-  // array, because an array inside a persisted class is the shape that used to crash the game
-  // (see the note on CBRival). Three lieutenants under one leader.
+  // Who runs this crew. Rival ids, 0 meaning the slot is empty. Flat scalars rather than an array, because an array
+  // inside a persisted class is the shape that used to crash the game (see the note on CBRival).
   public persistent let leaderRivalId: Int32;
   public persistent let lt1RivalId: Int32;
   public persistent let lt2RivalId: Int32;
@@ -57,11 +53,8 @@ public class CBDistrictState {
   public persistent let lastIncidentAt: Float;
 }
 
-// Scalars only. The kill tallies used to live here as `killsByClass` / `killsByMethod`
-// (array<Int32> nested inside this persisted class) and were ArrayResize'd on every load,
-// which is an allocation against a header that just came off disk - the same shape and the
-// same risky operation behind the 0.1.8 crash. They now live as a flat array directly on
-// CyberbaneSystem, which is the supported place for persisted collections (schema 3).
+// Scalars only. They now live as a flat array directly on CyberbaneSystem, which is the supported place for persisted
+// collections (schema 3).
 public class CBStats {
   public persistent let nonLethal: Int32;
   public persistent let psychosKilled: Int32;
@@ -92,11 +85,7 @@ public class CBRumor {
   public persistent let lastSpreadAt: Float;
   public persistent let hops: Int32;               // max 2
   public persistent let witnessed: Bool;
-  // Districts already reached, as a bit per district (CBDistrictIndex). This was an
-  // array<CName> through 0.1.8. A dynamic array nested inside a persisted class is not a
-  // documented-supported shape, and one that did not survive a save/load round trip handed
-  // the engine a buffer header with a nonsense capacity, which is what crashed the slow
-  // tick. A plain Int32 cannot come back malformed (schema 2).
+  // Districts already reached, as a bit per district (CBDistrictIndex).
   public persistent let reachedMask: Int32;
 }
 
@@ -115,13 +104,11 @@ public class CBRival {
   // CBRumor.reachedMask for why these are no longer nested CName arrays (schema 2).
   public persistent let traitMask: Int32;
   public persistent let weaknessMask: Int32;
-  // How V hurt them, as a bit per kind (see CBScar*). They carry it when they come back, so
-  // the one you set on fire is the one who turns up burned. A new scalar on an existing
-  // persisted class, so old saves read 0 and nothing needs migrating.
+  // How V hurt them, as a bit per kind (see CBScar*). They carry it when they come back, so the one you set on fire is
+  // the one who turns up burned.
   public persistent let scarMask: Int32;
-  // Ticks left to confirm a queued arrival actually materialised. CBSpawnGroup can only report
-  // that an entity was queued, not that it appeared, so this is how a no-show is noticed. A new
-  // scalar on an existing persisted class, so old saves read 0 and nothing needs migrating.
+  // Ticks left to confirm a queued arrival actually materialised. CBSpawnGroup can only report that an entity was
+  // queued, not that it appeared, so this is how a no-show is noticed.
   public persistent let arrivalCheckTicks: Int32;
   public persistent let encounters: Int32;
   public persistent let escapes: Int32;
@@ -133,15 +120,10 @@ public class CBRival {
   // The entity Cyberbane spawned for this Rival, so a kill can be attributed to them even if
   // the CB_Rival tag has gone. Session-only: entity ids mean nothing across a save.
   public let spawnedEntityId: EntityID;
-  // Fast ticks (about one a second) until this Rival turns up. Deliberately NOT persistent:
-  // it is a live countdown for this session, it is shown in the Hub, and a save reloads it
-  // fresh rather than resuming a stale clock. 0 means "not counting yet".
+  // Fast ticks (about one a second) until this Rival turns up.
   public let huntTicks: Int32;
-  // No `history` array here any more. It was an array<ref<CBRivalEvent>> nested inside this
-  // class, and this class lives inside the persisted m_rivals array - the exact shape that
-  // crashed the game via CBRumor.reached. It was also write-only: nothing ever read it back,
-  // so it is simply gone rather than relocated (schema 3). If Rival cards ever need an event
-  // log, put it in a flat array on CyberbaneSystem keyed by rival id.
+  // No `history` array here any more. It was an array<ref<CBRivalEvent>> nested inside this class, and this class lives
+  // inside the persisted m_rivals array - the exact shape that crashed the game via CBRumor.reached.
 }
 
 public class CBLogEntry {
@@ -185,7 +167,7 @@ public class CBEscapee {
   public let lastPos: Vector4;
   public let hasPos: Bool;
   public let wasRival: Bool;
-  // Asked to work for V where they lay, and said yes (Reactions/Crew.reds, 2.5.0).
+  // Asked to work for V where they lay, and said yes (Reactions/Crew.reds).
   public let recruited: Bool;
   // Actually running, under a Cyberbane order (Reactions/Morale.reds), and how often it was renewed.
   public let fleeing: Bool;
@@ -195,12 +177,11 @@ public class CBEscapee {
   public let spared: Bool;
   // What V did to them on the way down, copied off the puppet so it survives the puppet.
   public let scarMask: Int32;
-  // The non-lethal takedown V is owed credit for, classified at the moment they went down (who
-  // saw it, where, how) and held here until it is settled that V really left them breathing.
-  // Null when V was not the one who put them down. Session only, like the rest of this.
+  // The non-lethal takedown V is owed credit for, classified at the moment they went down (who saw it, where, how) and
+  // held here until it is settled that V really left them breathing. Null when V was not the one who put them down.
   public let mercy: ref<CBKillInfo>;
-  // A Rival put down alive (1.9.9): told that it is V's choice, how long V has stood with empty hands,
-  // whether V decided in words where they lie, and whether that was exile.
+  // A Rival put down alive: told that it is V's choice, how long V has stood with empty hands, whether V decided in
+  // words where they lie, and whether that was exile.
   public let announced: Bool;
   public let holsterTicks: Int32;
   public let mercyChosen: Bool;

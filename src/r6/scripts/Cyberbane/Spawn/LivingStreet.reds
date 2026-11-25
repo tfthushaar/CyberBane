@@ -1,26 +1,9 @@
-// Cyberbane - A living street (2.0.0)
+// Cyberbane - A living street
 //
-// The city does things on its own that V can step into:
-//
-//   Bagmen        now and then a gang's bagman walks the week's take across its turf near V, with one
-//                 lookout. Rob them (put the bagman down) and the eddies are V's; the gang takes the loss.
-//   Favours       a friendly or wary ganger asked "Need anything done?" gives V a small job: run off a lookout
-//                 of a gang at war with theirs, or lean on somebody who owes them. Done, they pay, warm to V
-//                 and sometimes pass on a lead.
-//   The sit-down  two gangs at war meet at a place and an hour V hears about. Crash it and both lose.
-//   While you were out   a little after a load, one line: the latest thing that mattered.
-//   Surrender     (on by default since 2.3.2, [E1]) a beaten ganger may give up instead of running: hands up,
-//                 not fighting. Walk away and they go; grab them and they talk; shoot them and the street hears.
-//   "Nobody kills you but me"   (on by default since 2.4.4, [E4]) outnumbered by one gang, V may be helped by a
-//                 Rival with a claim on them, who walks off afterwards with a promise.
-//
-// Placement is CBSpawnGroup or, at a named place, CBCreateSpawn on a spot V cannot see; one order per
-// person through CBIssueMove; removal through CBDeleteTaggedSafe, never in V's sight. Session state only:
-// a load ends whatever was going on, the way it ends a fight.
+// Bagmen, favours from friendly gangers, news while V was away, and surrender.
 
-// Why one of the street's features did not happen when its turn came (2.5.7), in the log at most once a game hour for each
-// feature and reason. Bagmen, gang life, sit-downs and street clashes never once appeared in hours of play, and every one
-// of them gave up without a word, so nothing could say which of their conditions never came true.
+// Why one of the street's features did not happen when its turn came, in the log at most once a game hour for each
+// feature and reason.
 public func CBStreetWhyNot(game: GameInstance, feature: String, why: String) -> Void {
   let rt = CyberbaneRuntime.Get();
   if !IsDefined(rt) || !rt.ShouldNoteWhy(feature + "|" + why, CBGameSeconds(game), CBConfig.SecondsPerHour()) {
@@ -29,7 +12,7 @@ public func CBStreetWhyNot(game: GameInstance, feature: String, why: String) -> 
   CBLog.Info(n"Street", s"No \(feature) this time: \(why).");
 }
 
-// Work for the corporations (2.7.7): contracts offered to V. Not CBCorpContractsOn (Spawn/Bounty.reds), the corporations'
+// Work for the corporations: contracts offered to V. Not CBCorpContractsOn (Spawn/Bounty.reds), the corporations'
 // contracts on V.
 public func CBCorpWorkOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -45,7 +28,7 @@ public func CBStreetLifeOn(flag: CName) -> Bool {
     return false;
   }
   if !rt.HasSettings() {
-    return true;   // surrender is on by default from 2.3.2, and "Nobody kills you but me" from 2.4.4
+    return true;   // surrender and "Nobody kills you but me" are on by default
   }
   let s = rt.GetSettings();
   if Equals(flag, n"bagmen") { return s.bagmen; }
@@ -53,7 +36,6 @@ public func CBStreetLifeOn(flag: CName) -> Bool {
   if Equals(flag, n"sitDowns") { return s.sitDowns; }
   if Equals(flag, n"whileOut") { return s.whileOut; }
   if Equals(flag, n"surrender") { return s.gangsSurrender; }
-  // A new field in 2.4.4 so its new default, on, reaches every install: the old claimHelp was stored off on all of them.
   if Equals(flag, n"claimHelp") { return s.nobodyButMe && CBRivalsOn(); }
   return false;
 }
@@ -85,10 +67,8 @@ public func CBIsMeetApex(des: ref<DynamicEntitySystem>, id: EntityID) -> Bool {
   return IsDefined(des) && des.IsTagged(id, n"CB_Meet") && CBTaggedApexSeat(des, id) >= 0;
 }
 
-// Built and kitted as a member of the gang's apex squad is (Spawn/Spawner.reds, the CB_Apex setup): the same
-// build under the apex strength slider, the same chair's kit. What they are to V is the street's call, made
-// by CBSetUpStreet first like everybody else at the sit-down. No boss bar: up to eight of them, standing
-// about before anybody is fighting, would fill the screen with bars for people who may never draw.
+// Built and kitted as a member of the gang's apex squad is (Spawn/Spawner.reds, the CB_Apex setup): the same build
+// under the apex strength slider, the same chair's kit.
 public func CBSetUpMeetApex(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>, seat: Int32) -> Void {
   if !IsDefined(puppet) || !puppet.IsAttached() || puppet.IsDead() {
     return;
@@ -99,11 +79,11 @@ public func CBSetUpMeetApex(sys: ref<CyberbaneSystem>, game: GameInstance, puppe
 
 public func CBTalkActFavour() -> Int32 = 30
 
-// Whether this person has a favour for V (2.6.4, CBStreetLife.HasWorkFor): 0 not asked yet, 1 yes, 2 no.
+// Whether this person has a favour for V (CBStreetLife.HasWorkFor): 0 not asked yet, 1 yes, 2 no.
 @addField(ScriptedPuppet)
 public let cbFavourRoll: Int32;
 
-// Who owes (2.6.4): one of the district's own who fights with fists (the wannabes' records), never one of the gang that is
+// Who owes: one of the district's own who fights with fists (the wannabes' records), never one of the gang that is
 // owed. Only a record this install has, a person nobody wrote.
 func CBDebtorRecord(sys: ref<CyberbaneSystem>, district: CName, owed: CName) -> TweakDBID {
   let content = IsDefined(sys) ? sys.GetContent() : null;
@@ -132,15 +112,13 @@ public let cbFavourMark: Bool;
 @addField(ScriptedPuppet)
 public let cbSurrendered: Bool;
 
-// Gave up to V, and kept when they are let go (2.6.3). cbSurrendered ends when the hold does, and with it everything
-// that kept them out of the fight: a Scav who said "I'm done" and was let walk was turned on V again by the vendetta's
-// hostility on sight the moment V came close to talk. Only V hurting them again ends it (Signals/CombatSignals.reds).
+// Gave up to V, and kept when they are let go. cbSurrendered ends when the hold does, and with it everything that kept
+// them out of the fight: a Scav who said "I'm done" and was let walk was turned on V again by the vendetta's hostility
+// on sight the moment V came close to talk.
 @addField(ScriptedPuppet)
 public let cbGaveUp: Bool;
 
 // Set up a moment after attaching, like everybody else of ours (Spawn/Spawner.reds, CBApplySpawnSetup).
-// A favour's lookout is hostile; a bagman, their lookout and the people at a sit-down leave V be unless their
-// gang is at war with V.
 public func CBSetUpStreet(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>, hostile: Bool) -> Void {
   let player = GetPlayer(game);
   if !IsDefined(sys) || !IsDefined(player) || !IsDefined(puppet) || !puppet.IsAttached() || puppet.IsDead() {
@@ -168,10 +146,9 @@ public func CBSetUpStreet(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   CBWakeStep(puppet);
 }
 
-// A step where they stand (2.7.7): the street's people are put in the world with nothing to do, and a body nothing asks
+// A step where they stand: the street's people are put in the world with nothing to do, and a body nothing asks
 // anything of could stand in the default pose until it was hit ("they won't react until I damage them, then the
-// animations load in"). A step is a move order like any other, so the next one they get (a walk to a drop, a walk in to a
-// meeting) takes its place (CBIssueMove), and in a fight it does nothing (ignoreInCombat).
+// animations load in").
 public func CBWakeStep(p: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(p) || !p.IsAttached() || p.IsDead() || IsDefined(p.cbMoveCmd) {
     return;
@@ -203,10 +180,8 @@ public func CBSetUpAlly(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: r
   life.TurnOnEnemy(sys, game, puppet);
 }
 
-// Taken out of what they were there for by V (2.1.0): put down, broken and running, or giving up after V hurt
-// them, or sent on their way by V's words (CBTalkSendOff). The one rule for a favour's lookout and the people at
-// a sit-down. Somebody else putting them down is not V doing it. Words count from 2.1.0, when the street's own
-// people became people V can talk to: a lookout V threatens off the corner has been run off.
+// Taken out of what they were there for by V: put down, broken and running, or giving up after V hurt them, or sent on
+// their way by V's words (CBTalkSendOff). The one rule for a favour's lookout and the people at a sit-down.
 func CBTakenOutByV(p: wref<ScriptedPuppet>) -> Bool {
   if !IsDefined(p) {
     return false;
@@ -217,7 +192,7 @@ func CBTakenOutByV(p: wref<ScriptedPuppet>) -> Bool {
   return p.cbDamagedByPlayer && (CBIsDown(p) || p.cbMoraleBroken || p.cbSurrendered);
 }
 
-// One of a gang's own people on the street (2.7.7): at a gathering, hanging out, a bagman, a debtor, a witness, a favour's
+// One of a gang's own people on the street: at a gathering, hanging out, a bagman, a debtor, a witness, a favour's
 // lookout, a wannabe. There to be talked to or dealt with; nobody of V's starts a fight with them.
 public func CBStreetPersonTag(des: ref<DynamicEntitySystem>, id: EntityID) -> Bool {
   return IsDefined(des) && (des.IsTagged(id, n"CB_Meet") || des.IsTagged(id, n"CB_Event") || des.IsTagged(id, n"CB_Hangout")
@@ -225,9 +200,8 @@ public func CBStreetPersonTag(des: ref<DynamicEntitySystem>, id: EntityID) -> Bo
       || des.IsTagged(id, n"CB_Favour") || des.IsTagged(id, n"CB_Wannabe") || des.IsTagged(id, n"CB_Mark"));
 }
 
-// Taken out by V or by somebody fighting on V's side (2.7.7, CBOnVsSide: V's crew, a gang's people with V, a companion): a
-// meeting V's crew cut down was crashed by V's side, as a fight won with V's crew counts (2.7.6). Asked only of V before, so a
-// sit-down V's crew wiped out "settled" when its window closed, with V speaking for it.
+// Taken out by V or by somebody fighting on V's side (CBOnVsSide: V's crew, a gang's people with V, a companion): a
+// meeting V's crew cut down was crashed by V's side, as a fight won with V's crew counts.
 func CBTakenOutByVSide(game: GameInstance, p: wref<ScriptedPuppet>) -> Bool {
   if CBTakenOutByV(p) {
     return true;
@@ -250,8 +224,8 @@ func CBStreetGiveMoney(game: GameInstance, amount: Int32) -> Void {
   }
 }
 
-// The time on the clock, to the minute (2.7.3). It gave the hour alone, so a meeting due at 04:50 was "around 04:00":
-// V turned up at four, and nothing came for fifty minutes.
+// The time on the clock, to the minute. It gave the hour alone, so a meeting due at 04:50 was "around 04:00": V turned
+// up at four, and nothing came for fifty minutes.
 func CBClockWord(gameSeconds: Float) -> String {
   let total = Cast<Int32>(gameSeconds / 60.0);
   let h = (total / 60) % 24;
@@ -264,9 +238,8 @@ public func CBQuarterUp(gameSeconds: Float) -> Float {
   return Cast<Float>(CeilF(gameSeconds / 900.0)) * 900.0;
 }
 
-// The hour and which day (2.6.1): "21:00 today", "03:00 tomorrow", "now" once it has started. The hour alone left a
-// player reading "around 03:00" at midnight unsure whether it meant in three hours or tomorrow night.
-// Is that moment now or already past, the way CBWhenWord says "now"? For code to ask instead of reading the word (2.7.1).
+// The hour and which day: "21:00 today", "03:00 tomorrow", "now" once it has started. Is that moment now or already
+// past, the way CBWhenWord says "now"? For code to ask instead of reading the word.
 public func CBWhenIsNow(game: GameInstance, at: Float) -> Bool {
   let now = CBGameSeconds(game);
   return now > 0.0 && at <= now;
@@ -298,8 +271,8 @@ public class CBStreetLife {
   private let m_bagTick: Int32;
   private let m_bagNext: Int32;
   private let m_bagDone: Bool;
-  private let m_bagRan: Bool;   // he saw V coming and ran (2.7.7)
-  // Where he is walking the take (2.6.5): his gang's drop, pinned.
+  private let m_bagRan: Bool;   // he saw V coming and ran
+  // Where he is walking the take: his gang's drop, pinned.
   private let m_bagDrop: Vector4;
   private let m_bagHasDrop: Bool;
   private let m_bagDropPin: NewMappinID;
@@ -311,33 +284,33 @@ public class CBStreetLife {
   private let m_favBody: EntityID;
   private let m_favUntil: Int32;
   private let m_favLeaned: Bool;
-  // Where it is, on the map from the moment it is asked (2.6.1): the person's own marker came only once they were in the
-  // world, so a lookout who never streamed in, or somebody the map would not mark, left "I marked it for you" with
-  // nothing on the map. The place pin goes once their own marker is up.
+  // Where it is, on the map from the moment it is asked: the person's own marker came only once they were in the world,
+  // so a lookout who never streamed in, or somebody the map would not mark, left "I marked it for you" with nothing on
+  // the map.
   private let m_favPin: NewMappinID;
   private let m_favPinned: Bool;
-  // And comes back whenever that marker is not showing (2.7.8, FavourKeepPin): what it says and where it goes, the place, or
+  // And comes back whenever that marker is not showing (FavourKeepPin): what it says and where it goes, the place, or
   // where a lookout was last seen.
   private let m_favPinText: String;
   private let m_favPinAt: Vector4;
-  // A debt to collect somewhere else (2.6.4): where the one who owes is, which district, whether they are in the world yet,
-  // and whether they would sooner fight than pay (0 no, 1 once the talk is over, 2 fighting).
+  // A debt to collect somewhere else: where the one who owes is, which district, whether they are in the world yet, and
+  // whether they would sooner fight than pay (0 no, 1 once the talk is over, 2 fighting).
   private let m_favAt: Vector4;
   private let m_favDistrict: CName;
   private let m_favPlaced: Bool;
   private let m_favFight: Int32;
   private let m_favFightTick: Int32;
-  // A gang that has just handed out a favour has no more for a while (2.6.4). Session only, like the favour.
+  // A gang that has just handed out a favour has no more for a while. Session only, like the favour.
   private let m_favRestGang: array<CName>;
   private let m_favRestUntil: array<Float>;
-  // How many names down a chain of debts this one is (2.6.5): a debtor who pays may give up somebody else who owes.
+  // How many names down a chain of debts this one is: a debtor who pays may give up somebody else who owes.
   private let m_favChain: Int32;
-  // A corporation's contract (2.7.7, favour kind 3): whose people the mark is, what it pays, and the next tick one may be
+  // A corporation's contract (favour kind 3): whose people the mark is, what it pays, and the next tick one may be
   // offered.
   private let m_favMark: CName;
   private let m_contractPay: Int32;
   private let m_contractNext: Int32;
-  // The sit-down and the rest of gang life's events (Spawn/StreetEvents.reds, 2.3.3).
+  // The sit-down and the rest of gang life's events (Spawn/StreetEvents.reds).
   private let m_events: ref<CBEventEngine>;
   // While you were out.
   private let m_toldOut: Bool;
@@ -350,7 +323,7 @@ public class CBStreetLife {
   private let m_allyEnemy: CName;
   private let m_allyCalm: Int32;
   private let m_allyDay: Int32;
-  private let m_allyRival: Int32;   // who came ([E4], 2.4.4), for their parting words
+  private let m_allyRival: Int32;   // who came ([E4]), for their parting words
 
   public func Tick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     let player = GetPlayer(game);
@@ -366,10 +339,10 @@ public class CBStreetLife {
         CBSanctuaryHoldTag(sys, game, des, player, tag, false, true);
       }
     }
-    // Nor on home ground (2.7.1, Spawn/HomeGround.reds).
+    // Nor on home ground (Spawn/HomeGround.reds).
     let busy = sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsOnJob() || sys.IsInSanctuary()
             || sys.IsInSafeZone() || CBPlayerInScene(game) || CBHomeKeepsOut(sys);
-    // The shared room nearly gone: what is holding it, once a game hour (2.5.7).
+    // The shared room nearly gone: what is holding it, once a game hour.
     if CBSpawnRoom(game) <= 2 {
       let rtRoom = CyberbaneRuntime.Get();
       if IsDefined(rtRoom) && rtRoom.ShouldNoteWhy("room", CBGameSeconds(game), CBConfig.SecondsPerHour()) {
@@ -386,8 +359,6 @@ public class CBStreetLife {
   }
 
   // Start over (CyberbaneSystem.HardReset): whatever the street had going belonged to the old playthrough.
-  // The people themselves go with everything else of ours; this lets go of what they were part of - the
-  // favour and its marker, the sit-down and its pin - and of anybody still held with their hands up.
   public func Reset(game: GameInstance) -> Void {
     this.m_bagFaction = n"";
     this.m_bagDone = false;
@@ -451,11 +422,11 @@ public class CBStreetLife {
         this.Robbed(sys, game);
       }
       let age = now - this.m_bagTick;
-      // Their round, and again after V has stopped one of them for a word (2.1.0): the conversation's hold
-      // took the place of the walk (CBTalkHold).
+      // Their round, and again after V has stopped one of them for a word: the conversation's hold took the place of
+      // the walk (CBTalkHold).
       if age == 4 || (age > 4 && CBTalkWalkOnDue(game, des, n"CB_Bagman")) {
         if this.m_bagHasDrop {
-          // To the drop (2.6.5), he and whoever watches his back.
+          // To the drop, he and whoever watches his back.
           for bid in des.GetTaggedIDs(n"CB_Bagman") {
             let walker = GameInstance.FindEntityByID(game, bid) as ScriptedPuppet;
             if CBNpcSafe(sys, walker) && CBStillStanding(walker) && !CBNpcInCombat(walker) {
@@ -466,7 +437,7 @@ public class CBStreetLife {
           CBPatrolWalk(sys, game, des, player, n"CB_Bagman");
         }
       }
-      // V coming at him, gun out or at a run (2.7.7): he bolts with the take, says so in his own voice, and his gang hears.
+      // V coming at him, gun out or at a run: he bolts with the take, says so in his own voice, and his gang hears.
       if !this.m_bagDone && !this.m_bagRan && IsDefined(p) && CBNpcSafe(sys, p) && CBStillStanding(p) && !CBNpcInCombat(p)
          && !p.cbDamagedByPlayer && CBBagmanSeesVComing(game, player, p) {
         this.m_bagRan = true;
@@ -506,7 +477,7 @@ public class CBStreetLife {
     else { if CBPlayerIndoors(game) { bagWhy = CBT(n"Cyberbane-LivingStreet-VIsIndoors"); }
     else { if CBHuntersOut(sys, game) { bagWhy = CBT(n"Cyberbane-LivingStreet-SomebodyIsOutHuntingV"); }
     else { if CBHuntPending(sys) { bagWhy = CBT(n"Cyberbane-LivingStreet-SomebodyIsOnTheirWayFor"); } } } } } }
-    // Nor before V's district is known (2.6.3): the roll found nobody holding "None" and spent its clock.
+    // Nor before V's district is known: the roll found nobody holding "None" and spent its clock.
     if StrLen(bagWhy) == 0 && Equals(sys.GetCurrentDistrict(), n"") {
       bagWhy = CBT(n"Cyberbane-LivingStreet-VSDistrictIsNotKnown");
     }
@@ -519,7 +490,7 @@ public class CBStreetLife {
       return;
     }
     let holder = CBTurfHolder(sys, game, sys.GetCurrentDistrict());
-    let bagRecord = CBGangTemplate(sys, holder);   // a gang V has never fought has bagmen too (2.5.0)
+    let bagRecord = CBGangTemplate(sys, holder);   // a gang V has never fought has bagmen too
     if Equals(holder, n"") || !CBFactionFieldsSquads(holder) || !TDBID.IsValid(bagRecord) {
       CBStreetWhyNot(game, "bagman", s"no gang that fields people holds \(NameToString(sys.GetCurrentDistrict()))");
       return;
@@ -539,7 +510,7 @@ public class CBStreetLife {
       this.m_bagTick = now;
       this.m_bagDone = false;
       this.m_bagRan = false;
-      // Where he is taking it (2.6.5): his gang's drop, a place of theirs further off, pinned, so robbing him is a plan.
+      // Where he is taking it: his gang's drop, a place of theirs further off, pinned, so robbing him is a plan.
       let drop: Vector4;
       let dropDistrict: CName;
       this.BagUnpin(game);
@@ -548,9 +519,9 @@ public class CBStreetLife {
         this.m_bagDrop = drop;
         this.m_bagDropPinned = CBPinPlace(game, drop, CBTf(n"Cyberbane-LivingStreet-DropTheTakeIsHeadedHere", [s"\(CBCapFirst(CBPossessive(CBFactionLabel(holder))))"]), this.m_bagDropPin);
       }
-      // A message, not word going round (2.6.5): something V can act on is never held back as chatter.
+      // A message, not word going round: something V can act on is never held back as chatter.
       if CBMessagesOn() {
-        let watch = placed > 1 ? CBT(n"Cyberbane-LivingStreet-OneLookout") : CBT(n"Cyberbane-LivingStreet-NobodyWatchingHisBack");   // only when one came (2.5.5)
+        let watch = placed > 1 ? CBT(n"Cyberbane-LivingStreet-OneLookout") : CBT(n"Cyberbane-LivingStreet-NobodyWatchingHisBack");   // only when one came
         CBPhoneFromDistrict(game, sys.GetCurrentDistrict(), this.m_bagHasDrop
           ? CBTf(n"Cyberbane-LivingStreet-BagmanIsWalkingTheWeekS", [s"\(CBCapFirst(CBPossessive(CBFactionLabel(holder))))", s"\(watch)"])
           : CBTf(n"Cyberbane-LivingStreet-BagmanIsDoingTheRoundsNear", [s"\(CBCapFirst(CBPossessive(CBFactionLabel(holder))))", s"\(watch)"]));
@@ -568,8 +539,8 @@ public class CBStreetLife {
 
   private func Robbed(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     let take = CBConfig.BagmanTakeBase() + RandRange(0, CBConfig.BagmanTakeBase() + 1);
-    // Now and then it is the gang's goods instead of cash (Reactions/CrewJobs.reds, 2.7.2). Taken quietly (the bagman
-    // only knocked out, and no fight on) the gang has to hear of it first.
+    // Now and then it is the gang's goods instead of cash (Reactions/CrewJobs.reds). Taken quietly (the bagman only
+    // knocked out, and no fight on) the gang has to hear of it first.
     let bagman = GameInstance.FindEntityByID(game, this.m_bagBody) as ScriptedPuppet;
     let player = GetPlayer(game);
     let quiet = IsDefined(bagman) && !bagman.IsDead() && IsDefined(player) && !player.IsInCombat();
@@ -582,7 +553,7 @@ public class CBStreetLife {
       return;
     }
     CBStreetGiveMoney(game, take);
-    CBWarSpend(game, this.m_bagFaction, Cast<Float>(take) * CBConfig.BagmanChestShare());   // the week's take (2.4.0)
+    CBWarSpend(game, this.m_bagFaction, Cast<Float>(take) * CBConfig.BagmanChestShare());   // the week's take
     CBWeakenGang(sys, game, this.m_bagFaction, CBConfig.BagmanGangLoss());
     CBTalkSlight(sys, game, this.m_bagFaction, CBConfig.BagmanStandingLoss());
     let now = CBGameSeconds(game);
@@ -600,14 +571,13 @@ public class CBStreetLife {
     return NotEquals(this.m_favFaction, n"");
   }
 
-  // Whose favour it is, for the map's marker on the one who owes them (UI/Tracking.reds, 2.5.4).
+  // Whose favour it is, for the map's marker on the one who owes them (UI/Tracking.reds).
   public func FavourFaction() -> CName {
     return this.m_favFaction;
   }
 
-  // Has this one got work for V (2.6.4)? "Three Tyger Claws on one corner and all of them had a favour for me": any
-  // friendly ganger had one, every time, while none was open. Now only some of them do, rolled once for each person, and
-  // a gang that has just handed one out has nothing more for FavourGangRestHours.
+  // Has this one got work for V? "Three Tyger Claws on one corner and all of them had a favour for me": any friendly
+  // ganger had one, every time, while none was open.
   public func HasWorkFor(game: GameInstance, npc: ref<ScriptedPuppet>, faction: CName) -> Bool {
     if this.FavourOpen() || !IsDefined(npc) || Equals(faction, n"") || this.GangResting(game, faction) {
       return false;
@@ -635,10 +605,8 @@ public class CBStreetLife {
     ArrayPush(this.m_favRestUntil, until);
   }
 
-  // Where the one who owes them is (2.6.4). "The victims spawn 20 metres away from them": the debtor was whoever of the
-  // crowd stood 15 to 60 metres from V. Somewhere else now, the way a Rival's hideout is: a place the street remembers in
-  // a district next door, else in any other district, else one where a Rival was seen in another district, else a spot
-  // well away from V. Every one a point an arrival could use (CBLairPointUsable: no job, no safe area).
+  // Where the one who owes them is. "The victims spawn 20 metres away from them": the debtor was whoever of the crowd
+  // stood 15 to 60 metres from V.
   private func DebtPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, out at: Vector4,
                          out where: CName) -> Bool {
     let here = sys.GetCurrentDistrict();
@@ -707,7 +675,7 @@ public class CBStreetLife {
     // A lookout of a gang at war with theirs, first.
     let enemies = CBGangRivalsOf(sys.GetContent(), t.faction);
     for g in enemies {
-      let lookout = CBGangTemplate(sys, g);   // whether or not V has fought them (2.5.0)
+      let lookout = CBGangTemplate(sys, g);   // whether or not V has fought them
       if CBFactionOn(g) && CBFactionFieldsSquads(g) && TDBID.IsValid(lookout) && RandF() < 0.6
          && CBSpawnRoom(game) > CBConfig.TurfPatrolKeepRoom() {
         let body: EntityID;
@@ -729,7 +697,7 @@ public class CBStreetLife {
         }
       }
     }
-    // Somebody somewhere else who owes them (2.6.4): a place, a pin, and the one who owes put there when V arrives.
+    // Somebody somewhere else who owes them: a place, a pin, and the one who owes put there when V arrives.
     let place = this.StartDebt(sys, game, player, t.faction, now);
     if StrLen(place) > 0 {
       this.m_favChain = 0;
@@ -741,8 +709,8 @@ public class CBStreetLife {
     return CBTalkSay(CBT(n"Cyberbane-LivingStreet-NothingThatNeedsYouTodayAsk"), n"");
   }
 
-  // V leaned on somebody (Reactions/StreetTalk.reds, Intimidate and Antagonize): was it the one who owes?
-  // A debt to collect, for this gang, somewhere else (2.6.4); the place's name, or "" when there was nowhere.
+  // V leaned on somebody (Reactions/StreetTalk.reds, Intimidate and Antagonize): was it the one who owes? A debt to
+  // collect, for this gang, somewhere else; the place's name, or "" when there was nowhere.
   private func StartDebt(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, faction: CName, now: Int32) -> String {
     let at: Vector4;
     let where: CName;
@@ -765,7 +733,7 @@ public class CBStreetLife {
     return place;
   }
 
-  // Frightened enough of V and they pay; otherwise they would sooner find out with their fists (2.6.4). The more the street
+  // Frightened enough of V and they pay; otherwise they would sooner find out with their fists. The more the street
   // fears V, the likelier the first.
   public func NoteLeaned(npc: ref<ScriptedPuppet>) -> Void {
     let target = this.m_favTarget;
@@ -780,8 +748,8 @@ public class CBStreetLife {
     }
   }
 
-  // The one who owes is put at the place once V is close (2.6.4): somewhere round it V cannot see, as a Rival at their place
-  // is (Rivals/Whereabouts.reds, CBLairTryPlace), minding their own business. On foot and calm, every third tick.
+  // The one who owes is put at the place once V is close: somewhere round it V cannot see, as a Rival at their place is
+  // (Rivals/Whereabouts.reds, CBLairTryPlace), minding their own business. On foot and calm, every third tick.
   private func DebtorArrive(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
                             player: ref<PlayerPuppet>, now: Int32) -> Void {
     let ppos = player.GetWorldPosition();
@@ -828,7 +796,7 @@ public class CBStreetLife {
     }
   }
 
-  // They put their fists up (2.6.4): hostile to V alone, the way a wannabe squares up (Spawn/Wannabe.reds).
+  // They put their fists up: hostile to V alone, the way a wannabe squares up (Spawn/Wannabe.reds).
   private func DebtorSwings(game: GameInstance, p: ref<ScriptedPuppet>) -> Void {
     CBCancelMove(p);
     CBGrantAbility(p as NPCPuppet, t"Ability.IsAggressive");
@@ -844,8 +812,8 @@ public class CBStreetLife {
     if !this.FavourOpen() {
       return;
     }
-    // Gone from the world by something else of ours (2.7.8, FavourTargetGone): the job is over, said so, and it does not
-    // count as the gang's favour given.
+    // Gone from the world by something else of ours (FavourTargetGone): the job is over, said so, and it does not count
+    // as the gang's favour given.
     if this.FavourTargetGone(des) {
       CBLog.Info(n"Street", "A favour's person was taken out of the world by something else; the favour is off.");
       this.FavourLost(game, this.m_favKind == 1 ? CBT(n"Cyberbane-LivingStreet-ForgetItTheLookoutSGone")
@@ -860,11 +828,11 @@ public class CBStreetLife {
     }
     let done = false;
     if this.m_favKind == 1 {
-      // Run off by V or V's side (CBTakenOutByVSide, 2.7.7). Somebody else putting the lookout down is not V doing the favour.
+      // Run off by V or V's side (CBTakenOutByVSide). Somebody else putting the lookout down is not V doing the favour.
       let p = GameInstance.FindEntityByID(game, this.m_favBody) as ScriptedPuppet;
       done = CBTakenOutByVSide(game, p);
-      // And it is over (2.7.8): it waited out its clock with nobody left to run off and nothing on the map, holding every
-      // other favour back, as the one who owes and a contract's mark never did.
+      // And it is over: it waited out its clock with nobody left to run off and nothing on the map, holding every other
+      // favour back, as the one who owes and a contract's mark never did.
       if !done && IsDefined(p) && CBIsDown(p) {
         CBLog.Info(n"Street", "A favour's lookout was put down by somebody else; the favour is off.");
         this.FavourLost(game, CBT(n"Cyberbane-LivingStreet-ForgetItTheLookoutSGone"));
@@ -884,8 +852,8 @@ public class CBStreetLife {
       }
       done = this.m_favLeaned;
       if IsDefined(debtor) {
-        // Dead: nobody pays from a body bag (2.6.4). By V's hand, the gang thinks less of V for it; by somebody else's, it is
-        // just over (2.5.6).
+        // Dead: nobody pays from a body bag. By V's hand, the gang thinks less of V for it; by somebody else's, it is
+        // just over.
         if debtor.IsDead() {
           let byV = debtor.cbDamagedByPlayer && !CBLastHitWasOthers(game, debtor);
           if byV {
@@ -905,7 +873,7 @@ public class CBStreetLife {
           this.FavourEnd(game);
           return;
         }
-        // Hurt by V before a word was said: that is the fight (2.6.4). It used to end the favour on the spot.
+        // Hurt by V before a word was said: that is the fight. It used to end the favour on the spot.
         if this.m_favFight == 0 && !done && debtor.cbDamagedByPlayer {
           this.m_favFight = 1;
         }
@@ -946,7 +914,7 @@ public class CBStreetLife {
     }
     if now >= this.m_favUntil {
       if CBMessagesOn() {
-        // What happened, for each kind (2.5.5): "somebody else handled it" fit neither a debt nor a lookout plainly.
+        // What happened, for each kind: "somebody else handled it" fit neither a debt nor a lookout plainly.
         CBPhoneFromAlly(game, this.m_favFaction, this.m_favKind == 2 ? CBT(n"Cyberbane-LivingStreet-ForgetItTheyPaidUpBefore")
                                                                      : CBT(n"Cyberbane-LivingStreet-ForgetItTheLookoutSGone"));
       }
@@ -958,7 +926,7 @@ public class CBStreetLife {
     let faction = this.m_favFaction;
     let pay = CBConfig.FavourPay() + RandRange(0, CBConfig.FavourPay() / 2 + 1);
     if this.m_favKind == 2 {
-      pay += CBConfig.FavourPay();   // the debt, less their cut, for a trip across town (2.6.4)
+      pay += CBConfig.FavourPay();   // the debt, less their cut, for a trip across town
     }
     let beaten = this.m_favKind == 2 && this.m_favFight == 2;
     CBStreetGiveMoney(game, pay);
@@ -978,7 +946,7 @@ public class CBStreetLife {
     CBLog.Info(n"Street", s"A favour for \(NameToString(faction)) done; \(pay)eb.");
     let chainable = this.m_favKind == 2 && this.m_favChain < 2;
     this.FavourEnd(game);
-    // A name given up (2.6.5): somebody else who owes them, somewhere else, two links at most.
+    // A name given up: somebody else who owes them, somewhere else, two links at most.
     if chainable && RandF() < CBConfig.FavourChainChance() {
       let next = this.StartDebt(sys, game, player, faction, sys.GetTickCount());
       if StrLen(next) > 0 {
@@ -990,14 +958,10 @@ public class CBStreetLife {
     }
   }
 
-  // ---- Corporate contracts (2.7.7) ----------------------------------------------------------------------------
+  // ---- Corporate contracts ----------------------------------------------------------------------------
   //
-  // "I'm in my Kang Tao phase and it's impossible to get any rep with them. A corporate bounty board, go to X and kill Y and
-  // get lots of rep, would be a relief." A corporation's people are almost never on the street to be helped, spared or
-  // fought beside, and Kang Tao's only rival, Arasaka, almost never comes out either. Now and then a corporation that
-  // doesn't hate V texts a contract: one of its rivals' people at a place on V's map, with bodyguards. Put them down (V or
-  // V's side) and it pays well, and the corporation thinks much better of V. One job open at a time, a favour's or a
-  // contract's, on the favour's own place, pin and placing.
+  // A corporation's people are almost never on the street to be helped, spared or fought beside, and Kang Tao's only
+  // rival, Arasaka, almost never comes out either.
 
   private func ContractOffer(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, now: Int32, busy: Bool) -> Void {
     if this.m_contractNext == 0 {
@@ -1041,7 +1005,7 @@ public class CBStreetLife {
     CBLog.Info(n"Street", s"A contract from \(NameToString(client)): one of \(NameToString(mark))'s people in \(NameToString(where)), \(this.m_contractPay)eb.");
   }
 
-  // Who offers (2.7.7): a corporation that is on, doesn't hate V and has a rival to send V after, more often the better it
+  // Who offers: a corporation that is on, doesn't hate V and has a rival to send V after, more often the better it
   // thinks of V, so the one V works for is the one that keeps calling.
   private func ContractClient(sys: ref<CyberbaneSystem>, game: GameInstance) -> CName {
     let score = sys.GetScore();
@@ -1207,11 +1171,7 @@ public class CBStreetLife {
     this.FavourEnd(game);
   }
 
-  // An open favour is always on the map (2.7.8). "Gang jobs vanish quickly from the map, and then no new one can be taken
-  // for a while." The place pin went for good the first time the person's own marker came up, and that marker is bound to
-  // them: when they streamed out (V drove off, or was chased off by a Rival) it went with them, and the favour, still open
-  // and holding every other favour back, was on the map nowhere. Now the place pin is up whenever their marker is not
-  // showing: at the place for a debt or a contract, where a lookout was last seen for a lookout.
+  // An open favour is always on the map.
   private func FavourKeepPin(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     let who: ref<ScriptedPuppet> = this.m_favTarget;
     if this.m_favKind == 1 {
@@ -1229,10 +1189,8 @@ public class CBStreetLife {
     }
   }
 
-  // Taken out of the world by something else of ours (2.7.8): no longer wearing the tag they were put out with, and not still
-  // being made. A lookout who held V in combat from too far off is let go that way (CBReleaseTag), removed or handed to the
-  // orphan sweep with the tag off, and the favour waited out its clock for a body that was gone. Streaming out keeps the tag.
-  // The one who owes and a contract's mark only once they have been put at the place.
+  // Taken out of the world by something else of ours: no longer wearing the tag they were put out with, and not still
+  // being made.
   private func FavourTargetGone(des: ref<DynamicEntitySystem>) -> Bool {
     if !IsDefined(des) || !EntityID.IsDefined(this.m_favBody) || (this.m_favKind != 1 && !this.m_favPlaced) {
       return false;
@@ -1241,7 +1199,7 @@ public class CBStreetLife {
     return !des.IsTagged(this.m_favBody, tag) && !des.IsSpawning(this.m_favBody);
   }
 
-  // Over through nobody's fault of V's (2.7.8): said, and the gang can be asked again straight away. Its rest is for a favour
+  // Over through nobody's fault of V's: said, and the gang can be asked again straight away. Its rest is for a favour
   // given, and this one was taken away.
   private func FavourLost(game: GameInstance, line: String) -> Void {
     if CBMessagesOn() && StrLen(line) > 0 {
@@ -1290,8 +1248,8 @@ public class CBStreetLife {
     this.m_favFaction = n"";
     this.m_favKind = 0;
     this.m_favTarget = null;
-    // Nobody's any more (2.7.8): a debt or a contract only sets it once its person is put at the place, and an old id left
-    // here read as their person gone (FavourTargetGone).
+    // Nobody's any more: a debt or a contract only sets it once its person is put at the place, and an old id left here
+    // read as their person gone (FavourTargetGone).
     let none: EntityID;
     this.m_favBody = none;
     this.m_favPinText = "";
@@ -1307,7 +1265,7 @@ public class CBStreetLife {
 
   // ---- The sit-down ----------------------------------------------------------------------------------------
 
-  // The sit-down and gang life's other events, one at a time (Spawn/StreetEvents.reds, 2.3.3).
+  // The sit-down and gang life's other events, one at a time (Spawn/StreetEvents.reds).
   public func Events() -> ref<CBEventEngine> {
     if !IsDefined(this.m_events) {
       this.m_events = new CBEventEngine();
@@ -1340,11 +1298,11 @@ public class CBStreetLife {
     let data: stimInvestigateData;
     data.fearPhase = 2;
     StimBroadcasterComponent.SendStimDirectly(player, gamedataStimType.SpreadFear, npc, data);
-    // Held where they kneel for as long as a hold always was here: the conversation's own holds are short now (2.5.1).
+    // Held where they kneel for as long as a hold always was here: the conversation's own holds are short now.
     CBTalkHold(npc, CBConfig.SurrenderHoldSeconds());
     npc.cbSurrendered = true;
     npc.cbGaveUp = true;
-    CBSayVoiced(sys, npc, n"fear_beg");   // in their own voice (Narrative/Telling.reds, [79], 2.4.6)
+    CBSayVoiced(sys, npc, n"fear_beg");   // in their own voice (Narrative/Telling.reds, [79])
     npc.SetScannerDirty(true);   // the scanner says so (UI/ScannerName.reds)
     ArrayPush(this.m_gaveUp, npc);
     ArrayPush(this.m_gaveUpTick, sys.GetTickCount());
@@ -1355,9 +1313,7 @@ public class CBStreetLife {
   }
 
   // One of ours with their hands up is out of the fight, as one who ran clear is (Reactions/CombatFlee.reds,
-  // CBRunnerGotAway). Their encounter lets go of them: a crew whose last one standing had given up was never
-  // beaten, its lane stayed busy, and the hunt ended by telling V that V had run. Left where they stand, not
-  // removed, because V is looking at them; the orphan sweep takes them once nobody is.
+  // CBRunnerGotAway).
   private func HandOffSurrendered(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>,
                                   npc: wref<ScriptedPuppet>) -> Void {
     if !IsDefined(des) || !IsDefined(npc) {
@@ -1400,8 +1356,8 @@ public class CBStreetLife {
           // Let go is let go: shot later, it is somebody running off, not somebody with their hands up.
           p.cbSurrendered = false;
           p.SetScannerDirty(true);
-          // Let go with their life (2.3.2): their gang hears that V let one walk, the way a mercy is heard, and
-          // V's name for restraint grows. Not for somebody V grabbed and questioned, who was let go already.
+          // Let go with their life: their gang hears that V let one walk, the way a mercy is heard, and V's name for
+          // restraint grows. Not for somebody V grabbed and questioned, who was let go already.
           if !p.cbIntelGiven {
             let gave = CBClassifyFaction(p);
             CBCreditMercy(sys, gave, CBConfig.SurrenderLetGoStanding());
@@ -1424,10 +1380,10 @@ public class CBStreetLife {
     if this.m_allyOut {
       this.m_allyCalm = player.IsInCombat() ? 0 : this.m_allyCalm + 1;
       if this.m_allyCalm == CBConfig.ClaimCalmTicks() {
-        // They leave with a line that sets up their next fight with V, and they will come for it ([E4], 2.4.4).
+        // They leave with a line that sets up their next fight with V, and they will come for it ([E4]).
         let ally = sys.FindRivalById(this.m_allyRival);
-        // What it does to them, whatever the message setting (2.6.0): with messages off they went on the lane at once and
-        // never took up the grudge, since both sat inside the line's own test.
+        // What it does to them, whatever the message setting: with messages off they went on the lane at once and never
+        // took up the grudge, since both sat inside the line's own test.
         if IsDefined(ally) {
           ally.huntTicks = Max(ally.huntTicks, CBConfig.RivalAfterEscapeTicks());
           CBRivalGiveTrait(ally, n"GrudgeBearer");
@@ -1451,7 +1407,8 @@ public class CBStreetLife {
       }
       return;
     }
-    // Not while V has a borrowed crew along (Reactions/Allies.reds, 2.4.5): both are CB_Ally, and this one's clean-up is by tag.
+    // Not while V has a borrowed crew along (Reactions/Allies.reds): both are CB_Ally, and this one's clean-up is by
+    // tag.
     if busy || !CBStreetLifeOn(n"claimHelp") || !player.IsInCombat() || now % 3 != 0 || CBGameDay(game) == this.m_allyDay
        || CBLiveTaggedPresent(game, n"CB_Follower") {
       return;
@@ -1510,9 +1467,9 @@ public class CBStreetLife {
           this.m_allyEnemy = enemy;
           this.m_allyCalm = 0;
           this.m_allyDay = CBGameDay(game);
-          // On V's side for once (2.5.6): no taunts to send back under it.
+          // On V's side for once: no taunts to send back under it.
           CBPhoneSendAside(game, CBRivalDisplayName(sys.GetContent(), r), CBT(n"Cyberbane-LivingStreet-NobodyKillsYouButMeKeep"), CBHudRed());
-          // And they say so as they arrive, in the street ([E4], 2.4.4).
+          // And they say so as they arrive, in the street ([E4]).
           CBAnnounceLater(game, CBRivalDisplayName(sys.GetContent(), r), CBPick2(CBT(n"Cyberbane-LivingStreet-NobodyKillsThisOneButMe"), CBT(n"Cyberbane-LivingStreet-BackOffThisMercSMine")), 2.5);
           CBLog.Info(n"Street", s"Rival \(r.id) came to help V against \(NameToString(enemy)).");
           return;
@@ -1549,7 +1506,7 @@ func CBWhileOutWorthIt(kind: CName) -> Bool {
       || Equals(kind, n"RivalExiled") || Equals(kind, n"MeetCrashed") || Equals(kind, n"BagmanRobbed");
 }
 
-// A bagman sees V coming for him (2.7.7): close, and either with a weapon out or at a sprint.
+// A bagman sees V coming for him: close, and either with a weapon out or at a sprint.
 func CBBagmanSeesVComing(game: GameInstance, player: ref<PlayerPuppet>, bagman: ref<ScriptedPuppet>) -> Bool {
   if !IsDefined(player) || !IsDefined(bagman) {
     return false;

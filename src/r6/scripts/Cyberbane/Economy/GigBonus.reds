@@ -1,18 +1,14 @@
 // Cyberbane - Gig payout bonus (spec §9.7)
 //
-// Fixers pay the famous more. This wraps the game's reward grant, measures how many
-// eddies a reward actually handed over, and if it was a real job payout (not loose
-// loot money) it tops it up by a fraction that grows with your Renown tier. It reads
-// the money granted rather than guessing which reward is a gig, so it stays correct
-// across quests, gigs and NCPD work without any hardcoded reward ids. The bonus is paid
-// as ordinary eddies, so it is harmless if a reward turns out not to be job money.
+// Fixers pay the famous more. This wraps the game's reward grant, measures how many eddies a reward actually handed
+// over, and if it was a real job payout (not loose loot money) it tops it up by a fraction that grows with your Renown
+// tier.
 
 @wrapMethod(RPGManager)
 public final static func GiveReward(gameInstance: GameInstance, rewardID: TweakDBID, opt entityID: StatsObjectID, opt quantityMultiplier: Float) -> Void {
   let rt = CyberbaneRuntime.Get();
-  // `modOn` decides whether we measure the payout at all, which is what tells Cyberbane a job
-  // was finished. `bonusOn` only decides whether to top the payout up. They used to be one
-  // flag, so turning the eddie bonus off would also have stopped jobs counting.
+  // `modOn` decides whether we measure the payout at all, which is what tells Cyberbane a job was finished. `bonusOn`
+  // only decides whether to top the payout up.
   let modOn = true;
   let bonusOn = true;
   let mult = 1.0;
@@ -43,9 +39,8 @@ public final static func GiveReward(gameInstance: GameInstance, rewardID: TweakD
     return;
   }
 
-  // Granting a reward can grant another one - an NCPD hustle payout that tips Street Cred
-  // over a level hands out the level reward from inside this very call. Only the outermost
-  // call measures and pays, so a nested payout (and its bonus) is never counted twice.
+  // Granting a reward can grant another one - an NCPD hustle payout that tips Street Cred over a level hands out the
+  // level reward from inside this very call.
   let outermost = true;
   if IsDefined(rt) {
     outermost = rt.EnterReward() == 1;
@@ -72,18 +67,6 @@ public final static func GiveReward(gameInstance: GameInstance, rewardID: TweakD
   }
 
   // A measured job payout is Cyberbane's signal that V finished a job (spec §7.2.3).
-  //
-  // Nothing ever called the deed system: it had entry points and no detection layer, so
-  // quests, gigs and hustles contributed nothing to your reputation even though the readme
-  // led with "finish jobs". This is the detection layer, and it reuses the measurement this
-  // hook already does rather than adding any new engine call: `delta` is real eddies the
-  // game just handed over, `outermost` has already excluded nested rewards, and
-  // CBWorldStable has already excluded payouts handed out mid-transition.
-  //
-  // Payout size separates the two kinds of work. NCPD hustles pay small; gigs and jobs pay
-  // considerably more. This deliberately does not try to name the specific quest - that
-  // needs journal tracking this mod does not do - so every job of a given size scores the
-  // same.
   if delta >= CBConfig.JobPayoutThreshold() {
     CBApplyGig(sys, gameInstance);
   } else {

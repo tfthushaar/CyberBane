@@ -1,18 +1,8 @@
-// Cyberbane - Witnesses who tell the gang ([2], 2.3.1)
+// Cyberbane - Witnesses who tell the gang ([2])
 //
-// Killing a hostile gang's people where somebody sees it sends their next crew (CBProvoke, Spawn/Hunt.reds).
-// Until 2.3.1 that "somebody" was a count, and the crew was on its way the moment the body dropped. Now,
-// when the only people who saw it are ordinary people on the street, one of them has to carry the word to
-// the gang, and that takes a few seconds V can use: talk them out of it (Reactions/StreetPay.reds), or put
-// them down. The HUD line says a witness is running while one is.
-//
-// When the gang's own people saw it, they need nobody to tell them, and the crew comes as it always has.
-// Whether anybody on the street bothers depends on the district (CBTemperTells, Data/Districts.reds):
-// City Center sees nothing, Heywood tells the Valentinos.
-//
-// Never the game's own call-the-police reaction: nothing here touches the crowd's reactions or the
-// prevention system. The witness is somebody the Director already reads; nothing is spawned, nobody is
-// ordered anywhere, and the only state is the street book's note of who is on their way and since when.
+// Killing a hostile gang's people where somebody sees it sends their next crew (CBProvoke, Spawn/Hunt.reds). Now, when
+// the only people who saw it are ordinary people on the street, one of them has to carry the word to the gang, and that
+// takes a few seconds V can use: talk them out of it (Reactions/StreetPay.reds), or put them down.
 
 public func CBWitnessesCallOn() -> Bool {
   let rt = CyberbaneRuntime.Get();

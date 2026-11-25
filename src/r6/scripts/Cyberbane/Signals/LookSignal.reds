@@ -1,16 +1,11 @@
 // Cyberbane - Look & disguise signal (spec §7.4, §9.3; spike S-10)
 //
-// Reads V's equipped clothing and turns it into two things: a Look score (how much your
-// outfit adds to the impression you make) and a Disguise value (how much it stops people
-// placing you). Masks and hoods make you harder to recognize; dressing in a gang's colours
-// makes that gang slower to clock you. Both feed the existing recognition and dread maths.
-//
-// The reader is complete; its visible effect depends on the look registry's data (visual
-// tag names and gang-clothing records), which is populated and tuned in-game (S-10). Add
-// entries with CyberbaneAPI.RegisterLookTag / RegisterLookItem. Fully reversible.
+// Reads V's equipped clothing and turns it into two things: a Look score (how much your outfit adds to the impression
+// you make) and a Disguise value (how much it stops people placing you). Masks and hoods make you harder to recognize;
+// dressing in a gang's colours makes that gang slower to clock you.
 
 public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-  // Same wait as the chrome reading (1.9.5).
+  // Same wait as the chrome reading.
   if !IsDefined(sys) || !sys.WornReady() {
     return;
   }
@@ -36,9 +31,9 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   let bestFactionDisguise = 0.0;
   let gangsWorn: array<CName>;
 
-  // What a stranger sees V wearing, the reading the chrome sample has just made (Signals/Concealment.reds):
-  // the game's clothing areas as drawn, outfit presets and hidden slots included, and anything else on
-  // V's body, such as an outfit mod's own slots. Read here only when nothing has read it yet.
+  // What a stranger sees V wearing, the reading the chrome sample has just made (Signals/Concealment.reds): the game's
+  // clothing areas as drawn, outfit presets and hidden slots included, and anything else on V's body, such as an outfit
+  // mod's own slots.
   let worn = sys.GetWorn();
   if !IsDefined(worn) {
     worn = CBReadWorn(game, data);
@@ -60,10 +55,7 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
         }
       }
 
-      // What the garment itself says (1.9.3). This read the item's visual tags against a list of
-      // nine names, and not one of them exists in the game's data, so no outfit ever counted for
-      // anything: Look was always zero, and with it a sixth of Dread. Clothing does carry tags the
-      // game uses, a style or two and often a gang, and those are read instead.
+      // What the garment itself says.
       let rec = TweakDBInterface.GetItemRecord(tdbid);
       if IsDefined(rec) {
         lookSum += CBGarmentLookScore(rec);
@@ -112,11 +104,8 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     lookSum += 12.0;   // a covered face reads as trouble before anything else does
   }
 
-  // A mask is a disguise whether or not the look tables happen to list that particular one.
-  // Those tables are hand-written and will never cover every face item in the game, and a
-  // player who covers their face and sees nothing change reasonably concludes the system does
-  // not work. A face They Will Remember counts partly hidden (a hood, a visor) is that share of a
-  // mask (2.4.2, Signals/Concealment.reds, CBReadTwrDisguise).
+  // A mask is a disguise whether or not the look tables happen to list that particular one. A face They Will Remember
+  // counts partly hidden (a hood, a visor) is that share of a mask (Signals/Concealment.reds, CBReadTwrDisguise).
   let faceHidden = worn.masked ? 1.0 : 0.0;
   if worn.twrRead && worn.twrFace > faceHidden {
     faceHidden = worn.twrFace;
@@ -124,9 +113,7 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   disguiseSum += CBConfig.MaskDisguise() * faceHidden;
   score.SetLook(MaxF(lookSum, 0.0), ClampF(disguiseSum, 0.0, 0.85));
 
-  // Whose gear V passes in. With They Will Remember deciding disguises and answering, its reading is the
-  // one (2.4.2): until then Cyberbane switched its own off under compatibility and put nothing in its
-  // place, so no gang's gear fooled any of Cyberbane's people. Off under the kill switch or the setting.
+  // Whose gear V passes in.
   let rt = CyberbaneRuntime.Get();
   let allow = true;
   if IsDefined(rt) {
@@ -148,8 +135,8 @@ public func CBUpdateLook(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   }
 }
 
-// How dangerous one garment makes V look, from the style tags the game files its clothing under
-// (1.9.3). Fatigues, leathers and gang gear read as trouble; a suit reads as money.
+// How dangerous one garment makes V look, from the style tags the game files its clothing under. Fatigues, leathers and
+// gang gear read as trouble; a suit reads as money.
 func CBGarmentLookScore(rec: ref<Item_Record>) -> Float {
   let s = 0.0;
   if rec.TagsContains(n"Military") { s += 7.0; }
@@ -166,8 +153,8 @@ func CBGarmentLookScore(rec: ref<Item_Record>) -> Float {
   return s;
 }
 
-// Whose gear this is, if the game files it under a gang or a corporation (1.9.3). Fifteen factions
-// have clothing of their own in the game's data; only nomad gear and one Wraiths vest used to count.
+// Whose gear this is, if the game files it under a gang or a corporation. Fifteen factions have clothing of their own
+// in the game's data; only nomad gear and one Wraiths vest used to count.
 func CBGarmentGang(rec: ref<Item_Record>) -> CName {
   if rec.TagsContains(n"TygerClaws") { return n"TygerClaws"; }
   if rec.TagsContains(n"Moxies") { return n"Mox"; }

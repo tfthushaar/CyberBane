@@ -1,21 +1,6 @@
-// Cyberbane - Smasher Encounters (2.6.7)
+// Cyberbane - Smasher Encounters
 //
-// Smasher Encounters (Nexus 26824) sends Adam Smasher after V now and then, with Arasaka cars behind him. Read in its 2.5.1
-// scripts: one ScriptableSystem, SmasherEncountersEventSystem, which answers IsSmasherEventInProgress(); Smasher himself a
-// boss-rarity copy of the game's record (Character.SmasherEncounters_Smasher, its $base Character.Smasher untouched, so
-// Cyberbane's measuring of V against Smasher reads the same numbers); his backup the game's Arasaka records, called through
-// the quests' dynamic spawn system.
-//
-// Where they overlap. Smasher himself was always safe: a boss is the story's to Cyberbane (CBRecordIsUniqueCharacter), never
-// a Rival, never talked to, never scared off. What stacked was the rest, while Smasher was out: a Cyberbane crew or Rival
-// arriving into the same fight, gangs turning on V at sight in the middle of it, and Arasaka's backup breaking and running
-// from V's name, which took the teeth out of an encounter built to be the hardest fight on the street. So while one is on,
-// nobody new is sent (CBArrivalsHeld, as with the police), nobody is turned on V at sight (Reactions/Director.reds), and
-// Arasaka holds its ground (Reactions/Morale.reds, CBHoldsGround). V's own crew still comes when called.
-//
-// Asked at run time, through Codeware's reflection, so nothing in this build names anything of theirs: their scripts declare
-// no module for ModuleExists to find, and naming a class of theirs would fail every script mod's compile on an install
-// without them. Asked at most every two seconds; what it found is said once in the log.
+// Smasher Encounters (Nexus 26824) sends Adam Smasher after V now and then, with Arasaka cars behind him.
 
 public class CBSmasherProbe {
   public let state: Int32;   // 0 not looked yet, 1 usable, 2 not installed or not the shape this reads

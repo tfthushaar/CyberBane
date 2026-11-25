@@ -1,17 +1,9 @@
-// Cyberbane - V, measured by the game (2.6.1)
-//
-// "The apex squad and Rivals should scale to our weapons, cyberware, our level, our other stats like solo, netrunner,
-// not just the data collected by Cyberbane but data from the whole game about how strong we are. Smarter enemies."
+// Cyberbane - V, measured by the game
 //
 // Everything here is read from the game itself, at the moment somebody is built, never kept: V's level and the five
 // attributes, V's health and armour as the game has them (cyberware included), V's best equipped weapon's damage per
-// second (EffectiveDPS, the number the game's own tooltips show), V's critical hits, and the chrome that changes how V
-// fights (a cyberdeck and its RAM, a Sandevistan, a Kerenzikov, Berserk, optical camo, a Smart link). From that, the
-// way V fights, the way the game's own builds are named: netrunner, blade, stealth, reflexes, tank, tech, gunner.
-//
-// What it is used for (Spawn/FactionApex.reds, CBApplyApexBuild): an apex squad's people and a Rival are built to last a
-// set number of seconds under V's own fire and to hit hard enough to get through V's armour, and they come with the
-// game's own abilities that answer how V fights (CBCounterV). Never past the ceilings: always beatable.
+// second (EffectiveDPS, the number the game's tooltips show), V's critical hits, and the chrome that changes how V
+// fights (a cyberdeck and its RAM, a Sandevistan, a Kerenzikov, Berserk, optical camo, a Smart link).
 
 public class CBVMeasure {
   public let level: Float;
@@ -119,12 +111,8 @@ public func CBMeasureV(game: GameInstance) -> ref<CBVMeasure> {
   return m;
 }
 
-// How far into the game V is (2.6.4): 0 at level 1, 1 at the game's own level cap (Proficiencies.Level, 60 with Phantom
-// Liberty and 50 without). Adam Smasher's curves are the game's answer to an endgame V, and a share of them was given to
-// every Rival and apex squad whatever V's level: "the first rival I've met is an Animal and seems to be unkillable, no
-// matter how much I shoot him his health bar doesn't move. I'm only level 2." Smasher's share grows with this now, so a
-// new V meets somebody measured against V's own weapon, and the boss's numbers arrive as V nears the point the game
-// brings the boss.
+// How far into the game V is: 0 at level 1, 1 at the game's level cap (Proficiencies.Level, 60 with Phantom Liberty and
+// 50 without).
 public func CBVProgress(m: ref<CBVMeasure>) -> Float {
   if !IsDefined(m) {
     return 0.0;
@@ -157,7 +145,7 @@ public func CBMatchDamageMult(m: ref<CBVMeasure>, answer: Float) -> Float {
   return IsDefined(m) ? 1.0 + m.armourFactor * answer : 1.0;
 }
 
-// The game's own abilities that answer how V fights (gmpl_abilities/abilities.tweak), and ICE against a netrunner. `grade`
+// The game's abilities that answer how V fights (gmpl_abilities/abilities.tweak), and ICE against a netrunner. `grade`
 // is how much of a full answer this one brings: an apex squad all of it, a Rival as far as they have come.
 public func CBCounterV(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>, m: ref<CBVMeasure>,
                        grade: Float) -> String {
@@ -190,9 +178,6 @@ public func CBCounterV(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: re
   if m.Quick() {
     CBGrantAbility(npc, t"Ability.HasDodge");
     CBGrantAbility(npc, t"Ability.CanCatchUp");
-    // A share of V's hits that do nothing, the game's own evasion roll. 2.6.1 gave a Kerenzikov here from grade 0.75,
-    // to every apex member and most senior Rivals against a quick V: cyberware on characters the game never built for
-    // it, the shape of the crash rule 5 was written after, and the likeliest cause of "CTD when Rivals are close".
     CBAddFlat(stats, id, gamedataStatType.Evasion, CBConfig.CounterEvasion() * grade);
     said += "quick ";
   }

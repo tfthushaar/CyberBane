@@ -1,42 +1,7 @@
 // Cyberbane - When the story has the stage (spec §16)
 //
-// Two reports, one cause:
-//
-//   "In the VR fight section I saw an enemy rival spawn in, but the only damage you can do is
-//    melee from the pistol you are holding, so you can't progress until you reload."
-//   "An attack happened while going with River to the water tower."
-//
-// Every gate Cyberbane had asked about *places*: a safe area, a restricted or dangerous zone,
-// the map pins of the objective V happens to be tracking, and the scene tier. None of those is
-// what makes a moment the story's. A VR fight is ordinary gameplay on scene tier 1, in no hostile
-// zone, with no map pins; a walk with River is an open field with the objective's pin somewhere
-// else, or with nothing tracked at all. Both passed every gate, so the clocks ran, the arrival
-// was placed, and the story was broken.
-//
-// The game does say when it is directing V, and says it on V rather than on the map. This file
-// reads what it says, in three plain questions:
-//
-//   1. Is the player V at all? `PlayerPuppet.IsReplacer` is true whenever the player is
-//      somebody else - the VR avatar (`Character.q000_vr_replacer`, the same check the settings
-//      menu uses to refuse the tutorial replay), Johnny in a flashback, anyone the story puts you
-//      in - and V is not in V's own world in cyberspace or a braindance either. Then nothing
-//      Cyberbane does means anything: nobody is sent, nothing is scored, nobody reacts to a
-//      reputation that is not the player's, and nothing is paid out of somebody else's pocket.
-//   2. Has the story taken control of what V can do? Quests and set pieces apply gameplay
-//      restrictions as status effects, and the game itself reads them by tag to decide what V
-//      may wield, whether the weapon wheel opens, whether V can move (quickSlotsManager.script
-//      326, radialWheel.script 788, equipmentSystem.script 4262-4345). A fist fight, a shooting
-//      contest, a VR bout with one pistol, a ride in somebody's car, a metro seat, a lore scene:
-//      each is one of these, and a Rival walking into any of them is a fight V cannot have.
-//   3. Is somebody from the story walking with V? `ScriptedPuppet.IsPlayerCompanion` is the
-//      game's own test for an NPC whose AI role is following the player
-//      (aiComponent.script:520-532). With a story character in that role - River, Panam, Judy -
-//      V is in the middle of their quest, wherever the objective's pin happens to be.
-//
-// While any of these is true, nobody is sent, every clock waits, anybody of ours who has not yet
-// reached V is quietly called back, and the street does not turn on V. Unlike "Stay out of quest
-// areas", none of this can be switched off: it is not a preference about where trouble may find
-// V, it is the game saying the stage is taken.
+// Places alone can't tell when the story is running (a VR fight or a walk with River passes every place check). The
+// game flags it on V while it directs the player, so every Cyberbane clock and arrival waits while that flag is up.
 
 public func CBStoryNone() -> Int32 = 0
 public func CBStoryScene() -> Int32 = 1
@@ -62,41 +27,6 @@ public func CBStoryLabel(reason: Int32) -> String {
 }
 
 // The gameplay restrictions that mean the story has V.
-//
-// Only tags the game applies to stage something, each of which it reads itself before letting V
-// fight, move or change weapons. Two lists, because the game also puts some of the same
-// restrictions on V during ordinary play, and those must never read as the story:
-//
-//   - In any vehicle, driving or riding, the game limits V's weapons itself: NoWeapons for a
-//     driver who cannot fight from that car, Firearms for a passenger
-//     (vehicleTransition.script:99, 126, 1556, 1854). So the weapon limits below are ignored while
-//     V is in a car. A ride the story is giving V carries VehicleScene, which is on the first list.
-//   - A thrown melee weapon holds FirearmsNoUnequipNoSwitch for the length of the throw
-//     (meleeTransitions.script:791), and getting in or out of a car passes through the vehicle
-//     limits on the way. Those last a moment; a VR bout or a ride with River lasts minutes. So a
-//     restriction has to have held for StoryRestrictionSettleTicks before anything is called back
-//     (CyberbaneSystem.RefreshStoryHold); a new arrival is refused the moment one appears, because
-//     a refusal costs nothing but a short wait.
-//   - NoMovement is not on either list. The game applies it when V dies (highLevelTransitions
-//     .script:692) and while lifting a body (carriedObject.script:813), and with a death mod such
-//     as Fenix Rebirth the first of those would call the hunters back in the middle of the fight.
-//     A quest that holds V in place does it with a scene, which is checked separately.
-//
-//   - The game also puts some of these tags on V for things V does, and the tag alone cannot tell
-//     the two apart (2.6.4). Berserk is a cyberware V switches on in a fight, and it carries Melee and
-//     the GameplayRestriction tag itself (breserk_advanced.tweak); a finisher holds FirearmsNoSwitch
-//     (finisher.script:288); carrying a body holds FirearmsNoSwitch or OneHandedFirearms for as long
-//     as V carries it (carriedObject.script:504-536). Read as the story, every Berserk build had its
-//     crew walk off with "Not our kind of place" the moment it fought, hunters were called back in the
-//     middle of katana fights, and picking up a body sent everybody home. So a tag counts only from an
-//     effect the story put there: each effect carrying it is looked at, and V's own (CBEffectIsVsOwn)
-//     are passed over.
-//
-// Deliberately on neither list: the driving-combat and vehicle-weapon tags (V fighting from a car
-// in free roam), the perk and cyberware buffs that share the status-effect system, phone call tags
-// (fixers ring in free roam all the time), and the fast-travel and time-skip blocks, which some
-// regions carry for long stretches of ordinary play. A tag on these lists costs at most a quiet
-// stretch; one wrongly added could silence the mod.
 public func CBStoryRestrictionTags() -> array<CName> {
   let tags: array<CName>;
   // V may not fight, or may only fight the way the scene allows.
@@ -173,11 +103,6 @@ public func CBHasStoryTag(game: GameInstance, player: ref<GameObject>, tags: arr
 }
 
 // An effect the game puts on V for something V is doing, not something the story is doing to V.
-//
-// Each of these is applied by the game's own handling of V's actions, and only there: Berserk by the
-// cyberware's activation (berserkAction.script), whose effects all share the Berserk type; the finisher
-// by finisher.script; the carry by carriedObject.script, one record per way of carrying, each tagged
-// with its own name (the friendly carry inherits the generic one's).
 public func CBEffectIsVsOwn(rec: ref<StatusEffect_Record>) -> Bool {
   if !IsDefined(rec) {
     return false;
@@ -195,9 +120,6 @@ public func CBEffectIsVsOwn(rec: ref<StatusEffect_Record>) -> Bool {
 }
 
 // Is the player V, in V's own world?
-//
-// False for the VR avatar, Johnny, anyone else the story makes you, and for V in cyberspace or a
-// braindance. Asked on every hit V lands, so it is kept to a record id compare and two tag reads.
 public func CBPlayerIsVHere(player: ref<PlayerPuppet>) -> Bool {
   if !IsDefined(player) {
     return false;
@@ -213,10 +135,6 @@ public func CBGameHasVHere(game: GameInstance) -> Bool {
   return CBPlayerIsVHere(GetPlayer(game));
 }
 
-// The main menu's world (2.7.8): the game builds one behind the menu, with a player in it, before any save is loaded.
-// The game's own test, as its settings and pop-up screens ask it (SystemRequestsHandler.IsPreGame), through Codeware's
-// handle on the handler. 2.7.7 waited there for a lifepath, and that world has one: every launch put a playthrough on
-// record outside the saves, where Start over reads, and ran the street's clocks behind the menu.
 public func CBInPreGame() -> Bool {
   let handler = GameInstance.GetSystemRequestsHandler();
   return IsDefined(handler) && handler.IsPreGame();
@@ -240,10 +158,6 @@ public func CBPlayerStoryRestricted(game: GameInstance) -> Bool {
 }
 
 // Somebody the story placed is walking with V.
-//
-// The registry already holds every NPC that has attached near V, so this is a pass over it with
-// the cheap tests first: settled, alive, close. Only then the game's own companion test, and only
-// for a companion the question of whose they are.
 public func CBStoryCompanionWithV(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
   if !IsDefined(sys) {
     return false;
@@ -253,9 +167,8 @@ public func CBStoryCompanionWithV(sys: ref<CyberbaneSystem>, game: GameInstance)
   if !IsDefined(player) || !IsDefined(reg) {
     return false;
   }
-  // Every few ticks, not every tick (1.9.1). This walks the whole registry - two hundred people on a
-  // busy street - reading each one's position, every second. A companion who has just joined is noticed
-  // a moment later, which only means nobody is sent for a moment longer than they would have been.
+  // Every few ticks, not every tick. This walks the whole registry - two hundred people on a busy street - reading each
+  // one's position, every second.
   let found = false;
   if sys.TakeCompanionScan(CBConfig.StoryCompanionScanTicks(), found) {
     return found;
@@ -275,13 +188,6 @@ public func CBStoryCompanionWithV(sys: ref<CyberbaneSystem>, game: GameInstance)
 }
 
 // Whose companion is this: the story's, or one somebody chose?
-//
-// A companion from Appearance Menu Mod or anything like it can be a story character too - Panam
-// is a popular one - and walks around with V for hours of ordinary play. Holding everything for
-// those would switch the mod off for the people who use them. So: anybody the quest system has
-// flagged is the story's; anybody a script mod created through the dynamic entity system is not;
-// and between those, the record's own quest affiliation decides, the same test that keeps story
-// characters off the Rival roster (CBRecordIsUniqueCharacter).
 public func CBIsStoryCompanion(p: wref<ScriptedPuppet>, des: ref<DynamicEntitySystem>) -> Bool {
   if !IsDefined(p) {
     return false;
@@ -295,9 +201,7 @@ public func CBIsStoryCompanion(p: wref<ScriptedPuppet>, des: ref<DynamicEntitySy
   return CBRecordIsUniqueCharacter(p.GetRecordID());
 }
 
-// The whole question, in order of how much it settles. Called once per settled fast tick by the
-// system, which works out whether a restriction has held long enough to count; the answer is kept
-// on the system (GetStoryHold) for everything that runs between ticks.
+// The whole question, in order of how much it settles.
 public func CBComputeStoryHold(sys: ref<CyberbaneSystem>, game: GameInstance, restrictionHeld: Bool) -> Int32 {
   if !CBGameHasVHere(game) {
     return CBStoryNotV();
@@ -314,10 +218,8 @@ public func CBComputeStoryHold(sys: ref<CyberbaneSystem>, game: GameInstance, re
   return CBStoryNone();
 }
 
-// Asked at the moment of placing somebody, which can be between ticks: the live answer for
-// everything that is cheap to read, and the last tick's answer for the companion pass. A
-// restriction refuses the arrival the instant it appears, without waiting for it to settle: a
-// refusal only makes them try again later, and the story may have only just begun.
+// Asked at the moment of placing somebody, which can be between ticks: the live answer for everything that is cheap to
+// read, and the last tick's answer for the companion pass.
 public func CBStoryHoldNow(game: GameInstance) -> Bool {
   if !CBGameHasVHere(game) || CBPlayerInScene(game) || CBPlayerStoryRestricted(game) {
     return true;
@@ -327,14 +229,6 @@ public func CBStoryHoldNow(game: GameInstance) -> Bool {
 }
 
 // The story has the stage: call back anybody of ours who has not reached V.
-//
-// Quietly. This is not V shaking them off, so nobody is promoted, nobody texts, and no gang
-// thinks less of V for running; a Rival simply goes back to waiting their turn. Only people out
-// of V's sight are removed, the same discretion the chase give-up uses, and anybody in sight is
-// left exactly as they are - not untagged, not orphaned - so if a fight is already on it still
-// counts. They are removed on a later tick, once V can no longer see them. A car's crew is told
-// to get out somewhere V cannot see it, and removed once they are out; until then it holds its
-// seats, as it does at a job (Spawn/Arrival.reds).
 public func CBStoryStandDown(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
     return;
@@ -352,11 +246,11 @@ public func CBStoryStandDown(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
               + CBStoryRemoveUnseen(game, des, n"CB_Escort")
               + CBStoryRemoveUnseen(game, des, n"CB_Scout")
               + CBStoryRemoveUnseen(game, des, n"CB_Lair")
-              // A crew lying in wait for V (Spawn/HuntGrows.reds, 2.4.2) is a crew sent after V like the rest.
+              // A crew lying in wait for V (Spawn/HuntGrows.reds) is a crew sent after V like the rest.
               + CBStoryRemoveUnseen(game, des, n"CB_Ambush")
-              // So is one of V's own crew who turned on V (Reactions/Crew.reds, 2.5.0): hostile to V like a hunter.
+              // So is one of V's own crew who turned on V (Reactions/Crew.reds): hostile to V like a hunter.
               + CBStoryRemoveUnseen(game, des, n"CB_Turned")
-              // And a stronghold's garrison (Rivals/Strongholds.reds, 2.7.2); the stronghold stays.
+              // And a stronghold's garrison (Rivals/Strongholds.reds); the stronghold stays.
               + CBStoryRemoveUnseen(game, des, n"CB_Hold");
   if removed > 0 {
     CBLog.Info(n"Spawn", s"The story has the stage (\(CBStoryLabel(sys.GetStoryHold()))): called back \(removed) of ours who had not reached you.");
@@ -365,7 +259,7 @@ public func CBStoryStandDown(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
              || CBLiveTaggedPresent(game, n"CB_Apex") || CBLiveTaggedPresent(game, n"CB_Escort")
              || CBLiveTaggedPresent(game, n"CB_Scout");
   if !anyLeft && sys.GetHuntState() != CBHuntNone() {
-    // A ride (the metro, a cab, a seat the story gives V) took V away from them: the street says so (2.4.1, [42]).
+    // A ride (the metro, a cab, a seat the story gives V) took V away from them: the street says so ([42]).
     if removed > 0 && sys.GetStoryHold() == CBStoryRestricted() && CBToastsOn() {
       CBHearsayFromStreet(game, CBT(n"Cyberbane-StoryHold-WhoeverWasAfterYouLostYou"), n"");
     }
@@ -374,13 +268,6 @@ public func CBStoryStandDown(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
 }
 
 // Remove everybody wearing this tag whom V cannot see, and nobody else.
-//
-// Through CBRemoveOne, the removal every sweep in the mod already uses: it leaves anybody still
-// spawning or in V's sight where they are, and orders anybody in a seat out first, so they are
-// removed on a later tick once they are standing somewhere V cannot see - never deleted from inside
-// a car. What it does not do, and CBDeleteTaggedSafe does, is untag the ones it leaves behind;
-// here they keep their tags, so a fight already under way still counts as the fight it is. The
-// cars themselves are left to the remains sweep, which takes a car once nobody of ours sits in it.
 func CBStoryRemoveUnseen(game: GameInstance, des: ref<DynamicEntitySystem>, tag: CName) -> Int32 {
   let removed = 0;
   let ids = des.GetTaggedIDs(tag);
@@ -399,7 +286,7 @@ func CBStoryResetHunt(sys: ref<CyberbaneSystem>) -> Void {
     // Back in the queue, unpromoted, and not straight back out the moment the story lets go.
     r.huntTicks = Max(r.huntTicks, CBConfig.RivalHuntRetryTicks());
   }
-  // So is everyone who came with them (1.9.0).
+  // So is everyone who came with them.
   for pid in sys.GetPackRivals() {
     let partner = sys.FindRivalById(pid);
     if IsDefined(partner) {

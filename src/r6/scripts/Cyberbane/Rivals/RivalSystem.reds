@@ -10,9 +10,7 @@ public func CBHashIndex(seed: Int32, salt: Int32, modulo: Int32) -> Int32 {
   if modulo <= 0 {
     return 0;
   }
-  // Take the remainder first, then lift it into range. Negating before the modulo leaves
-  // the most negative Int32 negative (it has no positive counterpart), which would hand
-  // back a negative index and read off the front of the pool array.
+  // Take the remainder first, then lift it into range.
   let h = (seed * 73 + salt * 19 + 7) % modulo;
   if h < 0 {
     h += modulo;
@@ -63,16 +61,7 @@ public func CBRivalGenerateName(content: ref<CyberbaneContent>, rival: ref<CBRiv
   }
 }
 
-// A name nobody in this save has ever had. The pick above is arithmetic on the Rival's id, and nothing
-// ever asked whether the answer was taken: with four first names and three surnames it came round
-// every twelve Rivals, and players met the same person twice.
-//
-// Looks through every combination the gang's lists can make, starting from that pick, so a name is
-// only refused when it has really been used. First for one whose first name nobody else of this gang
-// on the roster has, then, if a long roster has used those up, for any name that is still new.
-// A given name that would read as one of the game's own characters (2.7.4): Santiago leads the Aldecaldos in nomad lore,
-// Nash is a raffen in Panam's story. Never given to a new Rival; never taken out of the lists either, because a Rival is
-// saved as a position in them and removing one would rename every Rival after it in every save.
+// A name nobody in this save has ever had.
 func CBNameSkipped(faction: CName, name: String) -> Bool {
   if Equals(name, "Santiago") {
     return Equals(faction, n"Aldecaldos") || Equals(faction, n"Valentinos");
@@ -134,9 +123,8 @@ public func CBRivalPickFreeName(game: GameInstance, sys: ref<CyberbaneSystem>, c
   CBLog.Warn(n"Rivals", s"Every name for \(NameToString(rival.faction)) has been used; one is being repeated.");
 }
 
-// The part in quotes, the same way: nobody on the roster shares it while another is free. There are
-// a dozen or so of these for each way of becoming a Rival, so unlike a name they can run out, and
-// then the first pick stands. An avenger took the same one as the Rival they were avenging.
+// The part in quotes, the same way: nobody on the roster shares it while another is free. There are a dozen or so of
+// these for each way of becoming a Rival, so unlike a name they can run out, and then the first pick stands.
 func CBRivalPickFreeEpithet(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, rival: ref<CBRival>) -> Void {
   if !IsDefined(sys) || !IsDefined(content) || !IsDefined(rival) || rival.epithet < 0 {
     return;
@@ -144,7 +132,7 @@ func CBRivalPickFreeEpithet(sys: ref<CyberbaneSystem>, content: ref<CyberbaneCon
   let epithets = CBEpithetsForSource(content, rival.source);
   let n = ArraySize(epithets);
   let start = rival.epithet;
-  // First one nobody on this save has ever had (1.8.5), written down in the same book as the names;
+  // First one nobody on this save has ever had, written down in the same book as the names;
   // then, once a long playthrough has used those up, one nobody on the roster has now.
   let book = CBRivalNameBook.Get(sys.GetGameInstance());
   let pass = IsDefined(book) ? 0 : 1;
@@ -209,8 +197,6 @@ func CBRivalGangHasFirstName(sys: ref<CyberbaneSystem>, rival: ref<CBRival>) -> 
   return false;
 }
 
-// Anything the lists could make before 1.7.7 may have been somebody already, and that somebody may
-// have been forgotten or trimmed off the roster long before the book was there to write them down.
 // Those combinations are simply never handed out again. Everything since is in the book.
 func CBRivalNameIsNew(book: ref<CBRivalNameBook>, content: ref<CyberbaneContent>, pool: ref<CBFactionNames>, rival: ref<CBRival>) -> Bool {
   if rival.firstName < pool.oldFirsts && (ArraySize(pool.lastNames) == 0 || rival.lastName < pool.oldLasts) {
@@ -235,10 +221,7 @@ func CBRivalBareName(content: ref<CyberbaneContent>, rival: ref<CBRival>) -> Str
   return name;
 }
 
-// An epithet as the player reads it (2.7.6): its translation when one is installed, the English otherwise. The English stays
-// what the Rival is (CBRivalEpithet), the name book's key and the test for two Rivals sharing one, so changing the game's
-// language renames nobody. The key is the English with only its letters and digits: "Sore Loser" is
-// Cyberbane-Epithet-SoreLoser (Localization/en-us/English.reds, DefineEpithets).
+// An epithet as the player reads it: its translation when one is installed, the English otherwise.
 public func CBEpithetText(english: String) -> String {
   if StrLen(english) == 0 {
     return english;
@@ -265,8 +248,8 @@ public func CBRivalEpithet(content: ref<CyberbaneContent>, rival: ref<CBRival>) 
   if !IsDefined(rival) {
     return "";
   }
-  // After a break they are known for that, and nothing else (1.9.0). The one picked when they broke
-  // (CBRivalPickBrokenEpithet), stored past CBBrokenEpithetBase in the same field.
+  // After a break they are known for that, and nothing else. The one picked when they broke (CBRivalPickBrokenEpithet),
+  // stored past CBBrokenEpithetBase in the same field.
   if CBRivalHasTrait(rival, n"Broken") && IsDefined(content) {
     let e = content.GetEpithets();
     if IsDefined(e) && ArraySize(e.broken) > 0 {
@@ -277,7 +260,7 @@ public func CBRivalEpithet(content: ref<CyberbaneContent>, rival: ref<CBRival>) 
       return e.broken[CBHashIndex(rival.id, 9, ArraySize(e.broken))];
     }
   }
-  // Back from the dead, or humiliated (Rivals/RivalMoments.reds, 2.4.4): known for that now.
+  // Back from the dead, or humiliated (Rivals/RivalMoments.reds): known for that now.
   if CBRivalReturned(rival) {
     return CBReturnedEpithet(rival);
   }
@@ -298,16 +281,7 @@ public func CBRivalEarnedNickname(rival: ref<CBRival>) -> Bool {
   return IsDefined(rival) && (rival.rank >= 2 || rival.killedV > 0 || CBRivalHasTrait(rival, n"Broken"));
 }
 
-// Cyberpsychotic breaks (1.9.0).
-//
-// "Rivals who reach a breaking point keep pushing augments to get revenge on you, turning them into a
-// roided-out Cyberpsycho." A Rival at the top of the ladder who loses to V again - gets away hurt, is
-// spared, is shaken off - may break, with a chance that grows with every loss and never passes the
-// ceiling. A break is the Broken trait, which fits a bit the trait mask already had spare, so no save
-// changes shape. What it changes: the cyberpsycho's fighting kit instead of the Rival's own, holding
-// their ground rather than ever breaking and running, a nickname for it, and different words. Not one
-// point of health or armour on top of the build every Rival of that rank already gets, which is capped
-// against stacking (CBApplyApexBuild): hard to put down, never impossible. No MaxTac, no police.
+// Cyberpsychotic breaks.
 public func CBPsychoBreaksOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
   if !IsDefined(rt) || !rt.IsEnabled() {
@@ -342,9 +316,8 @@ public func CBRivalMaybeBreak(sys: ref<CyberbaneSystem>, game: GameInstance, r: 
 // number, so no save changes shape and a value below it still reads as the old pool.
 public func CBBrokenEpithetBase() -> Int32 = 1000
 
-// One nobody else has: not another cyberpsycho on the roster, and not one this save has used before
-// (the name book, as every nickname is since 1.8.5). Picked as they break. The first build hashed the
-// id instead, so two who broke could carry the same one, which nicknames never do.
+// Picked as they break. The first build hashed the id instead, so two who broke could carry the same one, which
+// nicknames never do.
 func CBRivalPickBrokenEpithet(sys: ref<CyberbaneSystem>, content: ref<CyberbaneContent>, r: ref<CBRival>) -> Void {
   if !IsDefined(sys) || !IsDefined(content) || !IsDefined(r) {
     return;
@@ -420,10 +393,9 @@ public func CBRivalDisplayName(content: ref<CyberbaneContent>, rival: ref<CBRiva
       }
     }
   }
-  // A nickname is earned (1.8.5): by moving up a rank, or by putting V down. A rank one Rival is
-  // just their name, so the ones who have done something stand out, and the same few nicknames are
-  // not on everybody.
-  let epithet = CBRivalEarnedNickname(rival) ? CBEpithetText(CBRivalEpithet(content, rival)) : "";   // translated (2.7.6)
+  // A nickname is earned: by moving up a rank, or by putting V down. A rank one Rival is just their name, so the ones
+  // who have done something stand out, and the same few nicknames are not on everybody.
+  let epithet = CBRivalEarnedNickname(rival) ? CBEpithetText(CBRivalEpithet(content, rival)) : "";   // translated
   let name = first;
   if StrLen(epithet) > 0 {
     name = name + " \"" + epithet + "\"";
@@ -490,18 +462,6 @@ public func CBRivalAddTrait(content: ref<CyberbaneContent>, rival: ref<CBRival>)
 
 // Create and register a Rival. Returns null if caps are full (spec §10.1).
 // Is this somebody the game wrote, rather than a face in a crowd?
-//
-// A Rival is built by respawning a character record, which is fine for a generic ganger and
-// wrong for anybody the story owns: respawning them puts a named individual the player has
-// already dealt with back on the street, and does it with Rival buffs on top. A player
-// reported exactly that - LT Mower, a cyberpsycho they had just killed, waiting outside their
-// apartment and effectively unkillable, because a cyberpsycho's own health is enormous before
-// the apex-grade buff a Rival gets is applied to it.
-//
-// The game marks these in the character record itself: cyberpsycho records carry
-// `tags += [ "Cyberpsycho" ]`. That is the reliable test, and it is read here rather than
-// guessed from the record's name. Boss and MaxTac rarity are refused for the same reason, and
-// the name check stays as a backstop for anything tagged inconsistently.
 public func CBRecordIsUniqueCharacter(recordID: TweakDBID) -> Bool {
   if !TDBID.IsValid(recordID) {
     return true;   // nothing to spawn from; refusing is the safe answer
@@ -511,10 +471,8 @@ public func CBRecordIsUniqueCharacter(recordID: TweakDBID) -> Bool {
     if rec.TagsContains(n"Cyberpsycho") || rec.TagsContains(n"Boss") {
       return true;
     }
-    // Written by the game not to die (1.9.4). Street-story extras, quest walk-ons and the like carry
-    // an Immortal or Invulnerable tag, and the engine makes anybody spawned from such a record shrug
-    // off every bullet. Filed as a Rival or a gang's template, that was an enemy only a car could kill:
-    // the ragdoll a car makes is the one hit the game does not check.
+    // Written by the game not to die. Street-story extras, quest walk-ons and the like carry an Immortal or
+    // Invulnerable tag, and the engine makes anybody spawned from such a record shrug off every bullet.
     if rec.TagsContains(n"Immortal") || rec.TagsContains(n"Invulnerable") {
       return true;
     }
@@ -526,19 +484,6 @@ public func CBRecordIsUniqueCharacter(recordID: TweakDBID) -> Bool {
       }
     }
     // Does the story own this person?
-    //
-    // This is the test that was missing, and the report that found it could not be clearer:
-    // "I got the rival is hunting you prompt, only instead of the rival, an immortal Panam
-    // spawns in with a sniper rifle." Panam carries no Boss tag and is not Boss rarity, her
-    // record id contains none of the words below, and `ScriptedPuppet.IsQuest` - which the
-    // capture path does check - is a property of a live puppet in a quest, not of the record,
-    // so a record that reached the roster by any other door walked straight through.
-    //
-    // `Character_Record.Quest()` is the record's own quest affiliation, and it is exactly the
-    // right question: `MainQuest`, `SideQuest`, `MinorQuest` and `StreetStory` are people the
-    // game has written and placed, while generic gangers are `General`. `MinorActivity` is the
-    // deliberate exception and the narrower CBRecordIsSightingCyberpsycho test below is built
-    // on it - a cyberpsycho from a sighting is the one person the story does not come back for.
     let quest = rec.Quest();
     if IsDefined(quest) {
       let affiliation = quest.Type();
@@ -549,10 +494,9 @@ public func CBRecordIsUniqueCharacter(recordID: TweakDBID) -> Bool {
         return true;
       }
     }
-    // Authored to have a boss health bar. `bossHealthBarThresholds` is only filled in on
-    // records the game intends to put a bar across the top of the screen for, which is a
-    // statement that this is a set piece rather than a kind of enemy. Cheap, structural, and it
-    // catches anyone the affiliation test misses.
+    // Authored to have a boss health bar. `bossHealthBarThresholds` is only filled in on records the game intends to
+    // put a bar across the top of the screen for, which is a statement that this is a set piece rather than a kind of
+    // enemy.
     if rec.GetBossHealthBarThresholdsCount() > 0 {
       return true;
     }
@@ -563,17 +507,6 @@ public func CBRecordIsUniqueCharacter(recordID: TweakDBID) -> Bool {
 }
 
 // Take anybody the game owns off the roster.
-//
-// CBCreateRival refuses unique characters now, but a roster written before that guard existed
-// still holds them, and they are the worst case it was added for: a cyberpsycho's own health is
-// enormous before a Rival's apex-grade multiplier goes on top of it, so what turns up is
-// something the player empties magazines into for nothing. That has now been reported twice, as
-// an unkillable enemy nobody could name. Refusing new ones does not clear the ones already
-// written down, so they are cleared here, once a session, by the same test.
-// Is this record a person? Drones, mechs, spiderbots, androids and the rest are not, and none of
-// them may become a Rival or a gang's spawn template. A Maelstrom drone that got away was being
-// made a Rival, given a boss-grade build and sent back again and again: the near-immortal
-// missile drone a player reported being stuck in a loop with.
 public func CBRecordIsPerson(recordID: TweakDBID) -> Bool {
   if !TDBID.IsValid(recordID) {
     return false;
@@ -605,20 +538,6 @@ public func CBRecordUnfitTemplate(recordID: TweakDBID) -> Bool {
 }
 
 // Would shooting this person bring the law down on V?
-//
-// "When Barghest ambushes you, it gives you wanted stars immediately, even when you are out of
-// Dogtown." In Dogtown the Barghest are the police. The game's prevention_dogtown_ records wear
-// their colours and carry the Barghest affiliation, but they descend from prevention_unit_base and
-// use a Police reaction preset, so anything that hurts one is a crime
-// (PreventionSystem.ShouldPreventionSystemReactToDamageDealt: IsPrevention, or the
-// TriggerPrevention tag). Cyberbane files spawn templates from whoever V fights, sorted by
-// affiliation, so one such kill made every crew and Rival that gang sent afterwards a police unit,
-// and the first shot at them anywhere the law operates raised the stars. Dogtown has no prevention
-// of its own to raise, which is why it only ever happened outside it. The same is true of the
-// other prevention_ uniforms (Aldecaldos, Militech) and of anybody NCPD.
-//
-// This is the game's own test, made on the record instead of a live body: IsPrevention is
-// IsCharacterPolice, which is a Police reaction group (ScriptedPuppet.RefreshCachedReactionPresetData).
 public func CBRecordDrawsPolice(recordID: TweakDBID) -> Bool {
   if !TDBID.IsValid(recordID) {
     return false;
@@ -662,8 +581,6 @@ public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
       if TDBID.IsValid(fs.roleNetrunnerRecord) && CBRecordUnfitTemplate(fs.roleNetrunnerRecord) {
         fs.roleNetrunnerRecord = TDBID.None(); wiped += 1;
       }
-      // A netrunner filed as the crew template before 1.8.5 moves to the netrunner's chair, and the
-      // crew is built from a fighter again.
       if TDBID.IsValid(fs.sampleRecord) && CBRecordIsNetrunner(fs.sampleRecord) {
         if !TDBID.IsValid(fs.roleNetrunnerRecord) {
           fs.roleNetrunnerRecord = fs.sampleRecord;
@@ -686,9 +603,8 @@ public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
   let dropped = 0;
   let enlisted = 0;
   for r in sys.GetRivals() {
-    // A Rival built from a police record keeps their name, rank and grudge and comes back as one
-    // of their gang's own people, so fighting them is a fight rather than a crime. Anybody who
-    // really is the law has no gang to fall back on and is retired below.
+    // A Rival built from a police record keeps their name, rank and grudge and comes back as one of their gang's own
+    // people, so fighting them is a fight rather than a crime.
     if IsDefined(r) && CBRecordDrawsPolice(r.recordID) {
       let swap = CBApexRosterRecord(r.faction, 1);
       if TDBID.IsValid(swap) {
@@ -711,9 +627,9 @@ public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
   if dropped > 0 {
     CBLog.Info(n"Rivals", s"Retired \(dropped) rival(s) built from story characters or the police; they will not come back.");
   }
-  // Every gang's chairs put right, once a session (2.4.2): somebody retired just now, made a Debtor, or run out of
-  // the city in an earlier build kept their chair until the gang next changed shape, and open season, the Hub and
-  // the street all took them for the one in charge.
+  // Every gang's chairs put right, once a session: somebody retired just now, made a Debtor, or run out of the city in
+  // an earlier build kept their chair until the gang next changed shape, and open season, the Hub and the street all
+  // took them for the one in charge.
   for gang in sys.GetFactionStates() {
     if IsDefined(gang) {
       CBHierarchyFill(sys, gang.id);
@@ -723,25 +639,9 @@ public func CBPruneUniqueRivals(sys: ref<CyberbaneSystem>) -> Void {
     CBLog.Info(n"Rivals", s"\(enlisted) rival(s) built from police records are their gang's own people now, so fighting them draws no heat.");
   }
   // Worth knowing: this prune is what clears a story character already written into a save.
-  // CBRecordIsUniqueCharacter got the quest-affiliation test in 1.4.7, so the sweep that has
-  // run once a session since 1.4.0 now catches the ones it used to walk past - which is how a
-  // Panam on somebody's roster goes away without them starting a new game.
 }
 
 // Is this one of Regina's cyberpsychos?
-//
-// Deliberately narrower than CBRecordIsUniqueCharacter, and the narrowing is the whole point.
-// The broad test refuses everybody the story owns, which is right for a gang's spawn template
-// and right for anyone the main quest needs where it left them. A cyberpsycho you chose to
-// leave breathing is the one exception worth making: the game asks you to take them alive and
-// then never follows it up, and somebody who survived you is exactly what a Rival is.
-//
-// The Cyberpsycho tag on its own is not enough, and this is worth writing down because it is a
-// trap that looks safe. `main_boss_adam_smasher` carries that tag. So do Placide and Woodman.
-// Rarity cannot separate them either: the sighting psychos are NPCRarity.Boss as well. What
-// does separate them is the quest affiliation. Every record under
-// characters/npcs/records/quest/minor_activities carries
-// `quest = "NPCQuestAffiliation.MinorActivity"`, and no story boss does.
 public func CBRecordIsSightingCyberpsycho(recordID: TweakDBID) -> Bool {
   if !TDBID.IsValid(recordID) {
     return false;
@@ -755,10 +655,6 @@ public func CBRecordIsSightingCyberpsycho(recordID: TweakDBID) -> Bool {
 }
 
 // Their own name, because everyone knows it.
-//
-// The generated handles are for gangers nobody has heard of. Calling the person from the
-// sighting anything other than what the game called them reads as a different character, which
-// throws away the only thing that makes this worth doing.
 public func CBCyberpsychoName(recordID: TweakDBID) -> String {
   if !CBRecordIsSightingCyberpsycho(recordID) {
     return "";
@@ -775,11 +671,6 @@ public func CBCyberpsychoName(recordID: TweakDBID) -> String {
 }
 
 // May this one come back, and does the coin say so?
-//
-// Only on a spare, because that is the choice that earns it. Killing one ends it, and nothing
-// here should quietly undo a fight the player won. Half the time, so leaving one alive is a
-// risk you take rather than a sequel you have booked. And only while the Rival list has room,
-// which the cap below already enforces for everybody.
 func CBCyberpsychoMayReturn(recordID: TweakDBID, source: ECBRivalSource) -> Bool {
   if NotEquals(source, ECBRivalSource.Spared) || !CBRecordIsSightingCyberpsycho(recordID) {
     return false;
@@ -791,20 +682,10 @@ func CBCyberpsychoMayReturn(recordID: TweakDBID, source: ECBRivalSource) -> Bool
   return RandF() < CBConfig.CyberpsychoRivalChance();
 }
 
-// ---- How likely somebody is to come back as a Rival (the 1.9.0 bug pass) ----------------------
+// ---- How likely somebody is to come back as a Rival ----------------------
 //
-// Every way of becoming a Rival rolled one flat number, whoever the person was and however many had
-// just been made. Two things followed. A grunt who ran was as likely to swear revenge as the officer
-// leading them, so a name meant nothing about who it was. And one fight could make a crowd: a room put
-// to sleep turned a Rival out of three bodies in four until the gang's limit stopped it, with a text and
-// a rumour for each, so the roster filled in a minute and the next new name was nobody in particular.
-// The Rival frequency setting also reached only two of the five rolls.
-//
-// Now one function answers for every roll: the base for that way of becoming one, times the frequency
-// setting, times how much the person counted for (CBRivalRarityWeight), divided by one more than the
-// number of Rivals already made in the last few minutes, so the second name a fight makes is half as
-// likely and the third a third. The ceiling goes last. A death (the Killer) is not a roll and is not
-// touched, and neither is the empty roster's first name (CBSeedRivalFromFactions).
+// Every way of becoming a Rival rolled one flat number, whoever the person was and however many had just been made. Two
+// things followed.
 public func CBRivalRarityWeight(recordID: TweakDBID) -> Float {
   let rec = TweakDBInterface.GetCharacterRecord(recordID);
   if !IsDefined(rec) {
@@ -836,14 +717,12 @@ public func CBRivalOdds(sys: ref<CyberbaneSystem>, base: Float, recordID: TweakD
   }
   if IsDefined(sys) {
     odds = odds / (1.0 + Cast<Float>(sys.RecentRivalsMade(CBConfig.RivalBurstTicks())));
-    // Fewer swear to get even with a merc nobody has heard of (2.7.0).
+    // Fewer swear to get even with a merc nobody has heard of.
     odds *= CBStandingScale(sys.GetGameInstance(), CBConfig.EarlyRivalShare());
   }
   return ClampF(odds, 0.0, CBConfig.RivalOddsCeiling());
 }
 
-// Roll it, and say what the odds were: "harder to make Rivals" has been reported before, and the
-// log is the only place the number can be read.
 // Not rolled at all for a gang that keeps no Rivals (switched off under Factions, or the Scavengers, who run): the log
 // said "a Rival" and, a line later, that none was made.
 public func CBRivalRoll(sys: ref<CyberbaneSystem>, what: String, base: Float, recordID: TweakDBID, byRank: Bool,
@@ -858,17 +737,16 @@ public func CBRivalRoll(sys: ref<CyberbaneSystem>, what: String, base: Float, re
   return hit;
 }
 
-// `quiet` leaves out the "has your name now" text, for a caller that sends its own line about the same
-// moment (a death). `counted` says the roll already counted this Rival towards the burst damping in
-// CBRivalOdds, as a birth held until the fight is over does (Rivals/Births.reds), so it is not counted
-// twice. Both 1.9.1.
+// `quiet` leaves out the "has your name now" text, for a caller that sends its own line about the same moment (a
+// death). `counted` says the roll already counted this Rival towards the burst damping in CBRivalOdds, as a birth held
+// until the fight is over does (Rivals/Births.reds), so it is not counted twice.
 public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CName,
     recordID: TweakDBID, appearance: CName, source: ECBRivalSource, origin: CName, at: Float,
     opt quiet: Bool, opt counted: Bool) -> ref<CBRival> {
   if !IsDefined(sys) {
     return null;
   }
-  // A faction the player switched off under Factions in Mod Settings keeps no Rivals (1.9.1).
+  // A faction the player switched off under Factions in Mod Settings keeps no Rivals.
   if !CBFactionOn(faction) {
     CBLog.Info(n"Rivals", s"No new Rival from \(NameToString(faction)): switched off in Mod Settings.");
     return null;
@@ -878,9 +756,8 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
     CBLog.Info(n"Rivals", s"No new Rival from \(NameToString(faction)): they run, and do not come back.");
     return null;
   }
-  // One gate, here, because eight different places create Rivals and several hand over a
-  // record straight off a puppet. Guarding each of them would mean missing one. The single
-  // exception is a spared cyberpsycho, on a coin flip; see CBCyberpsychoMayReturn.
+  // One gate, here, because eight different places create Rivals and several hand over a record straight off a puppet.
+  // Guarding each of them would mean missing one.
   if CBRecordIsUniqueCharacter(recordID) && !CBCyberpsychoMayReturn(recordID, source) {
     return null;
   }
@@ -948,10 +825,7 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   if !counted {
     sys.NoteRivalMade();   // so the next roll in the same fight is less likely (CBRivalOdds)
   }
-  // A new name in a crew may be the only one left standing in it (spec §10.1). Their gang on the books first (2.5.3): only
-  // a kill or a pay-off filed a gang's record, and the hierarchy seats nobody in a gang without one, so a Rival from a gang
-  // V had only knocked out or let get away held no chair, and the Rivals page's cards, which are drawn by chair, did not
-  // show them at all while the list did.
+  // A new name in a crew may be the only one left standing in it (spec §10.1).
   if NotEquals(faction, n"") {
     sys.EnsureFaction(faction);
   }
@@ -962,7 +836,7 @@ public func CBCreateRival(sys: ref<CyberbaneSystem>, game: GameInstance, faction
     CBPhoneFromGang(game, faction, CBTf(n"Cyberbane-Births-HasYourNameNowThatIs", [CBRivalDisplayName(content, r)]));
   }
   CBLog.Info(n"Rivals", s"Rival created id=\(r.id) faction=\(NameToString(faction)).");
-  CBApiRivalEvent(r, n"Made");   // extension API (2.7.4)
+  CBApiRivalEvent(r, n"Made");   // extension API
   return r;
 }
 
@@ -1019,7 +893,7 @@ public func CBRivalSparedByV(rival: ref<CBRival>, content: ref<CyberbaneContent>
     rival.state = EnumInt(ECBRivalState.Debtor);
     return true;
   }
-  // Humiliated (2.4.4, [55]): they lost a rank for it, and being spared again is no climb.
+  // Humiliated ([55]): they lost a rank for it, and being spared again is no climb.
   if !CBRivalWasHumiliated(rival) {
     CBPromoteRival(rival, content, at);
   }
@@ -1028,17 +902,6 @@ public func CBRivalSparedByV(rival: ref<CBRival>, content: ref<CyberbaneContent>
 
 // Slay a Rival (spec §10.7): archive it, award renown, bump stats, log.
 // Work out which Rival a dead CB_Rival puppet was.
-//
-// This used to rely solely on CyberbaneSystem's "active rival id". That id is cleared
-// whenever an encounter is retired, so a Rival who was spawned, left alone long enough to be
-// retired, and then killed anyway counted for nothing - which is what players hit when they
-// killed one and the Hub never registered it. Falling back to a hunting Rival of the same
-// faction catches those, and returns null rather than guessing when there is no match.
-// Which Rival, if any, Cyberbane spawned as this exact body.
-//
-// The surest match there is: the entity was recorded at spawn, and unlike the CB_Rival tag
-// nothing can clear it out from under us. Safe to use even on an untagged corpse, because it
-// only ever matches a body we created ourselves.
 public func CBFindRivalByBody(sys: ref<CyberbaneSystem>, body: EntityID) -> ref<CBRival> {
   if !IsDefined(sys) || !EntityID.IsDefined(body) {
     return null;
@@ -1088,15 +951,6 @@ public func CBResolveSlainRival(sys: ref<CyberbaneSystem>, puppet: ref<ScriptedP
 }
 
 // The fight with this Rival is over, however it ended. Tidy up after it.
-//
-// Three things have to happen when a Rival stops being a live encounter, and before this
-// existed each caller remembered its own subset. The lethal path did all three through
-// OnDeath, the escape path did two, and the mercy path did none, which is where the stuck
-// markers and the apparently teleporting Rivals came from. One function, called from all of
-// them, so a new ending cannot miss a step.
-//
-// `body` is optional: pass the puppet when the caller has it so the marker comes off the
-// right one, or leave it null and the tagged sweep handles it.
 public func CBCloseRivalEncounter(sys: ref<CyberbaneSystem>, game: GameInstance,
                                   rival: ref<CBRival>, body: wref<ScriptedPuppet>) -> Void {
   if !IsDefined(sys) {
@@ -1139,7 +993,7 @@ public func CBCloseRivalEncounter(sys: ref<CyberbaneSystem>, game: GameInstance,
     // entity that is no longer part of an encounter.
     let none: EntityID;
     rival.spawnedEntityId = none;
-    sys.RemovePackRival(rival.id);   // no longer one of a team that came together (1.9.0)
+    sys.RemovePackRival(rival.id);   // no longer one of a team that came together
     // 3. And a cooldown, so they do not walk straight back into the fight they just lost.
     //    Without this the gate clears the moment they go down and they are re-queued at once.
     if rival.huntTicks < CBConfig.RivalAfterEscapeTicks() {
@@ -1158,9 +1012,7 @@ public func CBCloseRivalEncounter(sys: ref<CyberbaneSystem>, game: GameInstance,
   CBUntrackStrayRivalBodies(sys, game);
 }
 
-// Is this Rival body somebody's encounter right now? Their body on record, or - while a Rival's car
-// is still being adopted (Spawn/Arrival.reds), when the body is not on record yet - any Rival body,
-// so nothing arriving is mistaken for a stray.
+// Is this Rival body somebody's encounter right now?
 public func CBRivalBodyIsLive(sys: ref<CyberbaneSystem>, id: EntityID) -> Bool {
   if !IsDefined(sys) {
     return true;
@@ -1177,10 +1029,8 @@ public func CBRivalBodyIsLive(sys: ref<CyberbaneSystem>, id: EntityID) -> Bool {
   return IsDefined(active) && !EntityID.IsDefined(active.spawnedEntityId);
 }
 
-// Living Rival bodies that are nobody's encounter, removed once V cannot see them (1.9.0). What the
-// deferred sweep after a death and the escape ending used to do to every CB_Rival; anybody still a
-// live Rival's is left alone. One that cannot go now is handed to the orphan sweep, the way
-// CBDeleteTaggedSafe hands one over. The dead are the remains sweep's.
+// Living Rival bodies that are nobody's encounter, removed once V cannot see them. What the deferred sweep after a
+// death and the escape ending used to do to every CB_Rival; anybody still a live Rival's is left alone.
 public func CBSweepStrayRivalBodies(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(sys) || !IsDefined(des) || !des.IsPopulated(n"CB_Rival") {
@@ -1219,10 +1069,8 @@ public func CBUntrackStrayRivalBodies(sys: ref<CyberbaneSystem>, game: GameInsta
   }
 }
 
-// The tags that make a body a Rival's come off, and it joins the bodies the orphan sweep clears once
-// V cannot see them (CBSweepOrphans), which is where CBDeleteTaggedSafe has always put one it could
-// not take. Who it belonged to is remembered for the rest of the session, so V finishing them later
-// still finishes that Rival (CBOnPuppetDeath). The same tag calls CBLairPromote moves a body with.
+// The tags that make a body a Rival's come off, and it joins the bodies the orphan sweep clears once V cannot see them
+// (CBSweepOrphans), which is where CBDeleteTaggedSafe has always put one it could not take.
 func CBRetireRivalBody(sys: ref<CyberbaneSystem>, game: GameInstance, body: wref<ScriptedPuppet>, rival: ref<CBRival>) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(sys) || !IsDefined(des) || !IsDefined(body) {
@@ -1241,11 +1089,7 @@ func CBRetireRivalBody(sys: ref<CyberbaneSystem>, game: GameInstance, body: wref
   if IsDefined(rival) {
     sys.NoteFormerRivalBody(id, rival.id);
   }
-  // Alive and their encounter over (2.6.8): they are out of it, and leave. "No matter how far I ran she kept following me,
-  // even after breaking morale once": a Rival who ran far enough was put down as got away, her body was untagged and left
-  // as it was, hostile, and once her run ended the game's own fight took her straight back after V, with nothing of
-  // Cyberbane's ordering her any more. Neutral to V and V's companions, what she saw of V forgotten, and walking off; the
-  // orphan sweep takes her once V cannot see her. Hurt her again and the game makes it a fight, as with anybody.
+  // Alive and their encounter over: they are out of it, and leave.
   if CBNpcSafe(sys, body) && CBStillStanding(body) && !body.IsDead() {
     let player = GetPlayer(game);
     let agent = body.GetAttitudeAgent();
@@ -1285,7 +1129,7 @@ public func CBPurgeRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int3
     bookP.ClearWords();   // nobody is waiting anywhere for V now
   }
   // V's own crew, and the ones who were, stay (CyberbaneSystem.RivalKeptByCrew): the crew member is that Rival, and
-  // forgetting every Rival renamed them (2.5.0).
+  // forgetting every Rival renamed them.
   let kept: array<Int32>;
   for k in sys.GetRivals() {
     if IsDefined(k) && sys.RivalKeptByCrew(k.id) {
@@ -1294,28 +1138,25 @@ public func CBPurgeRivals(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int3
   }
   let rivalBook = CBRivalBook.Get(game);
   if IsDefined(rivalBook) {
-    rivalBook.ClearExcept(kept);    // and no bond, ending or place is kept for anybody else (2.4.4)
+    rivalBook.ClearExcept(kept);    // and no bond, ending or place is kept for anybody else
   }
   let removed = sys.ClearRivals();
   sys.SetActiveRivalId(0);
   sys.ClearPack();
-  sys.ClearPendingBirths();   // nor anybody still waiting for a fight to be over (1.9.1)
+  sys.ClearPendingBirths();   // nor anybody still waiting for a fight to be over
   CBDeleteTaggedSafe(game, n"CB_Rival");
   CBLog.Info(n"Rivals", s"Purged \(removed) rivals at the player's request.");
   return removed;
 }
 
-// Can this one be forgotten right now? Not while a car is bringing them: their body arrives as a
-// Rival's and is adopted as one, and with nobody left to adopt it as, it would be a nameless hunter.
-// Nor one of V's own crew, or one who was (CyberbaneSystem.RivalKeptByCrew): the crew member is that Rival (2.5.0).
+// Can this one be forgotten right now? Not while a car is bringing them: their body arrives as a Rival's and is adopted
+// as one, and with nobody left to adopt it as, it would be a nameless hunter.
 public func CBRivalForgettable(sys: ref<CyberbaneSystem>, r: ref<CBRival>) -> Bool {
   return IsDefined(sys) && IsDefined(r) && sys.GetRivalCarPending() != r.id && !sys.RivalKeptByCrew(r.id);
 }
 
-// Forget one Rival (the Hub, 1.8.2). Everything "Forget every rival" does (CBPurgeRivals), for one of
-// them, from the settled tick (CyberbaneSystem.ServiceHubActions). Their place, the pin on it and the
-// waiting body go; one out after V ends the way every encounter does, and the body leaves once V
-// cannot see it; their chair is filled. Returns their name, or "" when there was nobody to forget.
+// Forget one Rival (the Hub). Everything "Forget every rival" does (CBPurgeRivals), for one of them, from the settled
+// tick (CyberbaneSystem.ServiceHubActions).
 public func CBForgetRival(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int32) -> String {
   if !IsDefined(sys) {
     return "";
@@ -1336,7 +1177,7 @@ public func CBForgetRival(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int
     svc.DropSighting(sys.GetPlaythroughId(), id);
   }
   CBWithdrawWord(game, id);
-  CBRivalBookForget(game, id);   // their bond, ending and places (Rivals/RivalBook.reds, 2.4.4)
+  CBRivalBookForget(game, id);   // their bond, ending and places (Rivals/RivalBook.reds)
   if sys.IsLeadPinned() && sys.GetLeadPinRival() == id {
     CBDropLead(sys, game);
   }
@@ -1364,10 +1205,8 @@ public func CBForgetRival(sys: ref<CyberbaneSystem>, game: GameInstance, id: Int
   return name;
 }
 
-// `byV`: V landed the killing blow, or V's side did (2.5.6, CBLastHitWasOthers). Until 2.5.6 every Rival death was
-// taken as V's: a Rival the NCPD or another gang killed went on V's tally and titles, paid V Renown, had the street say
-// everybody knew who did it, and left a successor sworn to avenge them on V, who never touched them. Dead either way,
-// and their chair filled either way; only what V did is V's.
+// `byV`: V landed the killing blow, or V's side did (CBLastHitWasOthers). Dead either way, and their chair filled
+// either way; only what V did is V's.
 public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: ref<CBRival>, at: Float, district: CName,
                          byV: Bool) -> Void {
   if !IsDefined(sys) || !IsDefined(rival) {
@@ -1376,7 +1215,7 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   rival.state = EnumInt(ECBRivalState.Slain);
   rival.lastSeenAt = at;
   CBApiRivalEvent(rival, n"Slain");
-  CBCrewLifeRivalDied(game, rival.id);   // revenge one of V's crew asked for (Reactions/CrewLife.reds, 2.7.7)
+  CBCrewLifeRivalDied(game, rival.id);   // revenge one of V's crew asked for (Reactions/CrewLife.reds)
 
   if byV {
     let stats = sys.GetStats();
@@ -1412,27 +1251,17 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   }
 
   // Succession: a crew does not simply lose its best and move on.
-  // Someone steps into the dead Rival's place carrying the same grudge, and the higher the
-  // one you put down, the likelier that is - so a faction cannot be decapitated in one
-  // fight. The successor inherits the slain one's standing, one rung down, rather than
-  // restarting at the bottom (spec §10.1).
-  //
-  // How likely rests on how high they stood. It started at sixty percent for anybody, so putting down
-  // a rank one Rival was nearly always answered by another rank one Rival and killing one settled
-  // nothing; now a small name usually ends with them, and a big one usually does not.
   let succeedChance = CBConfig.SuccessionChanceBase()
     + Cast<Float>(rival.rank) * CBConfig.SuccessionChancePerRank();
   if CBRivalRoll(sys, "succession", succeedChance, rival.recordID, false, rival.faction) {
-    // Inherit the slain Rival's rank, one step down. CBCreateRival starts everyone at 1, which is
-    // what made every Rival you killed a clean reset. Made once the fight is over, with the street
-    // saying who picked up where they left off (Rivals/Births.reds, 1.9.1).
-    // Sometimes the one who picks it up is family (Rivals/RivalLife.reds, 1.9.9).
+    // Inherit the slain Rival's rank, one step down. CBCreateRival starts everyone at 1, which is what made every Rival
+    // you killed a clean reset.
     let kin = RandF() < ClampF(CBConfig.KinChance() * CBCodeKin(rival.faction), 0.0, 0.9) ? rival.id : 0;
     CBRivalAfterFight(sys, game, rival.faction, rival.recordID, rival.appearance, ECBRivalSource.Avenger,
                       district, at, null, Max(1, rival.rank - 1), CBRivalDisplayName(content, rival), kin);
   }
 
-  // Called out, and finished at the place they named (Rivals/RivalLife.reds, 1.9.9).
+  // Called out, and finished at the place they named (Rivals/RivalLife.reds).
   CBWordKept(sys, game, rival);
   CBEvaluateTitles(sys, game);
 }

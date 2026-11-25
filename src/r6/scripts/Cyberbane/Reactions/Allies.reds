@@ -1,26 +1,7 @@
-// Cyberbane - Talk and allies (2.4.5)
+// Cyberbane - Talk and allies
 //
-//   [65] run with a crew      with a gang Friendly or better, [Watch my back] to one of its people: two of them (three
-//                             at Allied) come and follow V, the way the game makes its own companions follow
-//                             (AIFollowerRole), and fight whoever fights V. They go home after a game hour, when V
-//                             has been off their turf a while, drives off, goes to a job, or shoots one. Once a day.
-//   [66] one of theirs        at Allied, a gang may offer to make V one of its own. Joined, V counts as wearing their
-//                             colours everywhere, their enemies know V for one of them, their people greet V, and a
-//                             favour becomes a duty once a week that costs standing when ignored. V can leave, at a
-//                             cost.
-//   [67] ransom               a ganger who gave up can be held for their gang's money; the gang pays or comes to take
-//                             them back. Or V hands them to a gang at war with theirs.
-//   [69] feed the street a lie a talkative passer-by or a frightened ganger can carry a lie to whoever is after V: the
-//                             next of them goes looking in the wrong place, and the gang cools off a while. Fail the
-//                             Cool check, or tell a liar, and they sell V out instead.
-//   [U12] informants          the people who owe V are listed on the Hub; one whose gang finds out is hunted through
-//                             the street, and V can stand between them and the hunters.
-//   [U2] the sergeant's parley a crew's sergeant who reaches V before anybody fires stops to talk: pay them, scare them
-//                             off, or draw.
-//
-// Followers are spawned for it (CB_Ally with CB_Follower beside it), never a world NPC taken over; one order each, the
-// walk home at the end; removed out of V's sight. Session state on the war book, and the one save field it had laid out
-// for this: "one of theirs".
+// Running with a friendly gang's crew, one of theirs lent at Allied, ransoms, feeding the street a lie, informants and
+// the sergeant's parley.
 
 public func CBRunWithCrewOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -60,11 +41,10 @@ public func CBTalkActIsParley(act: Int32) -> Bool {
   return act >= CBTalkActParleyPay() && act <= CBTalkActParleyDraw();
 }
 
-// ---- The game's own follower role ----------------------------------------------------------------------------------
+// ---- The game's follower role ----------------------------------------------------------------------------------
 
-// The role finds who to follow through its entity reference (AIFollowerRole.OnRoleSet, FindFollowTarget), which a
-// quest fills in its editor and the game's own Flathead never needs. Pointed at the player the way the game names the
-// player in a reference ("#player", GetGameObjectFromEntityReference).
+// The role finds who to follow through its entity reference (AIFollowerRole.OnRoleSet, FindFollowTarget), which a quest
+// fills in its editor and the game's Flathead never needs.
 @addMethod(AIFollowerRole)
 public func CBFollowV() -> Void {
   let none: array<CName>;
@@ -88,9 +68,7 @@ public func CBEndFollower(npc: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(npc) || !npc.IsAttached() {
     return;
   }
-  // Out of V's car first, and their seat given back (Reactions/CrewCar.reds, 2.7.6). The way out of a car is the follower
-  // role's own, so taking the role from somebody in a seat left them in it for good: sent home, turned, a borrowed crew's
-  // hours up, Start over. Every one of those ends the role here.
+  // Out of V's car first, and their seat given back (Reactions/CrewCar.reds).
   CBRiderLeaves(npc.GetGame(), npc);
   CBTrace("role: a follower goes back to their own");
   AIHumanComponent.SetCurrentRole(npc, new AINoRole());
@@ -135,7 +113,7 @@ public func CBAllyTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: re
   if gang && friendly && CBRunWithCrewOn() && ArraySize(war.crewIds) == 0 && war.crewDay != CBGameDay(game) + 1 {
     ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-Allies-WatchMyBackSomeOfYours"), CBTalkActWatchBack(), t"ChoiceCaptionParts.ReinforcementIcon"));
   }
-  // [C4] One of theirs on V's crew for good (Reactions/Crew.reds, 2.5.0).
+  // [C4] One of theirs on V's crew for good (Reactions/Crew.reds).
   if gang {
     let lend = CBCrewLendLine(sys, game, t);
     if IsDefined(lend) {
@@ -201,7 +179,7 @@ public func CBAllyTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, play
 func CBWatchMyBack(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBook>, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   let score = sys.GetScore();
   let fs = sys.FindFaction(t.faction);
-  let base = CBGangTemplate(sys, t.faction);   // their own people even if V has never fought one of them (2.5.0)
+  let base = CBGangTemplate(sys, t.faction);   // their own people even if V has never fought one of them
   // Never on top of a Rival who came to help ("Nobody kills you but me" shares the CB_Ally tag and its clean-up).
   if !TDBID.IsValid(base) || CBSpawnRoom(game) < 3 || CBCrewHeldReason(sys, game) > 0 || CBLiveTaggedPresent(game, n"CB_Ally") {
     return CBTalkSay(CBPick2(CBT(n"Cyberbane-Allies-NotNowEverybodySBusy"), CBT(n"Cyberbane-Allies-CanTSpareAnybodyRightNow")), n"");
@@ -298,13 +276,13 @@ func CBCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBoo
   if far && sys.GetTickCount() % 5 == 0 {
     why = CBT(n"Cyberbane-Allies-LostYouWeLlCatchUp");
   }
-  // On V's side, so the crew's gate (2.6.5): the story, a scene, a safe place, a job by Your crew on jobs. It was the hunters'
+  // On V's side, so the crew's gate: the story, a scene, a safe place, a job by Your crew on jobs. It was the hunters'
   // (CBArrivalsHeld), so a gang's people lent to V went home the moment V stepped onto a gig or a gang's turf.
   if CBCrewHeldReason(sys, game) > 0 {
     why = CBT(n"Cyberbane-Allies-LooksLikeYouVeGotBusiness");
   }
-  // Run with a crew switched off while they are out (2.5.6): they walk home now, without a text ("-"), rather than
-  // following V for the rest of the hour, and are removed once V cannot see them, as any going home is.
+  // Run with a crew switched off while they are out: they walk home now, without a text ("-"), rather than following V
+  // for the rest of the hour, and are removed once V cannot see them, as any going home is.
   if !CBRunWithCrewOn() {
     why = "-";
   }
@@ -329,7 +307,7 @@ func CBCrewGoHome(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
     let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
     if CBNpcSafe(sys, p) && CBStillStanding(p) {
       CBEndFollower(p);
-      // Walked off, as the line says (2.5.1): a sprint away from V read as the crew running from something.
+      // Walked off, as the line says: a sprint away from V read as the crew running from something.
       CBOrderFlee(game, p, true);
     }
   }
@@ -343,7 +321,7 @@ func CBCrewGoHome(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
 // book has going there ends the way it would on its own. The street clash's gangers are the world's own and stay, so
 // they are put back as they were; the borrowed crew stop following V, so one still in a car seat, kept until they are
 // out of it, does not follow V into the new playthrough; and a held hostage the street's own reset did not let go is
-// let go (CBStreetLife.Reset). An open parley's people are ours and go with the rest. Nothing is said. (2.5.0)
+// let go (CBStreetLife.Reset). An open parley's people are ours and go with the rest. Nothing is said.
 public func CBWarStandDown(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBook>) -> Void {
   if !IsDefined(sys) || !IsDefined(war) {
     return;
@@ -361,7 +339,7 @@ public func CBWarStandDown(sys: ref<CyberbaneSystem>, game: GameInstance, war: r
     CBTalkReleaseHold(held);
     CBOrderFlee(game, held);
   }
-  CBRansomDropEnd(game, war);   // its pin down too (2.6.5)
+  CBRansomDropEnd(game, war);   // its pin down too
   war.ResetSession();
 }
 
@@ -424,8 +402,7 @@ public func CBAlliesDaily(sys: ref<CyberbaneSystem>, game: GameInstance, days: F
   }
 }
 
-// Favours become duties: once a week they ask for five of an enemy's people, and remember whether V did it. The ask is
-// kept in the History (the kills of the enemy when it was asked), so nothing new is saved for it.
+// Favours become duties: once a week they ask for five of an enemy's people, and remember whether V did it.
 func CBGangDuty(sys: ref<CyberbaneSystem>, game: GameInstance, mine: CName, now: Float) -> Void {
   let asked = CBLastLogOf(sys, n"DutyAsked");
   if IsDefined(asked) && now - asked.at < CBConfig.DutyDays() * CBConfig.SecondsPerDay() {
@@ -531,7 +508,7 @@ func CBRansomTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
   p.cbSurrendered = false;
   CBTalkReleaseHold(p);
   CBOrderFlee(game, p);
-  // Paid at a drop in their own district (2.6.5): money that came in the same breath as the answer, wherever V stood, was no
+  // Paid at a drop in their own district: money that came in the same breath as the answer, wherever V stood, was no
   // deal anybody would make. Now and then the drop is a trap, and their people are waiting instead.
   if pays {
     let at: Vector4;
@@ -665,7 +642,7 @@ public func CBInformantsLine(sys: ref<CyberbaneSystem>, game: GameInstance) -> S
     out += (StrLen(out) > 0 ? "; " : "") + who + (tips == 1 ? CBT(n"Cyberbane-Allies-OneTipLeft") : CBTf(n"Cyberbane-Allies-TipsLeft", [s"\(tips)"]));
     i += 1;
   }
-  // Named for what they are (2.5.5): "Who owes you" read as a list of debts.
+  // Named for what they are: "Who owes you" read as a list of debts.
   return CBTf(n"Cyberbane-Allies-YourInformants", [out]);
 }
 
@@ -689,8 +666,9 @@ public func CBInformantsDaily(sys: ref<CyberbaneSystem>, game: GameInstance, day
     let rid = book.InformantRival(i);
     let r = rid > 0 ? sys.FindRivalById(rid) : null;
     CBPhoneSend(game, IsDefined(r) ? CBRivalDisplayName(sys.GetContent(), r) : CBT(n"Cyberbane-Allies-YourInformant"),
-                // When it really is (2.5.6): the hunt may start an in-game hour from now at the soonest (OweInformantHunt),
-                // then waits for the street's next event and its lead time, so a few hours; "within the hour" was never true.
+                // When it really is: the hunt may start an in-game hour from now at the soonest (OweInformantHunt),
+                // then waits for the street's next event and its lead time, so a few hours; "within the hour" was never
+                // true.
                 CBTf(n"Cyberbane-Allies-TheyKnowKnowIVeBeen", [s"\(CBCapFirst(CBFactionLabel(gang)))"]));
   }
 }
@@ -730,11 +708,11 @@ func CBParleyTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
         crewHit = true;
       }
     }
-    // The clock holds while V is talking to the sergeant (2.5.1, CBTalkEngaged).
+    // The clock holds while V is talking to the sergeant (CBTalkEngaged).
     if CBNpcSafe(sys, s) && CBTalkEngaged(sys, s) {
       war.parleyTick = tick;
     }
-    // Or anybody of his crew holding further off (2.6.7, the truce broken).
+    // Or anybody of his crew holding further off (the truce broken).
     if !CBNpcSafe(sys, s) || !CBStillStanding(s) || s.cbDamagedByPlayer || crewHit || sys.GetTruce().Broken()
        || tick - war.parleyTick > CBConfig.FacedownTicks() {
       CBParleyFight(sys, game, war);
@@ -750,9 +728,8 @@ func CBParleyTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
   if !IsDefined(des) {
     return;
   }
-  // Before the shooting starts, asked as that (2.5.0): nobody of the crew hit by V, and V not hit by the crew. It was
-  // asked as "neither side in combat", and a crew sent hostile is in combat the moment it sees V, well before the
-  // sergeant is in talking range, so the parley all but never opened. Opening it calms them (CBParleyOpen).
+  // Before the shooting starts, asked as that: nobody of the crew hit by V, and V not hit by the crew. Opening it calms
+  // them (CBParleyOpen).
   if CBParleyShotsFired(sys, game, des, player) {
     return;
   }
@@ -797,8 +774,8 @@ func CBParleyOpen(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarB
     }
   }
   s.cbFacedownOpen = true;
-  // His whole crew holds while he talks (2.6.7, Reactions/TalkTruce.reds), the ones further off and walking up included:
-  // only those within a few metres of him were calmed, and the rest came on shooting while he said "Hold your fire".
+  // His whole crew holds while he talks (Reactions/TalkTruce.reds), the ones further off and walking up included: only
+  // those within a few metres of him were calmed, and the rest came on shooting while he said "Hold your fire".
   sys.GetTruce().Begin(sys, game, CBTruceParley(), faction, s);
   CBSayVoiced(sys, s, n"enemy_warning");
   let crewSize = ArraySize(war.parleyCrew);
@@ -898,7 +875,7 @@ public func CBAlliesTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   }
   CBCrewTick(sys, game, war, player);
   CBRansomTick(sys, game, war, player);
-  CBRansomDropTick(sys, game, war, player);   // the drop (2.6.5, Spawn/StreetStories.reds)
+  CBRansomDropTick(sys, game, war, player);   // the drop (Spawn/StreetStories.reds)
   if CBStreetTalkOn() || war.parleyOpen {
     CBParleyTick(sys, game, war, player);
   }

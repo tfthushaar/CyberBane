@@ -1,23 +1,8 @@
 // Cyberbane - Takedown signals (spec §7.1, §10.2)
 //
-// Cyberbane attributes everything through `cbDamagedByPlayer`, which was only ever set in the
-// OnHit hook. A takedown does not land as a hit event, so **every stealth takedown was
-// invisible to the mod**: a lethal one scored no reputation at all (CBOnPuppetDeath returns
-// early without the flag), and a non-lethal one never became a spared Rival, which is exactly
-// what players kept reporting when they knocked people out and got nothing.
-//
-// The completion of a takedown broadcasts a noise stim through the victim's
-// StimBroadcasterComponent, with the action type attached. That is the one place every
-// takedown variant passes through, so it is where V's involvement gets recorded. This hook
-// only sets the flag: whether the victim ends up spared is still decided by CBSparedSweep on
-// the next tick, once the engine has actually put them in a defeated state.
-//
-// Crash safety: no new systems, no allocation, no world queries. It reads the action type,
-// casts the owner, sets one boolean on a puppet we were handed, and calls through. The
-// wrapped method always runs.
-//
-// Hook point found by reading Much Better AI (Nexus 31402) by cshiai, which wraps the same
-// method for its own takedown reactions. No code from that mod is used here.
+// A takedown doesn't arrive as a hit, so OnHit never marks it as V's. Every takedown variant ends in a noise stim from
+// the victim, so that's where cbDamagedByPlayer gets set; CBSparedSweep still decides on the next tick whether the
+// victim was spared.
 
 @wrapMethod(StimBroadcasterComponent)
 public final func TriggerNoiseStim(owner: wref<GameObject>, takedownActionType: ETakedownActionType) -> Void {
@@ -55,15 +40,9 @@ func CBOnTakedownNoise(owner: wref<GameObject>, t: ETakedownActionType) -> Void 
   // V had hands on them. Everything downstream - the kill attribution in CBOnPuppetDeath and
   // the mercy check in CBSparedSweep - keys off this one flag.
   puppet.cbDamagedByPlayer = true;
-  puppet.cbLastHitByOther = false;   // V's hands are the last on them (Signals/CombatSignals.reds, 2.5.6)
+  puppet.cbLastHitByOther = false;   // V's hands are the last on them (Signals/CombatSignals.reds)
   puppet.cbLastHitVehicle = CBNoEntity();
   // And if it was a killing takedown, that is a finisher.
-  //
-  // Finisher was dropped from scoring for having no signal, which was wrong: this hook already
-  // knew. ETakedownActionType says plainly whether V snapped their neck or put them down
-  // breathing, so the one case the brutality rule is really about - grabbing someone and
-  // killing them by hand - is detectable after all, and only here. By the time the puppet
-  // dies the action type is gone.
   if CBIsLethalTakedown(t) {
     puppet.cbLastMethodMask = CBMethodAdd(puppet.cbLastMethodMask, CBMethodFinisher());
   }

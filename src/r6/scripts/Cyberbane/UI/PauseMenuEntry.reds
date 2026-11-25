@@ -1,83 +1,27 @@
 // Cyberbane - the Hub, in the pause menu (spec §12.1)
 //
-// Escape, then Cyberbane, the way you would reach anything else about your character. The Hub is
-// a page of the pause menu: it opens over the menu's own list, the game stays paused underneath
-// it, the cursor is the menu's cursor, and Escape takes you back to the list the way it does from
-// Settings or Load. It is the only way in: there is no separate key, because there is no longer
-// a separate Hub to open.
-//
-// ---- Why the page lives inside the pause menu's own widget tree --------------------------------
-//
-// 1.6's first attempt drew the Hub on inkMenuLayer as a tree of its own, opened from the fast tick
-// after the pause menu had been dismissed. That tree belonged to no menu. It had no cursor, so
-// nothing on it could be clicked; it took no input, so the mouse still turned the camera and the
-// left button still fired; and nothing closed it except stepping past the last tab. Worst of all,
-// it stayed drawn on top of whatever the game opened next, so pressing Escape opened the real pause
-// menu *underneath* the Hub and every press of Escape looked like it went to the Hub instead.
-//
-// A page parented to PauseMenuGameController's root cannot do any of that. It exists only while the
-// pause menu does, because it is part of that menu's tree and is dropped in the controller's
-// OnUninitialize; it gets the cursor and the pointer events the menu already has; and the game is
-// paused for as long as it is up, because PauseMenuBackgroundGameController pauses on initialise
-// and unpauses on uninitialise (pauseMenu.script:17-36). This is the same thing the game does with
-// its own GOG panel, which the pause scenario spawns into the pause menu's tree at runtime
-// (pauseScenario.script, SpawnGogPopupWidget).
-//
-// ---- The hooks, and what each one is for ------------------------------------------------------
-//
-//   AddMenuItem / PopulateMenuItemList  - put the entry in the list, after the game's Mods entry
-//                                         (2.5) or its Settings entry (2.31, which has no Mods).
-//   OnInitialize / OnUninitialize       - tell CyberbaneSystem the pause menu is up, and take the
-//                                         page down with it. Nothing outlives the menu.
-//   OnSwitchToCyberbane (scenario)      - the entry was chosen: show the page.
-//   OnBack (scenario)                   - Escape / B. The in-game menu controller turns `back`
-//                                         into this event without looking at IsHandled
-//                                         (inGameMenuGameController.script:346-361), so this is the
-//                                         only place Escape can be caught. With the page up it
-//                                         closes the page and stops; otherwise the game's own
-//                                         handling runs untouched.
-//
-// Nothing here pauses, unpauses, opens or closes a menu by hand except through the menu's own
-// event dispatcher, the way the game's own entries do.
+// Escape, then Cyberbane, the way you would reach anything else about your character. The Hub is a page of the pause
+// menu: it opens over the menu's own list, the game stays paused underneath it, the cursor is the menu's cursor, and
+// Escape takes you back to the list the way it does from Settings or Load.
 
 // ---- The entry --------------------------------------------------------------------------------
 //
-// The pattern Mod Settings has used on this game for years (read from its shipped source): position
-// chosen by which existing entry we append after, a fallback for when that entry never appears, and
-// a flag so a rebuild cannot add ours twice. Our own entry goes in through wrappedMethod, never
-// this.AddMenuItem: calling the wrapped name re-enters the whole chain, and with another mod wrapping
-// the same method that is how a menu ends up with one of everything per mod installed.
-//
-// Only the pause menu. gameuiMenuItemListGameController is also the main menu's list and the death
-// menu's, and neither has a game running to show a reputation for. Both are siblings of
-// PauseMenuGameController, not subclasses, so the IsA check below cannot match them.
+// The pattern Mod Settings has used on this game for years (read from its shipped source): position chosen by which
+// existing entry we append after, a fallback for when that entry never appears, and a flag so a rebuild cannot add ours
+// twice.
 
 @addField(gameuiMenuItemListGameController)
 private let m_cbEntryAdded: Bool;
 
-// Where it goes depends on the patch, because the pause menu's own list is not the same on both:
-//
 //   2.5   Resume, Save, Load, Mods, Settings, Credits, Exit to Main Menu
 //   2.31  Resume, Save, Load, Settings, Credits, Exit to Main Menu   (there is no Mods entry)
-//
-// (pauseMenu.script, PopulateMenuItemList, on each patch.) So the entry goes right after Mods
-// where there is one, and right after Settings where there is not. Mods always comes before
-// Settings on 2.5, so by the time Settings is added there the entry is already in and the flag
-// stops a second one: on 2.5 the Settings anchor never fires and the entry sits where it always
-// has. Settings is the game's own entry, present on every patch whatever else is installed, so on
-// 2.31 the entry does not depend on Mod Settings or any other mod putting something in the list.
-// If neither shows up at all, the fallback below still puts it on the end.
 @wrapMethod(gameuiMenuItemListGameController)
 protected func AddMenuItem(const label: script_ref<String>, spawnEvent: CName) {
   wrappedMethod(label, spawnEvent);
-  // Only for a player who has asked for the Hub here: it is a tab of the game's menu otherwise. That switch is the way
-  // out for a player whose tab does not show (the radial hub puts it inside Character's group, and a menu mod can
-  // rebuild the row), and from 2.4.6 to 2.5.6 it had come loose from its field and moved nothing (Settings/CyberbaneSettings.reds).
   if this.m_cbEntryAdded || !this.IsA(n"PauseMenuGameController") || CBHubAsGameMenuTab() {
     return;
   }
-  // Right after the game's own Mods entry (2.5), or its Settings entry where there is no Mods
-  // entry to follow (2.31).
+  // Right after the game's Mods entry (2.5), or its Settings entry where there is no Mods entry to follow (2.31).
   if Equals(spawnEvent, n"OnSwitchToModioMenu") || Equals(spawnEvent, n"OnSwitchToSettings") {
     wrappedMethod(CBPauseMenuLabel(), n"OnSwitchToCyberbane");
     this.m_cbEntryAdded = true;
@@ -86,11 +30,6 @@ protected func AddMenuItem(const label: script_ref<String>, spawnEvent: CName) {
 
 // If neither the Mods entry nor the Settings entry turned up (another mod rebuilt the list without
 // them), put ours on the end rather than losing it.
-//
-// The list has already been refreshed by the time this runs (PopulateMenuItemList ends with
-// m_menuListController.Refresh()), so an entry pushed now is data the list has not drawn. Mod
-// Settings refreshes after its own fallback for exactly that reason, and so does this; before it
-// did, the fallback added an entry nobody could see.
 @addMethod(gameuiMenuItemListGameController)
 protected func CBAddEntryIfMissing() {
   if !this.m_cbEntryAdded && this.IsA(n"PauseMenuGameController") && !CBHubAsGameMenuTab() {
@@ -109,9 +48,7 @@ private func PopulateMenuItemList() {
   this.CBAddEntryIfMissing();
 }
 
-// What the entry is called. A plain string rather than a localization key: the key would have to
-// resolve through Codeware's provider at the moment the pause menu is built, and a key that does
-// not resolve shows as the key itself in the middle of the game's own menu.
+// What the entry is called.
 public func CBPauseMenuLabel() -> String = CBT(n"Cyberbane-Titles-Cyberbane")
 
 // ---- The page's lifetime ----------------------------------------------------------------------
@@ -127,7 +64,7 @@ private let m_cbGeneration: Int32;
 
 @wrapMethod(PauseMenuGameController)
 protected cb func OnInitialize() -> Bool {
-  wrappedMethod();   // as a statement (2.6.8): never typed off what the game's event returns
+  wrappedMethod();   // as a statement: never typed off what the game's event returns
   let sys = CyberbaneSystem.Get(GetGameInstance());
   if IsDefined(sys) {
     this.m_cbGeneration = sys.PauseMenuOpened(this);
@@ -135,9 +72,8 @@ protected cb func OnInitialize() -> Bool {
   return true;
 }
 
-// Callbacks are handed back while every widget they point at still exists: before the wrapped
-// uninitialise, which is when the game starts dismantling the menu. Leaving a registration on a
-// widget that is being destroyed is the shape of the 1.4.7 phone crash (crash rule 9).
+// Callbacks are handed back while every widget they point at still exists: before the wrapped uninitialise, which is
+// when the game starts dismantling the menu.
 @wrapMethod(PauseMenuGameController)
 protected cb func OnUninitialize() -> Bool {
   if IsDefined(this.m_cbHub) {
@@ -185,11 +121,6 @@ public func CBHubIsOpen() -> Bool {
 }
 
 // The pause menu's own list goes out of sight, and out of reach, while the page is up.
-//
-// The page draws an opaque backdrop over it, and that alone would hide it, but a hidden widget is
-// also one the cursor cannot land on. Without this, anything that let a click through the backdrop
-// would land on whatever entry was underneath it, and one of those is Exit to Main Menu. Reached
-// through the list controller's root widget, the same way the game's own OnInitialize reaches it.
 @addMethod(PauseMenuGameController)
 private func CBSetListVisible(visible: Bool) -> Void {
   if !IsDefined(this.m_menuListController) {
@@ -222,8 +153,8 @@ protected cb func OnSwitchToCyberbane() -> Bool {
   return true;
 }
 
-// Escape / B. With the page up, close the page and stop there, so the next press reaches the
-// game's own handling and closes the pause menu as usual. With it down, this does nothing at all.
+// Escape / B. With the page up, close the page and stop there, so the next press reaches the game's handling and closes
+// the pause menu as usual. With it down, this does nothing at all.
 @wrapMethod(MenuScenario_PauseMenu)
 protected cb func OnBack() -> Bool {
   let sys = CyberbaneSystem.Get(GetGameInstance());

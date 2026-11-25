@@ -36,8 +36,7 @@ public func CBDistrictAt(index: Int32) -> CName {
 }
 
 // How many districts apart two are, by the roads that join them (the adjacency below): 0 for the same one or for
-// anywhere the table does not know, 1 next door, and so on. For how long word takes to cross the city
-// (UI/PhoneMessages.reds) and how long a gang takes to reach V (Spawn/Queue.reds).
+// anywhere the table does not know, 1 next door, and so on.
 public func CBDistrictHops(game: GameInstance, from: CName, to: CName) -> Int32 {
   let a = CBDistrictIndex(from);
   let b = CBDistrictIndex(to);
@@ -116,17 +115,9 @@ public func CBSeedDistricts(c: ref<CyberbaneContent>) -> Void {
   c.AddDistrict(d);
 }
 
-// ---- How each district takes what V does ([6], 2.3.1) ------------------------------------------------
+// ---- How each district takes what V does ([6]) ------------------------------------------------
 //
-// The same deed lands differently in Watson and in City Center. Four numbers per district, each 1.0 for
-// "as before", read by the systems that already handle each thing, never kept a second time:
-//
-//   word    how fast a story moves on from here (the rumour engine's spread interval is divided by it)
-//   scare   how easily people here frighten (the crowd's fear, Reactions/Crowd.reds)
-//   memory  how many in-game days a place here remembers what happened in it ([7], Model/StreetBook.reds)
-//   tells   how likely somebody who saw V hurt a ganger is to tell the gang ([2], Model/Witness.reds)
-//
-// Off (Mod Settings, The crowd), every district answers 1.0 and three days.
+// The same deed lands differently in Watson and in City Center.
 
 public func CBTempersOn() -> Bool {
   let rt = CyberbaneRuntime.Get();

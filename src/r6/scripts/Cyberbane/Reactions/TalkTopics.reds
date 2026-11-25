@@ -1,24 +1,6 @@
-// Cyberbane - What there is to talk about (1.9.7)
+// Cyberbane - What there is to talk about
 //
-// Street talk (Reactions/StreetTalk.reds) carries the conversation; this is what is said in it. The point of
-// talking to somebody is that they know things V does not, and want things V has:
-//
-//   Questions   "What's the word?" (the loudest story in this district), "Who runs these streets?" (the
-//               turf, how strong its gang is, who wants it), "Anyone looking for me?" (who is coming for V
-//               next, from the lanes and the Rivals out hunting: a warning V can use).
-//   A Rival     "Heard anything about [Rival]?" A ganger of a gang at war with the Rival's is glad to sell;
-//               one of the Rival's own people sells dear, refuses, or warns them. Afraid enough, or a fan,
-//               they just say it. Otherwise they name a price, and V can pay, haggle, lean on them or walk.
-//               A rare liar sells a story, and the street lets V know later. Paying goes through the same
-//               lead the Hub sells (CBRivalHideout, CBMarkLeadTold): the pin, the waiting Rival, the fight.
-//   Who V is    a Street Kid, a Nomad or a Corpo has a line of their own with the people who would care,
-//               and V's Body and Cool show in a threat that cannot fail on rank-and-file and a parley that
-//               holds more often, the way the game shows lifepath and attribute lines.
-//   Fans        somebody who knows V's name and likes it may stand V a drink: a few eddies, twice a day.
-//
-// Everything here only reads the world and writes Cyberbane's own numbers; the only thing it gives V is
-// eddies, straight to the inventory. Daily ceilings per gang (CBTalkTally) keep it from being farmed, and
-// loading a save does not reset them.
+// Street talk (Reactions/StreetTalk.reds) carries the conversation; this is what is said in it.
 
 // The questions and the deal (StreetTalk's lines carry these as their act).
 public func CBTalkActMenuAsk() -> Int32 = 12
@@ -64,7 +46,7 @@ public func CBTalkTemperPlain() -> Int32 = 5
 @addField(ScriptedPuppet)
 public let cbTalkTemper: Int32;
 
-// How many conversations V has had with this person (1.9.7): they remember V while they are around.
+// How many conversations V has had with this person: they remember V while they are around.
 @addField(ScriptedPuppet)
 public let cbTalkTimes: Int32;
 
@@ -125,7 +107,7 @@ public func CBTalkQuestionLines(sys: ref<CyberbaneSystem>, game: GameInstance, t
   let c = CBTalkMakeLine(CBT(n"Cyberbane-TalkTopics-AskAnyoneLookingForMe"), CBTalkActAskComing(), t"ChoiceCaptionParts.ReinforcementIcon");
   c.said = CBMaskHas(done, CBTalkActAskComing());
   ArrayPush(out, c);
-  ArrayPush(out, CBTalkWorthLine(t));   // the bounty board, asked of anybody (Reactions/TalkMore.reds, 2.7.7)
+  ArrayPush(out, CBTalkWorthLine(t));   // the bounty board, asked of anybody (Reactions/TalkMore.reds)
   let home = CBGangHomeTalkLine(t);
   if IsDefined(home) {
     ArrayPush(out, home);
@@ -161,7 +143,7 @@ public func CBTalkDealLines(game: GameInstance, t: ref<CBTalkTarget>, price: Int
   return out;
 }
 
-// ---- Business: what a gang at war with V will sell (1.9.7) ------------------------------------------------
+// ---- Business: what a gang at war with V will sell ------------------------------------------------
 
 // What a deal costs from this person: a base moved by what they are like and how afraid they are.
 func CBTalkPriceFor(t: ref<CBTalkTarget>, base: Float) -> Int32 {
@@ -311,7 +293,7 @@ public func CBTalkDealPayCallOff(sys: ref<CyberbaneSystem>, game: GameInstance, 
   }
   CBFileLog(sys, n"TalkCallOff", CBGameSeconds(game), CBEventDistrict(sys, game), t.faction, Cast<Float>(price));
   CBLog.Info(n"Talk", s"V paid one of \(NameToString(t.faction)) \(price)eb to call off their crew.");
-  CBCalmTowardsV(game, t.npc, 1);   // the one who took V's money is not the one to draw on V (2.6.0)
+  CBCalmTowardsV(game, t.npc, 1);   // the one who took V's money is not the one to draw on V
   return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-AlrightILlTellThemYou"),
                                   CBT(n"Cyberbane-TalkTopics-DoneTheyLlTurnAroundNext")), n"");
 }
@@ -369,12 +351,11 @@ public func CBTalkAnswerMenuAsk(t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-MakeItQuick"), CBT(n"Cyberbane-TalkTopics-Depends"), CBT(n"Cyberbane-TalkTopics-WhatAbout")), n"");
 }
 
-// "What's the word on the street?"
 public func CBTalkAnswerWord(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>, again: Bool) -> ref<CBTalkAnswer> {
   if again {
     return CBTalkSay(CBT(n"Cyberbane-TalkTopics-ToldYouAlreadyThatSAll"), n"");
   }
-  // What V has done lately, half the time it is there to tell (2.7.7): the crew's war, a district taken, a Rival put down.
+  // What V has done lately, half the time it is there to tell: the crew's war, a district taken, a Rival put down.
   let news = CBTalkRecentNews(sys, game);
   if StrLen(news) > 0 && RandF() < 0.5 {
     return CBTalkSay(news, n"");
@@ -383,7 +364,7 @@ public func CBTalkAnswerWord(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   if IsDefined(r) {
     return CBTalkSay(CBRumorPhrase(sys, r), n"");
   }
-  // Where V is standing, if it remembers something (Model/StreetBook.reds, 2.3.1).
+  // Where V is standing, if it remembers something (Model/StreetBook.reds).
   let st = CBReadStreet(sys, game, t.faction);
   if Equals(st.placeKind, n"Massacre") {
     return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-YouReStandingOnItThat"),
@@ -411,14 +392,13 @@ public func CBTalkAnswerWord(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-SameOldNightCitySomebodyS"), CBT(n"Cyberbane-TalkTopics-NothingWorthTheBreath"), CBT(n"Cyberbane-TalkTopics-CorposUpTopTheRestOf")), n"");
 }
 
-// "Who runs these streets?"
 public func CBTalkAnswerTurf(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>, again: Bool) -> ref<CBTalkAnswer> {
   if again {
     return CBTalkSay(CBT(n"Cyberbane-TalkTopics-SameAsFiveMinutesAgo"), n"");
   }
   let district = sys.GetCurrentDistrict();
   let holder = NotEquals(district, n"") ? CBTurfHolder(sys, game, district) : n"";
-  // V's own crew (Model/CrewTurf.reds, 2.7.6): the street knows whose people these are, and says so to V's face.
+  // V's own crew (Model/CrewTurf.reds): the street knows whose people these are, and says so to V's face.
   if CBIsCrewTurf(holder) {
     return CBTalkSay(CBCrewTurfLine(), n"");
   }
@@ -464,8 +444,7 @@ public func CBTalkAnswerTurf(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
   return CBTalkSay(line, n"");
 }
 
-// "Anyone looking for me?" From what is actually on its way: the lanes, the crews already sent, the Rivals
-// out hunting.
+// From what is actually on its way: the lanes, the crews already sent, the Rivals out hunting.
 public func CBTalkAnswerComing(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>, again: Bool) -> ref<CBTalkAnswer> {
   if again {
     return CBTalkSay(CBT(n"Cyberbane-TalkTopics-LikeISaidWatchYourself"), n"");
@@ -583,7 +562,6 @@ public class CBTalkOffer {
   public let price: Int32;     // > 0: a deal is on the table
 }
 
-// "Heard anything about [Rival]?"
 public func CBTalkAskRival(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>,
                            t: ref<CBTalkTarget>, again: Bool) -> ref<CBTalkOffer> {
   let o = new CBTalkOffer();
@@ -721,7 +699,7 @@ public func CBTalkDealPay(sys: ref<CyberbaneSystem>, game: GameInstance, player:
   }
   ts.RemoveItem(player, ItemID.FromTDBID(t"Items.money"), price);
   CBFileLog(sys, n"TalkBought", CBGameSeconds(game), CBEventDistrict(sys, game), t.faction, Cast<Float>(price));
-  CBCalmTowardsV(game, t.npc, 1);   // paid and told: they do not turn round and draw on V (2.6.0, CBCalmTowardsV)
+  CBCalmTowardsV(game, t.npc, 1);   // paid and told: they do not turn round and draw on V (CBCalmTowardsV)
   return CBTalkSay(CBTalkGiveLead(sys, game, player, t, r, true), n"");
 }
 
@@ -732,7 +710,7 @@ public class CBTalkHaggle {
   public let walked: Bool;   // pushed too far: the deal is off
 }
 
-// `round` 0 is the first push; the second (1.9.8) is harder, and failing it may end the deal.
+// `round` 0 is the first push; the second is harder, and failing it may end the deal.
 public func CBTalkDealHaggle(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>, price: Int32, round: Int32) -> ref<CBTalkHaggle> {
   let h = new CBTalkHaggle();
   h.price = price;

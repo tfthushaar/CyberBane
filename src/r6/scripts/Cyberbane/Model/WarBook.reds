@@ -1,13 +1,8 @@
-// Cyberbane - The war book (2.4.0)
+// Cyberbane - The war book
 //
 // What the turf war runs on: each gang's war chest and manpower, a peace haggled down, a truce between two gangs
 // against V, and V's side of it: the gang V backs, the districts that are V's own, a lie V told to set two gangs on
-// each other, a protection demand, a favour owed for peace. And, laid out now so the book's saved shape never has
-// to change, the two fields later releases fill: open season (2.4.1) and "one of theirs" (2.4.3).
-//
-// Its own save book, like the others (CBTurfBook, CBStreetBook, CBLedgerBook): a new class changes nothing already
-// saved, and starts empty on a save that has never had it. A gang the book has not seen yet has a full chest and
-// full ranks. Parallel lists, cut to the shortest on the first read after a load, bounds-checked on every read.
+// each other, a protection demand, a favour owed for peace.
 
 public class CBWarBook extends ScriptableSystem {
   // Per gang.
@@ -33,15 +28,15 @@ public class CBWarBook extends ScriptableSystem {
   private persistent let m_protectSeen: Float;         // game seconds V has spent in Westbrook since the last demand
   private persistent let m_favourFor: CName;           // a gang that will call it off for a favour, and until when
   private persistent let m_favourUntil: Float;
-  // For later releases: open season (2.4.1) and one of theirs (2.4.3).
+  // For later releases: open season and one of theirs.
   private persistent let m_openGang: CName;
   private persistent let m_openUntil: Float;
   private persistent let m_oneOfTheirs: CName;
 
   private let m_trimmed: Bool;
 
-  // Session only: rival gangers clashing on a contested street ([N1], Spawn/Clashes.reds, 2.4.3). The two gangs at war
-  // where V is, worked out now and then; a few of each the Director's walk has seen lately; and the clash itself.
+  // Session only: rival gangers clashing on a contested street ([N1], Spawn/Clashes.reds). The two gangs at war where V
+  // is, worked out now and then; a few of each the Director's walk has seen lately; and the clash itself.
   public let clashA: CName;
   public let clashB: CName;
   public let clashPairTick: Int32;
@@ -58,7 +53,7 @@ public class CBWarBook extends ScriptableSystem {
   public let lastClashA: CName;            // the last one, for the Hub's web of gangs ([H1])
   public let lastClashB: CName;
   public let lastClashAt: Float;
-  // Session only: talk and allies (Reactions/Allies.reds, 2.4.5).
+  // Session only: talk and allies (Reactions/Allies.reds).
   public let crewIds: array<EntityID>;
   public let crewGang: CName;
   public let crewUntil: Float;
@@ -70,7 +65,7 @@ public class CBWarBook extends ScriptableSystem {
   public let ransomGang: CName;
   public let ransomAmount: Int32;
   public let ransomTick: Int32;
-  // Where the ransom is paid (2.6.5, Spawn/StreetStories.reds): the drop in the gang's own district, by when, how much,
+  // Where the ransom is paid (Spawn/StreetStories.reds): the drop in the gang's own district, by when, how much,
   // whether it is a trap, and its pin. Session only, as the ransom itself is.
   public let dropAt: Vector4;
   public let dropGang: CName;
@@ -88,7 +83,7 @@ public class CBWarBook extends ScriptableSystem {
   public let parleyDoneTick: Int32;
   public let parleyCrew: array<EntityID>;
   public let greetTick: Int32;
-  public let phoneStalled: CName;          // a gang V stalled by text, for the crew already counting down (2.4.6)
+  public let phoneStalled: CName;          // a gang V stalled by text, for the crew already counting down
   public let phoneThreatDay: Int32;        // the game day + 1 V last threatened anybody by text
 
   private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
@@ -97,10 +92,7 @@ public class CBWarBook extends ScriptableSystem {
     this.ResetSession();
   }
 
-  // Everything below the saved fields. Start over (Clear) used to keep it: a gang's offer to make V one of theirs, a
-  // lie still steering a crew, a ransom still counting down to pay out or send a crew, and the last street clash on
-  // the web of gangs all carried into the new playthrough (2.5.0). What is live in the world is ended first, the way
-  // it ends on its own (Reactions/Allies.reds, CBWarStandDown).
+  // Everything below the saved fields.
   public func ResetSession() -> Void {
     let none: EntityID;
     let nowhere: Vector4;
@@ -131,8 +123,8 @@ public class CBWarBook extends ScriptableSystem {
     this.ransomGang = n"";
     this.ransomAmount = 0;
     this.ransomTick = 0;
-    // The ransom's drop (2.6.5): its pin is the mappin system's and is unregistered where it is registered
-    // (CBRansomDropEnd); here only what is ours, so a reset cannot leave a drop waiting for a playthrough that is gone.
+    // The ransom's drop: its pin is the mappin system's and is unregistered where it is registered (CBRansomDropEnd);
+    // here only what is ours, so a reset cannot leave a drop waiting for a playthrough that is gone.
     this.dropGang = n"";
     this.dropAmount = 0;
     this.dropBetray = false;
@@ -150,7 +142,6 @@ public class CBWarBook extends ScriptableSystem {
     this.phoneThreatDay = 0;
   }
 
-  // "One of theirs" (Reactions/Allies.reds, [66]): the one save field laid out for it in 2.4.0.
   public func OneOfTheirs() -> CName { return this.m_oneOfTheirs; }
   public func SetOneOfTheirs(gang: CName) -> Void { this.m_oneOfTheirs = gang; }
 
@@ -266,7 +257,7 @@ public class CBWarBook extends ScriptableSystem {
     return i >= 0 && now < this.m_truceUntil[i] ? this.m_truceWith[i] : n"";
   }
 
-  // When a's truce with b runs out, or 0 (the Hub's web of gangs, 2.4.3).
+  // When a's truce with b runs out, or 0 (the Hub's web of gangs).
   public func TruceUntilFor(a: CName, b: CName, now: Float) -> Float {
     let i = this.Find(a, false);
     return i >= 0 && Equals(this.m_truceWith[i], b) && now < this.m_truceUntil[i] ? this.m_truceUntil[i] : 0.0;

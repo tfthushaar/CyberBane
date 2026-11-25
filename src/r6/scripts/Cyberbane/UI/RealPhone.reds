@@ -1,52 +1,6 @@
 // Cyberbane - The phone V carries (spec §12.2)
 //
-// Players asked for the gang messages to be "actual text messages", and the phone is where text
-// messages live. This file puts Cyberbane's senders into it: each one is a contact in the
-// phone's Messages list, a new message arrives through the game's own incoming-SMS notification,
-// and opening the contact shows the thread in the phone's own messenger panel, drawn with the
-// game's own message bubbles.
-//
-// ---- How it fits into the game's phone (read against the 2.5 scripts) ----
-//
-// The list. `NewHudPhoneGameController` builds the Messages tab from
-// `MessengerUtils.GetSimpleContactDataArray`, which returns plain `ContactData` objects
-// (core/systems/journalManager.script:366, a constructible script class). Cyberbane appends one
-// per thread. The full-screen messenger in the hub menu calls the same function but passes its
-// sync object, and the phone does not (messengerController.script:290 against
-// newHudPhoneGameController.script:1421/1531), so the threads only go where they can be drawn.
-//
-// Opening a thread. Selecting a contact makes the phone queue an `OpenSmsMessengerEvent` (or a
-// refresh) carrying a `JournalNotificationData` whose `journalEntry` it looks up by hash. Ours
-// has no journal entry, so `GotoSmsMessenger` and `RefreshSmsMessager` hand over a subclass
-// carrying the thread instead, and `PhoneMessagePopupGameController.SetupData` sets the panel up
-// for it without ever asking the journal about it. The lines are handed to the messenger's own
-// message list as list data, so the game spawns its own `MessangerItemRenderer` bubbles for them.
-//
-// The notification. `PushSMSNotification` (newHudPhoneGameController.script:1768) fills a
-// `PhoneMessageNotificationViewData` and hands it to `AddNewNotificationData`. Cyberbane does
-// the same with its own text and an action that opens the phone on the thread, which is what
-// `OpenPhoneMessageAction` and `PhoneSystem.OnUsePhone` do for a real message: set
-// `MessageToOpenHash` on the UI_ComDevice blackboard, then open the contact list.
-//
-// Answering. A gang V can buy off that has sent a hostile message leaves an answer open in its
-// thread, handed to the messenger's own reply list and chosen the way the game's own reply
-// choices are chosen (up, down, select, or a click). Paying runs CBBrokerPeace, the same
-// function and price as the Hub's shortcut; refusing gets their answer. The game marks a chosen
-// reply as a journal entry, and ours have none, so the panel's "has replies" test and the two
-// ways of choosing are wrapped to answer for Cyberbane's rows while one of its threads shows.
-//
-// The approach is the one the Phone Extension framework (r457 and gh057) proved on 2.x. None of
-// its code is used and nothing here depends on it; every name is Cyberbane's own, so both can
-// be installed together.
-//
-// ---- Safety ----
-//
-// Everything is a wrap that falls straight through to the game unless the contact, the panel or
-// the notification is one of Cyberbane's. A contact is ours only if its hash is in Cyberbane's
-// block (CBConfig.PhoneHashBase) and the thread exists. Nothing is added to the phone at all in
-// the Cards or Notices delivery modes, or with the kill switch thrown, and a panel that is
-// already showing one of ours keeps working when the setting changes, rather than being handed
-// to vanilla code that would look for a journal entry that is not there.
+// Gang, Rival and crew messages as real texts in V's phone, with replies.
 
 // ---- Our contacts ---------------------------------------------------------
 
@@ -103,9 +57,7 @@ public func CBRealPhoneFill(contact: ref<ContactData>) -> Void {
   contact.timeStamp = store.ThreadTime(thread);
 }
 
-// One row per thread, for the phone's Messages tab. With the tab showing unread only, a thread
-// that has been read stays out unless V can still answer it, the same rule the game applies to
-// its own contacts (MessengerUtils.AddContactData).
+// One row per thread, for the phone's Messages tab.
 public func CBRealPhoneContacts(includeRead: Bool) -> array<ref<IScriptable>> {
   let out: array<ref<IScriptable>>;
   let store = CBPhoneStore();
@@ -166,15 +118,12 @@ public func CBRealPhoneThreadMine(hash: Int32) -> array<Bool> {
   return store.ThreadMine(CBPhoneThreadOf(hash), CBConfig.PhoneThreadShown());
 }
 
-// What a thread can be answered about right now: nothing, a Rival's whereabouts on offer (1.9.7), or a
-// gang's price to call it off. The rows shown and the reply carried out both ask this, so they can never
-// disagree. They did: with a lead on the thread and another purchase already going through, the rows
-// fell through to the gang's offer while the reply still went by the lead, and "Pay Xeb to call it off"
-// bought the lead instead. Anything no longer on offer is cleared from the thread on the way.
+// What a thread can be answered about right now: nothing, a Rival's whereabouts on offer, or a gang's price to call it
+// off. The rows shown and the reply carried out both ask this, so they can never disagree.
 public func CBPhoneAnswerNone() -> Int32 = 0
 public func CBPhoneAnswerLead() -> Int32 = 1
 public func CBPhoneAnswerOffer() -> Int32 = 2
-public func CBPhoneAnswerRival() -> Int32 = 3   // a Rival's own thread can be answered (2.4.6, [U13])
+public func CBPhoneAnswerRival() -> Int32 = 3   // a Rival's own thread can be answered ([U13])
 
 // The rows of a thread, by what each does: one list for what is shown and what is done (CBRealPhoneChoices,
 // CBRealPhoneReply), so the two can never disagree about which row is which.
@@ -229,9 +178,9 @@ public func CBPhoneRows(sys: ref<CyberbaneSystem>, game: GameInstance, store: re
     }
     ArrayPush(out, CBPhoneRowTaunt());
   }
-  // V's crew (Reactions/Crew.reds, 2.5.0).
+  // V's crew (Reactions/Crew.reds).
   if kind >= CBPhoneAnswerCrew() {
-    // One of them in their own thread (2.7.6): whose it is.
+    // One of them in their own thread: whose it is.
     let member = 0;
     if kind == CBPhoneAnswerCrewMember() {
       let one = CBCrewMemberOfThread(sys, CBCrewBook.Get(game), store.ThreadName(thread));
@@ -246,7 +195,7 @@ public func CBPhoneRows(sys: ref<CyberbaneSystem>, game: GameInstance, store: re
 }
 
 func CBRealPhoneAnswerKind(sys: ref<CyberbaneSystem>, game: GameInstance, store: ref<CBPhone>, thread: Int32) -> Int32 {
-  // An add-on's question waiting in this thread (API/Requests.reds, 2.7.4).
+  // An add-on's question waiting in this thread (API/Requests.reds).
   let asks = CBApiAsks.Get(game);
   if IsDefined(asks) && asks.Pending(store.ThreadName(thread)) {
     return CBPhoneAnswerApi();
@@ -267,15 +216,15 @@ func CBRealPhoneAnswerKind(sys: ref<CyberbaneSystem>, game: GameInstance, store:
   if Equals(faction, n"") {
     let threadRival = CBPhoneThreadRival(sys, store, thread);
     if IsDefined(threadRival) {
-      // Waiting at the place they named (2.5.6): "Name the place" asked for a second one, and "Come and find me" had
-      // them text "On my way" while they went on waiting where they said. Going there is the answer.
+      // Waiting at the place they named: "Name the place" asked for a second one, and "Come and find me" had them text
+      // "On my way" while they went on waiting where they said. Going there is the answer.
       let intel = CBIntelBook.Get(game);
       if IsDefined(intel) && intel.WordSent(threadRival.id) {
         return CBPhoneAnswerNone();
       }
       return store.ThreadAwaitsAnswer(thread) ? CBPhoneAnswerRival() : CBPhoneAnswerNone();
     }
-    return CBCrewPhoneKind(sys, game, store, thread);   // the crew's own thread, a Debtor's, a solo on offer (2.5.0)
+    return CBCrewPhoneKind(sys, game, store, thread);   // the crew's own thread, a Debtor's, a solo on offer
   }
   if CBPeaceQuote(sys, game, faction) < 0 {
     store.ClearOffer(thread);
@@ -284,9 +233,7 @@ func CBRealPhoneAnswerKind(sys: ref<CyberbaneSystem>, game: GameInstance, store:
   return CBPhoneAnswerOffer();
 }
 
-// The answers V can send in this thread right now, as the reply rows show them. Worked out
-// fresh every time from the gang's current standing and price, so a stale offer never shows:
-// once they are no longer hostile, or the price has moved, the rows say so or disappear.
+// The answers V can send in this thread right now, as the reply rows show them.
 public func CBRealPhoneChoices(hash: Int32) -> array<String> {
   let out: array<String>;
   if !CBRealPhoneOwns(hash) {
@@ -311,7 +258,7 @@ public func CBRealPhoneChoices(hash: Int32) -> array<String> {
     ArrayPush(out, CBT(n"Cyberbane-RealPhone-ForgetIt"));
     return out;
   }
-  // A gang's offer and a Rival's thread (2.4.6, [U13]): the rows from CBPhoneRows, in its order.
+  // A gang's offer and a Rival's thread ([U13]): the rows from CBPhoneRows, in its order.
   for row in CBPhoneRows(sys, game, store, thread, kind) {
     if row == CBPhoneRowPay() { ArrayPush(out, CBTf(n"Cyberbane-RealPhone-PayEbToCallItOff", [s"\(CBPeaceQuote(sys, game, store.ThreadOffer(thread)))"])); }
     if row == CBPhoneRowHaggle() { ArrayPush(out, CBT(n"Cyberbane-Crew-TooMuch")); }
@@ -381,8 +328,8 @@ public func CBRealPhoneReply(hash: Int32, choice: Int32) -> Void {
   }
   store.ClearOffer(thread);
   if row == CBPhoneRowPay() {
-    // V only says the money is coming when it is (1.9.5). "Xeb. Call it off." went out first either way,
-    // and the gang then answered that V did not have it.
+    // V only says the money is coming when it is. "Xeb. Call it off." went out first either way, and the gang then
+    // answered that V did not have it.
     let player = GetPlayer(game);
     let ts = GameInstance.GetTransactionSystem(game);
     let enough = IsDefined(player) && IsDefined(ts)
@@ -397,7 +344,7 @@ public func CBRealPhoneReply(hash: Int32, choice: Int32) -> Void {
   }
 }
 
-// V answered a lead offered by text (1.9.7): the deal, pushing back on the price once, or walking away.
+// V answered a lead offered by text: the deal, pushing back on the price once, or walking away.
 func CBRealPhoneLeadReply(sys: ref<CyberbaneSystem>, game: GameInstance, store: ref<CBPhone>, thread: Int32,
                           choice: Int32, count: Int32) -> Void {
   let id = store.ThreadLead(thread);
@@ -460,8 +407,8 @@ public func CBRealPhoneThreadBodies(hash: Int32) -> array<String> {
   return store.ThreadBodies(CBPhoneThreadOf(hash), CBConfig.PhoneThreadShown());
 }
 
-// What the messenger panel is opened with for one of ours. The game's own data class, so every
-// field it reads is there; the thread rides along in the fields this subclass adds.
+// What the messenger panel is opened with for one of ours. The game's data class, so every field it reads is there; the
+// thread rides along in the fields this subclass adds.
 public class CBPhoneThreadData extends JournalNotificationData {
   public let cbHash: Int32;
   public let cbName: String;
@@ -528,7 +475,7 @@ public class CBOpenThreadAction extends GenericNotificationBaseAction {
 // Keep hold of the phone when the HUD builds it. Weak, and re-checked on every use.
 @wrapMethod(NewHudPhoneGameController)
 protected cb func OnPlayerAttach(playerPuppet: ref<GameObject>) -> Bool {
-  wrappedMethod(playerPuppet);   // as a statement (2.6.8): never typed off what the game's event returns
+  wrappedMethod(playerPuppet);   // as a statement: never typed off what the game's event returns
   if IsDefined(playerPuppet) {
     let sys = CyberbaneSystem.Get(playerPuppet.GetGame());
     if IsDefined(sys) {
@@ -538,9 +485,8 @@ protected cb func OnPlayerAttach(playerPuppet: ref<GameObject>) -> Bool {
   return true;
 }
 
-// And let go of it the moment the HUD tears it down. Texts never go to a controller that is on
-// its way out: until the next one attaches they wait for it (CBPhone.Deliver). Only this phone is
-// let go of: the old one is often torn down after the new one has attached (1.9.1).
+// And let go of it the moment the HUD tears it down. Texts never go to a controller that is on its way out: until the
+// next one attaches they wait for it (CBPhone.Deliver).
 @wrapMethod(NewHudPhoneGameController)
 protected cb func OnUninitialize() -> Bool {
   let store = CBPhoneStore();
@@ -640,9 +586,7 @@ public final func RefreshSmsMessager(contactData: wref<ContactData>) -> Void {
   wrappedMethod(contactData);
 }
 
-// Coming back out of one of ours. The game re-reads the contact from the journal here, finds
-// nothing for our hash and reports no change; reading it from the thread instead lets the game
-// treat a read thread the way it treats its own and take it off the unread list.
+// Coming back out of one of ours.
 @wrapMethod(NewHudPhoneGameController)
 public final func RefreshReplies(contactData: ref<ContactData>) -> Bool {
   if IsDefined(contactData) && CBRealPhoneOwns(contactData.hash) {
@@ -695,8 +639,8 @@ private func CBSetupThread(data: ref<CBPhoneThreadData>) -> Void {
   if IsDefined(this.m_dialogViewController) {
     this.m_dialogViewController.CBShowThread(data.cbHash);
   }
-  // Opened from the phone, so it starts as a preview beside the list and takes focus when the
-  // player opens it, exactly as the game's own threads do.
+  // Opened from the phone, so it starts as a preview beside the list and takes focus when the player opens it, exactly
+  // as the game's threads do.
   this.SetFocus(!data.openedFromPhone);
 }
 
@@ -731,21 +675,8 @@ private final func TryCallContact() -> Void {
 
 // ---- The thread itself ----------------------------------------------------
 //
-// The panel's message list and reply list are the game's own list controllers
-// (JournalEntriesListController, native ListController underneath). Each owns the widgets in its
-// container: it spawns them when data is pushed and destroys them when it is cleared. So a
-// Cyberbane thread is handed to those same controllers as data, exactly the way the game hands
-// them journal entries in MessengerDialogViewController.UpdateData, and the game builds,
-// selects, highlights and destroys every widget itself.
-//
-// 1.4.7 spawned its own bubbles and reply rows into those containers and cleared them with
-// RemoveAllChildren, which took widgets out from under a native list that was still tracking
-// them. That is the likeliest cause of the crash reported on opening a gang's text, which is
-// the thread that carries reply rows. Nothing here adds or removes a widget by hand any more.
-//
-// Each line rides in the list item's m_extraData as a CBPhoneLine, and the two item renderers
-// are wrapped to draw a CBPhoneLine when they are given one. A game entry never carries one, so
-// the game's own threads draw exactly as before.
+// The panel's message list and reply list are the game's list controllers (JournalEntriesListController, native
+// ListController underneath).
 
 // One line of a thread or one answer, as list data.
 public class CBPhoneLine extends IScriptable {
@@ -840,11 +771,7 @@ public func CBRenderThread(animateLast: Bool) -> Void {
   }
 }
 
-// Redraw on the panel's next frame rather than now. Used whenever the redraw is asked for from
-// inside something the lists are doing (a reply row being activated) or from outside the UI (a
-// message arriving): clearing a list from inside its own callback would destroy the row whose
-// callback is running. The game does the same thing for its own threads: a reply changes the
-// journal, and the redraw comes back later as a DelayedJournalUpdate.
+// Redraw on the panel's next frame rather than now.
 @addMethod(MessengerDialogViewController)
 public func CBQueueRedraw(animate: Bool) -> Void {
   if this.cbThreadHash == 0 {
@@ -875,8 +802,8 @@ public func CBActivateChoice(index: Int32) -> Void {
   this.CBQueueRedraw(true);
 }
 
-// Hand the panel back to the game. Its lists are cleared and refilled by the game's own
-// UpdateData straight after this, so there is nothing of ours to take down.
+// Hand the panel back to the game. Its lists are cleared and refilled by the game's UpdateData straight after this, so
+// there is nothing of ours to take down.
 @addMethod(MessengerDialogViewController)
 public func CBLeaveThread() -> Void {
   this.cbThreadHash = 0;
@@ -896,9 +823,7 @@ protected cb func OnUninitialize() -> Bool {
   return true;
 }
 
-// The game refreshes the panel whenever anything in the journal's phone section changes. While
-// it is showing one of ours, that refresh redraws ours instead of asking the journal for an
-// entry that does not exist (which would come back empty and wipe the thread off the panel).
+// The game refreshes the panel whenever anything in the journal's phone section changes.
 @wrapMethod(MessengerDialogViewController)
 public final func UpdateData(animateLastMessage: Bool, setVisited: Bool) -> Void {
   if this.cbThreadHash != 0 {
@@ -982,7 +907,7 @@ protected func OnJournalEntryUpdated(entry: wref<JournalEntry>, extraData: ref<I
   wrappedMethod(entry, extraData);
 }
 
-// ---- Answers on a gang's thread and a Rival's (2.4.6, [U13]) ---------------------------------------------------------
+// ---- Answers on a gang's thread and a Rival's ([U13]) ---------------------------------------------------------
 
 // Stalling buys V time before their crew comes, once a crew; a threat can make them think again, or bring them now;
 // an insult always brings them, and costs standing, and the street likes the nerve of it.
@@ -1015,11 +940,11 @@ func CBPhoneOfferAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, store: re
       CBCallOffGang(sys, game, faction);
       CBTalkFear(sys, game, faction, CBConfig.StareFear());
       CBFileLog(sys, n"PhoneThreatWorked", CBGameSeconds(game), CBEventDistrict(sys, game), faction, 0.0);
-      // Settled: nothing left to answer, so the thread closes here (2.5.0). It used to open the offer again, and
-      // "Not paying" then got "We will be seeing you" straight after they had backed down.
+      // Settled: nothing left to answer, so the thread closes here. It used to open the offer again, and "Not paying"
+      // then got "We will be seeing you" straight after they had backed down.
       CBPhoneFromGangFinal(game, faction, CBPick2(CBT(n"Cyberbane-RealPhone-FineWeLlLeaveYouBe"), CBT(n"Cyberbane-RealPhone-WeLlLeaveItForNow")));
     } else {
-      // Called their bluff the wrong way: they are coming, and there is nothing left to answer (2.5.0).
+      // Called their bluff the wrong way: they are coming, and there is nothing left to answer.
       store.ClearOffer(thread);
       CBProvoke(sys, game, faction);
       CBPhoneFromGangFinal(game, faction, CBPick2(CBTf(n"Cyberbane-RealPhone-ThreatsFromYouWeReComing", [s"\(you)"]), CBT(n"Cyberbane-RealPhone-WrongAnswer")));
@@ -1052,8 +977,8 @@ func CBPhoneRivalReply(sys: ref<CyberbaneSystem>, game: GameInstance, store: ref
   }
   if row == CBPhoneRowNamePlace() {
     store.Reply(game, thread, CBT(n"Cyberbane-RealPhone-YouWantMePickAPlace"));
-    // The place is looked for back in the game, on the next settled tick (2.7.7), the way the Hub's call-out is: with the
-    // phone open the game reads the world as not ready, and the search came back "Not around here" more than it should.
+    // The place is looked for back in the game, on the next settled tick, the way the Hub's call-out is: with the phone
+    // open the game reads the world as not ready, and the search came back "Not around here" more than it should.
     sys.RequestSendWord(r.id, true);
     return;
   }

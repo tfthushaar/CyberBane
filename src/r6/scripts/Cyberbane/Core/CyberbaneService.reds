@@ -3,8 +3,6 @@
 // Codeware ScriptableService. Persistent fields are stored globally (shared by
 // all saves), which is what the Death Ledger needs so a killer can become a
 // Rival across the reload that follows V's death (spec §10.8).
-//
-// The service must never hold references to game objects (Codeware guidance).
 
 public class CBLedgerEntry {
   public persistent let id: Int32;
@@ -18,31 +16,22 @@ public class CBLedgerEntry {
   public persistent let method: Int32;             // ECBKillMethod used on V
 }
 
-// "Forget every rival", remembered for a playthrough (1.6.2).
-//
-// Every Rival id up to `rivalUpTo` is gone for good on every save of this playthrough, and every
-// death in the ledger up to `ledgerUpTo` no longer makes or promotes a Rival there.
+// "Forget every rival", remembered for a playthrough.
 public class CBForgetNote {
   public persistent let playthroughId: CName;
   public persistent let rivalUpTo: Int32;
   public persistent let ledgerUpTo: Int32;
 }
 
-// One Rival forgotten on the Hub (1.8.2). Kept here, beside "Forget every rival", for the same reason:
-// it is an instruction about a playthrough, and loading an older save must not bring them back. The
-// record is checked as well as the id, because another branch of the playthrough can have given that
-// id to somebody else.
+// One Rival forgotten on the Hub. Kept here, beside "Forget every rival", for the same reason: it is an instruction
+// about a playthrough, and loading an older save must not bring them back.
 public class CBForgottenRival {
   public persistent let playthroughId: CName;
   public persistent let rivalId: Int32;
   public persistent let recordID: TweakDBID;
 }
 
-// Where a Rival was last seen standing, and whether anybody has passed it on to V (1.6.2,
-// Rivals/Whereabouts.reds). Kept here rather than in the save because nothing may be added to a
-// class the save holds without wiping everybody's progress, and because it is street knowledge:
-// the city is the same city in every save. Every read checks it against the Rival in the save it
-// is read from.
+// Where a Rival was last seen standing, and whether anybody has passed it on to V (Rivals/Whereabouts.reds).
 public class CBSighting {
   public persistent let playthroughId: CName;
   public persistent let rivalId: Int32;
@@ -56,9 +45,8 @@ public class CBSighting {
   public persistent let tipFaction: CName;     // the gang that told V; n"" = the street
 }
 
-// How strong a gang is in one playthrough, and when that was last written (1.6.3,
-// Model/Territory.reds). Here for the same reason as CBSighting: nothing may be added to a class
-// the save holds. What it was rebuilt since `at` is worked out on reading, never stored.
+// How strong a gang is in one playthrough, and when that was last written (Model/Territory.reds). Here for the same
+// reason as CBSighting: nothing may be added to a class the save holds.
 public class CBGangPower {
   public persistent let playthroughId: CName;
   public persistent let faction: CName;
@@ -66,11 +54,7 @@ public class CBGangPower {
   public persistent let at: Float;             // game seconds
 }
 
-// What V has said to one gang's people on one in-game day (1.9.5, Reactions/StreetTalk.reds). Talking to
-// people moves standing, fear and conduct a little at a time, and this is what keeps it a little: each
-// kind of change has a ceiling a day per gang (n"" is everybody with no gang), so a crowd cannot be
-// farmed by greeting it over and over, and loading a save does not hand the day's allowance back. Here
-// rather than in the save for the reason CBSighting is: nothing may be added to a class the save holds.
+// What V has said to one gang's people on one in-game day (Reactions/StreetTalk.reds).
 public class CBTalkTally {
   public persistent let playthroughId: CName;
   public persistent let faction: CName;
@@ -84,36 +68,16 @@ public class CBTalkTally {
   public persistent let tips: Int32;           // a friend of V's passed on word about their enemies
 }
 
-// Which V a playthrough id belongs to (1.8.3).
-//
-// Everything this service keeps is tied to a playthrough by its id, and that id was the only thing
-// keeping two characters apart. Nothing ever checked that a new one was not already taken, so two
-// different characters could end up answering to the same id, and then each one read the other's
-// deaths, gang strength and forget notes as its own. A player reported exactly that: a brand-new V
-// texted by three Tyger Claws within minutes of loading, which were another character's deaths at
-// the Ho-Oh, replayed by the death ledger as Killer Rivals.
-//
-// `bornAt` is the game time the playthrough first met Cyberbane. It is written into every save of
-// that playthrough too (CyberbaneSystem.m_installedAt, a saved field that already existed and was
-// never written, so the save keeps its shape), so a save that carries this id but a different
-// birth is another character. `lifepath` is the V it belongs to, which can never change inside a
-// playthrough; it tells saves from before 1.8.3 apart, which carry no birth of their own.
-//
-// A playthrough split off from a shared id remembers where it came from (`splitFrom`, and the birth
-// its saves carried there, `formerBornAt`, 0 for a save from before 1.8.3), so the other saves of
-// the same character join it when they load, rather than each one becoming a playthrough of its own.
+// Which V a playthrough id belongs to.
 public class CBPlaythroughBirth {
   public persistent let playthroughId: CName;
   public persistent let bornAt: Float;         // game seconds; always above zero once written
   public persistent let lifepath: Int32;       // EnumInt(gamedataLifePath); -1 = not known yet
   public persistent let splitFrom: CName;      // n"" = not split off from anything
   public persistent let formerBornAt: Float;
-  // Put on record by a save from before 1.8.3, which carries no birth of its own: whichever save of
-  // the id loaded first claimed it, and that may not be the character the records belong to.
   public persistent let legacyClaim: Bool;
-  // A V with another lifepath turned up on a legacy claim: two characters shared this id before
-  // 1.8.3, and the records under it are both of theirs. Every save on it moves to one of its own,
-  // whichever of the two loaded first (CyberbaneSystem.VerifyPlaythroughOwner).
+  // Every save on it moves to one of its own, whichever of the two loaded first
+  // (CyberbaneSystem.VerifyPlaythroughOwner).
   public persistent let disputed: Bool;
 }
 
@@ -121,33 +85,23 @@ public class CyberbaneService extends ScriptableService {
   private persistent let m_schemaVersion: Int32;
   private persistent let m_nextLedgerId: Int32;
   private persistent let m_ledger: array<ref<CBLedgerEntry>>;   // cap 100 total, 30 per playthrough, FIFO
-  // ---- Instructions about a playthrough (1.6.2) --------------------------------------------
+  // ---- Instructions about a playthrough --------------------------------------------
   //
-  // "Forget every rival" and "Start over" used to change only the save's own data, and only once
-  // the game was unpaused. Quitting from the pause menu threw them away, and loading any save
-  // written before them brought everything back, which is what a player reported: Rivals cleared
-  // on the Hub, the game closed, the save loaded, every Rival back in the list. They are
-  // instructions about a playthrough rather than events inside one, so they are kept here, where
-  // the death ledger already lives: outside every save, read back on every load.
+  // "Forget every rival" and "Start over" used to change only the save's own data, and only once the game was unpaused.
   private persistent let m_forgetNotes: array<ref<CBForgetNote>>;   // cap CapForgetNotes, FIFO
   private persistent let m_retiredIds: array<CName>;                // started over; cap CapRetiredIds
   // Where Rivals were last seen (Rivals/Whereabouts.reds). Cap CapSightings, oldest first.
   private persistent let m_sightings: array<ref<CBSighting>>;
   // How strong each gang is, per playthrough (Model/Territory.reds). Cap CapGangPower, oldest first.
   private persistent let m_gangPower: array<ref<CBGangPower>>;
-  // Rivals forgotten one at a time (1.8.2). Cap CapForgottenRivals, oldest first.
+  // Rivals forgotten one at a time. Cap CapForgottenRivals, oldest first.
   private persistent let m_forgottenRivals: array<ref<CBForgottenRival>>;
-  // Which V each playthrough id belongs to (1.8.3). Cap CapBirths, oldest first.
+  // Which V each playthrough id belongs to. Cap CapBirths, oldest first.
   private persistent let m_births: array<ref<CBPlaythroughBirth>>;
-  // What V has said to each gang's people today (1.9.5). Cap CapTalkTallies, oldest first.
+  // What V has said to each gang's people today. Cap CapTalkTallies, oldest first.
   private persistent let m_talkTallies: array<ref<CBTalkTally>>;
-  // The two action switches in Mod Settings, as last seen (1.8.3): CBSwitchUnseen, CBSwitchOff, or
-  // CBSwitchActed (on, and already carried out). Mod Settings keeps a switch's accepted value and
-  // writes it to its file, and hands it back on every launch and with every later change to any
-  // setting; turning the field off in script never reached it. So "Reset all Cyberbane data", once
-  // used, asked for another reset each time any setting was applied and on every launch after. A
-  // switch now acts only on the way from off to on, and this is where "off" is remembered, because
-  // it has to outlive the game being closed.
+  // The two action switches in Mod Settings, as last seen: CBSwitchUnseen, CBSwitchOff, or CBSwitchActed (on, and
+  // already carried out).
   private persistent let m_resetSwitch: Int32;
   private persistent let m_separateSwitch: Int32;
 
@@ -300,7 +254,7 @@ public class CyberbaneService extends ScriptableService {
     }
   }
 
-  // ---- Rivals forgotten one at a time (1.8.2) ----------------------------------------------
+  // ---- Rivals forgotten one at a time ----------------------------------------------
 
   public func GetForgottenRivals() -> array<ref<CBForgottenRival>> {
     return this.m_forgottenRivals;
@@ -354,16 +308,14 @@ public class CyberbaneService extends ScriptableService {
     }
   }
 
-  // The playthrough started over most recently, n"" when none was (2.6.3).
+  // The playthrough started over most recently, n"" when none was.
   public func LastRetired() -> CName {
     let n = ArraySize(this.m_retiredIds);
     return n > 0 ? this.m_retiredIds[n - 1] : n"";
   }
 
-  // Undo a Start over (2.6.3): the playthrough is no longer on record as started over, so its saves from before it load
-  // as they were. "I saved before Start over and loaded that save, and everything was gone": by design, an older save of
-  // a playthrough that was started over is reset when it loads, and nothing could take that back. What Start over took
-  // from this service itself (sightings, gang power, the day's talk) is not in any save and stays gone.
+  // Undo a Start over: the playthrough is no longer on record as started over, so its saves from before it load as they
+  // were.
   public func Unretire(playthroughId: CName) -> Bool {
     let i = ArrayFindFirst(this.m_retiredIds, playthroughId);
     if i < 0 {
@@ -479,8 +431,8 @@ public class CyberbaneService extends ScriptableService {
     p.at = at;
   }
 
-  // Today's record of what V has said to this gang's people, made on first use (1.9.5). A record of an
-  // earlier day for the same gang is reused for today, so the list holds one per gang and playthrough.
+  // Today's record of what V has said to this gang's people, made on first use. A record of an earlier day for the same
+  // gang is reused for today, so the list holds one per gang and playthrough.
   public func TalkTally(playthroughId: CName, faction: CName, day: Int32) -> ref<CBTalkTally> {
     if !IsNameValid(playthroughId) {
       return null;
@@ -514,7 +466,7 @@ public class CyberbaneService extends ScriptableService {
     return made;
   }
 
-  // Today's record for this gang if there is one, without making it (1.9.6): the Hub only reads.
+  // Today's record for this gang if there is one, without making it: the Hub only reads.
   public func FindTalkTally(playthroughId: CName, faction: CName, day: Int32) -> ref<CBTalkTally> {
     for t in this.m_talkTallies {
       if IsDefined(t) && Equals(t.playthroughId, playthroughId) && Equals(t.faction, faction) && t.day == day {
@@ -557,11 +509,9 @@ public class CyberbaneService extends ScriptableService {
     }
   }
 
-  // ---- Which V a playthrough id belongs to (1.8.3) ----------------------------------------
+  // ---- Which V a playthrough id belongs to ----------------------------------------
 
-  // Is this id somebody's already? Every kind of record is asked, not only the births: a
-  // playthrough from before 1.8.3 has no birth on record, only its deaths, notes and numbers.
-  // An empty id is never free.
+  // Is this id somebody's already? An empty id is never free.
   public func IsPlaythroughIdInUse(id: CName) -> Bool {
     if !IsNameValid(id) {
       return true;
@@ -657,7 +607,6 @@ public class CyberbaneService extends ScriptableService {
     }
   }
 
-  // A birth claimed by a save from before 1.8.3 (CBPlaythroughBirth.legacyClaim).
   public func NoteLegacyClaim(id: CName, bornAt: Float, lifepath: Int32) -> Void {
     this.NoteBirth(id, bornAt, lifepath);
     let b = this.FindBirth(id);
@@ -683,12 +632,10 @@ public class CyberbaneService extends ScriptableService {
     }
   }
 
-  // A save that turned out to be another character keeps, under its new id, what its old id's
-  // records said at this point in its own time, so nothing it already had changes under it: gang
-  // strength that counts for it now (Model/Territory.reds reads a record from more than an hour
-  // ahead as not this save's), and sightings that are not ahead of it (Rivals/Whereabouts.reds
-  // drops those as foreign). Anything ahead of `now` was the other character's. Notes are not
-  // copied: "forget every rival" and "start over" from the other character must never reach it.
+  // A save that turned out to be another character keeps, under its new id, what its old id's records said at this
+  // point in its own time, so nothing it already had changes under it: gang strength that counts for it now
+  // (Model/Territory.reds reads a record from more than an hour ahead as not this save's), and sightings that are not
+  // ahead of it (Rivals/Whereabouts.reds drops those as foreign).
   public func CopyPlaythroughRecords(fromId: CName, toId: CName, now: Float) -> Void {
     if !IsNameValid(fromId) || !IsNameValid(toId) || Equals(fromId, toId) {
       return;
@@ -729,7 +676,7 @@ public class CyberbaneService extends ScriptableService {
     }
   }
 
-  // ---- The action switches (1.8.3) --------------------------------------------------------
+  // ---- The action switches --------------------------------------------------------
 
   public func GetResetSwitch() -> Int32 {
     return this.m_resetSwitch;

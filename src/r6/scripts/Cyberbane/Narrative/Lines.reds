@@ -1,24 +1,9 @@
-// Cyberbane - The line library (2.3.1)
+// Cyberbane - The line library
 //
 // Everything somebody says in Cyberbane is picked here: an overheard line, a passer-by's answer in talk,
 // a ganger's warning, a rumour, a text. Each place that speaks still writes its own lines, whole, for
 // who is speaking and what has just happened; this is how one of them is chosen, and how the street
 // keeps from saying the same thing twice.
-//
-// What the old picker did was keep one index, shared by every list in the mod, and nudge a roll off it.
-// So two lists of three lines could still land the same sentence twice running, and a line heard a
-// minute before could come straight back as long as it was not the very last one. Now:
-//
-//   - The street remembers what it has said lately: the last LineMemory lines that reached the screen,
-//     from anybody, in any form (a subtitle, an overheard line, a text). A pick steers away from all
-//     of them, and only when every option was heard lately does it take the one heard longest ago.
-//   - A line is remembered when it is shown, never when it is built. A whisper builds a dozen
-//     candidates and shows one; only the one shown is something anybody heard (CBLineHeard, called
-//     from the three doors in UI/PhoneMessages.reds).
-//
-// What the moment is (the hour, the rain, V bleeding or fresh from a fight, the district's temper, a
-// place that remembers) is read once into the street read (Model/StreetRead.reds), and each builder
-// chooses from it.
 
 // One of these, steering clear of anything said lately.
 public func CBLineOf(options: array<String>) -> String {
@@ -66,10 +51,6 @@ public func CBLineHeard(line: String) -> Void {
 }
 
 // The lines on offer for one moment, each with what it is about and how much it is worth saying.
-//
-// Topic-weighted, so what V is doing right now outweighs what V is known for, and the topic the last
-// line was about sits the next one out while anything else is on offer (1.9.5). A line heard lately is
-// worth a fraction of its weight, so the bag moves on from it without ever running dry.
 public class CBLineBag {
   public let lines: array<String>;
   public let topics: array<CName>;

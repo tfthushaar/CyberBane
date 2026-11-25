@@ -1,23 +1,10 @@
-// Cyberbane - The street's stories (2.6.5)
+// Cyberbane - The street's stories
 //
-// From the favour feedback ("if you could make them spawn far away, in a different district, it would make sense of the
-// situation and the rewards"): the same shape given to the rest of the street. A reason, a place somewhere else, a person
-// who can say no, and a consequence that fits.
-//
-//   the bagman      walks the week's take to his gang's drop, pinned, so robbing him is planned (Spawn/LivingStreet.reds)
-//   a debt chain    a debtor who pays may give up a name: somebody else who owes, somewhere else (Spawn/LivingStreet.reds)
-//   the witness     a Rival's lead names somebody who saw them, met on the way there: asked, they show V the way in nobody
-//                   watches; paid, they forget V; leaned on, they run ahead to warn the Rival (here)
-//   wannabes        come where V's name is newest, with friends watching who carry the story (Spawn/Wannabe.reds)
-//   the ransom      paid at a drop in the gang's own district, or a crew waiting there instead (Reactions/Allies.reds)
-//   sit-downs       held over something (a debt, a killing, a street, V), which decides how it ends (Spawn/StreetEvents.reds)
-//
-// Nothing new reaches the engine: every body through CBCreateSpawn on a spot V cannot see, every walk through the one
-// move order (CBIssueMove), every pin through the mappin system as the lead and the favour already do, every removal
-// through CBDeleteTaggedSafe. Session state only, like the rest of the street.
+// Bagmen, debt trips, ransom drops and sit-downs, each with a reason, a place somewhere else, a person who can say no
+// and a consequence that fits.
 
-// A place of this gang's own (2.6.5): one the street remembers where they did business or that lies in a district they
-// hold, between `minD` and `maxD` from V, the newest first; else a spot well away from V. Never at a job or in a safe area.
+// A place of this gang's own: one the street remembers where they did business or that lies in a district they hold,
+// between `minD` and `maxD` from V, the newest first; else a spot well away from V. Never at a job or in a safe area.
 public func CBGangDropPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, gang: CName,
                             minD: Float, maxD: Float, out at: Vector4, out district: CName) -> Bool {
   if !IsDefined(sys) || !IsDefined(player) {
@@ -63,14 +50,14 @@ public func CBGangDropPlace(sys: ref<CyberbaneSystem>, game: GameInstance, playe
   return false;
 }
 
-// A pin on a place, as the favour's and the sit-down's (2.6.5).
+// A pin on a place, as the favour's and the sit-down's.
 public func CBPinPlace(game: GameInstance, at: Vector4, text: String, out id: NewMappinID) -> Bool {
   let ms = GameInstance.GetMappinSystem(game);
   if !IsDefined(ms) || !CBMapMarkersOn() || (at.X == 0.0 && at.Y == 0.0) {
     return false;
   }
   id = ms.RegisterMappin(CBPlacePinData(CBEventPinCaption(text)), at);
-  CBUiSound(game, n"ui_menu_map_pin_created", n"PinMade", 4.0);   // 2.7.7
+  CBUiSound(game, n"ui_menu_map_pin_created", n"PinMade", 4.0);
   return true;
 }
 
@@ -81,7 +68,7 @@ public func CBUnpinPlace(game: GameInstance, id: NewMappinID) -> Void {
   }
 }
 
-// One walk order to a spot, stopping `near` metres short (2.6.5): the wannabes' walk, with its distance.
+// One walk order to a spot, stopping `near` metres short: the wannabes' walk, with its distance.
 public func CBStreetWalkNear(p: ref<ScriptedPuppet>, to: Vector4, near: Float) -> Void {
   if !IsDefined(p) {
     return;
@@ -105,8 +92,8 @@ public func CBStreetWalkNear(p: ref<ScriptedPuppet>, to: Vector4, near: Float) -
   CBIssueMove(p, ai, cmd);
 }
 
-// Somebody put round `center` where V cannot see them, minding their own business (2.6.5): the debtor's and the lair's
-// hidden placement, for a witness. True when they were queued.
+// Somebody put round `center` where V cannot see them, minding their own business: the debtor's and the lair's hidden
+// placement, for a witness. True when they were queued.
 public func CBPlaceHiddenNear(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>,
                               center: Vector4, record: TweakDBID, tag: CName, out body: EntityID) -> Bool {
   let ppos = player.GetWorldPosition();
@@ -141,13 +128,11 @@ public func CBPlaceHiddenNear(sys: ref<CyberbaneSystem>, game: GameInstance, des
 
 // ---- The witness ---------------------------------------------------------------------------------------------------
 
-// Their own numbers (2.7.8). These were 32 and 33, which the street-pay lines already had (Reactions/StreetPay.reds), and
-// the witness's answers come first in talk's chain: "Keep an eye out for me" charged the witness's price and answered "Never
-// saw you", and leaning on a witness got directions instead. tools/check_talk_ids.ps1 now refuses a build where two meet.
+// Their own numbers.
 public func CBTalkActLeadWitnessAsk() -> Int32 = 68
 public func CBTalkActLeadWitnessPay() -> Int32 = 69
 
-// Which Rival this person saw (2.6.5), 0 for nobody; and whether V leaned on them.
+// Which Rival this person saw, 0 for nobody; and whether V leaned on them.
 @addField(ScriptedPuppet)
 public let cbLeadWitnessFor: Int32;
 @addField(ScriptedPuppet)

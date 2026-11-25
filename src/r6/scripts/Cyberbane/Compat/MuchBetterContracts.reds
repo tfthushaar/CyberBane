@@ -1,23 +1,7 @@
-// Cyberbane - Much Better Contracts (Repeatable Gigs, the Wire), detected on its own (2.7.5)
+// Cyberbane - Much Better Contracts (Repeatable Gigs)
 //
-// "How well does it run next to Repeatable Gigs (Much Better Contracts)?" Read side by side (its 2.4.8): it adds no
-// method of its own over the game's that Cyberbane also hooks (every one of its 46 hooks is a wrap that calls through),
-// it replays a gig as a journal quest of its own with tracked objectives, and the game's own spawners put that gig's
-// people back. So Cyberbane already treats a contract's site as a job: nobody it sends comes for V there, and its people
-// at the site are left alone, as at any gig. A base learned from a gig is one base to a place, however often the gig is
-// played again (Rivals/Strongholds.reds).
-//
-// What it does that Cyberbane could not see on its own:
-// - A contract runs on after V leaves its site, and three of them send their own pursuit after V (its FactionResponses).
-//   Detected, a fight while one of its contracts is running is the contract's, and nobody new of Cyberbane's is sent
-//   into it (CBArrivalsHeldBase).
-// - It pays a contract straight into V's pockets, not through the game's reward grant, so the payout Cyberbane measures
-//   to know a job was done (Economy/GigBonus.reds) never saw one. Detected, each contract its board counts as completed
-//   is a finished job to Cyberbane, as a gig is: Renown, and the professional's name. Its own pay is left as it set it:
-//   no gig bonus on top.
-//
-// Both read by reflection, from its board's public HasAssignment and Completed, so a later Much Better Contracts that
-// renames either turns that rule off and says so in the log, never stops the scripts compiling.
+// Found by reflection on its board system, so nothing here depends on it being installed. While one of its contracts
+// runs, nobody from Cyberbane is sent into the fight, and each contract it completes counts as a finished job.
 
 public class CBMbcProbe {
   public let state: Int32;   // 0 not looked yet, 1 usable, 2 not installed or not the shape this reads

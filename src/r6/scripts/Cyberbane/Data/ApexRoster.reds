@@ -1,34 +1,9 @@
-// Cyberbane - Who sits in each chair of a gang's apex squad (1.7.0)
+// Cyberbane - Apex squad roster
 //
-// "The apex squad members are all the same even though they have roles like heavy, netrunner,
-// blade. All they do is use guns." That was exactly what was happening. A chair's record came from
-// the gang's role records, and those were only ever filled by V killing somebody of that kind, so
-// until V had personally put down a blade and a netrunner from that gang, every chair fell back
-// to the same elite record: four copies of one shooter with four different labels on the bar. The
-// label and an ability kit were all the role there was.
-//
-// A role cannot be painted on. What makes somebody fight with a katana, hack V from cover or walk
-// through fire behind an HMG is the character record: its weapon, its archetype and the behaviour
-// the game wrote for that archetype. So each chair is now a real record of that kind from that
-// gang's own people, listed here, read straight out of the game's faction files. A netrunner
-// record netruns because the game built it to, which is also why this stays inside crash rule 6:
-// nothing is bolted on to a character the game never made for it.
-//
-// Where a gang simply has nobody of a kind (the Valentinos have no netrunners, the Animals no
-// blades), the chair holds the nearest thing that gang really fields, and the bar and the kit say
-// what that person actually is (CBKitApexSeat). A gang is not given a netrunner it does not have.
-//
-// Safe by construction: every entry is a TweakDB lookup checked at runtime, so a record missing on
-// a patch or without Phantom Liberty is skipped, never spawned. Each is also put through the same
-// tests as any other template (CBRecordUnfitTemplate): a person, nobody the story owns, and nobody
-// who brings the police down on V.
+// Each seat in a gang's apex squad is a real character record (tank, shooter, blade, netrunner), so each member fights
+// the way that record's archetype does instead of being a reskinned ganger.
 
 // The people a gang can put in this chair, best first.
-//
-// Assigned to a local and then returned, on purpose. `return [...]` is shorter and every compiler
-// we can run here takes it, but the mod had never used that form before 1.7.0 and a player on 1.7
-// got a compile failure, which takes every script mod down with it. This is the form the mod has
-// always shipped (`f.rivalFactions = [...]`), so it is not something a 2.31 install meets first here.
 public func CBApexRosterList(faction: CName, chair: Int32) -> array<TweakDBID> {
   let c = chair % 4;
   let picked: array<TweakDBID>;
@@ -103,8 +78,7 @@ public func CBApexRosterList(faction: CName, chair: Int32) -> array<TweakDBID> {
   }
   if Equals(faction, n"Scrappers") {
     // Phantom Liberty's scrappers.tweak, the whole of it: one elite, two kinds of rifleman, wrenches and revolvers. No
-    // heavies, blades or netrunners of their own; the chairs hold what they really field. Without Phantom Liberty none of
-    // these records exists and the gang sends nobody.
+    // heavies, blades or netrunners of their own; the chairs hold what they really field.
     if c == 0 { picked = [t"Character.scrappers_elite2_shotgun_igla_ma"]; return picked; }   // no heavies; their elite
     if c == 1 { picked = [t"Character.scrappers_ranged2_copperhead_ma", t"Character.scrappers_ranged2_ajax_wa", t"Character.scrappers_ranged2_ajax_ma", t"Character.scrappers_ranged2_copperhead_wa"]; return picked; }
     if c == 2 { picked = [t"Character.scrappers_grunt1_melee1_pipewrench_ma", t"Character.scrappers_grunt1_melee1_pipewrench_wa"]; return picked; }   // no blades; a wrench
@@ -132,13 +106,8 @@ public func CBApexRosterList(faction: CName, chair: Int32) -> array<TweakDBID> {
   return none;
 }
 
-// One record for this chair of this gang: any of the ones listed that this install really has and
-// that is fit to send, chosen at random so the same four faces do not turn up every time. Invalid
-// when the gang has none, and the caller falls back to whoever V has actually fought.
-// The people a gang sends (2.5.0): the ones V has fought when V has fought any (CBFactionState.sampleRecord, filed from
-// V's kills), else its own rank and file from the roster. Asked by everything that puts a gang's people in the world,
-// because the template is only ever filed from a kill: a gang V had never crossed, most often a friendly one, had
-// nobody to lend, no lookout for a favour, no bagman on its streets and no partners for a truce's crew.
+// One record for this chair of this gang: any of the ones listed that this install really has and that is fit to send,
+// chosen at random so the same four faces do not turn up every time.
 public func CBGangTemplate(sys: ref<CyberbaneSystem>, faction: CName) -> TweakDBID {
   let fs = IsDefined(sys) && IsNameValid(faction) ? sys.FindFaction(faction) : null;
   if IsDefined(fs) && TDBID.IsValid(fs.sampleRecord) {

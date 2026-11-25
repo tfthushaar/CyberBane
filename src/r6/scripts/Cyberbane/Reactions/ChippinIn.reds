@@ -1,28 +1,7 @@
-// Cyberbane - Chippin' In (2.7.6)
+// Cyberbane - Chippin' In
 //
-// A player's idea: "a probability that a crew member not With You and on a different job drops the task, revives you, and
-// aids you while fighting an apex crew (except when they're training, at war, hitting a Rival or a bagman), about one in
-// four." And, asked how it should sit beside the mods that already bring V back: only when Fenix Rebirth is not installed,
-// and after Second Heart has had its turn.
-//
-// How it goes. When a gang's apex squad is in the world, one roll for the fight (the setting, 25% by default) picks the
-// most loyal member who could drop what they are doing: at home or working (earning, recruiting, running money, watching
-// the house), never hurt, away (training, at war, a hit, a bag, a duel: CBCrewAway), sparring, out with V already, or
-// restless. They are listening in. If a blow lands that would kill V, it is caught before the game applies it, in the same
-// place the damage hook already stands (Spawn/FactionApex.reds, StatPoolsManager.ApplyDamage), so the game never kills V:
-// V is knocked down (the game's own knockdown, BaseStatusEffect.VehicleKnockdown, the fall Fenix Rebirth also uses), left
-// with a sliver of health, and nothing lands on V while they come. They drop their job and come the way a call brings
-// them (CBSpawnOnSide), and when they reach V, V is back up with half their health, and they fight on beside V as one of
-// the crew out with V. If they cannot be placed, or take too long, V gets up on their own with less.
-//
-// Never twice in one fight, never in a car, never while V is down for another reason, never for anybody but V. A Second
-// Heart that is ready is the game's own revive and goes first: Chippin' In only catches a blow when V has no Second Heart
-// or it is cooling down (its cooldown is what zeroes the HasSecondHeart flag, so a spent one reads as none). And never with
-// Fenix Rebirth installed, which catches the same blow in the same place; two mods both swallowing one hit is a fight
-// over it neither can win cleanly.
-//
-// No scene animation: the story's own pick-ups are quest scenes that cannot be given another actor, and changing a body's
-// appearance at run time is crash rule 6. The knockdown and the game's own get-up are what is left.
+// In an apex squad fight, a crew member at home or working may drop what they're doing and get V back up when a hit
+// would kill V. One roll per fight, after Second Heart, and off when Fenix Rebirth is installed.
 
 // Session state on V (a load builds a new V, so all of it starts clear).
 @addField(PlayerPuppet)
@@ -91,8 +70,6 @@ public func CBChippinInTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   }
   if player.cbChipRolled {
     // Whoever was listening can no longer come (called, hurt, sent off, the call on its way home): nobody is.
-    // Nor while the crew's own holds keep them away (the story, a scene, a safe place, a job by Your crew on jobs): called
-    // there they would be sent home the moment they arrived (CBMyCrewTick).
     if player.cbChipArmed > 0
        && (!IsDefined(book) || book.leaving || CBSpawnRoom(game) <= 0 || CBFenixInstalled() || StrLen(CBCrewHeldWhy(sys, game)) > 0
            || !CBChipInCanCome(game, book, book.Find(player.cbChipArmed), CBGameSeconds(game))) {
@@ -118,8 +95,7 @@ public func CBChippinInTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
 }
 
 // From the damage hook, for a hit on V (Spawn/FactionApex.reds). True when the hit is caught and must not land: the
-// blow that would have killed V, or anything at all while V is down and covered. Only V's own fields are written here,
-// and the rest waits for the next frame (the 1.8.1 rule: a game event changes nothing shared).
+// blow that would have killed V, or anything at all while V is down and covered.
 public func CBChipInCatch(pv: ref<PlayerPuppet>, hitEvent: ref<gameHitEvent>) -> Bool {
   if !IsDefined(pv) {
     return false;
@@ -141,7 +117,7 @@ public func CBChipInCatch(pv: ref<PlayerPuppet>, hitEvent: ref<gameHitEvent>) ->
   if hp > 1.0 && incoming < hp - 1.0 {
     return false;   // not a killing blow
   }
-  // A Second Heart that is ready brings V back the game's own way, first.
+  // A Second Heart that is ready brings V back the game's way, first.
   if RPGManager.HasStatFlag(pv, gamedataStatType.HasSecondHeart)
      && !StatusEffectSystem.ObjectHasStatusEffect(pv, t"BaseStatusEffect.SecondHeartCooldown") {
     return false;

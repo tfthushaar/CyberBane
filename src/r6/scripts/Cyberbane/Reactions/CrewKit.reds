@@ -1,30 +1,8 @@
-// Cyberbane - Kitting out the crew (2.6.0)
+// Cyberbane - Kitting out the crew
 //
 // V's crew, made V's own: a weapon handed over from V's inventory, chrome V owns and does not wear, training that
 // brings them back stronger, a war on a gang sent with somebody senior, and a name for the crew itself. All of it
 // asked for on the Hub's Crew page and carried out on the game's tick (CBCrewKitService), never from the menu.
-//
-// What the game lets a script do, and so how each one works:
-//   - A weapon. The game's AI picks an NPC's weapon from its record in a fight, so the gun itself cannot be put in their
-//     hands to stay. A weapon handed over sets how they fight (heavy, shooter or blade, from what kind of weapon it is),
-//     and from their next call they come on a body of their gang's that fights that way; its quality adds to their
-//     damage. The weapon itself is kept for V, mods and attachments handed back first, and given back on request or
-//     whenever they leave the crew.
-//   - Chrome. Installed for good: what it does follows where it goes (armour, health, damage, critical hits,
-//     resistance), worked in as they come into the world. Never an ability the crash rules keep off NPCs.
-//   - Rank. Their wins and their training together, Rookie to Legend, each rank tougher than the last.
-//   - Training. Away for some game hours at a price; back a rank higher, with better gear and better field chrome.
-//   - A war. From Lieutenant up, sent to start one on a gang: won, the gang loses ground and knows who sent it;
-//     lost, they come back hurt, or not at all.
-//   - A name. Typed on the Hub (Codeware's text input), kept in the save as letters from a fixed set.
-//   - A spar. V calls one of them out for a timed round: they come at V, tougher and hitting soft, and the round stops
-//     the moment either side is close to going down, or the time runs out. Nobody dies of it: the game's god mode is
-//     what Cyberbane strips off its people (CBDisarmGodMode), so the round is kept safe by its own stop instead. Each
-//     spar leaves them sharp for a day, and every few count as a training. Once a game day each.
-//   - Work. Put on earning, they bring in money every game day by their rank, and now and then come back hurt. Or
-//     put to recruiting (one at a time), they find the broker better solos (Reactions/CrewBanner.reds).
-//
-// Everything is kept in CBCrewKitBook, keyed by the member's id: the crew's own saved class is never changed.
 
 // One member's kit.
 public class CBCrewKit {
@@ -33,9 +11,7 @@ public class CBCrewKit {
   public persistent let weapon: ItemID;
   public persistent let weaponType: Int32;    // gamedataItemType, as a number
   public persistent let weaponTier: Int32;    // 0 common .. 4 legendary or iconic
-  // The chrome put in them, up to CBCrewChromeSlots, as four scalars. Never an array: this class is saved inside the
-  // book's own list, and an array nested in a saved class is the shape that crashed the game before (schema 2 and 3,
-  // CBRumor.reachedMask), the reason CBFactionState keeps its role records as four fields too.
+  // The chrome put in them, up to CBCrewChromeSlots, as four scalars.
   public persistent let chrome0: TweakDBID;
   public persistent let chrome1: TweakDBID;
   public persistent let chrome2: TweakDBID;
@@ -91,7 +67,7 @@ public class CBCrewKitAsk {
   public let what: Int32;     // CBCrewAskGive .. CBCrewAskWork
   public let item: ItemID;    // the weapon or the chrome
   public let gang: CName;     // the war's gang, or a job's
-  public let rival: Int32;    // a hit's Rival (2.7.2)
+  public let rival: Int32;    // a hit's Rival
 }
 
 public func CBCrewAskGive() -> Int32 = 1
@@ -112,8 +88,8 @@ public class CBCrewKitBook extends ScriptableSystem {
   public let sparBody: EntityID;
   public let sparStart: Int32;     // the tick it was asked for
   public let sparSeen: Int32;      // the tick their body was first in the world, 0 before
-  // The body of a round just over, walking off (2.6.3): its member is not called again until it is gone, or two of the
-  // same person stand in the street.
+  // The body of a round just over, walking off: its member is not called again until it is gone, or two of the same
+  // person stand in the street.
   public let sparLeftMember: Int32;
   public let sparLeftBody: EntityID;
   // Asked for on the Hub: a spar on the next tick (CBCrewKitService), the rest at once (CBCrewKitDoNow).
@@ -122,7 +98,7 @@ public class CBCrewKitBook extends ScriptableSystem {
   public let deferTexts: Bool;
   public let laterWho: array<Int32>;
   public let laterLines: array<String>;
-  public let laterGroup: array<Bool>;   // for the crew's group chat rather than their own thread (2.7.6)
+  public let laterGroup: array<Bool>;   // for the crew's group chat rather than their own thread
 
   public static func Get(game: GameInstance) -> ref<CBCrewKitBook> {
     let c = GameInstance.GetScriptableSystemsContainer(game);
@@ -305,7 +281,7 @@ public func CBCrewRankOf(game: GameInstance, m: ref<CBCrewMember>) -> Int32 {
   return Min(6, CBCrewRank(m.wins) + (IsDefined(k) ? k.trained : 0));
 }
 
-// Where they stand on the climb, for a card or a row (2.6.1): "Veteran 3/6".
+// Where they stand on the climb, for a card or a row: "Veteran 3/6".
 public func CBCrewRankShort(game: GameInstance, m: ref<CBCrewMember>) -> String {
   let rank = CBCrewRankOf(game, m);
   return s"\(CBCrewRankWord(rank)) \(rank)/6";
@@ -318,8 +294,8 @@ func CBCrewWinsFor(rank: Int32) -> Int32 {
   return CBCrewPaceWins(12);
 }
 
-// What it takes to reach the next rank, said plainly (2.6.1): "Next, Lieutenant: 5 more wins, or a training (2 more
-// spars count as one)." Every way there is, from their wins and their training as they are now.
+// What it takes to reach the next rank, said plainly: Every way there is, from their wins and their training as they
+// are now.
 public func CBCrewNextRankLine(game: GameInstance, m: ref<CBCrewMember>) -> String {
   if !IsDefined(m) {
     return "";
@@ -394,7 +370,7 @@ public func CBCrewSeatForWeapon(t: gamedataItemType) -> Int32 {
   return -1;
 }
 
-// 0 common .. 4 legendary or iconic, read off the quality's name so every "Plus" lands with its own.
+// 0 common.. 4 legendary or iconic, read off the quality's name so every "Plus" lands with its own.
 public func CBCrewTierOf(q: gamedataQuality) -> Int32 {
   let n = EnumValueToString(CBT(n"Cyberbane-CrewKit-GamedataQuality"), Cast<Int64>(EnumInt(q)));
   if StrContains(n, "Legendary") || StrContains(n, "Iconic") { return 4; }
@@ -437,7 +413,7 @@ public func CBCrewWeaponChoices(game: GameInstance) -> array<ItemID> {
       ArrayPush(out, d.GetID());
     }
   }
-  // And the stash's, when V is at it (Reactions/CrewHome.reds, 2.7.2).
+  // And the stash's, when V is at it (Reactions/CrewHome.reds).
   for s in CBArmoryChoices(game) {
     if ArraySize(out) < CBConfig.CrewPickListMax() {
       ArrayPush(out, s);
@@ -465,28 +441,10 @@ public func CBCrewChromeChoices(game: GameInstance) -> array<ItemID> {
   return out;
 }
 
-// ---- Chrome: what each piece does for them, by the game's own numbers (2.6.0) ------------------------------------
+// ---- Chrome: what each piece does for them, by the game's numbers ------------------------------------
 //
 // It sorted implants into five rough kinds by where they go (armour, health, damage, critical hits, hack resistance),
 // so a Mechatronic Core, which makes whoever wears it hit drones, mechs and robots harder, read as hack resistance.
-//
-// Now each piece is read from its own record, the way the game reads it for V: the stats on the implant itself (a body
-// part's armour, a constant and a share by its quality: statModifiers) and the stats it gives whoever wears it
-// (OnEquip). Each goes one of three ways:
-// - what the game reads for anybody in a fight goes on as it is: armour, health, mitigation, the resistances and
-//   immunities, damage to machines (damageSystem.script ProcessArmor, ProcessMitigation, ProcessDamageReduction;
-//   damageManager.script CalculateSourceModifiers);
-// - what the game reads for V alone is turned into what it is worth on average: critical hits, headshots and weak
-//   spots (ProcessCriticalHit and ProcessLocalizedDamage return at once for anybody else) and attack speed become
-//   damage, the armour multiplier becomes armour;
-// - the rest is V's own (RAM, zoom, stamina, healing items) and does nothing for anybody else, so a piece with only that
-//   is not offered.
-// An implant that is a power to use (a Sandevistan, a Kerenzikov, a second heart, optical camo, Berserk, a biomonitor)
-// gives what the power does in a fight, as stats (CBCrewChromeAbilities, 2.6.3), never the game's own cyberware ability:
-// those fire on characters the game never built for them (crash rule 5). A pain editor's ability is stats only. The
-// effects inside an implant's packages are never applied to them: those set quest facts, drive V's detection meter and
-// play V's sounds, and what an implant does only under a condition (low health, a kill) lives in those effects, so it
-// is never given for good either.
 public class CBCrewChromeEffect {
   public let stats: array<gamedataStatType>;
   public let types: array<gameStatModifierType>;
@@ -499,8 +457,8 @@ public class CBCrewChromeEffect {
   public let armourMult: Float;   // the armour multiplier's gain
   public let abilities: array<TweakDBID>;
   public let words: array<String>;
-  // Arm cyberware (2.7.7): the kind of fighter it makes them, as a signature kind (Rivals/Signature.reds): 1 mantis blades
-  // or a monowire, 2 gorilla arms, 3 a projectile launcher's heavy. 0 for anything else.
+  // Arm cyberware: the kind of fighter it makes them, as a signature kind (Rivals/Signature.reds): 1 mantis blades or a
+  // monowire, 2 gorilla arms, 3 a projectile launcher's heavy. 0 for anything else.
   public let style: Int32;
 
   public func Any() -> Bool {
@@ -651,17 +609,10 @@ func CBCrewChromeStatWord(stat: gamedataStatType) -> String {
 
 // What an implant's power is worth to one of the crew, by the implant's cyberwareType (the key the game itself asks of
 // an implant: rpgManager.script, player.script).
-//
-// 2.6.0 gave them the game's own powers for these: a Sandevistan, a Kerenzikov, a Second Heart, optical camo, Berserk,
-// a biomonitor. Each is a flag the game's NPC AI reads to fire time dilation, a dodge, a revive, a rage, a shader or a
-// heal, on characters it never built for them, and crash rule 5 has kept them off Cyberbane's people since 1.5.0 after
-// a crash of exactly that shape (2.6.3). So each is given as what it does in a fight, in stats the game rolls for every
-// target (damageSystem.script: ProcessEvasion, the health and armour pools) and the attack speed that already becomes
-// damage here. The pain editor is a stat package only and stays as it is.
 func CBCrewChromeAbilities(e: ref<CBCrewChromeEffect>, kind: CName, quality: Float) -> Void {
   switch kind {
     case n"Sandevistan":
-      ArrayPush(e.abilities, t"Ability.HasDodge");   // the game's own dodge, behaviour only
+      ArrayPush(e.abilities, t"Ability.HasDodge");   // the game's dodge, behaviour only
       CBCrewChromeStat(e, gamedataStatType.Evasion, gameStatModifierType.Additive, 4.0 + 2.0 * quality);
       e.speed += 0.10 + 0.05 * quality;
       e.Say(CBT(n"Cyberbane-CrewKit-ASandevistanSSpeedHarderTo"));
@@ -692,9 +643,7 @@ func CBCrewChromeAbilities(e: ref<CBCrewChromeEffect>, kind: CName, quality: Flo
       ArrayPush(e.abilities, t"Ability.HasPainEditor");
       e.Say(CBT(n"Cyberbane-CrewKit-NoFlinching"));
       break;
-    // Arm cyberware has no stats of its own to read, so it was never offered (2.7.7). It makes them another kind of fighter:
-    // a body of the kind that fights that way, one their gang's signature fighters have (CBCrewStyleFromChrome), and a
-    // fixed share of damage for it, the way the Sandevistan becomes dodge and speed.
+    // Arm cyberware has no stats of its own to read, so it was never offered.
     case n"MantisBlades":
     case n"NanoWires":
       e.style = 1;
@@ -707,8 +656,8 @@ func CBCrewChromeAbilities(e: ref<CBCrewChromeEffect>, kind: CName, quality: Flo
       ArrayPush(e.abilities, t"Ability.HasMeleeHitReactionAndTakedownResistance");
       e.Say(CBT(n"Cyberbane-CrewKit-FightsWithGorillaArms"));
       break;
-    // What works only on a condition for V (a kill, a dodge), as a fair fixed share for them (2.7.7): never a heal in a
-    // fight, which would break the rule that nothing of Cyberbane's mends itself under fire.
+    // What works only on a condition for V (a kill, a dodge), as a fair fixed share for them: never a heal in a fight,
+    // which would break the rule that nothing of Cyberbane's mends itself under fire.
     case n"HealOnKill":
       CBCrewChromeStat(e, gamedataStatType.Health, gameStatModifierType.Multiplier, 1.06 + 0.02 * quality);
       e.Say(CBT(n"Cyberbane-CrewKit-ToughenedByAKillChrome"));
@@ -725,8 +674,8 @@ func CBCrewChromeAbilities(e: ref<CBCrewChromeEffect>, kind: CName, quality: Flo
   }
 }
 
-// What it does for them by the numbers (2.7.7): "+18% armour, +10% fire resistance". "More armour" named the kind of bonus
-// and never how much. The first `most` of them.
+// What it does for them by the numbers: "+18% armour, +10% fire resistance". "More armour" named the kind of bonus and
+// never how much. The first `most` of them.
 public func CBCrewChromeNumbers(e: ref<CBCrewChromeEffect>, most: Int32) -> String {
   if !IsDefined(e) {
     return "";
@@ -826,9 +775,9 @@ public func CBCrewStatNoun(stat: gamedataStatType) -> String {
   return "";
 }
 
-// Arm cyberware put in (2.7.7): the body they come in fights that way from the next call, one of their old gang's
-// signature fighters when the gang has one, else anybody's of that kind; one who was a Rival keeps their own body and
-// only fights differently in name. The seat follows: blades and gorilla arms fight up close, the launcher is a heavy's.
+// Arm cyberware put in: the body they come in fights that way from the next call, one of their old gang's signature
+// fighters when the gang has one, else anybody's of that kind; one who was a Rival keeps their own body and only fights
+// differently in name.
 public func CBCrewStyleFromChrome(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>, e: ref<CBCrewChromeEffect>) -> Void {
   if !IsDefined(m) || !IsDefined(e) || e.style <= 0 {
     return;
@@ -885,7 +834,7 @@ func CBCrewStyleRecord(gang: CName, style: Int32, seed: Int32, sex: Int32) -> Tw
   return ArraySize(found) > 0 ? found[CBHashIndex(seed, 23, ArraySize(found))] : TDBID.None();
 }
 
-// The sex a character record's body has (2.7.7): 1 a woman, 2 a man, 0 when the record allows both or says nothing.
+// The sex a character record's body has: 1 a woman, 2 a man, 0 when the record allows both or says nothing.
 public func CBRecordSex(rec: TweakDBID) -> Int32 {
   let cr = TweakDBInterface.GetCharacterRecord(rec);
   if !IsDefined(cr) || cr.GetGendersCount() != 1 {
@@ -901,8 +850,8 @@ public func CBRecordSex(rec: TweakDBID) -> Int32 {
   return 0;
 }
 
-// How many pieces of chrome V owns and is not wearing that would do nothing for anybody but V (2.7.7), so the list can
-// say why they are not there.
+// How many pieces of chrome V owns and is not wearing that would do nothing for anybody but V, so the list can say why
+// they are not there.
 public func CBCrewChromeLeftOut(game: GameInstance) -> Int32 {
   let player = GetPlayer(game);
   let ts = GameInstance.GetTransactionSystem(game);
@@ -921,14 +870,10 @@ public func CBCrewChromeLeftOut(game: GameInstance) -> Int32 {
   return n;
 }
 
-// ---- Their own weapon in their hands (2.7.7, experimental) ---------------------------------------------------------
+// ---- Their own weapon in their hands (experimental) ---------------------------------------------------------
 //
 // The weapon handed over stays V's, kept for them (CBCrewKit.weapon), and what reaches the fight is how they fight and
-// the damage its grade brings. With "Their own weapon in their hands" on, a copy of the same weapon goes into the body's
-// inventory as it comes into the world and the game's own equip order (AIEquipCommand, core/ai/aiCommand.script) puts it
-// in their hand: the one AI order they get on arrival (crash rule 2; the follower role is a role, not an order). The game
-// may still have them switch to the weapons their record carries in a fight. If they die, the weapon falls where they did
-// and is theirs no longer: the one on the ground is it.
+// the damage its grade brings.
 public func CBCrewWeaponInHandOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
   return IsDefined(rt) && rt.HasSettings() && rt.GetSettings().crewWeaponInHand;
@@ -1058,7 +1003,7 @@ public func CBCrewAway(game: GameInstance, id: Int32, now: Float) -> Bool {
   let k = IsDefined(kb) ? kb.Find(id) : null;
   return (IsDefined(k) && (k.trainUntil > now || (k.warUntil > now && !CBCrewWarHere(game, k.warOn))))
       || CBCrewJobAway(game, id, now)
-      || CBCrewResting(game, id, now);   // a day off V gave them (2.7.7); a war's party can come on the war's own streets
+      || CBCrewResting(game, id, now);   // a day off V gave them; a war's party can come on the war's own streets
 }
 
 // "TRAINING, 6H" or "AT WAR, 12H" for the card, "" when here.
@@ -1111,7 +1056,7 @@ public func CBCrewWarTargets(sys: ref<CyberbaneSystem>) -> array<CName> {
 @addField(ScriptedPuppet)
 public let cbCrewKitted: Bool;
 
-// What a member's kit comes to (2.7.7): every multiplier, stat and ability CBCrewApplyKit puts on them, worked out without
+// What a member's kit comes to: every multiplier, stat and ability CBCrewApplyKit puts on them, worked out without
 // touching anybody, so the Hub can show their real numbers and what a piece of chrome would change before it goes in.
 public class CBCrewKitNumbers {
   public let rank: Int32;
@@ -1194,7 +1139,7 @@ public func CBCrewKitCalc(game: GameInstance, m: ref<CBCrewMember>, pl: Float, b
   if TDBID.IsValid(extra) {
     ArrayPush(chrome, extra);
   }
-  // Each implant as the game has it (CBCrewChromeRead): its own stats on them, its power as the game's own people have it,
+  // Each implant as the game has it (CBCrewChromeRead): its own stats on them, its power as the game's people have it,
   // and what only V could use turned into its worth.
   for c in chrome {
     let e = CBCrewChromeRead(c);
@@ -1224,10 +1169,9 @@ public func CBCrewKitCalc(game: GameInstance, m: ref<CBCrewMember>, pl: Float, b
   let chance = ClampF(baseChance + critChance / 100.0, 0.0, 1.0);
   damage += chance * (baseDamage + critDamage / 100.0) - baseChance * baseDamage;
   damage += CBConfig.CrewHeadshotShare() * headshot + CBConfig.CrewWeakspotShare() * weakspot;
-  // Their climb, on the scale the apex squads are built on (2.6.1, Spawn/FactionApex.reds): Adam Smasher's own curves at
-  // their power level, a share of him that grows with every rank and every spar, and the same measure of V's fire an apex
-  // squad member takes. A Legend who has sparred with V is past an apex squad member at the highest Apex strength; a Rookie
-  // is a ganger, much as before.
+  // Their climb, on the scale the apex squads are built on (Spawn/FactionApex.reds): Adam Smasher's own curves at their
+  // power level, a share of him that grows with every rank and every spar, and the same measure of V's fire an apex
+  // squad member takes.
   let climb = ClampF(Cast<Float>(rank - 1) / 5.0, 0.0, 1.0);
   let sparred = IsDefined(k) ? MinF(Cast<Float>(k.spars) * CBConfig.CrewSmasherSparStep(), CBConfig.CrewSmasherSparMax()) : 0.0;
   let share = CBConfig.CrewSmasherShareTop() * climb + sparred;
@@ -1236,7 +1180,7 @@ public func CBCrewKitCalc(game: GameInstance, m: ref<CBCrewMember>, pl: Float, b
   let npcDamage = 1.0;
   if share > 0.0 {
     let sm = CBSmasherScale(game, pl);
-    // As far as V is into the game (2.6.4, Spawn/MeasureV.reds CBVProgress), as for a Rival.
+    // As far as V is into the game (Spawn/MeasureV.reds CBVProgress), as for a Rival.
     let measure = CBMeasureV(game);
     let progress = CBVProgress(measure);
     if sm.X > 0.0 {
@@ -1259,7 +1203,7 @@ public func CBCrewKitCalc(game: GameInstance, m: ref<CBCrewMember>, pl: Float, b
     n.hitCap = CBConfig.CrewHitCapRookie() - (CBConfig.CrewHitCapRookie() - CBConfig.CrewHitCapLegend()) * climb;
     n.smasherSaid = CBTf(n"Cyberbane-CrewKit-SmasherXHealthXDamageAt", [s"\(sm.X)", s"\(sm.Y)", s"\(share)", s"\(n.hitCap)"]);
   }
-  // What a rank brings with it, the game's own abilities (gmpl_abilities/abilities.tweak).
+  // What a rank brings with it, the game's abilities (gmpl_abilities/abilities.tweak).
   if rank >= 3 {
     ArrayPush(n.abilities, t"Ability.HasDodge");
     ArrayPush(n.abilities, t"Ability.CanCatchUp");
@@ -1274,8 +1218,6 @@ public func CBCrewKitCalc(game: GameInstance, m: ref<CBCrewMember>, pl: Float, b
     ArrayPush(n.abilities, t"Ability.CanUseAntiStun");
   }
   if rank >= 6 {
-    // Dodging as the game's evasion roll, never a Kerenzikov: cyberware abilities stay off Cyberbane's people (crash
-    // rule 5), which 2.6.2 broke here.
     n.evasion = CBConfig.CrewLegendEvasion();
     ArrayPush(n.abilities, t"Ability.CanGuardBreak");
   }
@@ -1335,7 +1277,7 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
   if IsDefined(pools) {
     pools.RequestSettingStatPoolMaxValue(id, gamedataStatPoolType.Health, null);
   }
-  // What the Hub shows as their numbers when last called (2.7.7).
+  // What the Hub shows as their numbers when last called.
   let lb = CBCrewLifeBook.Get(game);
   if IsDefined(lb) {
     lb.NoteKit(m.id, n.health, n.armour, n.damage);
@@ -1351,7 +1293,7 @@ public func CBCrewReturnWeapon(game: GameInstance, k: ref<CBCrewKit>) -> Bool {
   if !IsDefined(k) || !k.hasWeapon || !IsDefined(player) || !IsDefined(ts) {
     return false;
   }
-  // One from the stash never left it (2.7.2).
+  // One from the stash never left it.
   if CBArmoryReturn(game, k) {
     return true;
   }
@@ -1405,10 +1347,10 @@ public func CBCrewKitService(sys: ref<CyberbaneSystem>, game: GameInstance, book
     CBCrewKitCarryOut(sys, game, kb, book, a, now);
   }
   CBCrewKitReturns(sys, game, kb, book, now);
-  CBCrewWarTick(sys, game);   // how the crew's wars are going, in its group chat (Reactions/CrewWar.reds, 2.7.6)
+  CBCrewWarTick(sys, game);   // how the crew's wars are going, in its group chat (Reactions/CrewWar.reds)
   CBCrewSparTick(sys, game, kb, book, now);
   CBCrewEarnTick(sys, game, kb, book, now);
-  CBCrewJobsTick(sys, game, book, now);   // jobs, the kitty, challenges and goods (Reactions/CrewJobs.reds, 2.7.2)
+  CBCrewJobsTick(sys, game, book, now);   // jobs, the kitty, challenges and goods (Reactions/CrewJobs.reds)
   CBCrewBannerTick(sys, game, now);
 }
 
@@ -1428,14 +1370,14 @@ func CBCrewKitCarryOut(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CB
   if a.what == CBCrewAskChrome() { CBCrewInstallChrome(sys, game, kb, m, a.item); }
   if a.what == CBCrewAskTrain() { CBCrewSendTraining(sys, game, kb, m, now); }
   if a.what == CBCrewAskWar() {
-    // A war party of one (2.7.6, Reactions/CrewWar.reds): the Hub's war screen sends whole parties itself.
+    // A war party of one (Reactions/CrewWar.reds): the Hub's war screen sends whole parties itself.
     let one: array<Int32>;
     ArrayPush(one, m.id);
     CBCrewSendWarParty(sys, game, a.gang, one);
   }
   if a.what == CBCrewAskSpar() { CBCrewSparStart(sys, game, kb, m, now); }
   if a.what == CBCrewAskWork() { CBCrewSetWork(sys, game, m); }   // earning, recruiting, or none (CrewBanner.reds)
-  // A job (2.7.2): a Rival's hit, or a gang's bag; and the answer to a challenge.
+  // A job: a Rival's hit, or a gang's bag; and the answer to a challenge.
   if a.what == CBCrewAskJob() {
     CBCrewSendOnJob(sys, game, m, a.rival > 0 ? CBCrewJobHit() : CBCrewJobBag(), a.rival, a.gang);
   }
@@ -1444,10 +1386,8 @@ func CBCrewKitCarryOut(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CB
   }
 }
 
-// What the Hub asked that touches nothing but V's bag and the crew's own books, done while the menu is still open
-// (2.6.0): a weapon given or taken back, chrome put in, training, work, a war. The game's own menus move items while it
-// is paused, and so does this. Waiting for the game, as a spar has to (it puts somebody in the world), every order read
-// as not done until the menu closed. Their texts still wait for the game (CBCrewText).
+// What the Hub asked that touches nothing but V's bag and the crew's own books, done while the menu is still open: a
+// weapon given or taken back, chrome put in, training, work, a war.
 public func CBCrewKitDoNow(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let kb = CBCrewKitBook.Get(game);
   let book = CBCrewBook.Get(game);
@@ -1479,7 +1419,7 @@ public func CBCrewKitDoNow(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
 
 // ---- A spar --------------------------------------------------------------------------------------
 
-// In a round with V, or their round's body still walking off (2.6.3): not to be called, or two of them stand in the street.
+// In a round with V, or their round's body still walking off: not to be called, or two of them stand in the street.
 public func CBCrewSparring(game: GameInstance, id: Int32) -> Bool {
   let kb = CBCrewKitBook.Get(game);
   if !IsDefined(kb) || id <= 0 {
@@ -1583,10 +1523,10 @@ public func CBCrewSparSetUp(sys: ref<CyberbaneSystem>, game: GameInstance, puppe
   if IsDefined(stats) {
     let id = Cast<StatsObjectID>(puppet.GetEntityID());
     // Tougher for a round, less so the further they have climbed: a Legend is built near an apex squad's grade already
-    // (CBCrewApplyKit), and two and a half times that again only ever ran a round out on the clock (2.6.1).
+    // (CBCrewApplyKit), and two and a half times that again only ever ran a round out on the clock.
     let climb = IsDefined(m) ? ClampF(Cast<Float>(CBCrewRankOf(game, m) - 1) / 5.0, 0.0, 1.0) : 0.0;
     CBAddMult(stats, id, gamedataStatType.Health, 1.0 + (CBConfig.CrewSparHealthMult() - 1.0) * (1.0 - climb));
-    // Hitting softly, for real: CBAddMult only ever raises a stat, so the spar's 0.35 was never applied (2.6.1).
+    // Hitting softly, for real: CBAddMult only ever raises a stat, so the spar's 0.35 was never applied.
     let soft = RPGManager.CreateStatModifier(gamedataStatType.PhysicalDamage, gameStatModifierType.Multiplier, CBConfig.CrewSparDamageMult());
     if IsDefined(soft) {
       stats.AddModifier(id, soft);
@@ -1614,13 +1554,12 @@ func CBCrewSparTick(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
     return;
   }
   // The story, a scene, a job or a safe place takes over mid-round: the bell goes (or the round is called off before it
-  // began). The round's body is hostile to V, and nothing hostile of ours stays while those hold; it was only asked
-  // when the round was set up (CBCrewSparBlocked).
+  // began).
   if sys.GetStoryHold() != CBStoryNone() || CBArrivalsHeldBase(sys, game) {
     CBCrewSparEnd(sys, game, kb, m, p, kb.sparSeen > 0 ? 3 : 0);
     return;
   }
-  // Real trouble on the way (2.6.3): the round is off, and the crew can be called. Nothing is scored for it.
+  // Real trouble on the way: the round is off, and the crew can be called. Nothing is scored for it.
   if CBHuntersOut(sys, game) || CBHuntPending(sys) {
     CBCrewSparEnd(sys, game, kb, m, p, 0);
     CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewKit-RealTroubleComingRoundSOff"));
@@ -1782,7 +1721,7 @@ func CBCrewGiveWeapon(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
   if !IsDefined(player) || !IsDefined(ts) || !ItemID.IsValid(item) {
     return;
   }
-  // From the stash V is at: it stays there (Reactions/CrewHome.reds, 2.7.2).
+  // From the stash V is at: it stays there (Reactions/CrewHome.reds).
   if CBArmoryFromStash(game, item) {
     CBArmoryGive(sys, game, kb, m, item);
     return;
@@ -1799,7 +1738,7 @@ func CBCrewGiveWeapon(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
   let k = kb.Kit(m.id);
   // One at a time: the one they had comes back first.
   CBCrewReturnWeapon(game, k);
-  // Its mods and attachments back into V's bag, the way the game's own stash takes them off (stash.script).
+  // Its mods and attachments back into V's bag, the way the game's stash takes them off (stash.script).
   let slots = RPGManager.GetModsSlotIDs(data.GetItemType());
   for s in slots {
     ts.RemovePart(player, item, s);
@@ -1829,7 +1768,7 @@ func CBCrewGiveWeapon(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
     }
   }
   let what = CBCrewItemName(ItemID.GetTDBID(item));
-  // What it really does (2.7.7): the way they fight and the damage its grade brings, unless they carry it themselves.
+  // What it really does: the way they fight and the damage its grade brings, unless they carry it themselves.
   let how = CBCrewWeaponInHandOn() ? CBTf(n"Cyberbane-CrewKit-InTheirHands", [CBLowFirst(CBCrewSeatWord(seat))])
                                    : CBTf(n"Cyberbane-CrewKit-FightAsWithGrade", [CBLowFirst(CBCrewSeatWord(seat)), CBLowFirst(CBCrewTierWord(tier))]);
   CBCrewBatchText(game, m, (tier >= 3 ? CBTf(n"Cyberbane-CrewKit-SeriousPiece", [what]) : CBTf(n"Cyberbane-CrewKit-PutItToWork", [what])) + " " + how);
@@ -1867,8 +1806,8 @@ func CBCrewInstallChrome(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<
     return;
   }
   k.AddChrome(rec);
-  // What it really does for them, by the numbers (2.7.7, CBCrewChromeNumbers): "+18% armour, +10% fire resistance". Three
-  // pieces put in at once are one text (CBCrewBatchText), and the game's own sound for a finished build.
+  // What it really does for them, by the numbers (CBCrewChromeNumbers): "+18% armour, +10% fire resistance". Three
+  // pieces put in at once are one text (CBCrewBatchText), and the game's sound for a finished build.
   let what = CBCrewChromeNumbers(e, 3);
   CBCrewBatchText(game, m, CBTf(n"Cyberbane-CrewKit-GotThePutInFeelIt", [s"\(CBCrewItemName(rec))", s"\(CBCapFirst(what))"]));
   CBCrewLifeNote(game, m.id, CBLifeChrome(), n"", 0);
@@ -1913,8 +1852,6 @@ func CBCrewKitReturns(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
       CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-BackNowBetterGearAndThey", [s"\(CBCrewRankWord(CBCrewRankOf(game, m)))"]));
       CBLog.Info(n"Crew", "One of the crew is back from training.");
     }
-    // A war's end, for everybody who went with them (2.7.6, Reactions/CrewWar.reds): a war party is everybody sent on the
-    // same gang with the same end, and a war from before 2.7.6 is a party of one.
     if IsDefined(k) && k.warUntil > 0.0 && now >= k.warUntil {
       if CBCrewWarPartyResolve(sys, game, kb, book, k.warOn, k.warUntil, now) {
         return;   // the roster changed under the walk

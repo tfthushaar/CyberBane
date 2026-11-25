@@ -1,38 +1,7 @@
-// Cyberbane - The grudge clock (2.6.5)
+// Cyberbane - The grudge clock
 //
-// "The default frequency of people chasing you for revenge is a little too high." "No, let's not keep a cap: let the
-// whole queue work on standing with the gang." "And the more we break a gang, the less often they come. Consider all
-// factors."
-//
-// Until 2.6.5 a day had a shape fixed in advance: a timetable of windows built from three per-day sliders (8 Rivals, 5
-// crews, 4 apex squads), and whoever scored highest filled each window. How a gang stood with V decided who came, never
-// whether or how often. Now there is no day's allowance at all. Each gang holding a grudge has its own patience, and moves
-// when it has run out; each Rival has theirs. The lanes (Spawn/Queue.reds) still send one of each kind at a time, with a
-// breather after each (Encounter gap), so two fights never land on top of each other; that is all that is left of pacing.
-//
-// A gang's patience, in game hours, starts from how hot its grudge runs and is then stretched or shortened by what it
-// would weigh before sending anybody:
-//
-//   the grudge     just over the line into Hostile, about a day between moves; at the bottom of Vendetta, three hours
-//   a fresh wound  V hurt them within GrudgeFreshHours: they move sooner
-//   manpower       the more of them V has put down, the longer they take to find anybody to send (Model/Territory.reds);
-//                  a gang that is all but broken barely comes at all, and fields no apex squad
-//   a beaten crew  the last crew they sent was beaten: they regroup first (an apex squad is how they answer that)
-//   fear of V      a frightening V, to a gang that frightens easily (the faction's dread), keeps them home longer
-//   their own war  at war with another gang over a district: busy
-//   distance       V on their streets is round the corner; across town it takes them longer to come
-//   a mask         V they cannot place takes longer to find
-//   knowing V      a gang that has only heard of V looks harder than one that knows V's face
-//   their code     a gang that sends many (Barghest) is quicker to it than one that sends few (the Mox)
-//   the hour       night is theirs
-//   the setting    How eager gangs are (hitSquadFrequencyMult)
-//
-// A Rival's patience is personal: the steps they have climbed against V (rank, escapes, mercies, V's deaths), their gang's
-// grudge counted for less, a Grudge-Bearer quicker, their own streets and the night quicker, a mask slower, and How eager
-// Rivals are. Their gang being broken slows them only a little: it is personal.
-//
-// Read only from what the save already keeps (standing, renown, kills, lastIncidentAt, lastHitSquadAt, lastPeaceAt, a
-// Rival's lastSeenAt and createdAt) and the live world, so no persistent field changes and every save carries over.
+// Each gang holding a grudge against V, and each Rival, has its own patience and moves when it runs out. There is no
+// daily allowance.
 
 public func CBGrudgeHostileLine() -> Float = CBConfig.PostureHostile()
 
@@ -121,7 +90,7 @@ public func CBGangPatienceHours(sys: ref<CyberbaneSystem>, game: GameInstance, f
   // Their code, and the hour.
   hours /= MaxF(CBCodeCrew(fs.id), 0.25);
   hours *= CBGrudgeHourOfNight(game);
-  // A merc they have barely heard of (2.7.0): finding out who it was, and whether they are worth a crew, takes longer.
+  // A merc they have barely heard of: finding out who it was, and whether they are worth a crew, takes longer.
   hours *= CBConfig.EarlyPatienceMult() - (CBConfig.EarlyPatienceMult() - 1.0) * CBMercStanding(game);
   // The player's say.
   let rt = CyberbaneRuntime.Get();
@@ -192,7 +161,7 @@ public func CBRivalPatienceHours(sys: ref<CyberbaneSystem>, game: GameInstance, 
     hours *= CBConfig.GrudgeMaskMult();
   }
   hours *= CBGrudgeHourOfNight(game);
-  // Finding a merc with no name yet takes longer (2.7.0).
+  // Finding a merc with no name yet takes longer.
   hours *= CBConfig.EarlyPatienceMult() - (CBConfig.EarlyPatienceMult() - 1.0) * CBMercStanding(game);
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() {
@@ -243,8 +212,8 @@ public func CBGrudgeNextIn(sys: ref<CyberbaneSystem>, game: GameInstance, lane: 
         }
       }
     }
-    // Nobody on the roster yet: the lane makes its first Rival from a gang V has fought (CBLanePick, CBSeedRivalFromFactions),
-    // when that gang's grudge is ready. Without this an empty roster was never due, and no first Rival was ever made.
+    // Nobody on the roster yet: the lane makes its first Rival from a gang V has fought (CBLanePick,
+    // CBSeedRivalFromFactions), when that gang's grudge is ready.
     if best < 0.0 && sys.CountActiveRivals() == 0 {
       for fs in sys.GetFactionStates() {
         if IsDefined(fs) && fs.kills > 0 && TDBID.IsValid(fs.sampleRecord) && CBFactionFieldsSquads(fs.id) {

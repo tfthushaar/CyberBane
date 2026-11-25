@@ -1,17 +1,7 @@
 // Cyberbane - Faction apex enforcer (spec §9.9)
 //
-// Put enough of one gang in the ground and they stop sending squads and send someone who
-// matters: a named heavy built from the toughest member of theirs V has actually put down.
-// No story character is ever involved, so this cannot spoil anything, cannot collide with a
-// quest version of anyone, and works for every gang including the ones with no famous boss.
-//
-// V gets a line first ("Rhino of the Animals is hunting you down"), then a short beat, then
-// they walk in with a couple of their people. The apex is a plain spawned enemy, not a Rival:
-// it is not tracked, ranked or remembered, it is just the gang's answer to you.
-//
-// Crash safety: the trigger reads only persisted scalars, the spawn goes through CBSpawnGroup
-// (which refuses to spawn while the world is still streaming) and runs from the gated fast
-// tick, and every faction entry is bound and checked before a field is read off it.
+// Put enough of one gang in the ground and they stop sending squads and send someone who matters: a named heavy built
+// from the toughest member of theirs V has actually put down.
 
 // A name for the gang's heavy, pulled from that faction's own name pool. Deterministic for a
 // given seed so the warning and anything later agree.
@@ -33,24 +23,7 @@ public func CBApexName(content: ref<CyberbaneContent>, faction: CName, seed: Int
   return CBT(n"Cyberbane-FactionApex-TheirBest");
 }
 
-// Make a spawned apex actually feel like one. The base record is a gang elite, which is not a
-// boss by itself, so the spawned one is lifted to boss grade: far more health, much harder to
-// chew through, and its health pool topped back up because raising the stat does not refill
-// what it already had. Applied at attach, where the puppet is real and its stats exist, and
-// only ever to our own CB_Apex spawn - nothing in the world is touched.
-// How strong should an apex be, as a fraction of a boss-grade build?
-//
-// The settings slider is read as a percentage, where 100 is the full set of multipliers below
-// and the default 70 is most of the way there. The numbers at the top of the scale are
-// deliberately in the same territory as the game's own set piece enforcers rather than
-// measured against one of them: the game does not expose a boss's health as a number a script
-// can read, so this is calibrated by design, not copied off a record.
-//
-// New Game Plus is the one case that has to be handled rather than ignored. It rebuilds every
-// NPC in the game to be harder, and its buffs and Cyberbane's multiply rather than replace
-// each other, so an apex under both would be unkillable. When it is running, Cyberbane steps
-// its own contribution down and leaves the random traits to New Game Plus, which already
-// hands them out.
+// Make a spawned apex actually feel like one.
 public func CBApexStrengthFraction() -> Float {
   let rt = CyberbaneRuntime.Get();
   let pct = CBConfig.ApexStrengthDefault();
@@ -60,10 +33,8 @@ public func CBApexStrengthFraction() -> Float {
   return CBStrengthFraction(pct);
 }
 
-// The same for Rivals, from their own slider (1.9.2, under Rivals). Rivals have always been built with
-// the apex build, and until this they were scaled by the apex squad's slider too: "Where is the setting
-// to buff Rivals? I only found the one for apex enemies." It was that one, and nothing said so. The two
-// defaults are the same; a player who had moved the apex slider has Rivals at 55 until this one matches.
+// The same for Rivals, from their own slider (under Rivals). Rivals have always been built with the apex build, and
+// until this they were scaled by the apex squad's slider too: It was that one, and nothing said so.
 public func CBRivalStrengthFraction() -> Float {
   let rt = CyberbaneRuntime.Get();
   let pct = CBConfig.ApexStrengthDefault();
@@ -83,10 +54,8 @@ func CBStrengthFraction(pct: Int32) -> Float {
   return frac * CBDifficultyStepDown();
 }
 
-// The game's own difficulty already scales what every enemy does to V. On Hard and Very Hard the
-// apex build stacked on top of that, which is how an apex squad came to delete a player in a
-// couple of hits. Cyberbane gives back part of its share at those settings.
-// Steps above Easy: Hard is one, Very Hard two, Easy and Story none.
+// The game's difficulty already scales what every enemy does to V. Cyberbane gives back part of its share at those
+// settings. Steps above Easy: Hard is one, Very Hard two, Easy and Story none.
 public func CBDifficultyLevel() -> Int32 {
   let sds = GameInstance.GetStatsDataSystem(GetGameInstance());
   if !IsDefined(sds) {
@@ -102,10 +71,7 @@ public func CBDifficultyLevel() -> Int32 {
   return 0;
 }
 
-// Is a combat overhaul installed that already makes every enemy deadlier? Immersive Shooting AI
-// registers no script module Cyberbane can test at compile time, so this reads the Mod Settings
-// list, the same way They Will Remember and Street Sense are found. A mod that does not register
-// settings there is not seen, and the apex strength slider is the way to tune for it.
+// Is a combat overhaul installed that already makes every enemy deadlier?
 public func CBCombatOverhaulActive() -> Bool {
   let mods = CBModSettingsMods();
   for mod in mods {
@@ -134,25 +100,11 @@ public func CBDifficultyStepDown() -> Float {
 }
 
 // Scale a multiplier toward 1.0 (no change) rather than toward zero.
-//
-// A multiplier of 1.0 means "leave this stat alone", so half of a x25 multiplier is x13, not
-// x12.5. Getting this wrong at the bottom of the slider would make an apex weaker than the
-// ganger it was promoted from.
 public func CBApexLerp(full: Float, frac: Float) -> Float {
   return 1.0 + (full - 1.0) * frac;
 }
 
 // Give this enforcer one or two traits of its own.
-//
-// Borrowed in spirit from New Game Plus, which gives ordinary NPCs a random chance of being
-// the fast one or the tanky one, and is the reason its enemies stay interesting long after
-// you know the encounter. The same idea applied to a single boss means two apexes from the
-// same gang do not fight the same way: one is wearing plate, the next one hits like a truck.
-//
-// This used to add its own stat modifiers, and that is the mistake the whole rebalance is
-// about. A trait landing on Health put a second multiplier on top of the grade buff's, and
-// nothing anywhere knew the product of the two. It rolls the numbers and hands them back now,
-// so the one place that applies anything can see everything and clamp it.
 func CBRollApexTraits(scale: Float, strength: Float,
                       out health: Float, out armour: Float, out damage: Float,
                       out critChance: Float, out critDamage: Float, out power: Float) -> Void {
@@ -190,10 +142,8 @@ func CBRollOneApexTrait(which: Int32, scale: Float, strength: Float,
         if which == 3 {
           health += amount;        // Juggernaut: takes some putting down.
         } else {
-          // Overclocked: fights above its level. Clamped hard by the caller, because the game
-          // derives health, armour and damage from power level, so this one term quietly
-          // multiplies the other three. Ten of them was the largest single contributor to the
-          // enemy nobody could kill.
+          // Overclocked: fights above its level. Clamped hard by the caller, because the game derives health, armour
+          // and damage from power level, so this one term quietly multiplies the other three.
           power += CBConfig.ApexPowerLevelBonus() * strength;
         }
       }
@@ -206,10 +156,6 @@ public func CBApplyApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance, puppe
 }
 
 // How much of V's own menace this enemy is measured against.
-//
-// Menace already folds in level, Street Cred and skills - the same number the Hub reports - so
-// a maxed-out merc meets something that can take it, and an early character meets something
-// beatable rather than a wall.
 public func CBMenaceScale(sys: ref<CyberbaneSystem>) -> Float {
   if !IsDefined(sys) {
     return 0.0;
@@ -222,33 +168,12 @@ public func CBMenaceScale(sys: ref<CyberbaneSystem>) -> Float {
 }
 
 // Build one enemy to apex grade, or to a fraction of it.
-//
-// `grade` is how much of a full apex this one should be: 1.0 for a member of an apex squad,
-// less for a Rival working their way up.
 public func CBApplyApexGradeBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
                                  puppet: ref<ScriptedPuppet>, grade: Float) -> Void {
   CBApplyApexBuild(sys, game, puppet, grade, CBApexStrengthFraction(), 1.0);
 }
 
 // The one place anything is ever done to a spawned enemy's stats.
-//
-// Everything that used to be applied separately - the grade multipliers, the random traits,
-// the bonus a Rival running a crew gets - is combined here into one multiplier per stat and
-// clamped against the ceilings in Config before a single modifier is created.
-//
-// That is the fix for the enemies players could not kill, and it is structural rather than a
-// tuning pass. Three functions each added a term and none of them could see the others, so
-// nothing in the codebase knew what it was building: at the top of the scale a Rival leading a
-// crew came out near eleven times health behind three and a half times armour, several power
-// levels above the gang it came from, and every individual number that produced it looked
-// reasonable in isolation.
-//
-// `roleHealthMult` is the crew-rank bonus, 1.0 for anybody who is not running one.
-// `traitHealth`, `traitArmour`, `traitDamage` and `traitCrit` are a Rival's own traits and
-// weaknesses (CBRivalTraitTerms): fractions added to, or taken off, the same terms the random
-// traits use, so they are clamped by the same ceilings and can never stack past them.
-// `slider` is the player's strength setting for this kind of enemy as a fraction (CBApexStrengthFraction,
-// CBRivalStrengthFraction).
 public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
                              puppet: ref<ScriptedPuppet>, grade: Float, slider: Float, roleHealthMult: Float,
                              opt traitHealth: Float, opt traitArmour: Float,
@@ -287,8 +212,8 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   CBRollApexTraits(scale, strength, tHealth, tArmour, tDamage, tCritChance, tCritDamage, tPower);
   tHealth += traitHealth;
   tArmour += traitArmour;
-  // What they know about this fight (2.3.2, [U3]): how strong their gang is now, how dangerous the district, their
-  // code, and what they have prepared for how V fights. Terms on the same fractions, under the same ceilings.
+  // What they know about this fight ([U3]): how strong their gang is now, how dangerous the district, their code, and
+  // what they have prepared for how V fights. Terms on the same fractions, under the same ceilings.
   let gangOf = CBClassifyFaction(puppet);
   tHealth += CBFightReadHealth(sys, game, gangOf);
   tArmour += CBAdaptArmour(game, gangOf);
@@ -313,9 +238,8 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   hpMult = ClampF(hpMult, 1.0, CBConfig.ApexHealthMultCeiling());
   armourMult = ClampF(armourMult, 1.0, CBConfig.ApexArmorMultCeiling());
   dmgMult = ClampF(dmgMult, 1.0, CBConfig.ApexDamageMultCeiling());
-  // An apex squad's people and a Rival, measured against V by the game's own numbers (2.6.1, Spawn/MeasureV.reds):
-  // whichever is tougher, this or the build above, under ceilings of their own, and the game's abilities that answer
-  // how V fights. A Rival lasts longer than one of a squad, and grows into it: a new one brings part of it.
+  // An apex squad's people and a Rival, measured against V by the game's numbers (Spawn/MeasureV.reds): whichever is
+  // tougher, this or the build above, under ceilings of their own, and the game's abilities that answer how V fights.
   let desMatch = GameInstance.GetDynamicEntitySystem();
   let matchId = puppet.GetEntityID();
   let isApex = IsDefined(desMatch) && (desMatch.IsTagged(matchId, n"CB_Apex") || desMatch.IsTagged(matchId, n"CB_HoldLt"));
@@ -334,15 +258,12 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
     let seconds = (isRival ? CBConfig.RivalMatchSeconds() : CBConfig.ApexMatchSeconds()) * (0.5 + level);
     let matchHp = CBMatchHealthMult(measure, stats.GetStatValue(npcId, gamedataStatType.Health), seconds);
     let matchDmg = CBMatchDamageMult(measure, CBConfig.ApexArmourAnswer() * (isRival ? ClampF(grade, 0.4, 1.0) : 1.0));
-    // Adam Smasher's own scaling (2.6.2-style, here in 2.6.1): the game keeps its last boss a fight for an endgame V with
-    // curves on his power level (characters/npcs/records/gameplay/bosses.tweak, Main_boss_adam_smasher_stats): health by
-    // smasher_level_to_health, damage by smasher_level_to_dps_mult, times 0.7. Read from the game at this one's power level,
-    // which in the open world follows V's own, and a share of it given to them: an apex squad's people a share each, a
-    // Rival more as they climb. No fixed ceiling under it any more: the ceiling is a share of Smasher himself.
+    // Read from the game at this one's power level, which in the open world follows V's own, and a share of it given to
+    // them: an apex squad's people a share each, a Rival more as they climb.
     let sm = CBSmasherScale(game, stats.GetStatValue(npcId, gamedataStatType.PowerLevel));
     let share = isRival ? (CBConfig.RivalSmasherShareMin() + (CBConfig.RivalSmasherShareMax() - CBConfig.RivalSmasherShareMin()) * level) * ClampF(grade, 0.25, 1.0)
                         : CBConfig.ApexSmasherShareMin() + (CBConfig.ApexSmasherShareMax() - CBConfig.ApexSmasherShareMin()) * level;
-    // As far as V is into the game (2.6.4, CBVProgress): none of him for a new V, all of the share at the level cap.
+    // As far as V is into the game (CBVProgress): none of him for a new V, all of the share at the level cap.
     let progress = CBVProgress(measure);
     let smHp = CBSmasherPart(sm.X, share, progress);
     let smDmg = CBSmasherPart(sm.Y * CBConfig.SmasherDamageScale(), share, progress);
@@ -350,8 +271,8 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
     let dmgCeiling = MaxF(CBConfig.ApexMatchDamageCeiling(), CBSmasherPart(sm.Y * CBConfig.SmasherDamageScale(), CBConfig.SmasherCeilingShare(), progress));
     hpMult = ClampF(MaxF(hpMult, MaxF(matchHp, smHp)), 1.0, hpCeiling);
     // Their hits: the most of their own build, V's armour answered, and Smasher's share, on the damage multiplier this
-    // build has always used for their weapons; and the same share on NPCDamage, which is what their burning and bleeding
-    // is made of (primary_stats.tweak, NPCDoTDPS). The two never meet on one hit.
+    // build has always used for their weapons; and the same share on NPCDamage, which is what their burning and
+    // bleeding is made of (primary_stats.tweak, NPCDoTDPS).
     dmgMult = ClampF(MaxF(dmgMult, MaxF(matchDmg, smDmg)), 1.0, dmgCeiling);
     npcDamageMult = smDmg > 1.0 ? ClampF(smDmg, 1.0, dmgCeiling) : 1.0;
     // And no burst kills (statPoolsManager.script: MaxPercentDamageTakenPerHit, 7 on Smasher): no single hit takes more
@@ -373,7 +294,7 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   critDamage = ClampF(critDamage, 0.0, CBConfig.ApexCritDamageCeiling());
   let power = ClampF(tPower, 0.0, CBConfig.ApexPowerLevelCeiling());
 
-  // The ceiling on the finished body (2.7.2, Spawn/Killable.reds), taken before this build's terms go on.
+  // The ceiling on the finished body (Spawn/Killable.reds), taken before this build's terms go on.
   CBSetKillLimit(game, puppet, isRival ? CBKillableSecondsRival(grade)
                                        : (isApex ? CBConfig.KillableApexSeconds() : CBConfig.KillableCrewSeconds()), measure);
   let id = Cast<StatsObjectID>(puppet.GetEntityID());
@@ -382,30 +303,26 @@ public func CBApplyApexBuild(sys: ref<CyberbaneSystem>, game: GameInstance,
   // Hitting back. A boss that only soaks damage is a chore; one that can actually kill you is
   // the event this is supposed to be.
   CBAddMult(stats, id, gamedataStatType.PhysicalDamage, dmgMult);
-  CBAddMult(stats, id, gamedataStatType.NPCDamage, npcDamageMult);   // Smasher's share (2.6.1), 1 for anybody else
+  CBAddMult(stats, id, gamedataStatType.NPCDamage, npcDamageMult);   // Smasher's share, 1 for anybody else
   puppet.cbHitCap = hitCap;
   CBAddFlat(stats, id, gamedataStatType.CritChance, critChance);
   CBAddFlat(stats, id, gamedataStatType.CritDamage, critDamage);
   CBAddFlat(stats, id, gamedataStatType.PowerLevel, power);
   CBAddFlat(stats, id, gamedataStatType.HackingResistance, CBAdaptIce(game, gangOf));
-  // Logged because the numbers are the thing that keeps being wrong, and a player who reports
-  // an unkillable enemy can now send a line that says exactly what was built.
   CBLog.Info(n"Spawn", s"Built at grade \(grade): health x\(hpMult), armour x\(armourMult), damage x\(dmgMult), +\(power) power.");
   CBKeepKillable(game, puppet, false);
   if IsDefined(sys) {
     sys.NoteBuilt(puppet.GetEntityID(), stats.GetStatValue(id, gamedataStatType.Health));
   }
-  // Topped up to the new maximum, the way the game refills a pool (RequestSettingStatPoolMaxValue). This set
-  // 100.0 without the percentage flag, which is a hundred hit points: a built apex started the fight at a
-  // fraction of the health it had just been given.
+  // Topped up to the new maximum, the way the game refills a pool (RequestSettingStatPoolMaxValue).
   let pools = GameInstance.GetStatPoolsSystem(game);
   if IsDefined(pools) {
     pools.RequestSettingStatPoolMaxValue(id, gamedataStatPoolType.Health, null);
   }
 }
 
-// Adam Smasher's health and damage multipliers at this power level, read from the game's own curves (Main_boss_adam_smasher_stats):
-// X health, Y damage before his 0.7. Zeros when the curves cannot be read.
+// Adam Smasher's health and damage multipliers at this power level, read from the game's curves
+// (Main_boss_adam_smasher_stats): X health, Y damage before his 0.7. Zeros when the curves cannot be read.
 public func CBSmasherScale(game: GameInstance, powerLevel: Float) -> Vector4 {
   let sds = GameInstance.GetStatsDataSystem(game);
   if !IsDefined(sds) || powerLevel <= 0.0 {
@@ -416,16 +333,15 @@ public func CBSmasherScale(game: GameInstance, powerLevel: Float) -> Vector4 {
   return new Vector4(MaxF(hp, 0.0), MaxF(dps, 0.0), 0.0, 0.0);
 }
 
-// No single hit takes more than this share of an apex's or a Rival's health (2.6.1): the rule the game keeps for its bosses
-// (StatPoolsManager.ApplyDamage, MaxPercentDamageTakenPerHit), for the people Cyberbane builds to that grade. Per projectile
-// for a shotgun, as the game's own is; never on a finisher.
+// No single hit takes more than this share of an apex's or a Rival's health: the rule the game keeps for its bosses
+// (StatPoolsManager.ApplyDamage, MaxPercentDamageTakenPerHit), for the people Cyberbane builds to that grade.
 @addField(ScriptedPuppet)
 public let cbHitCap: Float;
 
 @wrapMethod(StatPoolsManager)
 public static func ApplyDamage(hitEvent: ref<gameHitEvent>, forReal: Bool, out valuesLost: array<SDamageDealt>) -> Void {
-  // Chippin' In (Reactions/ChippinIn.reds, 2.7.6): the blow that would kill V, caught before the game applies it, and
-  // nothing at all while V is down and one of the crew is on the way.
+  // Chippin' In (Reactions/ChippinIn.reds): the blow that would kill V, caught before the game applies it, and nothing
+  // at all while V is down and one of the crew is on the way.
   let pv = IsDefined(hitEvent) ? hitEvent.target as PlayerPuppet : null;
   if forReal && IsDefined(pv) && (pv.cbChipArmed > 0 || pv.cbChipDown) && CBChipInCatch(pv, hitEvent) {
     return;
@@ -465,9 +381,9 @@ public static func ApplyDamage(hitEvent: ref<gameHitEvent>, forReal: Bool, out v
   }
 }
 
-// The fight, read for the build ([U3], 2.3.2): a gang at full strength holds nothing back and a bled one has less
-// to send; a dangerous district puts tougher people on its streets; a gang's code may make its people tougher;
-// and what they have prepared for V. A fraction of health, bounded both ways.
+// The fight, read for the build ([U3]): a gang at full strength holds nothing back and a bled one has less to send; a
+// dangerous district puts tougher people on its streets; a gang's code may make its people tougher; and what they have
+// prepared for V.
 public func CBFightReadHealth(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName) -> Float {
   if Equals(gang, n"") {
     return 0.0;
@@ -492,10 +408,8 @@ public func CBDistrictDanger(district: CName) -> Float {
   }
 }
 
-// A crew member's build (2.3.2). Crews were never built at all, and still are not by V's menace: only what their
-// gang's code and preparation add (the Animals' toughness, Barghest's, plate against a V who shoots, ICE against a
-// V who hacks). Nothing when none of that applies, so a gang with no code and nothing to prepare for sends what it
-// always sent. Once per body, like the apex build, and never on top of it.
+// A crew member's build. Crews were never built at all, and still are not by V's menace: only what their gang's code
+// and preparation add (the Animals' toughness, Barghest's, plate against a V who shoots, ICE against a V who hacks).
 public func CBApplyCrewBuild(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(puppet) || !puppet.IsAttached() || puppet.IsDead() || puppet.cbBuffed {
     return;
@@ -525,9 +439,7 @@ public func CBApplyCrewBuild(sys: ref<CyberbaneSystem>, game: GameInstance, pupp
   if IsDefined(sys) {
     sys.NoteBuilt(puppet.GetEntityID(), stats.GetStatValue(id, gamedataStatType.Health));
   }
-  // Topped up to the new maximum, the way the game refills a pool (RequestSettingStatPoolMaxValue). This set
-  // 100.0 without the percentage flag, which is a hundred hit points: a built apex started the fight at a
-  // fraction of the health it had just been given.
+  // Topped up to the new maximum, the way the game refills a pool (RequestSettingStatPoolMaxValue).
   let pools = GameInstance.GetStatPoolsSystem(game);
   if IsDefined(pools) {
     pools.RequestSettingStatPoolMaxValue(id, gamedataStatPoolType.Health, null);
@@ -556,15 +468,6 @@ func CBAddFlat(stats: ref<StatsSystem>, id: StatsObjectID, stat: gamedataStatTyp
 }
 
 // Where on the ladder is this Rival?
-//
-// The heart of the Rivals. A Rival starts dangerous and gets worse every time
-// they get away from you or you let them live, which is the deal the mechanic offers: mercy
-// and failure both have a price, and the price is the person you will meet next time.
-//
-// Rank, escapes and mercies all count, because they are three different ways of saying the
-// same thing - this one has survived you before. Returns 0..1, where 1 is a full member of an
-// apex squad: by the top of the ladder a Rival is the equal of one of the four, and an apex
-// squad is four of those at once.
 public func CBRivalGrade(r: ref<CBRival>) -> Float {
   if !IsDefined(r) {
     return 0.0;
@@ -581,22 +484,13 @@ public func CBRivalGrade(r: ref<CBRival>) -> Float {
 }
 
 // Build a Rival to their place on the ladder.
-//
-// `role` is CBRoleLeader, CBRoleLieutenant or CBRoleNone. It used to be a second buff applied
-// from its own function straight after this one, which is how a leader Rival ended up with
-// twice the health of a build that was already at the ceiling. It is one term of one
-// calculation now.
 public func CBApplyRivalApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
                                  puppet: ref<ScriptedPuppet>, r: ref<CBRival>, role: Int32) -> Void {
   if !IsDefined(r) {
     return;
   }
-  // A cyberpsycho gets none of this, the crew-rank bonus included. They already carry a boss's
-  // own health and armour, and multiplying that was the whole of why the first one to come back
-  // could not be killed. The crew-rank bonus was still reaching them, because it was applied
-  // from somewhere this check could not cover. What they get instead is the kit: see
-  // CBKitCyberpsycho. Marking them as buffed stops the attach path from applying it a moment
-  // later from the other direction.
+  // A cyberpsycho gets none of this, the crew-rank bonus included. They already carry a boss's own health and armour,
+  // and multiplying that was the whole of why the first one to come back could not be killed.
   if CBRecordIsSightingCyberpsycho(r.recordID) {
     if IsDefined(puppet) {
       puppet.cbBuffed = true;
@@ -620,12 +514,6 @@ public func CBApplyRivalApexBuff(sys: ref<CyberbaneSystem>, game: GameInstance,
 }
 
 // What a Rival's traits and weaknesses do to their build.
-//
-// They were rolled, promoted, kept in the save and shown nowhere, and none of them changed how a
-// Rival fought: the comment on the trait list promised the effects "once the stat-modifier API
-// is wired", and it was wired for the apex build long ago without the traits ever being plugged
-// into it. Each one is a small fraction on the same terms the build already uses, so the ceilings
-// in Config still decide the most anyone can be.
 public func CBRivalTraitTerms(r: ref<CBRival>, out health: Float, out armour: Float,
                               out damage: Float, out crit: Float) -> Void {
   if !IsDefined(r) {
@@ -643,7 +531,7 @@ public func CBRivalTraitTerms(r: ref<CBRival>, out health: Float, out armour: Fl
   if CBRivalHasTrait(r, n"OldWound") { health -= step; }
   if CBRivalHasTrait(r, n"Reckless") { armour -= step; damage += step * 0.4; }
   if CBRivalHasTrait(r, n"Shaken") { damage -= step * 0.6; }
-  // Their chrome (Rivals/RivalMoments.reds, [U9], 2.4.4): on the same terms, under the same ceilings.
+  // Their chrome (Rivals/RivalMoments.reds, [U9]): on the same terms, under the same ceilings.
   CBRivalImplantTerms(r, health, armour, damage, crit);
 }
 
@@ -661,31 +549,17 @@ public func CBKitRivalTraits(npc: ref<NPCPuppet>, r: ref<CBRival>) -> Void {
   if CBRivalHasTrait(r, n"ChromedOut") {
     CBGrantAbility(npc, t"Ability.HasSubdermalArmorHigh");
   }
-  // And what their chrome and their kind of Rival bring ([U9] [U11], 2.4.4).
+  // And what their chrome and their kind of Rival bring ([U9] [U11]).
   CBKitRivalImplants(npc, r);
 }
 
 // The sound of something you do not want arriving.
-//
-// `av_maxtac_descent_horn` is the game's own MaxTac AV descent horn, which is exactly the
-// association wanted here: every player who has drawn a five star heat level knows what that
-// noise means before they have looked up. Played globally rather than from the car, because it
-// is doing the job of a warning - the squad is seventy metres away and out of sight when it
-// fires, and positional audio at that range would be missed.
-// The street reacts to an apex squad the way it reacts to MaxTac.
-//
-// `psychoSquadAVSystem.script:111` broadcasts Terror from the player at 100 m the moment a
-// MaxTac AV arrives, which is why the crowd scatters before you have seen anything. An apex
-// squad is built to be the gang's answer to MaxTac, so it gets the same treatment: one stim,
-// from V, once, at the moment they are actually standing there.
 public func CBApexTerrorWave(game: GameInstance) -> Void {
   let player = GetPlayer(game);
   if !IsDefined(player) {
     return;
   }
-  // This is a civilian reaction, so it answers to the civilian settings. Without this, a
-  // player who had turned crowd reactions off still got the whole street scattering every
-  // time an apex squad landed, which is the one thing they had asked not to happen.
+  // This is a civilian reaction, so it answers to the civilian settings.
   let intensity = 1.0;
   let rt = CyberbaneRuntime.Get();
   if IsDefined(rt) && rt.HasSettings() {
@@ -716,26 +590,14 @@ public func CBApexArrivalSound(game: GameInstance) -> Void {
   if !IsDefined(player) {
     return;
   }
-  // 2.7.7: never heard in play. The horn is authored against a MaxTac AV's own emitter (the game plays it only on the AV,
-  // psychoSquadAVSystem.script:112), and played on V with no AV in the world it was silent, on V's entity or with no entity
-  // at all. The game's own sting for being marked for MaxTac plays from anywhere (preventionSystem.script, the same
-  // audio-system call), and the squad's car sounds its own horn as it pulls up (Spawn/Arrival.reds).
+  // never heard in play.
   CBApexWarningSound(game);
 }
 
 // ---- Four, every time ----------------------------------------------------------------
 //
-// "Apex squad should always be four members with MaxTac-like roles." Every path that brings one
-// in - the apex lane's car or walk-in, a crew bringing its best - marks each chair as somebody is
-// put in the world for it (sys.NoteApexChair). This tick walks in whoever is still missing: the
-// chairs a car had no seat for, the ones the street refused on the first try, the whole squad if
-// the car never turned up. By chair rather than by head count, so the right record and the right
-// kit fill the right chair, and a chair whose member V has already put down is never filled a
-// second time. It stops when the squad is whole, when the window closes, or when everybody who
-// did arrive is down - nobody walks into a fight that is already over.
-//
-// Crash safety: every placement goes through CBSpawnGroup, which already refuses an unsettled
-// world, the story, a quiet job and the live ceiling; this only decides who to ask for.
+// Every path that brings one in - the apex lane's car or walk-in, a crew bringing its best - marks each chair as
+// somebody is put in the world for it (sys.NoteApexChair).
 public func CBApexMusterTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
     return;
@@ -754,9 +616,7 @@ public func CBApexMusterTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
     sys.ClearApexMuster();
     return;
   }
-  // A car still seating chairs: let it finish, or let it be given up on. And chairs still
-  // waiting for the next car of their convoy are on their way too (CBConvoyTick); walking them
-  // in now would put a second heavy in the world when that car comes.
+  // A car still seating chairs: let it finish, or let it be given up on.
   if (sys.HasPendingArrival() && sys.IsArrivalRoleSquad()) || sys.ConvoyHasTag(n"CB_Apex") {
     return;
   }
@@ -770,7 +630,7 @@ public func CBApexMusterTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
     sys.ClearApexMuster();
     return;
   }
-  // Nor onto home ground (2.7.1, Spawn/HomeGround.reds): no spot there would take them anyway.
+  // Nor onto home ground (Spawn/HomeGround.reds): no spot there would take them anyway.
   if sys.GetStoryHold() != CBStoryNone() || CBStealthEncounterNearby(sys, game) || CBHomeHolds(sys, faction) {
     return;   // wait for the stage, the quiet job or home ground to be over
   }
@@ -806,10 +666,8 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
       return;   // shares the "gangs send people after you" switch
     }
   }
-  // Another mod already owns gangs coming after you. The apex is the same kind of system as a
-  // hit squad, so it stands down with them rather than stacking a second wave of enemies on
-  // top of theirs (spec §17). They Will Remember sends crews; Night City Remembers does not, and with
-  // it the apex comes as usual (2.6.7).
+  // Another mod already owns gangs coming after you. The apex is the same kind of system as a hit squad, so it stands
+  // down with them rather than stacking a second wave of enemies on top of theirs (spec §17).
   if CBRememberSendsCrews() {
     return;
   }
@@ -848,17 +706,7 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
       // Their toughest if V has met one, otherwise whoever V has been fighting.
       // The same test the apex lane picks with, so this never announces a squad that will not come.
       if CBApexEligible(sys, fs) {
-        // Announce only. Deciding when they actually set off belongs to Spawn/Queue.reds now,
-        // which holds the one clock for the whole mod; arming a second countdown here would
-        // put two encounters on their way at once and leave the Hub showing a timer for a
-        // thing that was not really next.
-        //
-        // The kills are spent in CBProcessPendingApex, and only once someone has actually
-        // arrived. Spending them here meant a spawn that failed for any reason quietly cost
-        // the player twenty bodies and they simply never saw an apex.
-        // This squad, not this gang: the kills already paid for say which squad it is, and they
-        // move once it has been sent. Keyed to the gang alone, a gang's second apex squad of a
-        // session was never announced.
+        // Announce only.
         if !sys.IsApexAnnounced(fs.id, fs.apexAtKills) {
           sys.SetApexAnnounced(fs.id, fs.apexAtKills);
         } else {
@@ -868,7 +716,7 @@ public func CBApexTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
         // Seeded by the kills already paid for, which does not move until they are sent, so the
         // name in this warning is the name in the one that says they are on the road.
         let name = CBApexName(CBContent(game), fs.id, fs.apexAtKills);
-        // One voice (2.6.1, CBCrewWarning): a friendly gang's word, or theirs.
+        // One voice (CBCrewWarning): a friendly gang's word, or theirs.
         if !CBAllyTipOff(sys, game, fs.id) && CBMessagesOn() {
           CBPhoneDemandFromGang(game, fs.id, CBTf(n"Cyberbane-FactionApex-IsComingForYouAndNot", [s"\(name)"]));
         }
@@ -906,19 +754,6 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   }
   // The clock was a drive, not a warning: this squad has already been sent. Whether the
   // appointment is finished depends on whether anybody actually got out of the car.
-  //
-  // This used to end here unconditionally, reasoning that a squad had been sent and sending a
-  // second would turn into a stream of them. The reasoning was right and the conclusion was
-  // wrong, because a request is not an arrival. The car can be accepted and deliver nothing:
-  // no road near the player, the spawn refused, the adoption window closing before anything
-  // attached. The squad was then written off in silence, which from the player's side is a
-  // countdown in the Hub that reaches zero and nobody ever turning up. That is exactly the
-  // report, and it got worse in 1.4.1: before that the chase request could not succeed at all,
-  // so the walk-in below always ran and an apex always arrived on foot.
-  //
-  // Ways to be sure they came: somebody wearing the tag is standing in the world, or a chair was
-  // filled, which still reads as delivered after the player has killed them. None is true means
-  // nobody came, so they walk in instead.
   let carFailed = false;
   if sys.IsPendingApexDriving() {
     sys.SetPendingApex(faction, 0);   // the drive is over whichever way this goes
@@ -941,7 +776,7 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     sys.SetPendingApex(n"", 0);   // nothing to send; do not sit on a dead appointment
     return;
   }
-  // The name their warning gave them, kept for their bodies (2.6.1, CBApexMemberName): it moves on once they are sent.
+  // The name their warning gave them, kept for their bodies (CBApexMemberName): it moves on once they are sent.
   let rtName = CyberbaneRuntime.Get();
   if IsDefined(rtName) {
     rtName.lastApexFaction = fs.id;
@@ -957,8 +792,8 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     CBLog.Info(n"Spawn", s"Apex squad from \(NameToString(fs.id)) called off.");
     return;
   }
-  // What V did while they were on their way, and home ground (2.7.1, Spawn/Slip.reds, Spawn/HomeGround.reds). Not for a
-  // car that delivered nobody: that squad set off already.
+  // What V did while they were on their way, and home ground (Spawn/Slip.reds, Spawn/HomeGround.reds). Not for a car
+  // that delivered nobody: that squad set off already.
   if !carFailed {
     if CBSlipResolve(sys, game, fs.id) {
       return;
@@ -975,12 +810,8 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     sys.SetPendingApex(n"", 0);
     return;
   }
-  // An apex turning up on foot out of nowhere was the other half of the arrival complaint.
-  // If a car can get here, the escort drives it in and the apex comes with them; the walk-in
-  // below stays for indoors and anywhere a car cannot be placed.
-  // A carload of them, all boss grade - the gang's answer to MaxTac rather than one heavy
-  // with a lift. Every seat is tagged CB_Apex, so every one of them gets the full buff, and
-  // the strength slider is how a player dials that back if four at once is too much.
+  // If a car can get here, the escort drives it in and the apex comes with them; the walk-in below stays for indoors
+  // and anywhere a car cannot be placed.
   sys.ResetApexRoles();   // this squad starts again at the heavy
   sys.ClearSquadAnchor();
   // One muster for this squad, whichever way it comes. Kept if it is already this gang's - a
@@ -990,10 +821,7 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   }
   if !carFailed
      && CBSendByCar(sys, game, fs, record, CBConfig.ApexStrikeTeamSize(), n"CB_Apex") > 0 {
-    // The warning is spent, but they are not here yet: they are driving. Keep the clock
-    // running for the length of the drive so the Hub has something true to show, instead of
-    // the countdown vanishing the moment the car is dispatched and the squad turning up with
-    // no warning at all. This is why there appeared to be no apex countdown.
+    // The warning is spent, but they are not here yet: they are driving.
     sys.SetPendingApexDriving(fs.id, CBConfig.ApexDriveTicks());
     CBApexArrivalSound(game);
     fs.apexAtKills = fs.kills;
@@ -1001,20 +829,13 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
     CBLog.Info(n"Spawn", s"Apex squad from \(NameToString(fs.id)) arriving by car.");
     return;
   }
-  // CBSpawnGroup will refuse while the world is still streaming in, so this can only land on
-  // a settled frame. CB_Apex is also tagged n"Cyberbane", so the session sweep clears it.
-  // Four of them, with their roles, the same as the carload: one per chair, each chair's own
-  // record and tag (CBWalkInRest), any chair the street refuses now walked in by the muster.
+  // CBSpawnGroup will refuse while the world is still streaming in, so this can only land on a settled frame. CB_Apex
+  // is also tagged n"Cyberbane", so the session sweep clears it.
   CBWalkInRest(sys, game, fs, record, n"CB_Apex", 0, CBConfig.ApexStrikeTeamSize());
   if sys.GetApexMusterMask() == 0 {
     // The world was not settled enough to place anyone. Keep the kills on the books and keep
     // the appointment, so the next tick tries again rather than charging the player for a
     // no-show.
-    //
-    // The appointment used to be cleared just above this, before anybody had been placed, so
-    // the hold aged here was already gone and a squad that failed its first try simply never
-    // came. AgePendingApexHold still gives up after a bounded wait and lets the lane
-    // reschedule, so a squad that can never be placed cannot block every later one.
     let why = CBBlockLabel(CBLastSpawnBlock());
     if StrLen(why) == 0 {
       why = CBT(n"Cyberbane-FactionApex-NoReasonRecorded");
@@ -1032,12 +853,7 @@ public func CBProcessPendingApex(sys: ref<CyberbaneSystem>, game: GameInstance) 
   CBApexTerrorWave(game);      // and everybody nearby gets out of the way
   if CBConfig.ApexEscortCount() > 0 && TDBID.IsValid(fs.sampleRecord) {
     let escortEntity: EntityID;
-    // CB_Escort, not CB_Squad. They used to wear the hit squad's own tag, which had two
-    // consequences: the squad lane saw a hit squad in the world that nobody had sent and
-    // refused to arrange one, and an escort from this gang was indistinguishable from another
-    // gang's crew that happened to be live at the same time - so the two read as one mixed
-    // squad. They are still kitted, still hostile and still chase, because every list below
-    // that matters now names this tag too.
+    // CB_Escort, not CB_Squad.
     CBSpawnGroup(game, fs.sampleRecord, n"", CBConfig.ApexEscortCount(), n"CB_Escort",
       CBConfig.ApexSpawnDistance() + 4.0, escortEntity);
   }

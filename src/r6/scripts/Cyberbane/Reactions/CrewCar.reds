@@ -1,28 +1,8 @@
-// Cyberbane - V's people in V's car (2.7.6)
+// Cyberbane - Crew in V's car
 //
-// "I'm getting in a ride with four seats and four doors, but the two I got with me are both sitting in the same seat right
-// next to me, clipping into each other." "One of them would never leave the car, and they'd be permanently with you even
-// after you sent them home; only a quicksave and a reload fixed it."
-//
-// V's crew and a friendly gang's people ride with V on the game's own follower role, and the role's way into a car is the
-// game's own (FollowerActions.EnterVehicle, tweaks ai/actions/library/followeractions.tweak). That action names no seat.
-// With no seat named, AISubActionMountVehicle_Record_Implementation.MountVehicle takes the first seat nobody is sitting in
-// (VehicleComponent.GetFirstAvailableSlot) and reserves nothing; only its 'first_available' path reserves one, through the
-// car's own AI (TryReserveSeatOrFirstAvailable, core/ai/actions/tweakAISubActions.script). So two followers getting in
-// together were both handed the same empty seat and both sat in it. The game's own companions never meet this: a quest
-// seats each of them by name.
-//
-// So for V's own people the seat is taken the way the reserving path takes one: a seat nobody sits in and nobody has
-// reserved, reserved for them on the car's AI, then the game's own mount into exactly that seat. The back seats first, so
-// the seat beside V stays free for whoever the game or another mod puts there (Johnny, with The Passenger). Nobody is put
-// in a car with no free seat: they stay out, and a drive long enough ends the call as it always has (CBMyCrewTick).
-//
-// And out again. Ending the call took their follower role away (CBEndFollower) while they sat in V's car, and the way out
-// of a car is the role's too (FollowerActions.ExitVehicle), so nothing ever asked them out; the walk home is refused to
-// anybody in a seat (CBOrderFlee), and the sweep that takes them away waits for V to look away, which V sitting beside them
-// never does. They are asked out before the role goes (CBRiderLeaves), the seat is given back, and anybody still in a seat
-// a few seconds after being asked is lifted out with the game's own InstantUnmount once the car is standing still
-// (CBUnmountStuck), the event it uses itself for a body in a trunk.
+// The follower EnterVehicle action doesn't name a seat, so two followers get sent to the same one. Each gets a seat
+// reserved for them (back seats first) and is mounted into it, and anyone still in a seat after being sent home is
+// lifted out once the car stops.
 
 // The seat this one was given, in which car, and when (engine seconds). Session only.
 @addField(ScriptedPuppet)
@@ -60,12 +40,6 @@ public func CBRidesWithV(p: ref<ScriptedPuppet>) -> Bool {
 
 // A car whose seats can be handed out by name. A bike, a wreck, a car V is driving by hack or one falling apart is left to
 // the game, which turns all but the bike down anyway.
-//
-// With or without a seat AI of its own (2.7.8). "Both of them still get into the passenger seat." This handed any car with
-// no AI component back to the game, and the game seats followers the old way there, both in the first empty seat; the
-// game's own reserving path asks for the component before it reserves (tweakAISubActions.script, 'first_available'), and so
-// does its seat count (VehicleComponent.GetFirstAvailableSlot), so cars without one are not rare. Seats are now also kept by
-// Cyberbane for V's own people (CBSeatClaimed), so two of them are never sent to one seat, whatever the car can reserve.
 func CBSeatsByName(vehicle: wref<VehicleObject>) -> Bool {
   if !IsDefined(vehicle) || vehicle.IsDestroyed() || IsDefined(vehicle as BikeObject) {
     return false;
@@ -77,7 +51,7 @@ func CBSeatsByName(vehicle: wref<VehicleObject>) -> Bool {
   return !IsDefined(vc) || !vc.IsVehicleInDecay();
 }
 
-// A seat of their own in this car, reserved, and the game's own mount into it. False when there is none.
+// A seat of their own in this car, reserved, and the game's mount into it. False when there is none.
 func CBBoardWithV(owner: ref<ScriptedPuppet>, vehicle: wref<VehicleObject>, instant: Bool) -> Bool {
   let game = owner.GetGame();
   let id = owner.GetEntityID();
@@ -109,7 +83,7 @@ func CBBoardWithV(owner: ref<ScriptedPuppet>, vehicle: wref<VehicleObject>, inst
     }
     let human = owner.GetAIControllerComponent();
     if IsDefined(human) {
-      human.OnSeatReserved(carId);   // the game's own note of which car holds their reservation, released on death or detach
+      human.OnSeatReserved(carId);   // the game's note of which car holds their reservation, released on death or detach
     }
   }
   owner.cbSeatCar = carId;
@@ -150,9 +124,8 @@ func CBFreeSeat(game: GameInstance, vehicle: wref<VehicleObject>, forWhom: Entit
   return n"";
 }
 
-// Is this seat of this car one that another of V's people was given and is still walking to (2.7.8)? Read off their own
-// seat notes, so it holds for a car with no seat AI to reserve it. V's crew and a friendly gang's people riding with V:
-// a handful of people, one look each.
+// Is this seat of this car one that another of V's people was given and is still walking to? Read off their own seat
+// notes, so it holds for a car with no seat AI to reserve it.
 func CBSeatClaimed(game: GameInstance, vehicle: wref<VehicleObject>, seat: CName, except: EntityID) -> Bool {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) || !IsDefined(vehicle) {
@@ -190,9 +163,8 @@ public func CBRiderLeaves(game: GameInstance, p: ref<ScriptedPuppet>) -> Void {
   CBUnmountOnce(game, p);
 }
 
-// Asked out of a car and still in it a few seconds later: lifted out with the game's own InstantUnmount, once the car is
-// standing still. The game sends the same event for a body in a trunk and for its own police. Asked again every few
-// seconds while they sit there.
+// Asked out of a car and still in it a few seconds later: lifted out with the game's InstantUnmount, once the car is
+// standing still. The game sends the same event for a body in a trunk and for its own police.
 public func CBUnmountStuck(game: GameInstance, p: ref<ScriptedPuppet>) -> Void {
   if !IsDefined(p) || !p.cbUnmountSent || !p.IsAttached() || p.IsDead() || !VehicleComponent.IsMountedToVehicle(game, p.GetEntityID()) {
     return;

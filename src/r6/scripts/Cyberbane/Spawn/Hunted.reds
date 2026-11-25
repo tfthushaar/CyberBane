@@ -1,21 +1,7 @@
-// Cyberbane - Being hunted, fairer and more readable (2.4.1)
+// Cyberbane - Being hunted, fairer and more readable
 //
-//   [44] a fair first volley  for a moment after a hunter is handed V (CBEngageV), their aim is off: the game's own
-//                             Accuracy stat, a modifier added and taken off again the way the game's effectors do
-//   [41] lie low on purpose   while they are still searching, changing clothes or slipping into another district
-//                             unseen can make the trail go cold, and the Hub says how hot each gang is
-//   [42] the metro             riding it already calls back whoever had not reached V (Core/StoryHold.reds); now the
-//                             street says so
-//   [46] [U8] haunts           the districts V spends time in are counted (CBHuntBook); a hunt starting in one starts
-//                             from a closer tip, and hunters see V sooner near the car they know
-//   [U7] [68] scouts worth catching   a scout looks without drawing: hostile only once they have called it in, so V
-//                             can walk up and pay them to say they found nothing; the Voodoo Boys' scout is a
-//                             netrunner who spots V from further off; calling it in shows on the HUD
-//   [50] lookouts in the crowd on a hostile gang's streets, the turf watch is somebody: a passer-by who will report V.
-//                             The scanner shows them; deal with them (talk, a takedown) and nothing is reported
-//
-// Its own save book for what outlives a session (haunts now; the bounty, the hunters' ladder, a tracker and a
-// corporation's interest in 2.4.2 and 2.4.3), laid out whole so its saved shape never changes.
+// A fair first volley, lying low to make a trail go cold, losing them on the metro, scouts and lookouts in the crowd,
+// and the HUD line that says what's after V.
 
 public func CBFairVolleyOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -41,7 +27,7 @@ public func CBTalkActBribeScout() -> Int32 = 39
 
 public class CBHuntBook extends ScriptableSystem {
   private persistent let m_haunt: array<Float>;        // game seconds V has spent in each district (CBDistrictIndex)
-  // Later releases (2.4.2, 2.4.3): a tracker, the bounty, the hunters' ladder, a corporation's interest.
+  // Later releases: a tracker, the bounty, the hunters' ladder, a corporation's interest.
   private persistent let m_trackedBy: CName;
   private persistent let m_trackedUntil: Float;
   private persistent let m_bountyBy: CName;
@@ -55,7 +41,7 @@ public class CBHuntBook extends ScriptableSystem {
   private persistent let m_corpBy: CName;
   private persistent let m_corpAt: Float;
   private let m_padded: Bool;
-  public let safeTicks: Int32;         // real seconds V has spent somewhere safe while tracked (2.4.2)
+  public let safeTicks: Int32;         // real seconds V has spent somewhere safe while tracked
 
   private func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
     this.m_padded = false;
@@ -78,8 +64,8 @@ public class CBHuntBook extends ScriptableSystem {
     this.safeTicks = 0;
   }
 
-  // ---- The price on V's head and the hunters' ladder (Spawn/Bounty.reds, 2.4.3) ----
-  // Session only: who of the ladder is out after V now, and who is on their way.
+  // ---- The price on V's head and the hunters' ladder (Spawn/Bounty.reds) ---- Session only: who of the ladder is out
+  // after V now, and who is on their way.
   public let outBody: array<EntityID>;
   public let outSlot: array<Int32>;      // index into the roster, for each body above
   public let outDownTick: array<Int32>;  // the tick they were first seen down and breathing, 0 not yet
@@ -87,8 +73,8 @@ public class CBHuntBook extends ScriptableSystem {
   public let comingPair: Int32;          // and a second, likewise
   public let comingTicks: Int32;
   public let payRequested: Bool;         // chosen on the Hub, carried out on the next tick back in the game
-  public let darkKills: Int32;           // a crew picked off this hunt with nobody seeing V (2.4.6, [80])
-  public let briefDay: Int32;            // the game day + 1 the morning brief last went out (2.4.6, [83])
+  public let darkKills: Int32;           // a crew picked off this hunt with nobody seeing V ([80])
+  public let briefDay: Int32;            // the game day + 1 the morning brief last went out ([83])
 
   public func BountyBy() -> CName { return this.m_bountyBy; }
   public func BountyAmount() -> Int32 { return this.m_bountyAmount; }
@@ -304,7 +290,7 @@ public func CBHuntedTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   if !IsDefined(sys) || !IsDefined(book) || !IsDefined(player) {
     return;
   }
-  // A gang's countdown can be slipped too (2.7.1, Spawn/Slip.reds).
+  // A gang's countdown can be slipped too (Spawn/Slip.reds).
   CBSlipTick(sys, game);
   let tick = sys.GetTickCount();
   if CBHauntsOn() && tick % 10 == 0 {
@@ -442,9 +428,9 @@ public func CBScoutTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pla
   if IsDefined(fs) {
     fs.lastHitSquadAt = CBGameSeconds(game);   // they leave V alone a while, as a silenced scout's gang does
   }
-  // Out of the hunt for good, the way anybody stood down is (Rivals/RivalMoments.reds, CBFacedownStandDown): still wearing
-  // the scout's tag, the hunt went on ordering them after V and, once V was found, handed them V as a target, so the one V
-  // had just paid walked straight back into the fight. An orphan the sweep clears once V cannot see them, walking off.
+  // Out of the hunt for good, the way anybody stood down is (Rivals/RivalMoments.reds, CBFacedownStandDown): still
+  // wearing the scout's tag, the hunt went on ordering them after V and, once V was found, handed them V as a target,
+  // so the one V had just paid walked straight back into the fight.
   let des = GameInstance.GetDynamicEntitySystem();
   if IsDefined(t.npc) && IsDefined(des) {
     let id = t.npc.GetEntityID();

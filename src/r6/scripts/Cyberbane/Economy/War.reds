@@ -1,25 +1,7 @@
-// Cyberbane - Turf, money and war (2.4.0)
+// Cyberbane - Turf, money and war
 //
-// The turf war gets a strategy, all through the systems that already run it:
-//
-//   [34] the war chest  each gang's money. Its streets earn it every day, a missed racket or deal adds to it;
-//                       crews, apex squads, tribute and bounties spend it, and robbing a bagman or hitting a
-//                       racket takes from it. A broke gang sends fewer people, and none when it cannot pay at all
-//                       (CBCrewSizeFor, CBCrewReason, CBApexEligible).
-//   [35] manpower       a massacre empties a gang's ranks for days: smaller crews, and none at all near empty.
-//   [33] back a gang    in street talk, with a gang that likes V. V's work against its enemies counts double
-//                       (CBCreditRivalGangs), and every week it holds streets it pays V a cut.
-//   [70] set gangs on each other   a lie in street talk. Believed, the two gangs are far likelier to meet in a
-//                       street fight near V (the event engine), and both lose a little ground.
-//   [36] a common enemy two gangs at war that both fear and hate V stop fighting each other for a day, and their
-//                       crews come together.
-//   [37] V's own streets at Legend, a district where every gang is broken and V's name is everything: no crews
-//                       come there, and the gangs passing through pay.
-//   [U6] peace with terms  a price haggled by text, or peace for a favour (crash their enemy's next event); and the
-//                       Tyger Claws' protection money for working Japantown ([11], their code).
-//
-// The Hub's gang page says how a gang stands (flush, counting every eddie, broke; ranks thin) on its "Right now"
-// line. Everything is in the war book (Model/WarBook.reds). Each part has its switch; off, the war runs as before.
+// War chests and manpower, backing a gang, setting two gangs on each other, a common enemy, V's own streets and peace
+// with terms. A gang's money and people limit what it can send after V.
 
 public func CBWarChestOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -247,7 +229,7 @@ func CBWarOwnStreets(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
       i += 1;
     }
     let toll = CBConfig.OwnStreetsToll() * n;
-    // V's crew keeps an eye on them while V is away (Reactions/Crew.reds, [C9], 2.5.0): a quarter more comes in.
+    // V's crew keeps an eye on them while V is away (Reactions/Crew.reds, [C9]): a quarter more comes in.
     let crew = CBCrewBook.Get(game);
     if CBMyCrewOn() && IsDefined(crew) && crew.Count() >= 2 {
       toll = RoundF(Cast<Float>(toll) * 1.25);
@@ -447,8 +429,6 @@ public func CBWarTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref
 }
 
 // The gang at war with this one that has people near V, for the lie.
-// Any gang at war with theirs that fields people (2.5.0): it asked for a record, so a gang V had never crossed could not
-// be lied about, and the war's own enemies were often exactly those.
 func CBWarIncitable(sys: ref<CyberbaneSystem>, gang: CName) -> CName {
   for g in CBGangRivalsOf(sys.GetContent(), gang) {
     if CBFactionFieldsSquads(g) && CBFactionOn(g) {
@@ -480,7 +460,7 @@ public func CBWarTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, playe
       fs.standing = ClampF(fs.standing + CBConfig.ProtectionPaidStanding(), -100.0, 100.0);
     }
     CBFileLog(sys, n"ProtectionPaid", now, CBEventDistrict(sys, game), n"TygerClaws", Cast<Float>(amount));
-    CBCalmTowardsV(game, t.npc, 1);   // a paying customer is nobody's target, starting with the one paid (2.6.0)
+    CBCalmTowardsV(game, t.npc, 1);   // a paying customer is nobody's target, starting with the one paid
     return CBTalkSay(CBLineOf([CBT(n"Cyberbane-War-PleasureDoingBusinessJapantownSSafe"),
                                CBT(n"Cyberbane-War-SmartNobodyOfOursBothersA")]), n"");
   }
@@ -496,7 +476,7 @@ public func CBWarTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, playe
     }
     CBFileLog(sys, n"Backed", now, CBEventDistrict(sys, game), t.faction, 0.0);
     CBLog.Info(n"Model", s"V backs \(NameToString(t.faction)) (was \(NameToString(old))).");
-    CBCalmTowardsV(game, t.npc, 1);   // on their side now: the one V shook on it with stands down (2.6.0)
+    CBCalmTowardsV(game, t.npc, 1);   // on their side now: the one V shook on it with stands down
     return CBTalkSay(CBLineOf([CBT(n"Cyberbane-War-ThenYouReWithUsHurt"),
                                CBT(n"Cyberbane-War-GoodEveryStreetWeTakeYou"),
                                CBT(n"Cyberbane-War-WelcomeToTheWarChoomOur")]), n"greeting");

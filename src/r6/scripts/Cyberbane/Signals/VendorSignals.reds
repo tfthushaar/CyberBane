@@ -1,11 +1,8 @@
 // Cyberbane - Vendor pricing (spec §9.6)
 //
-// Night City charges the famous and the feared differently. This wraps the game's
-// buy-price function and nudges the result by V's reputation: the more the city dreads
-// you, the better your prices ("no trouble here, choom"); a clean Professional
-// reputation earns goodwill, while a mad-dog reputation pays a danger tax. The whole
-// adjustment is clamped to the Mod Settings range and only ever touches buy prices, so
-// turning the system off (or the kill switch) restores vanilla pricing immediately.
+// Night City charges the famous and the feared differently. This wraps the game's buy-price function and nudges the
+// result by V's reputation: the more the city dreads you, the better your prices ("no trouble here, choom"); a clean
+// Professional reputation earns goodwill, while a mad-dog reputation pays a danger tax.
 
 @wrapMethod(MarketSystem)
 public final static func GetBuyPrice(owner: wref<GameObject>, itemID: ItemID) -> Int32 {

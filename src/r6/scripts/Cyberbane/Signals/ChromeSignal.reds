@@ -1,17 +1,11 @@
 // Cyberbane - Chrome signal (spec §7.3)
 //
-// Reads V's equipped cyberware and Humanity to compute Chrome (C) and visible
-// Chrome (C_visible), then pushes them to the score engine. All APIs here are
-// compile-verified against 2.31 (EquipmentSystem, GetActiveItem, Humanity stats,
-// ItemID.IsValid). Per-implant family scores and tiers are refined in S-11; this
-// first pass derives C from Humanity usage plus the number of implants, and
-// C_visible from visibly-chromed areas (arms, eyes, skin).
+// Reads V's equipped cyberware and Humanity to compute Chrome (C) and visible Chrome (C_visible), then pushes them to
+// the score engine. All APIs here are compile-verified against 2.31 (EquipmentSystem, GetActiveItem, Humanity stats,
+// ItemID.IsValid).
 
-// How obvious a piece of chrome is to someone looking at V. Arms carry the most - mantis blades,
-// gorilla arms and a monowire read as a threat from across the street. Eyes and chromed skin get
-// clocked closer in, and chromed legs show the moment you move. Everything internal scores 0,
-// because nobody on the street can tell what your cardiovascular system is running.
-// Max visible sum is 24, scaled by CBChromeVisibleScale in CBComputeChromeVisible.
+// How obvious a piece of chrome is to someone looking at V. Arms carry the most - mantis blades, gorilla arms and a
+// monowire read as a threat from across the street.
 func CBVisibleChromeWeight(area: gamedataEquipmentArea) -> Float {
   if Equals(area, gamedataEquipmentArea.ArmsCW) {
     return 12.0;
@@ -29,9 +23,6 @@ func CBVisibleChromeWeight(area: gamedataEquipmentArea) -> Float {
 }
 
 // Quality to the tier number CBTierMult expects.
-//
-// Compared by name rather than cast from the enum's ordinal. The ordinals are not visible from
-// a compile, and assuming them is the single mistake that has cost this project the most.
 public func CBQualityTier(q: gamedataQuality) -> Int32 {
   if Equals(q, gamedataQuality.Iconic) { return 6; }
   if Equals(q, gamedataQuality.Legendary) { return 5; }
@@ -42,8 +33,8 @@ public func CBQualityTier(q: gamedataQuality) -> Int32 {
 }
 
 public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-  // Not before the session's first settled tick: the load may still be putting V's implants and clothes
-  // back on (CyberbaneSystem.StartSession, 1.9.5).
+  // Not before the session's first settled tick: the load may still be putting V's implants and clothes back on
+  // (CyberbaneSystem.StartSession).
   if !IsDefined(sys) || !sys.WornReady() {
     return;
   }
@@ -79,15 +70,6 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   ];
 
   // Weighted by tier, which CBTierMult has always been written to do and nothing ever called.
-  // Its own comment says the caller should pass the sum of visibleScore x tierMult; no caller
-  // did, so a rack of legendary chrome scored exactly the same as the common version of the
-  // same slots. Quality is read through the item's data rather than guessed from the id.
-  //
-  // Every slot of every area, not the one item GetActiveItem names. Most areas hold two or three
-  // implants, and a mod such as Cyberware-EX adds more, so a fully chromed body used to read as eleven
-  // implants and whatever share of its capacity it used. The best implant in each area still sets that
-  // area's quality, so the scale is what it always was; what is new is that a slot only a mod adds
-  // counts, and so does filling every slot you have.
   let ts = GameInstance.GetTransactionSystem(game);
   // What V is wearing, from the game's clothing areas as drawn and from anything else on V (an outfit
   // mod's own slots), read once for this sample and kept for the look and the mask test.
@@ -97,11 +79,8 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   let visibleSum = 0.0;
   let slots = 0;
   let filled = 0;
-  // Every one of these areas exists on every V: GetActiveItem, which this read until 1.8.1, indexed
-  // them with no check at all, and so does the game's own code (GetNumberOfSlots(ArmsCW)). The public
-  // test for a missing area, GetEquipAreaIndex, is private on 2.31, and calling it there would stop
-  // every script mod compiling. Reading the slots also stops this from going through GetActiveItem,
-  // which rewrites the area's active index as a side effect of being asked.
+  // The public test for a missing area, GetEquipAreaIndex, is private on 2.31, and calling it there would stop every
+  // script mod compiling.
   for area in areas {
     // Only slots that exist: GetItemInEquipSlot has no bounds check of its own.
     let count = data.GetNumberOfSlots(area, true);
@@ -137,9 +116,7 @@ public func CBUpdateChrome(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   let c = CBComputeChrome(MaxF(usage, coverage), implantSum, overalloc);
   let cVisible = CBComputeChromeVisible(visibleSum, 0.0);
 
-  // Report it when it moves. Concealment is the sort of feature that can look like it does
-  // nothing when it is in fact working and being hidden by the ceiling, and there is no way to
-  // tell those apart from a screenshot of a bar sitting at 100.
+  // Report it when it moves.
   let rounded = RoundF(cVisible);
   if rounded != sys.GetLastLoggedChrome() {
     sys.SetLastLoggedChrome(rounded);

@@ -1,27 +1,13 @@
 // Cyberbane - Fear reactions (spec §9.2)
 //
-// Anyone on the street can read how dangerous V looks and back off. The trigger is the
-// greater of civilian-perceived Dread (D_civ) and visible Chrome (C_visible), so a merc
-// decked out in obvious combat chrome scares people even before a reputation is built,
-// and a feared legend scares them on top of that. Civilians, gangers and cops all react;
-// only bosses and MaxTac hold their ground. Vendetta gangs attack instead of fleeing (the
-// Director handles that first). Reactions use the game's own four stages of crowd fear, so
-// nothing here is permanent or needs custom audio. The Director caps how many react per tick
-// (Mod Settings) so the street never empties all at once.
+// Anyone on the street can read how dangerous V looks and back off. The trigger is the greater of civilian-perceived
+// Dread (D_civ) and visible Chrome (C_visible), so a merc decked out in obvious combat chrome scares people even before
+// a reputation is built, and a feared legend scares them on top of that.
 
 @addField(ScriptedPuppet)
 public let cbCrowdReacted: Bool;
 
 // Tick at which this NPC last reacted to V.
-//
-// The bool above is a one-way latch: it was set the first time an NPC reacted and never reset
-// anywhere, so that NPC could never be frightened again for as long as it existed. Crowd NPCs
-// linger in a district, so after one pass through a street nobody there would ever react again
-// no matter how much more frightening V became, or how many times V walked back past them.
-// Together with the tick starvation fixed in 1.1.8 that is most of "the crowd does not fear
-// me": the few that were evaluated fired once and went inert.
-//
-// A stamp instead, so fear can be felt again after a cooldown rather than exactly once.
 @addField(ScriptedPuppet)
 public let cbCrowdReactedTick: Int32;
 
@@ -35,9 +21,7 @@ public let cbCrowdLastFear: Int32;
 @addField(ScriptedPuppet)
 public let cbCrowdNerve: Int32;
 
-// A look over at V and a worried face, then back to their day. The game's first stage of fear,
-// which it reserves for a car horn; a horn sent from V would pass a walk-away to everybody within
-// 15 m, so the two things that stage does are done here instead. Nothing is asked of their AI.
+// A look over at V and a worried face, then back to their day.
 @addMethod(ReactionManagerComponent)
 public func CBGlanceAt(target: ref<GameObject>) -> Void {
   if this.m_desiredFearPhase > -1 || IsDefined(this.m_activeReaction)
@@ -101,9 +85,8 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
     }
   }
 
-  // Obvious chrome gets read from further out. Someone walking around with blades for arms is
-  // clocked halfway down the block, where a clean-looking merc has to be close before anyone
-  // reacts. Every range stays inside the Director's evaluation radius.
+  // Obvious chrome gets read from further out. Someone walking around with blades for arms is clocked halfway down the
+  // block, where a clean-looking merc has to be close before anyone reacts.
   let reach = 1.0 + (score.GetChromeVisible() / 100.0) * CBConfig.ChromeNoticeRangeBonus();
 
   // courageMod is ten points of nerve for 0.10, on the same scale the stages use.
@@ -137,28 +120,23 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
     return false;
   }
 
-  // The game's own test for who takes the crowd's path through its reaction code.
+  // The game's test for who takes the crowd's path through its reaction code.
   let civilian = npc.IsCrowd() || npc.IsCharacterCivilian();
   let counted = false;
   if stage == 0 || !civilian {
-    // Somebody with a job to do sizes V up and stays put. They used to shout Terror at everyone
-    // within ten metres, which did nothing to them (the game drops a stim whose source is its own
-    // target, IsStimuliEventValid) and sent every civilian nearby running: much of why walking past
-    // a gang corner emptied the street.
+    // Somebody with a job to do sizes V up and stays put.
     let reactions = npc.GetStimReactionComponent();
     if IsDefined(reactions) {
       reactions.CBGlanceAt(player);
     }
   } else {
-    // SpreadFear is the one stim the game lets a sender choose the stage of. It comes from V, so
-    // they turn to V and move away from V, and it is tagged to stop with this person: the crowd
-    // does not pass it on, and it cannot start an armed civilian on V.
+    // SpreadFear is the one stim the game lets a sender choose the stage of.
     let data: stimInvestigateData;
     data.fearPhase = stage;
     StimBroadcasterComponent.SendStimDirectly(player, gamedataStimType.SpreadFear, npc, data);
     counted = true;
 
-    // A crowd near V's fight says so out loud (2.7.7), in its own voices, now and then.
+    // A crowd near V's fight says so out loud, in its own voices, now and then.
     if player.IsInCombat() && stage >= 2 {
       CBVoice(CyberbaneSystem.Get(game), game, npc, n"crowd_combat", n"CrowdCombat", 15.0, n"fear_run");
     }

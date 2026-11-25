@@ -2,23 +2,6 @@
 //
 // A gang you have turned hostile can send a squad after you. Who comes next, and when, lives in
 // Spawn/Queue.reds; this file brings a crew in once its lane has decided it is their turn.
-//
-// A hit squad is the gang's apex squad - four of their best, one in each chair: a heavy, a
-// shooter, a blade and a netrunner, the way a MaxTac drop reads - with the rest of the crew
-// behind them (CBCrewBringsApex). It spawns out of view, built from the kind of member V has
-// actually fought (captured records), and tagged so it can always be swept away.
-//
-// How long a squad stays in the world is the hunt's business and nobody else's
-// (Spawn/Hunt.reds): they search, find V, fight, and leave only when V has given them the slip
-// or the story takes the stage. Until 1.6.3 a second clock ran here as well, left over from
-// before the hunt existed: "five minutes" after a crew was sent, the slow tick deleted every
-// living member V could not see at that moment. Five minutes of the in-game clock is under forty
-// real seconds, and the slow tick only looks once an in-game hour, so whenever that hourly look
-// fell inside a fight - which was most fights - anybody flanking behind V or ducked behind cover
-// simply vanished, and those still in view were stripped of their tag and vanished the moment
-// they were not. That was the "enemies despawn mid fight, only hit squads, never Rivals" report:
-// it only ever looked at CB_Squad. The clock is gone rather than retuned, because no length of
-// it can know whether a fight is on; the hunt does.
 
 // How many a gang at full vendetta sends when V is at full menace.
 public func CBVendettaSquadSize() -> Int32 {
@@ -37,10 +20,6 @@ public func CBVendettaSquadsOn() -> Bool {
 
 
 // Run the clock down, and send them when it reaches zero.
-//
-// Everything that would make an arrival wrong right now - a safe area, a gig, a quiet job -
-// holds the timer where it is instead of cancelling it. The gang has not changed its mind
-// because you walked into a bar; they are waiting outside.
 public func CBProcessPendingSquad(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
     return;
@@ -63,11 +42,11 @@ public func CBProcessPendingSquad(sys: ref<CyberbaneSystem>, game: GameInstance)
     sys.AgePendingSquadHold();
     return;
   }
-  // What V did while they were on their way (2.7.1, Spawn/Slip.reds): they may have lost V before setting off.
+  // What V did while they were on their way (Spawn/Slip.reds): they may have lost V before setting off.
   if CBSlipResolve(sys, game, faction) {
     return;
   }
-  // Home ground (2.7.1, Spawn/HomeGround.reds): they wait outside, the way they wait out a safe area.
+  // Home ground (Spawn/HomeGround.reds): they wait outside, the way they wait out a safe area.
   if CBHomeHolds(sys, faction) {
     sys.AgePendingSquadHold();
     return;
@@ -88,19 +67,15 @@ public func CBProcessPendingSquad(sys: ref<CyberbaneSystem>, game: GameInstance)
     return;
   }
   let score = sys.GetScore();
-  // They may have been paid off, or simply calmed down, while the crew was on its way, or the
-  // player may have switched them or crews off (CBGangMaySend). "Still wants you dead" rather than
-  // Vendetta alone, since an ordinary hostile gang schedules a crew too.
+  // They may have been paid off, or simply calmed down, while the crew was on its way, or the player may have switched
+  // them or crews off (CBGangMaySend).
   if !CBGangMaySend(sys, fs.id) {
     sys.ClearPendingSquad();
     CBLog.Info(n"Spawn", s"Squad from \(NameToString(fs.id)) called off.");
     return;
   }
   let infamous = IsDefined(score) && EnumInt(score.GetTier()) >= EnumInt(ECBRenownTier.Infamous);
-  // Only a crew that actually set off ends the appointment. This cleared it whatever happened,
-  // so a crew the street would not take on its first try - every point in view, no floor, the
-  // world still settling - was dropped on the spot, and the hold-and-retry written for exactly
-  // that case (AgePendingSquadHold, below in CBSpawnHitSquad) never got a second tick to work in.
+  // Only a crew that actually set off ends the appointment.
   if CBSpawnHitSquad(sys, game, fs, infamous, CBGameSeconds(game)) {
     sys.ClearPendingSquad();
   }
@@ -116,11 +91,8 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
   let squadEntity: EntityID;
   sys.ClearSquadAnchor();   // this crew is its own squad, not a late joiner to the last one
 
-  // Their best come first: four, one in each chair, the way a MaxTac drop reads - a heavy, a
-  // shooter, a blade and a netrunner (Spawn/ApexSquad.reds). First so the ceiling on live
-  // spawns can never leave the crew standing there without them. By car when V is driving and
-  // a car can get here, otherwise on foot; whichever chairs either way cannot fill now, the
-  // muster walks in shortly (CBApexMusterTick). Same decision as the warning and the HUD line.
+  // Their best come first: four, one in each chair, the way a MaxTac drop reads - a heavy, a shooter, a blade and a
+  // netrunner (Spawn/ApexSquad.reds).
   let team = CBConfig.ApexStrikeTeamSize();
   let assassin = CBClawsAssassin(game, fs.id);
   let withApex = !assassin && CBCrewBringsApex(sys, fs);
@@ -145,9 +117,8 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
     } else {
       sys.ResetApexRoles();
       if CBWalkInRest(sys, game, fs, apexRecord, n"CB_Apex", 0, team) <= 0 {
-        // Nobody could be placed. The crew does not come without them: if the street will not
-        // take four people now, it will not take the rest either, and a crew that is promised
-        // with its best should arrive with them. The appointment stands and tries again.
+        // Nobody could be placed. The crew does not come without them: if the street will not take four people now, it
+        // will not take the rest either, and a crew that is promised with its best should arrive with them.
         sys.ClearApexMuster();
         CBLog.Info(n"Spawn", s"Crew from \(NameToString(fs.id)) is holding for its apex squad: \(CBSpawnBlockWhy()).");
         sys.AgePendingSquadHold();
@@ -158,12 +129,8 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
     }
   }
 
-  // The rest of the crew, inside whatever room the ceiling has left, keeping room for the apex
-  // chairs a car is still bringing. If they can drive to you, they drive, all of them: as many
-  // cars as it takes, one after another, behind the apex squad's own (CBSendByCar, CBConvoyTick).
-  // This used to send one car of four at most and walk everybody else in, and with the apex squad
-  // in that one car the whole crew walked. Whoever the "Cars per arrival" limit leaves over, or a
-  // car cannot be sent for, still comes on foot.
+  // The rest of the crew, inside whatever room the ceiling has left, keeping room for the apex chairs a car is still
+  // bringing.
   let crew = Min(size, Max(0, CBSpawnRoom(game) - apexFuture));
   let spawned = 0;
   let crewFuture = 0;   // crew a car has yet to bring into the world
@@ -183,11 +150,8 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
       }
     }
   }
-  // And their netrunner (1.8.5), hanging back while the rest go in. Not with an apex squad, which
-  // brings its own fourth chair; not for a crew of one or two; never past the live ceiling. One body,
-  // placed the way the crew was (CBSpawnGroup), so it is one of the crew in every count. A crew coming
-  // by car is not in the world until its car is, so its seats are counted here as taken: without that
-  // the netrunner walked into the room the car's last passenger then could not have.
+  // And their netrunner, hanging back while the rest go in. Not with an apex squad, which brings its own fourth chair;
+  // not for a crew of one or two; never past the live ceiling.
   if spawned >= CBConfig.NetrunnerSeatMinCrew() && !withApex {
     let netrunner = CBNetrunnerSeatRecord(fs);
     if TDBID.IsValid(netrunner) && CBSpawnRoom(game) - crewFuture >= 1 {
@@ -199,15 +163,14 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
     }
   }
   if spawned <= 0 && !withApex {
-    // Nothing queued, so the cooldown does not start - but the appointment has to be aged or
-    // it stands for ever, and a standing appointment keeps the lane busy. That is the Rival
-    // lane's trap again, in a third place, and it was silent here too.
+    // Nothing queued, so the cooldown does not start - but the appointment has to be aged or it stands for ever, and a
+    // standing appointment keeps the lane busy.
     CBLog.Info(n"Spawn", s"Crew from \(NameToString(fs.id)) could not be placed: \(CBSpawnBlockWhy()).");
     sys.AgePendingSquadHold();
     return false;
   }
 
-  // A common enemy (Economy/War.reds, 2.4.0): the gang they have a truce with sends a couple of its own along.
+  // A common enemy (Economy/War.reds): the gang they have a truce with sends a couple of its own along.
   let partner = CBTrucePartner(game, fs.id);
   let partnerRecord = IsNameValid(partner) ? CBGangTemplate(sys, partner) : TDBID.None();
   if TDBID.IsValid(partnerRecord) && CBSpawnRoom(game) > 0 {
@@ -219,7 +182,7 @@ func CBSpawnHitSquad(sys: ref<CyberbaneSystem>, game: GameInstance, fs: ref<CBFa
       CBLog.Info(n"Spawn", s"\(joined) of \(NameToString(partner)) came along with the \(NameToString(fs.id)) crew.");
     }
   }
-  // Paid for out of their chest (Economy/War.reds, 2.4.0).
+  // Paid for out of their chest (Economy/War.reds).
   CBWarSpend(game, fs.id, CBConfig.WarCrewCost() * Cast<Float>(Max(spawned, 0)) + (withApex ? CBConfig.WarApexCost() : 0.0));
   fs.lastHitSquadAt = now;
   sys.SetActiveSquadFaction(fs.id);
@@ -252,11 +215,7 @@ public func CBSpawnBlockWhy() -> String {
   return why;
 }
 
-// A crew that isn't five of one person ([U1], 2.3.2). Each seat from whoever of theirs V has met in that role (the
-// records the apex roster already captures as V fights them, CBCaptureRoleRecord): a heavy once there are four, a
-// blade once there are three, and the rest shooters, half of them the gang's own last-seen face. A seat whose record
-// is not a fit person to spawn falls back to that face. One CBSpawnGroup per record, under the same live ceiling.
-// The car path still seats one record (CBSendByCar takes one); whoever walks in is mixed.
+// A crew that isn't five of one person ([U1]).
 public func CBSpawnMixedCrew(game: GameInstance, fs: ref<CBFactionState>, crew: Int32, dist: Float, out last: EntityID,
                              opt tag: CName) -> Int32 {
   let wear = IsNameValid(tag) ? tag : n"CB_Squad";

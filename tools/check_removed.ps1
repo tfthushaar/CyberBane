@@ -3,16 +3,12 @@
   Fails if any script the mod has ever shipped is missing from src.
 
 .DESCRIPTION
-  Installing a new version over an old one does not remove files. A script deleted from the mod
-  stays in r6\scripts\Cyberbane on every install that updated by extracting the zip, and redscript
-  compiles it with everything else. So the moment anything it calls is removed, that file fails to
-  compile, and a failed compile stops every script mod the player has. That is how 1.7.0 broke:
-  Spawn/VanillaChase.reds was deleted in 1.5.0, and CBChaseVehicle, which it called, was removed in
-  1.7.0.
+  Installing a new version over an old one doesn't remove files, so a deleted script stays on every install
+  that updated by extracting the zip and still gets compiled. Once anything it calls is gone it fails to
+  compile, and that stops every script mod the player has.
 
-  The rule this enforces: no .reds file is ever deleted. A file the mod no longer needs is replaced
-  by a stub at the same path, so that installing over the top overwrites the old copy. An install
-  then always ends up with exactly the files in the zip, whichever version it started from.
+  So no .reds file is ever deleted: a file the mod no longer needs is replaced by a stub at the same path,
+  and installing over the top overwrites the old copy.
 
   Run by tools/build.ps1 and tools/validate.ps1. Paths come from the whole history of every branch,
   with renames counted as a removal of the old path.

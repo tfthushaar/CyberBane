@@ -1,13 +1,7 @@
-// Cyberbane - The street's read on V (1.9.5)
+// Cyberbane - The street's read on V
 //
-// What somebody standing next to V knows about them, in one place. Two things need it: what the crowd
-// says about V (Narrative/Whispers.reds) and how a person V walks up to answers (Reactions/
-// StreetTalk.reds). Both used to read the score engine piecemeal, and the whispers read almost
-// none of it: a mood out of three and a title, so a Ghost with a hundred unseen kills and a Brawler who
-// never killed anybody were talked about in the same words.
-//
-// Read on demand, never stored: every field is worked out from state the save already holds, and the
-// read costs a handful of lookups, which is nothing at the rate either of its callers asks.
+// What somebody standing next to V knows about them, in one place. Two things need it: what the crowd says about V
+// (Narrative/Whispers.reds) and how a person V walks up to answers (Reactions/ StreetTalk.reds).
 
 public class CBStreetRead {
   // Who V is to the city.
@@ -49,7 +43,6 @@ public class CBStreetRead {
   public let leader: String;          // whoever runs their crew, from V's Rivals
   public let rivalsAlive: Int32;
 
-  // The moment (Model/Moment.reds) and what the street remembers (Model/StreetBook.reds), 2.3.1.
   public let night: Bool;
   public let rain: Int32;              // 0 dry, 1 light, 2 heavy
   public let wounded: Bool;
@@ -119,7 +112,7 @@ public func CBReadStreet(sys: ref<CyberbaneSystem>, game: GameInstance, faction:
     r.turfHolder = CBTurfHolder(sys, game, r.district);
   }
 
-  // A faction switched off in Mod Settings speaks like anybody else on the street (1.9.1).
+  // A faction switched off in Mod Settings speaks like anybody else on the street.
   if Equals(faction, n"") || !CBFactionOn(faction) {
     return r;
   }

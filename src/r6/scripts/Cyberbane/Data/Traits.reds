@@ -23,7 +23,7 @@ public func CBTraitBit(id: CName) -> Int32 {
   if Equals(id, n"Shaken") { return 11; }
   if Equals(id, n"OldWound") { return 12; }
   if Equals(id, n"Reckless") { return 13; }
-  if Equals(id, n"Broken") { return 14; }   // 1.9.0: a cyberpsychotic break, never rolled at creation
+  if Equals(id, n"Broken") { return 14; }   // a cyberpsychotic break, never rolled at creation
   return -1;
 }
 
@@ -46,6 +46,6 @@ public func CBSeedTraits(c: ref<CyberbaneContent>) -> Void {
   c.AddTrait(CBMakeTrait(n"OldWound",     CBT(n"Cyberbane-Traits-OldWound"),     true));
   c.AddTrait(CBMakeTrait(n"Reckless",     CBT(n"Cyberbane-Traits-Reckless"),      true));
 
-  // Earned, never rolled (CBRivalAddTrait leaves it out): a top-rank Rival who broke (1.9.0).
+  // Earned, never rolled (CBRivalAddTrait leaves it out): a top-rank Rival who broke.
   c.AddTrait(CBMakeTrait(n"Broken",       CBT(n"Cyberbane-Traits-Cyberpsycho"),   false));
 }

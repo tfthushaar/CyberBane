@@ -1,14 +1,7 @@
-// Cyberbane - listening to Cyberbane's events (extension API level 1, 2.7.4)
+// Cyberbane - listening to Cyberbane's events (extension API level 1)
 //
 // An add-on extends CBListener, overrides what it wants and registers it with CyberbaneAPI.RegisterListener, each
-// session (from its own system's OnAttach or the player's attach). Every call is delivered on Cyberbane's own tick,
-// never inside a game event: a death or a hit runs where the game calls it, so Cyberbane only writes it down there and
-// tells listeners on the next tick. A listener that throws away nothing it is told breaks nothing: each call is
-// independent, and a listener registered twice is told once.
-//
-// OnPlaythroughReset matters most: Start over (HardReset) restarts Rival ids at 0, so data an add-on keys by a Rival id
-// would attach to the wrong Rival after it. The epoch counts resets on this playthrough and is kept in the save, so an
-// add-on that stores it can compare on load (CyberbaneAPI.PlaythroughEpoch) even if it missed the call.
+// session (from its own system's OnAttach or the player's attach).
 
 public abstract class CBListener extends IScriptable {
   // Somebody died. `faction` is Cyberbane's own id for them ("" when nobody's); `byV` is decided the way Cyberbane
@@ -16,7 +9,7 @@ public abstract class CBListener extends IScriptable {
   public func OnNpcKilled(game: GameInstance, faction: CName, byV: Bool) -> Void {}
   // A Rival changed: kind is one of n"Made", n"Climbed", n"Escaped", n"Spared", n"KilledV", n"Slain".
   public func OnRivalEvent(game: GameInstance, rivalId: Int32, kind: CName) -> Void {}
-  // A faction's posture towards V changed: the values of ECBPosture (Allied 0 ... Vendetta 4).
+  // A faction's posture towards V changed: the values of ECBPosture (Allied 0... Vendetta 4).
   public func OnPostureChanged(game: GameInstance, faction: CName, before: Int32, after: Int32) -> Void {}
   // The world has settled after a load, a fast travel or a scene: a safe moment to place people.
   public func OnSettled(game: GameInstance) -> Void {}
@@ -24,8 +17,8 @@ public abstract class CBListener extends IScriptable {
   public func OnPlaythroughReset(game: GameInstance, epoch: Int32) -> Void {}
   // A playthrough Cyberbane had never seen began (or began again after Start over): the game's gamedataLifePath value.
   public func OnPlaythroughBorn(game: GameInstance, lifepath: Int32) -> Void {}
-  // API level 2 (2.7.5): every couple of seconds on Cyberbane's settled tick, for an add-on's own clocks. Never during a
-  // load, a scene, a menu or the settle after a fast travel; CyberbaneAPI.WorldStable answers the same question.
+  // API level 2: every couple of seconds on Cyberbane's settled tick, for an add-on's own clocks. Never during a load,
+  // a scene, a menu or the settle after a fast travel; CyberbaneAPI.WorldStable answers the same question.
   public func OnTick(game: GameInstance) -> Void {}
 }
 
@@ -79,8 +72,8 @@ public class CBApiBook extends ScriptableSystem {
   public func HasListeners() -> Bool { return ArraySize(this.m_listeners) > 0; }
 
   // The tick stood down (a load, a scene, a menu, the settle after a fast travel): the next settled tick says so again.
-  // Drain runs only on a settled tick, so it could never see the world go: OnSettled came after a load and never after a
-  // scene or a fast travel (2.7.5).
+  // Drain runs only on a settled tick, so it could never see the world go: OnSettled came after a load and never after
+  // a scene or a fast travel.
   public func Unsettle() -> Void { this.m_settled = false; }
 
   public func Queue(kind: Int32, name: CName, a: Int32, b: Int32) -> Void {
@@ -111,7 +104,7 @@ public class CBApiBook extends ScriptableSystem {
     if n > 0 {
       this.Tell(game, n);
     }
-    // OnTick (2.7.5): its own count, so it keeps its pace whatever else was told.
+    // OnTick: its own count, so it keeps its pace whatever else was told.
     this.m_ticks += 1;
     if stable && this.m_ticks % CBConfig.ApiListenerTickEvery() == 0 {
       let ticking = this.m_listeners;
@@ -165,7 +158,7 @@ public func CBApiNote(kind: Int32, name: CName, a: Int32, b: Int32) -> Void {
 public func CBApiRivalEvent(r: ref<CBRival>, kind: CName) -> Void {
   if IsDefined(r) && r.id > 0 {
     CBApiNote(CBApiQRival(), kind, r.id, 0);
-    // Every moment of a Rival's comes through here, so their timeline is written here too (Rivals/RivalTimeline.reds, 2.7.7).
+    // Every moment of a Rival's comes through here, so their timeline is written here too (Rivals/RivalTimeline.reds).
     CBRivalTimelineEvent(r, kind);
   }
 }

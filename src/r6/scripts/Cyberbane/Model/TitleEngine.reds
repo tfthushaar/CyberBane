@@ -41,7 +41,7 @@ func CBCheckTitleCondition(sys: ref<CyberbaneSystem>, id: CName) -> Bool {
   if Equals(id, n"T_PSYCHO_HUNTER") { return stats.psychosKilled >= 10; }
   if Equals(id, n"T_PSYCHO_WHISPERER") { return stats.psychosPacified >= 5; }
   if Equals(id, n"T_FIST") {
-    // Knockouts count (1.9.3): the Fist of Night City may well never have killed anybody.
+    // Knockouts count: the Fist of Night City may well never have killed anybody.
     return sys.GetPrimaryArchetypeIndex() == EnumInt(ECBArchetype.Brawler)
         && sys.TotalKills() + stats.nonLethal >= 100;
   }
@@ -63,11 +63,6 @@ func CBCheckTitleCondition(sys: ref<CyberbaneSystem>, id: CName) -> Bool {
   }
   if Equals(id, n"T_DISTRICT_PROBLEM") { return CBAnyDistrictProblem(sys, score); }
   // Earned by working unseen rather than by finishing one specific job.
-  //
-  // This was the only title in the mod with no condition at all: it hung off a deed, and deed
-  // detection goes by payout size rather than quest identity, so it could never fire. Rather
-  // than leave a title nobody can ever get, it now means what its name means - a great deal of
-  // work that nobody could put a name to.
   if Equals(id, n"T_KONPEKI_GHOST") {
     return sys.GetPrimaryArchetypeIndex() == EnumInt(ECBArchetype.Ghost)
         && stats.unattributed >= CBConfig.KonpekiUnattributed();
@@ -75,17 +70,12 @@ func CBCheckTitleCondition(sys: ref<CyberbaneSystem>, id: CName) -> Bool {
   if Equals(id, n"T_MERC_FROM") { return EnumInt(score.GetTier()) >= EnumInt(ECBRenownTier.LocalName); }
   if Equals(id, n"T_CYBERBANE") { return CBCyberbaneCondition(sys, score); }
   if CBNewTitleCondition(sys, sys.GetGameInstance(), id) {
-    return true;   // the ladder, the war, gang life, trophies, a gang's own (Narrative/Telling.reds, 2.4.6)
+    return true;   // the ladder, the war, gang life, trophies, a gang's own (Narrative/Telling.reds)
   }
   return false;   // deed-gated titles unlock through the deed system
 }
 
 // What this title takes, in plain words, with progress where there is a number to show.
-//
-// Written because a player reported the obvious: the mod hands out titles and never explains
-// what any of them mean or how they are earned, so the whole system reads as something that
-// happens to you rather than something you can go after. Every line here mirrors the condition
-// directly above it, so the two cannot drift apart without somebody noticing.
 public func CBTitleRequirement(sys: ref<CyberbaneSystem>, id: CName) -> String {
   if !IsDefined(sys) {
     return "";
@@ -96,7 +86,6 @@ public func CBTitleRequirement(sys: ref<CyberbaneSystem>, id: CName) -> String {
     return "";
   }
   let renown = RoundF(score.GetRenown());
-  // 2.4.6 ([U15]).
   if Equals(id, n"T_NUMBER_ONE") { return CBT(n"Cyberbane-TitleEngine-ReachTheTopOfTheHunters"); }
   if Equals(id, n"T_WARLORD") { return CBT(n"Cyberbane-TitleEngine-MakeADistrictYourOwnA"); }
   if Equals(id, n"T_SEASON_SURVIVOR") { return CBT(n"Cyberbane-TitleEngine-LiveThroughAGangSOpen"); }
@@ -218,7 +207,6 @@ func CBMostKilledGang(sys: ref<CyberbaneSystem>, out gang: CName) -> Int32 {
   return most;
 }
 
-// mode 0: kills (a knockout is not one since 1.9.3). 1: quiet takedowns. 2: Renown.
 func CBBestDistrict(sys: ref<CyberbaneSystem>, mode: Int32, out where: String) -> Int32 {
   let best = 0;
   for ds in sys.GetDistrictStates() {
@@ -272,7 +260,7 @@ public func CBTitleProgress(sys: ref<CyberbaneSystem>, id: CName) -> String {
   return s"\(Min(have, need))/\(need)";
 }
 
-// Whether titles do anything at all. The switch a player can reach if an effect is ever the problem.
+// Whether titles do anything at all.
 public func CBTitlesDoThings() -> Bool {
   let rt = CyberbaneRuntime.Get();
   return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().titlePerks;

@@ -2,27 +2,9 @@
 //
 // Overheard lines, shown when a recognized NPC is near and V is notable enough to be worth
 // talking about.
-//
-// There used to be exactly six lines in here, one per mood and topic, with no substitution of
-// any kind: the same sentence every time, whoever was speaking, wherever you were, whatever you
-// had done. A line you have already heard says nothing about the city, so the whole system read
-// as decoration rather than as word getting around.
-//
-// Three things give it variance now:
-//
-//   - Several lines per bucket, and the last one used is remembered for the session so the
-//     same one never lands twice running.
-//   - Substitution. The gang's name, the district a story came from, and V's current title go
-//     into the line, so it is about this street and this V.
-//   - Rumours. If a story has actually reached the district V is standing in, the speaker can
-//     be talking about that specific thing - a massacre in Watson, a boss put down in Heywood -
-//     rather than about V in the abstract. That is what the rumour engine is for, and until now
-//     nothing the player could hear was driven by it.
 
-// Who is talking. The game's own subtitles put this name in front of the line (1.9.5), so it says what
-// the speaker is to anybody looking: one of a gang by that gang's own word for its people, a cop, or
-// somebody off the street. "Ganger" six times running was its own kind of repetition, and it never
-// said whose.
+// Who is talking. The game's subtitles put this name in front of the line, so it says what the speaker is to anybody
+// looking: one of a gang by that gang's own word for its people, a cop, or somebody off the street.
 public func CBWhisperSpeaker(faction: CName) -> String {
   if Equals(faction, n"") || !CBFactionOn(faction) {
     return CBPick3(CBT(n"Cyberbane-Whispers-PasserBy"), CBT(n"Cyberbane-Whispers-Local"), CBT(n"Cyberbane-Whispers-SomeoneNearby"));
@@ -54,9 +36,6 @@ public func CBFactionMemberWord(faction: CName) -> String {
 }
 
 // The strongest story that has actually travelled to where V is standing.
-//
-// Returns null when nothing has reached here, which is the normal case early on and the reason
-// the generic lines below still exist.
 public func CBWhisperRumor(sys: ref<CyberbaneSystem>, game: GameInstance) -> ref<CBRumor> {
   if !IsDefined(sys) {
     return null;
@@ -125,19 +104,12 @@ func CBRumorPhrase(sys: ref<CyberbaneSystem>, r: ref<CBRumor>) -> String {
   return CBTf(n"Cyberbane-Whispers-WordIsSomebodySBeenBusy", [where]);
 }
 
-// ---- What gets said (1.9.5) -------------------------------------------------------------------------
+// ---- What gets said -------------------------------------------------------------------------
 //
-// "Make what the crowd says about you more relevant to what you are in Cyberbane." It said one of three
-// moods, a title and now and then a rumour, and that was all it knew. Now every line comes from the
-// street's read on V (Model/StreetRead.reds): how V works and how V treats people, the chrome on show,
-// the mask, the heat, how well this district knows V, what V is doing right now, and, from somebody
-// with a gang, everything between V and that gang - the blood, the mercy, the tribute, the Rival out
-// after V, who runs their crew now and whether the gang is breaking. Each of those offers lines when it
-// is true, weighted by how much it is worth saying, and the topic the last line was about sits the
-// next one out, so the street moves from subject to subject the way people do.
+// It said one of three moods, a title and now and then a rumour, and that was all it knew.
 
-// Is this gang breaking: below the line where the street calls them broken (Model/Territory.reds)?
-// Their people stop acting on a vendetta and start being afraid of the one who broke them (1.9.5).
+// Is this gang breaking: below the line where the street calls them broken (Model/Territory.reds)? Their people stop
+// acting on a vendetta and start being afraid of the one who broke them.
 public func CBGangBroken(sys: ref<CyberbaneSystem>, faction: CName) -> Bool {
   if !IsDefined(sys) || Equals(faction, n"") || !CBTurfWarsOn() || !CBFactionFieldsSquads(faction) {
     return false;
@@ -174,8 +146,8 @@ public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
       CBT(n"Cyberbane-Whispers-YouDonTSurviveMaxTacThat"));
   }
   if Equals(topic, n"warning") {
-    // In their own voice, most of the time (Narrative/GangVoice.reds).
-    // Their own words for a stranger (Narrative/GangVoice.reds): a gang V has bled does not call V "civilian" (2.6.1).
+    // In their own voice, most of the time (Narrative/GangVoice.reds). Their own words for a stranger
+    // (Narrative/GangVoice.reds): a gang V has bled does not call V "civilian".
     let own = CBGangWarnLine(st.faction);
     if StrLen(own) > 0 && st.kills < CBConfig.WarnKnowsYouKills() && RandF() < CBConfig.GangVoiceShare() {
       return own;
@@ -204,7 +176,7 @@ public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
     bag.Add(n"own", 3.0, CBLineOf([CBT(n"Cyberbane-Whispers-TheseAreTheirStreetsNowNobody"), CBT(n"Cyberbane-Whispers-GangsPayToWalkThroughHere"),
                                     CBT(n"Cyberbane-Whispers-ThatSWhoRunsThisPlace")]));
   }
-  // Streets V's crew holds, and a crew big enough to be talked about anywhere (Model/CrewTurf.reds, 2.7.6). A mask hides V,
+  // Streets V's crew holds, and a crew big enough to be talked about anywhere (Model/CrewTurf.reds). A mask hides V,
   // not whose corners these are.
   if CBIsCrewTurf(st.turfHolder) {
     let crewName = CBCapFirst(CBCrewTurfLabel());
@@ -216,13 +188,13 @@ public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
                                       CBT(n"Cyberbane-Whispers-HeardTheyRunACrew")]));
     }
   }
-  // V's crew walking with V, by name (2.7.7): passers-by and gangers notice who V brought.
+  // V's crew walking with V, by name: passers-by and gangers notice who V brought.
   let crewWith = CBCrewWalkingWith(sys, game);
   if !st.masked && StrLen(crewWith) > 0 {
     bag.Add(n"crewnames", 2.5, CBLineOf([CBTf(n"Cyberbane-Whispers-CrewWith1", [crewWith]), CBTf(n"Cyberbane-Whispers-CrewWith2", [crewWith]),
                                          CBTf(n"Cyberbane-Whispers-CrewWith3", [crewWith])]));
   }
-  // V's title, more often than the generic lines that used to carry it (2.7.7).
+  // V's title, more often than the generic lines that used to carry it.
   let titleWord = CBWhisperTitle(sys);
   if !st.masked && StrLen(titleWord) > 0 {
     bag.Add(n"titled", 1.5, CBLineOf([CBTf(n"Cyberbane-Whispers-Titled1", [titleWord]), CBTf(n"Cyberbane-Whispers-Titled2", [titleWord])]));
@@ -470,7 +442,7 @@ func CBWhisperGang(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName, gang
         CBT(n"Cyberbane-Whispers-GoodWithTheCrewThatOne"),
         CBT(n"Cyberbane-Whispers-HeardTheyVeBeenDoingUs")));
     } else {
-      // A broken gang's people have no threats left in them (1.9.5); CBWhisperBroken speaks for them.
+      // A broken gang's people have no threats left in them; CBWhisperBroken speaks for them.
       if !st.broken && (Equals(st.posture, ECBPosture.Hostile) || Equals(st.posture, ECBPosture.Vendetta)) {
         if st.kills >= 20 {
           bag.Add(n"blood", 2.5, CBPick3(
@@ -527,7 +499,7 @@ func CBWhisperMasked(bag: ref<CBLineBag>, st: ref<CBStreetRead>) -> Void {
     CBT(n"Cyberbane-Whispers-SomebodyWhoDoesnTWantTo")));
 }
 
-// What everybody can see right now (Model/Moment.reds, 2.3.1): the blood, a fight just over, the hour, the rain.
+// What everybody can see right now (Model/Moment.reds): the blood, a fight just over, the hour, the rain.
 func CBWhisperMoment(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) -> Void {
   if st.wounded {
     if Equals(mood, n"hate") {
@@ -576,7 +548,7 @@ func CBWhisperMoment(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) ->
   }
 }
 
-// Where V is standing, if something big happened there (Model/StreetBook.reds, 2.3.1).
+// Where V is standing, if something big happened there (Model/StreetBook.reds).
 func CBWhisperRemembered(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName, gang: String) -> Void {
   if Equals(st.placeKind, n"") {
     return;
@@ -619,7 +591,7 @@ func CBWhisperRemembered(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName
   }
 }
 
-// A mask does not hide the car everybody knows, or the gun (Model/StreetBook.reds, 2.3.1).
+// A mask does not hide the car everybody knows, or the gun (Model/StreetBook.reds).
 func CBWhisperGivenAway(bag: ref<CBLineBag>, st: ref<CBStreetRead>) -> Void {
   if st.givenAway == 1 {
     bag.Add(n"knownby", 4.0, CBLineOf([
@@ -695,7 +667,7 @@ func CBWhisperDistrict(bag: ref<CBLineBag>, st: ref<CBStreetRead>) -> Void {
 func CBWhisperGeneric(bag: ref<CBLineBag>, st: ref<CBStreetRead>, mood: CName) -> Void {
   CBWhisperDistrict(bag, st);
   if Equals(mood, n"respect") {
-    // Twice as many as before (2.7.6): these are what the street says most, and four wore thin within an evening.
+    // Twice as many as before: these are what the street says most, and four wore thin within an evening.
     bag.Add(n"generic", 1.0, CBLineOf([
       CBT(n"Cyberbane-Whispers-NowThatSAMercWorth"),
       CBT(n"Cyberbane-Whispers-SolidNoMessNoNoise"),
@@ -749,7 +721,7 @@ func CBWhisperTitle(sys: ref<CyberbaneSystem>) -> String {
   return CBTitleDisplayById(sys, sys.GetContent(), id);
 }
 
-// The Whispers switch, for anything else that would put an overheard line on the screen (1.9.1).
+// The Whispers switch, for anything else that would put an overheard line on the screen.
 public func CBWhispersOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
   return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().whispers;
@@ -757,13 +729,10 @@ public func CBWhispersOn() -> Bool {
 
 public func CBShowWhisper(sys: ref<CyberbaneSystem>, game: GameInstance,
                           faction: CName, mood: CName, topic: CName) -> Void {
-  // A whisper is something said near V, not something sent to V, so it is a line of subtitle
-  // and never a text. 1.4.7's first pass sent these as texts from "Passerby" and "Ganger",
-  // which in the real phone would have meant contacts nobody could have had a number for.
   CBOverheard(game, CBWhisperSpeaker(faction), CBWhisperLine(sys, game, faction, mood, topic));
 }
 
-// The first name of one of V's crew walking with V now, for the street to say; "" when none is (2.7.7).
+// The first name of one of V's crew walking with V now, for the street to say; "" when none is.
 public func CBCrewWalkingWith(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   let book = CBCrewBook.Get(game);
   if !IsDefined(book) || book.OutCount() == 0 || book.leaving {

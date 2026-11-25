@@ -4,17 +4,12 @@
 
 .DESCRIPTION
   Every line V can pick in street talk carries an action id, a constant such as
-  `public func CBTalkActWatch() -> Int32 = 33`, and the answer is found by comparing the id the
-  player picked against those constants in one long chain (CBStreetTalk, Reactions/StreetTalk.reds).
-  The ids are picked by hand in fifteen files, so nothing stopped two of them taking the same
-  number, and when they did the first test in the chain won. 2.6.5 gave the lead witness's lines 32
-  and 33, which the street-pay lines already had: "Keep an eye out for me" (250eb) charged the
-  witness's price, answered "Never saw you", sent the person away and set no watch, and leaning on a
-  witness got the witness's directions instead of a hush (reported on 2.7.8).
+  `public func CBTalkActWatch() -> Int32 = 33`, and the answer is found by comparing the picked id against
+  those constants in one long chain (CBStreetTalk, Reactions/StreetTalk.reds). The ids are set by hand across
+  fifteen files, so two can collide, and then the first test in the chain wins.
 
-  Some actions are told apart by range rather than one by one (CBTalkActIsFacedown, CBTalkActIsAlly,
-  CBTalkActIsParley): `act >= CBTalkActA() && act <= CBTalkActB()`. An id of another file landing
-  inside such a range would go to the wrong answer in the same way, so that is refused too.
+  Some actions are matched by range (CBTalkActIsFacedown, CBTalkActIsAlly, CBTalkActIsParley):
+  `act >= CBTalkActA() && act <= CBTalkActB()`. An id from another file inside such a range is refused too.
 
   Run by tools/build.ps1 and tools/validate.ps1.
 #>

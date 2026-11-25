@@ -1,25 +1,7 @@
-// Cyberbane - The street talks (1.9.8)
+// Cyberbane - The street talks
 //
-// What V can learn about the Rivals comes from the street itself, in the ways V already deals with people:
-//
-//   Squeeze     grab a ganger (the game's own grab) and hold them. A few seconds and they talk: a Rival's
-//               fatal flaw, where one is lying low, or who is coming for V. The loyal say nothing, the greedy
-//               hold out longer, the scared give it up at once. Aiming (a human shield) or letting go ends
-//               it unsaid. No new key: holding them is the question.
-//   The downed  crouch over a ganger V put down alive and look at them: they give one thing up. A Rival's
-//               body carries something about another of their gang.
-//   Scans       a full scan of a ganger now and then turns up the same in their files. Once per person.
-//   Informants  a Rival V spared twice (the Debtor) owes V, and texts two or three tips over the next days
-//               before they call it square; now and then the last is a set-up. A ganger V has frightened
-//               enough can be turned in a conversation ("You work for me now") and texts tips the same way.
-//   The bubble  the game's talk icon over people nearby who really have word of a Rival: at most two.
-//   Flaws       a rare high-rank Rival has one fatal flaw (a blade, something heavy, a bare fist, a quickhack,
-//               an explosive). Meeting it kills them outright. The street is how V finds out which.
-//
-// Saves: what V has learnt and who owes V tips is the playthrough's, in its own system (CBIntelBook, the
-// CBTurfBook pattern), so nothing already saved changes shape. A flaw itself is never stored: it follows
-// from the Rival's id. Everything that happens here happens on the talk tick, never inside a game event:
-// the hooks below only note who was grabbed or scanned.
+// Getting information out of gangers: grab one and hold them, crouch over one V put down, or scan them. They may give
+// up a Rival's weak spot, where one is lying low, or who is coming for V.
 
 // ---- What V knows ---------------------------------------------------------------------------------------
 
@@ -32,8 +14,8 @@ public class CBIntelBook extends ScriptableSystem {
   private persistent let m_infTips: array<Int32>;
   private persistent let m_infNextAt: array<Float>;
   private persistent let m_infSetup: array<Bool>;
-  // Rivals waiting for V at a place they named (Rivals/RivalLife.reds, 1.9.9), and kin: a Rival and the
-  // slain Rival they are family of.
+  // Rivals waiting for V at a place they named (Rivals/RivalLife.reds), and kin: a Rival and the slain Rival they are
+  // family of.
   private persistent let m_word: array<Int32>;
   private persistent let m_kinRival: array<Int32>;
   private persistent let m_kinOf: array<Int32>;
@@ -53,11 +35,7 @@ public class CBIntelBook extends ScriptableSystem {
     }
   }
 
-  // The five informant arrays are saved, and read back by index. A save that holds them at different
-  // lengths (cut short, or written by a build that pushed to one and not another) put every read past
-  // the shortest one out of bounds, which is a crash, not an error. So the count is the shortest of them
-  // (the SlotCount model), every read is checked, and anything past the shortest is trimmed before the
-  // arrays are changed, so they stay in step from then on.
+  // The five informant arrays are saved, and read back by index.
   private func AlignInformants() -> Void {
     let n = this.InformantCount();
     if ArraySize(this.m_infRival) > n { ArrayResize(this.m_infRival, n); }
@@ -100,7 +78,7 @@ public class CBIntelBook extends ScriptableSystem {
     this.m_infNextAt[i] = nextAt;
   }
 
-  // Saved from their own gang: they have more to tell (Reactions/Allies.reds, [U12], 2.4.5).
+  // Saved from their own gang: they have more to tell (Reactions/Allies.reds, [U12]).
   public func GiveTips(i: Int32, n: Int32) -> Void {
     if i < 0 || i >= this.InformantCount() {
       return;
@@ -455,12 +433,12 @@ public func CBIntelTurn(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CB
     chance += 0.1;
   }
   if temper != CBTalkTemperLoyal() && RandF() < ClampF(chance, 0.05, 0.8) {
-    // Frightened enough, they join V instead of informing (Reactions/Crew.reds, [C2], 2.5.0).
+    // Frightened enough, they join V instead of informing (Reactions/Crew.reds, [C2]).
     let joined = CBCrewFrightenedJoins(sys, game, t);
     if IsDefined(joined) {
       return joined;
     }
-    // The question is there for the crew alone when the informants are off (Reactions/StreetTalk.reds, 2.5.0).
+    // The question is there for the crew alone when the informants are off (Reactions/StreetTalk.reds).
     if !CBInformantsOn() {
       CBStandDownFromV(game, t.npc);
       return CBTalkSay(CBPick2(CBT(n"Cyberbane-StreetIntel-WorkForYouINoBut"),
@@ -514,7 +492,7 @@ public func OnExit(stateContext: ref<StateContext>, scriptInterface: ref<StateGa
 
 @wrapMethod(ScriptedPuppet)
 protected cb func OnScanningEvent(evt: ref<ScanningEvent>) -> Bool {
-  wrappedMethod(evt);   // as a statement (2.6.8): never typed off what the game's event returns
+  wrappedMethod(evt);   // as a statement: never typed off what the game's event returns
   if IsDefined(evt) && Equals(evt.state, gameScanningState.Complete) && !this.cbIntelScanned {
     let intel = CBStreetIntelFor(this.GetGame());
     if IsDefined(intel) {
@@ -543,7 +521,7 @@ func CBPlayerAiming(game: GameInstance) -> Bool {
 
 func CBIntelSay(game: GameInstance, slot: Int32, speaker: String, line: String, seconds: Float) -> Void {
   if CBGameSubtitlesOn(game) {
-    CBShowGameSubtitle(game, slot, speaker, line, CBTalkReadSeconds(line, seconds));   // long enough to read (2.6.3)
+    CBShowGameSubtitle(game, slot, speaker, line, CBTalkReadSeconds(line, seconds));   // long enough to read
   } else {
     CBOverheard(game, speaker, line);
   }
@@ -604,7 +582,7 @@ public class CBStreetIntel {
       return;
     }
     if !body.IsAttached() {
-      return;   // on their way in or out of the world: asked again next pass (2.4.2)
+      return;   // on their way in or out of the world: asked again next pass
     }
     let i = 0;
     while i < ArraySize(this.m_guardIds) {
@@ -616,9 +594,8 @@ public class CBStreetIntel {
           let sid = Cast<StatsObjectID>(body.GetEntityID());
           if IsDefined(pools) {
             let cur = pools.GetStatPoolValue(sid, gamedataStatPoolType.Health, true);
-            // Read as a percentage, so written as one (the last flag): without it this set that many hit
-            // points, and a Rival at 80% dropped to 65 hit points the moment one of their people fell.
-            // Never up: a Rival already under the floor stays where V put them.
+            // Read as a percentage, so written as one (the last flag): without it this set that many hit points, and a
+            // Rival at 80% dropped to 65 hit points the moment one of their people fell.
             pools.RequestSettingStatPoolValue(sid, gamedataStatPoolType.Health, MinF(cur, MaxF(cur - CBConfig.GuardNerveLoss(), 10.0)), GetPlayer(game), true);
           }
           CBIntelSay(game, 3, CBRivalDisplayName(sys.GetContent(), r),
@@ -629,8 +606,8 @@ public class CBStreetIntel {
     }
   }
 
-  // A Rival's people at their place walk a short beat round it, now and then, one order each (2.4.4, [U10]). Only
-  // while nobody is fighting: a guard who has seen V is the fight's.
+  // A Rival's people at their place walk a short beat round it, now and then, one order each ([U10]). Only while nobody
+  // is fighting: a guard who has seen V is the fight's.
   private let m_guardBeatTick: Int32;
 
   private func GuardBeat(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
@@ -729,7 +706,7 @@ public class CBStreetIntel {
     if !IsDefined(npc) {
       return;
     }
-    // Still in the world before their record is read for their gang (2.2.1).
+    // Still in the world before their record is read for their gang.
     if npc.cbIntelGiven || !npc.IsAttached() || npc.IsDead() {
       this.m_grab = null;
       return;
@@ -783,7 +760,7 @@ public class CBStreetIntel {
 
   // Crouched over somebody on the ground: a ganger down and alive talks; a Rival's body carries something.
   private func Downed(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, dt: Float) -> Void {
-    if !CBPlayerCrouched(game) || player.IsInCombat() {   // crouched over them, as the feature says (2.5.1)
+    if !CBPlayerCrouched(game) || player.IsInCombat() {   // crouched over them, as the feature says
       this.m_down = null;
       this.m_downFor = 0.0;
       return;
@@ -857,8 +834,6 @@ public class CBStreetIntel {
   }
 
   // Cheapest tests first: our own flag, then distance, then the angle, then the engine's questions.
-  // CBNpcSafe, not a bare IsAttached (2.2.1): what follows reads their record and tags, and the registry
-  // can hand back somebody who has just streamed in or is on their way out.
   private func LyingHere(sys: ref<CyberbaneSystem>, p: ref<ScriptedPuppet>, ppos: Vector4, fwd: Vector4,
                          des: ref<DynamicEntitySystem>) -> Bool {
     if !IsDefined(p) || p.cbIntelGiven || !CBNpcSafe(sys, p) || p.IsPlayer() {
@@ -941,14 +916,6 @@ public class CBStreetIntel {
     }
     // Whether a gang has word of a Rival is asked once per gang a pass, and at most six people are put
     // through the full talk checks: a dense street has dozens of gangers in the registry.
-    //
-    // The per-NPC gate (CBNpcSafe) comes before anything is read from them (2.2.1). This asked IsCrowd,
-    // which reads the person's character record, first, and whether they were attached only after: so
-    // every registry entry, near or far, still in the world or already streamed out, had its record read
-    // every pass and a half. The registry is only pruned once a tick, and not on the busy ones, so a
-    // streamed-out puppet is still in it, and reading its record took the game down (CTD in
-    // ScriptedPuppet.IsCrowd > GetRecord). The Director has always read the same things in this order:
-    // the gate, then the distance, then the record.
     let asked: array<CName>;
     let answers: array<Bool>;
     let checks = 0;

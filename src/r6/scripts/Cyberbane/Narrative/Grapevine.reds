@@ -4,32 +4,10 @@
 // touched before, somebody who trades in information there gets in touch about what they heard.
 // A contact saying "heard about Northside" lands harder than a meter filling, and it is the
 // audible surface for the mod's signature mechanic.
-//
-// It is also where the witness system shows its face. Word that came from people who saw you
-// arrives with your name on it. Word about work nobody witnessed arrives as a question: the
-// street knows something happened and cannot say who did it.
-//
-// Since 1.4.7 these arrive as text messages rather than as a line across the middle of the
-// screen, and from the broker who works the district the word reached rather than from a
-// rotating anonymous handle. That is the point of a grapevine: the same person keeps calling
-// you about their own part of town. See UI/PhoneMessages.reds for why this is Cyberbane's own
-// presentation of a message rather than a real journal entry, and for why the senders are
-// handles instead of the game's own fixers.
-//
-// Crash safety: no engine API beyond one guarded blackboard write inside the presenter, and
-// this runs from the rumor slow tick, which is behind the world-state gate.
 
 // Who is passing it on. Roles, never a named quest-giver: the player must never read one of
 // these as a real fixer offering real work.
 // Somebody gets in touch about a thing you did.
-//
-// A player asked for the phone to tell them when their standing changes. Real phone messages
-// are not available to a script mod: JournalPhoneMessage is abstract and cannot be built, and
-// the journal entry lookup that would let an existing thread be triggered does not exist on
-// this patch either (both verified by probe, along with every other route suggested). What is
-// available is this - a message that reads as coming from somebody rather than from a mod -
-// and it is already how word of your reputation reaches you, so milestones now arrive the
-// same way instead of as a system notice.
 public func CBContactMessage(game: GameInstance, body: String) -> Void {
   // From whoever works the part of town V is standing in, when that is known. Word about your
   // reputation reaching you from the local broker reads as the city; the same word from a
@@ -123,18 +101,7 @@ public func CBGrapevineOnReach(sys: ref<CyberbaneSystem>, game: GameInstance, r:
 
 // ---- Arriving somewhere word has already reached --------------------------
 //
-// Asked for directly: "if we fast travel and land in a different region and the rumours have
-// spread there, the fixers could mention that."
-//
-// It is the right half of the mechanic to make audible, because it is the half the player can
-// verify. Propagation happening on a slow tick behind the scenes is invisible; walking off a
-// fast-travel terminal into a district that already knows your name is the mechanic happening
-// to you. The broker who works that district is the one who says so, and it is the same handle
-// every time you come back.
-//
-// Called when the cached district changes, which the fast tick already tracks for the Director.
-// Rides the same cooldown as the rest of the grapevine, so arriving somewhere does not jump the
-// queue ahead of word that is still travelling.
+// It is the right half of the mechanic to make audible, because it is the half the player can verify.
 public func CBGrapevineOnArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
                                  districtId: CName, now: Float) -> Void {
   if !IsDefined(sys) || Equals(districtId, n"") {
@@ -158,9 +125,8 @@ public func CBGrapevineOnArrival(sys: ref<CyberbaneSystem>, game: GameInstance,
   if index < 0 {
     return;
   }
-  // Walked with GetRumorCount / GetRumorAt rather than GetRumors, which returns the array by
-  // value: indexing that temporary hands back a handle into a copy destroyed at the end of the
-  // statement. The note on the getter spells this out and it has cost a crash before.
+  // Walked with GetRumorCount / GetRumorAt rather than GetRumors, which returns the array by value: indexing that
+  // temporary hands back a handle into a copy destroyed at the end of the statement.
   let loudest: ref<CBRumor>;
   let best = 0.0;
   let i = 0;

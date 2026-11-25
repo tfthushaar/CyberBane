@@ -5,11 +5,8 @@
 // add-on mods through CyberbaneAPI. These classes are never persisted, so String
 // display keys are allowed here (unlike the save-state classes in State.reds).
 
-// Cached content accessor used everywhere outside the one warm-up lookup. It returns the content
-// service reference cached on the per-save system, which was fetched once from a confirmed-stable
-// fast tick. Nothing here re-locks the global service container, which during a load or streaming
-// can hand back a dead-but-non-null reference that passes IsDefined and then crashes on the native
-// context lock. Returns null until the cache is warm; callers already null-check content.
+// Cached content accessor used everywhere outside the one warm-up lookup. It returns the content service reference
+// cached on the per-save system, which was fetched once from a confirmed-stable fast tick.
 public func CBContent(game: GameInstance) -> ref<CyberbaneContent> {
   let sys = CyberbaneSystem.Get(game);
   if !IsDefined(sys) {
@@ -20,9 +17,8 @@ public func CBContent(game: GameInstance) -> ref<CyberbaneContent> {
 
 // ---- Record classes -------------------------------------------------------
 
-// A faction's code (2.7.4, Data/FactionProfiles.reds): what Data/GangCodes.reds used to spell out in chains of names, as
-// values on the profile. The defaults are the neutral answers, so a faction without a code (or an add-on's) behaves like
-// any gang with none.
+// A faction's code (Data/FactionProfiles.reds): what Data/GangCodes.reds used to spell out in chains of names, as
+// values on the profile.
 public class CBGangCode {
   public let mercy: Float = 1.0;
   public let shotHands: Float = 1.0;
@@ -64,35 +60,33 @@ public class CBFactionProfile {
   public let respectWeights: array<Float>;    // index = ECBArchetype, length = CBArchetypeCount()
   public let rivalFactions: array<CName>;
   public let turf: array<CName>;              // district ids
-  // The game's attitude group for a gang it never gave an affiliation (2.6.4): Dogtown's Scrappers are Factions.Unaffiliated
+  // The game's attitude group for a gang it never gave an affiliation: Dogtown's Scrappers are Factions.Unaffiliated
   // and only their base attitude group, "scrappers", says who they are (attitudes.tweak, Group_Scrappers).
   public let attitudeGroups: array<CName>;
-  // How hard they push for their own streets, against a gang that shares them (2.6.4): 1 for a gang that runs its district,
+  // How hard they push for their own streets, against a gang that shares them: 1 for a gang that runs its district,
   // less for one that lives in the cracks of somebody else's (the Scrappers in Barghest's Dogtown).
   public let turfHold: Float;
-  // How ready they are to run a whole district (2.7.0), as against holding their own blocks in it: 1 for a gang that runs
-  // its streets, less for one that only guards a corner (the Mox in Kabuki) or holds no streets at all (the Scavengers).
-  // Only who holds the district reads it (CBTurfClaims); where each gang is on its own streets is turfHold's.
+  // How ready they are to run a whole district, as against holding their own blocks in it: 1 for a gang that runs its
+  // streets, less for one that only guards a corner (the Mox in Kabuki) or holds no streets at all (the Scavengers).
   public let turfClaim: Float;
   public let isGang: Bool;                    // tribute/hit-squad eligibility
   public let canBeBought: Bool;               // broker-peace eligibility (corps cannot)
   public let displayKey: String;
-  // 2.7.4 (Data/FactionProfiles.reds): its code, whether it fields people at all, and the cars it comes in (its own kind,
-  // its own colours, and the one a lone rider takes). Built each session, never saved.
+  // Built each session, never saved.
   public let code: ref<CBGangCode>;
   public let fieldsSquads: Bool = true;
   public let cars: array<TweakDBID>;
   public let paintedCars: array<TweakDBID>;
   public let loneRide: TweakDBID;
   // What its people are called, as a key (gang, clan, raffen, corporation, law, army), and the label its Hub card wears
-  // when that is not "gang" in the lore's own word (2.7.4: Clan, Raffen). Keys, never compared as text.
+  // when that is not "gang" in the lore's own word (Clan, Raffen). Keys, never compared as text.
   public let nounKey: CName = n"Cyberbane-Faction-NounGang";
   public let cardLabelKey: CName;
-  // An add-on's faction's name ("Wraiths") and label ("the Wraiths"), as keys (2.7.5, API level 2); without them its
+  // An add-on's faction's name ("Wraiths") and label ("the Wraiths"), as keys (API level 2); without them its
   // displayKey names it. Cyberbane's own are named by CBFactionName and CBFactionLabel.
   public let nameKey: CName;
   public let labelKey: CName;
-  // A faction an add-on registered that keeps a standing with V and never sends anybody (2.7.4, CyberbaneAPI.RegisterFaction),
+  // A faction an add-on registered that keeps a standing with V and never sends anybody (CyberbaneAPI.RegisterFaction),
   // and whether anybody in the world is filed under it.
   public let standingOnly: Bool;
   public let hasBodies: Bool = true;
@@ -194,7 +188,7 @@ public class CBFactionNames {
   public let faction: CName;
   public let firstNames: array<String>;
   public let lastNames: array<String>;
-  // How long each list was before 1.7.7. See CBRivalNameIsNew.
+  // See CBRivalNameIsNew.
   public let oldFirsts: Int32;
   public let oldLasts: Int32;
 }
@@ -206,9 +200,9 @@ public class CBEpithets {
   public let killer: array<String>;
   public let avenger: array<String>;
   public let hunter: array<String>;
-  public let betrayer: array<String>;   // 2.5.0: one of V's own crew who turned
+  public let betrayer: array<String>;   // one of V's own crew who turned
   public let promotion: array<String>;
-  public let broken: array<String>;   // 1.9.0: a Rival after a cyberpsychotic break
+  public let broken: array<String>;   // a Rival after a cyberpsychotic break
 }
 
 // Rival traits and weaknesses (spec §10.5). Stat effects are applied on spawn by
@@ -233,8 +227,8 @@ public class CBDeedDef {
   public let id: CName;
   public let requiredState: Int32;   // 0 Succeeded, 1 Failed, 2 Any-finished
   public let journalPath: String;
-  // The game's own record that this happened: a quest fact, read with
-  // QuestsSystem.GetFact. Empty means nothing can fire this deed yet.
+  // The game's record that this happened: a quest fact, read with QuestsSystem.GetFact. Empty means nothing can fire
+  // this deed yet.
   public let fact: CName;
   public let renown: Float;
   public let dread: Float;
@@ -293,7 +287,7 @@ public class CyberbaneContent extends ScriptableService {
     }
     this.m_built = true;   // set first so re-entrant Add* calls don't loop
     CBSeedFactions(this);
-    CBSeedFactionProfiles(this);   // codes, cars, who fields people (2.7.4)
+    CBSeedFactionProfiles(this);   // codes, cars, who fields people
     CBSeedDistricts(this);
     CBSeedImplants(this);
     CBSeedLooks(this);
@@ -338,7 +332,7 @@ public class CyberbaneContent extends ScriptableService {
     return n"";
   }
 
-  // A gang known only by its attitude group (2.6.4), n"" if none.
+  // A gang known only by its attitude group, n"" if none.
   public func FactionForAttitude(group: CName) -> CName {
     if !IsNameValid(group) {
       return n"";

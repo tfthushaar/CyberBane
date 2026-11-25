@@ -43,8 +43,8 @@ public func CBTributeTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
   let cooldown = CBConfig.TributeCooldownDays() * CBConfig.SecondsPerDay();
   for fs in sys.GetFactionStates() {
     let prof = content.GetFaction(fs.id);
-    // Feared, not yet at war, and known to the gang; corps and cops never pay (spec §9.8).
-    // Nor a faction switched off in Mod Settings (1.9.1).
+    // Feared, not yet at war, and known to the gang; corps and cops never pay (spec §9.8). Nor a faction switched off
+    // in Mod Settings.
     let eligible = IsDefined(prof) && prof.isGang && CBFactionOn(fs.id)
       && CBActingStanding(fs.id, fs.standing) >= -60.0 && CBActingStanding(fs.id, fs.standing) <= 40.0
       && fs.renown >= CBConfig.TributeRenownThreshold()
@@ -57,10 +57,10 @@ public func CBTributeTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
 }
 
 func CBPayTribute(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<GameObject>, score: ref<CBScoreEngine>, fs: ref<CBFactionState>, tributeMult: Float, now: Float) -> Void {
-  // round50(500 + 2500 × (F_f − 75)/25) × tributeMult  (spec §9.8).
+  // round50(500 + 2500 × (F_f − 75)/25) × tributeMult (spec §9.8).
   let ff = score.GetFactionFear(fs.id);
-  // From the threshold up, whatever the threshold is (1.9.3): the 75 written in here no longer
-  // matched it, and a gang just afraid enough to pay would have paid less than nothing.
+  // From the threshold up, whatever the threshold is: the 75 written in here no longer matched it, and a gang just
+  // afraid enough to pay would have paid less than nothing.
   let floorFear = CBConfig.TributeFearThreshold();
   let span = MaxF(100.0 - floorFear, 1.0);
   let raw = (500.0 + 2500.0 * ClampF((ff - floorFear) / span, 0.0, 1.0)) * tributeMult * sys.WornPerk().tributeMult;
@@ -73,7 +73,7 @@ func CBPayTribute(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Gam
   if IsDefined(ts) {
     ts.GiveItem(player, ItemID.FromTDBID(t"Items.money"), amount);
   }
-  CBWarSpend(game, fs.id, Cast<Float>(amount));   // out of their chest (Economy/War.reds, 2.4.0)
+  CBWarSpend(game, fs.id, Cast<Float>(amount));   // out of their chest (Economy/War.reds)
 
   if !CBReputationFrozen() {
     fs.standing = ClampF(fs.standing + 5.0, -100.0, 100.0);
@@ -87,9 +87,8 @@ func CBPayTribute(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Gam
   CBFileLog(sys, n"Tribute", now, CBEventDistrict(sys, game), fs.id, Cast<Float>(amount));
 
   if CBMessagesOn() {
-    // From a gang paying V, so not as a threat, and with no "pay them off" answer attached: a
-    // hostile gang's tribute used to offer V the chance to pay them, in the message paying V.
-    // "As agreed" only once there is an arrangement: the first payment is them making the offer.
+    // From a gang paying V, so not as a threat, and with no "pay them off" answer attached: a hostile gang's tribute
+    // used to offer V the chance to pay them, in the message paying V.
     if fs.tributes <= 1 {
       CBPhoneFromAlly(game, fs.id, CBTf(n"Cyberbane-Tribute-EbNoStringsWeWouldRather", [s"\(amount)"]));
     } else {

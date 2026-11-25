@@ -1,18 +1,8 @@
-// Cyberbane - Rival gangers clash on contested streets ([N1], 2.4.3)
+// Cyberbane - Rival gangers clash on contested streets ([N1])
 //
 // The idea is Night City Alive's (gangs that fight gangs); the way of doing it is Cyberbane's own. That mod edits the
 // game's attitude groups for good, so every member of two gangs fights every other, everywhere, quest scenes included.
-// Here it is scoped and put back: on a contested street (a challenger for the district in the turf book, or two gangs
-// at war both on the streets V is on), now and then a pair or two of the world's own gangers of the two gangs, who
-// the Director's walk has already seen and passed through the Safety Gate, are set hostile to each other through
-// their own attitude agents, the way 2.3.4's fights are (CBSetPairAttitude). What each thought of the other before
-// is read first and put back when it is over or V has gone. The side left standing moves the turf a little, the way
-// a front line does.
-//
-// Never a story NPC or anybody at a job (only people the walk passed through the gate), never while V is on a job,
-// in a scene, somewhere safe or in a fight, never between gangs in a truce, never a switched-off faction; one clash
-// at a time, minutes apart. No new scan: the Director keeps the last few of each side it saw (CBClashNote), and the
-// clash is chosen from those. Session only, on the war book.
+// What each thought of the other before is read first and put back when it is over or V has gone.
 
 public func CBStreetClashesOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -246,9 +236,8 @@ func CBClashWatch(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBWar
   }
 }
 
-// Over: whoever is still standing is put back how they were towards the other, and the winner, if there was one,
-// takes a little ground.
-// Every pair back to what they thought of each other before (CBClashStart), and the fight forgotten.
+// Over: whoever is still standing is put back how they were towards the other, and the winner, if there was one, takes
+// a little ground.
 public func CBClashPutBack(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBWarBook>) -> Void {
   let n = Min(ArraySize(book.fightA), Min(ArraySize(book.fightB), ArraySize(book.fightWas)));
   let k = 0;

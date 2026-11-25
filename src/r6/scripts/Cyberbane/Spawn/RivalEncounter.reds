@@ -1,11 +1,8 @@
 // Cyberbane - Rival encounters (spec §10, §9.9; spike S-08)
 //
-// A Rival who is hunting you can actually turn up. On the slow tick, if one of your
-// hunting Rivals is off cooldown and you are not already fighting, there is a chance it
-// spawns near you (behind, out of view) wearing its captured record and appearance,
-// tagged CB_Rival so it starts hostile and can be swept away. One Rival at a time; it is
-// time-despawned if you never engage. Encounter outcomes (killed V / escaped / slain) are
-// handled by the existing Rival transitions when the fight actually happens.
+// A Rival who is hunting you can actually turn up. On the slow tick, if one of your hunting Rivals is off cooldown and
+// you are not already fighting, there is a chance it spawns near you (behind, out of view) wearing its captured record
+// and appearance, tagged CB_Rival so it starts hostile and can be swept away.
 
 public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
@@ -30,32 +27,10 @@ public func CBRivalEncounterTick(sys: ref<CyberbaneSystem>, game: GameInstance) 
   let player = GetPlayer(game);
 
   // Retire a Rival who has been left standing around too long.
-  //
-  // This used to run at the old crew despawn time * 120 in-game seconds, which is about ten real
-  // seconds: a Rival was being untagged almost as soon as they arrived. If the engine then
-  // could not destroy the puppet because V was fighting it, the body stayed in the world with
-  // no tag, the kill was never attributed, and the same Rival returned forever.
-  //
-  // Now it is a sensible stretch, and it never fires while V is in a fight.
-  //
-  // Nor while the hunt has eyes on V. V being out of combat for one moment - reloading behind a
-  // wall, sneaking round to flank - is not the encounter having gone stale, and the hunt is what
-  // knows whether the Rival is still on V (Spawn/Hunt.reds). This is the backstop for a Rival
-  // nobody is engaging, which is exactly when the hunt is not Located.
   let fighting = (IsDefined(player) && player.IsInCombat()) || sys.GetHuntState() == CBHuntLocated();
   if IsDefined(cd) && !fighting && des.IsPopulated(n"CB_Rival")
      && (now - cd.lastRivalEncounterAt) > CBConfig.RivalRetireGameSeconds() {
     // You got away from them, and that has to count.
-    //
-    // Retiring simply deleted the Rival and said nothing, so running from one was worth
-    // exactly nothing: they vanished, their hunt clock restarted, and a short while later the
-    // same person reappeared behind you. With no way to escape, the only way to resolve a
-    // Rival was to kill them, which is the one outcome that stops them ever being promoted -
-    // the Rivals quietly reduced to a respawning nuisance.
-    //
-    // Losing them now promotes them and buys real time before they find you again.
-    // Everyone of the encounter still out, the one leading and whoever came with them, the same way
-    // the hunt giving up counts it (CBRivalsShakenOff).
     CBRivalsShakenOff(sys, game, false);
     sys.ClearPack();
     CBDeleteTaggedSafe(game, n"CB_Rival", false, true);
@@ -81,20 +56,13 @@ public func CBRivalsAtCap(sys: ref<CyberbaneSystem>) -> Bool {
 }
 
 // How long this Rival takes to find you, in fast ticks. Higher rank, better information.
-//
-// At the cap no new Rival can be created, so the queue would otherwise just sit there: the
-// only way to make room is to put the existing ones down, and they have to turn up for that
-// to be possible. So they come at you faster until you have cleared some.
 public func CBRivalHuntTicksFor(rank: Int32, atCap: Bool) -> Int32 {
   let t = Max(CBConfig.RivalHuntTicksMin(),
               CBConfig.RivalHuntTicksBase() - rank * CBConfig.RivalHuntTicksPerRank());
   if atCap {
     t = Max(CBConfig.RivalHuntTicksMin() / 2, RoundF(Cast<Float>(t) * CBConfig.RivalCapHurryMult()));
   }
-  // Spread them out. This was purely a function of rank, so every Rival of the same rank got
-  // the same countdown to the second and they all queued up to arrive together, which reads
-  // as a scripted wave rather than as separate people with separate grudges. The jitter is
-  // generous on purpose: being hunted should feel irregular.
+  // Spread them out.
   let jitter = CBConfig.RivalHuntJitterTicks();
   if jitter > 0 {
     t += RandRange(0, jitter);
@@ -103,11 +71,6 @@ public func CBRivalHuntTicksFor(rank: Int32, atCap: Bool) -> Int32 {
 }
 
 // Advance the countdowns without touching the world.
-//
-// Called from the settle window, when the engine is busy and no native query is safe. Every
-// line here reads or writes Cyberbane's own fields and nothing else - no entity handles, no
-// systems, no spawn. A clock that reaches zero in here simply waits at zero, and the first
-// settled tick does the arriving.
 public func CBTickClocksOnly(sys: ref<CyberbaneSystem>) -> Void {
   if !IsDefined(sys) {
     return;
@@ -132,18 +95,8 @@ public func CBTickClocksOnly(sys: ref<CyberbaneSystem>) -> Void {
 }
 
 // You got away from the Rival who was after you, and that has to count.
-//
-// Retiring used to delete them and say nothing, so running was worth exactly nothing: they
-// vanished, their clock restarted, and the same person turned up again shortly after. With no
-// way to escape, the only way to resolve a Rival was to kill them - the one outcome that stops
-// them ever being promoted, which hollowed the whole idea of a Rival out.
-//
-// Reached through CBRivalsShakenOff, from the retire sweep and the moment the hunters give up
-// because you outran them, for every Rival of the encounter. `CBRivalEscapedByPlayer`, which did
-// this for the active Rival alone, is gone on purpose (the 1.9.0 bug pass): with a team out it was
-// the half answer, and every path that used it had to remember the partners separately.
 
-// V shook this one off (1.9.0: any Rival, not only the active one, so one who came with them counts).
+// V shook this one off (any Rival, not only the active one, so one who came with them counts).
 public func CBRivalEscapedByPlayerFor(sys: ref<CyberbaneSystem>, game: GameInstance, got: ref<CBRival>) -> Void {
   if !IsDefined(sys) || !IsDefined(got) {
     return;
@@ -157,7 +110,7 @@ public func CBRivalEscapedByPlayerFor(sys: ref<CyberbaneSystem>, game: GameInsta
     lostBody = GameInstance.FindEntityByID(game, got.spawnedEntityId) as ScriptedPuppet;
   }
   CBNoteRivalSeen(sys, game, got, lostBody);
-  CBRivalTimelineNote(game, got.id, CBTlLostThem());   // V lost them (Rivals/RivalTimeline.reds, 2.7.7)
+  CBRivalTimelineNote(game, got.id, CBTlLostThem());   // V lost them (Rivals/RivalTimeline.reds)
   got.encounters += 1;
   CBPromoteRival(got, content, CBGameSeconds(game));
   got.huntTicks = CBConfig.RivalAfterEscapeTicks();
@@ -171,9 +124,6 @@ public func CBRivalEscapedByPlayerFor(sys: ref<CyberbaneSystem>, game: GameInsta
 }
 
 // Is any Rival actually alive and in the world right now?
-//
-// Walks only our own recorded bodies, so it cannot be fooled by a tag left on a corpse or by
-// anything else in the world carrying the same tag.
 public func CBLiveRivalPresent(sys: ref<CyberbaneSystem>, game: GameInstance) -> Bool {
   if !IsDefined(sys) {
     return false;
@@ -195,9 +145,6 @@ public func CBLiveRivalPresent(sys: ref<CyberbaneSystem>, game: GameInstance) ->
 }
 
 // Is the body we queued for this Rival actually in the world?
-//
-// Deliberately asks the world rather than trusting the spawn call's return value, which only
-// ever meant "the request was accepted".
 public func CBRivalBodyPresent(game: GameInstance, r: ref<CBRival>) -> Bool {
   if !IsDefined(r) || !EntityID.IsDefined(r.spawnedEntityId) {
     return false;
@@ -207,14 +154,6 @@ public func CBRivalBodyPresent(game: GameInstance, r: ref<CBRival>) -> Bool {
 
 
 // Drive the hunt countdown, once per fast tick.
-//
-// Rivals used to arrive on a dice roll taken every slow tick, which meant one might appear in
-// seconds or never, and there was nothing to show the player because nothing was actually
-// scheduled. Each hunting Rival now has a real countdown, the Hub shows it, and the spawn
-// lands the moment it reaches zero.
-//
-// Crash safety: this only reads and writes our own persisted state and calls CBSpawnGroup,
-// which already refuses while the world is unsettled. It is bounded by the Rival cap (15).
 public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   if !IsDefined(sys) {
     return;
@@ -234,12 +173,6 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   }
   // One Rival in the world at a time, and never on top of a fight already in progress.
   // "Is a Rival out?" means a living one.
-  //
-  // This was `des.IsPopulated(n"CB_Rival")`, which counts tagged entities - and the tag stays
-  // on the body after death until the retire sweep clears it, which is a couple of minutes
-  // away and never runs during combat. So putting a Rival down blocked every other Rival
-  // behind it, and the Hub showed the whole list stuck on "waiting their turn" with nothing
-  // actually out there. A corpse is not somebody hunting you.
   let busy = des.IsPopulated(n"CB_Rival") && CBLiveRivalPresent(sys, game);
   let player = GetPlayer(game);
   let inCombat = !IsDefined(player) || player.IsInCombat();
@@ -250,20 +183,8 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   let now = CBGameSeconds(game);
   let atCap = CBRivalsAtCap(sys);
   let rivals = sys.GetRivals();
-  // NOTE: the scheduling that used to live here now belongs to Spawn/Queue.reds. Every Rival
-  // running its own countdown meant several clocks for encounters that could never all happen,
-  // and no way to say which one was actually next. What remains here is confirming that a
-  // Rival the queue sent was really placed, which is about one specific spawn rather than
-  // about whose turn it is.
-  //
-  // Why nobody can arrive right now, if that is the case. Recorded so the Hub can say so
-  // instead of showing a countdown that is not counting.
-  //
-  // This is the fix for the frozen timer. The clock used to keep running while an arrival was
-  // impossible, hit zero, get reset to the retry interval, run down again and reset again -
-  // for every Rival at once, because all three blockers are global. The Hub, sampling that at
-  // render time, showed every Rival pinned at the same small number forever. A held clock has
-  // to actually stop.
+  // NOTE: the scheduling that used to live here now belongs to Spawn/Queue.reds. Every Rival running its own countdown
+  // meant several clocks for encounters that could never all happen, and no way to say which one was actually next.
   let hold = CBHoldNone();
   if sys.GetStoryHold() != CBStoryNone() {
     hold = CBHoldStory();   // the story has the stage (Core/StoryHold.reds)
@@ -280,16 +201,9 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
       }
     }
   }
-  // Everybody waits, and every clock stays where it is, except the one below. Whether the Rival
-  // just sent actually turned up is a question about now, and it used to sit behind this hold: the
-  // moment they arrived the hold came on (somebody is out, V is in a fight), so the ten-second
-  // check did not run until the encounter was over, minutes later, with the body gone by then.
-  // The log said they never arrived, and they were put back in the queue with no escape counted.
+  // Everybody waits, and every clock stays where it is, except the one below.
 
-  // Written once, at the end, rather than up here. Setting it before the loop overwrote any
-  // "nowhere to put them" recorded by the previous tick's spawn attempt, so that reason never
-  // survived long enough for the Hub to draw it and an unplaceable arrival looked like an
-  // ordinary countdown.
+  // Written once, at the end, rather than up here.
   let failedToPlace = false;
   let i = 0;
   while i < ArraySize(rivals) {
@@ -298,12 +212,6 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     if IsDefined(r) && TDBID.IsValid(r.recordID)
        && (r.state == EnumInt(ECBRivalState.Active) || r.state == EnumInt(ECBRivalState.Hunting)) {
       // Waiting to see whether the one we queued actually turned up.
-      //
-      // This is the gap the reference mods both close and Cyberbane did not: CreateEntity
-      // hands back a valid EntityID even when the engine goes on to decline the spawn, so
-      // "queued" was being treated as "arrived". A Rival that never materialised stayed
-      // marked as Hunting, held the active slot, and blocked every other Rival behind the
-      // one-at-a-time rule - which is exactly a Hub full of people who are due and never come.
       if r.arrivalCheckTicks > 0 {
         r.arrivalCheckTicks -= 1;
         if r.arrivalCheckTicks <= 0 {
@@ -341,7 +249,7 @@ public func CBRivalHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
 }
 
 func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float) -> Bool {
-  CBRivalTakeSignature(sys, game, r);   // high enough, they come back chromed (Rivals/Signature.reds, 2.7.2)
+  CBRivalTakeSignature(sys, game, r);   // high enough, they come back chromed (Rivals/Signature.reds)
   // By car whenever a car can be sent, on foot only when it cannot. They get out when the car
   // reaches V, or keep chasing if V is driving.
   if CBRivalByCar(sys, game, r) {
@@ -357,10 +265,8 @@ func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
   let body: EntityID;
   let spawned = CBSpawnGroup(game, r.recordID, r.appearance, 1, n"CB_Rival", CBConfig.RivalSpawnDistance(), body);
   if spawned <= 0 {
-    // Say why. This path was silent, so a Rival that could not be placed produced a Hub
-    // reading "any moment" for as long as the player stood somewhere unsuitable and nothing
-    // anywhere said what was wrong. A refusal that names itself is the difference between a
-    // one-line answer and another evening of guessing.
+    // Say why. This path was silent, so a Rival that could not be placed produced a Hub reading "any moment" for as
+    // long as the player stood somewhere unsuitable and nothing anywhere said what was wrong.
     let why = CBBlockLabel(CBLastSpawnBlock());
     if StrLen(why) == 0 {
       why = CBT(n"Cyberbane-FactionApex-NoReasonRecorded");
@@ -368,9 +274,7 @@ func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
     CBLog.Info(n"Spawn", s"Rival \(r.id) could not be placed: \(why).");
     return false;
   }
-  // Remember which body is theirs. The CB_Rival tag can be cleared out from under us by the
-  // retire sweep, and when that happened the kill stopped counting: the Rival was never marked
-  // slain, never replaced, and came back again and again.
+  // Remember which body is theirs.
   r.spawnedEntityId = body;
   r.arrivalCheckTicks = CBConfig.RivalArrivalCheckTicks();   // confirm they really showed up
   CBRivalOnTheirWay(sys, game, r, now);
@@ -379,11 +283,6 @@ func CBSpawnRival(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
 }
 
 // Send this Rival by car, if a car can be sent.
-//
-// The seat that is created for them carries their body (CBOnArrivalCarAttached), which is what ties
-// it to the Rival so their death and their escape count. A Rival whose last car never delivered
-// them walks in this time, so a road that looks usable and is not cannot keep a Rival away. This
-// was also a 60% roll, so two Rivals in five walked in however good the road was.
 func CBRivalByCar(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>) -> Bool {
   if !IsDefined(sys) || !IsDefined(r) {
     return false;
@@ -406,10 +305,7 @@ func CBRivalByCar(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>
   let previous = sys.GetActiveRivalId();
   sys.SetActiveRivalId(r.id);
   sys.SetRivalCarPending(r.id);
-  // Their own people ride with them. They used to be walked in the moment the car set off, so a
-  // Rival "coming by car" turned up as a group on foot first and a car later, if at all - and if
-  // the car never delivered, the walk-in that followed brought a second set. The Rival takes the
-  // first seat, their people the rest, and whoever the car cannot seat walks in now.
+  // Their own people ride with them.
   let escorts = CBRivalEscortCount(sys, r);
   let fs = sys.FindFaction(r.faction);
   let sent = false;
@@ -451,19 +347,10 @@ func CBRivalEscortCount(sys: ref<CyberbaneSystem>, r: ref<CBRival>) -> Int32 {
 }
 
 // Everything that is true of a Rival the moment they set off, whichever way they are coming.
-//
-// `byCar`: their people are already in the car with them (CBRivalByCar), so nobody walks in here.
 func CBRivalOnTheirWay(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival>, now: Float,
                        opt byCar: Bool) -> Void {
-  // Their people walk in as escorts, so they fight, chase and give up with the encounter and
-  // never hold up the crew lane. Only as many as are not already out: a Rival whose car never
-  // delivered them walks in on the next try, and whoever of theirs did get here is still here.
-  //
-  // Counted with CBCountLiveOrSpawning, which includes anybody the engine has been asked for and
-  // has not finished building. The standing-only count misses exactly the people this test is
-  // about: an escort queued a moment ago by this same path is not standing yet, so it read as
-  // absent and a second one was sent for it - the group arriving over strength and eating room
-  // under MaxLiveSpawns. Same reason CBSpawnGroup shares its room by the or-spawning count.
+  // Their people walk in as escorts, so they fight, chase and give up with the encounter and never hold up the crew
+  // lane.
   let escorts = 0;
   if !byCar {
     escorts = CBRivalEscortCount(sys, r) - CBCountLiveOrSpawning(game, n"CB_Escort");
@@ -483,9 +370,8 @@ func CBRivalOnTheirWay(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
   if IsDefined(cd) {
     cd.lastRivalEncounterAt = now;
   }
-  // No text here. They already said they were coming (CBRivalWarning), and they say they have
-  // found you when they actually lay eyes on you (Spawn/Hunt.reds, CBHuntOnLocated). A third
-  // message on arrival said "found you" before anybody had.
+  // No text here. They already said they were coming (CBRivalWarning), and they say they have found you when they
+  // actually lay eyes on you (Spawn/Hunt.reds, CBHuntOnLocated).
 }
 
 // What a Rival texts when they have found you. Chosen by how they came to be one, so the one
@@ -532,24 +418,7 @@ func CBRivalGotAwayLine(r: ref<CBRival>) -> String {
   return CBT(n"Cyberbane-RivalEncounter-CloseNotCloseEnoughSeeYou");
 }
 
-// Rivals who come together (1.9.0; on by default since the 1.9.0 bug pass).
-//
-// "More Rivals coordinating a singular ambush would be cool." Now and then the Rival who comes brings
-// one or two others of the same gang who are free to come. Each is a Rival of their own in every way
-// the encounter code knows - their own body on record (spawnedEntityId), their own death, mercy and
-// escape, their own build when they attach - and the Rival lane stays busy until the last of them is
-// down or gone (CBLiveRivalPresent). They walk in a little further back, through the same placement
-// as every arrival (CBSpawnGroup), never past the live ceiling, and their people do not come with them:
-// the one leading brings theirs.
-//
-// What makes it hold together, each one a fault the first build had:
-//   - The lead going down hands the encounter to a partner still out (CBPackHandOffLead, from
-//     CBCloseRivalEncounter), so everything that asks about "the active Rival" keeps seeing a live one.
-//   - Every way V gets away from them counts for all of them, through one routine (CBRivalsShakenOff):
-//     the hunt giving up, the hunt finding nobody left, and the stale-encounter retire.
-//   - Partners are anybody of that gang not already out, whatever their state says: a Rival made from
-//     an escape or a mercy is filed as Hunting from the start, and asking for Active only left the
-//     newest Rivals - most of them - out of every team.
+// Now and then the Rival who comes brings one or two others of the same gang who are free to come.
 public func CBRivalTeamUpsOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
   if !IsDefined(rt) || !rt.IsEnabled() || !CBRivalsOn() {
@@ -669,17 +538,15 @@ public func CBPackHandOffLead(sys: ref<CyberbaneSystem>) -> Void {
   sys.ClearPack();
 }
 
-// V got away from the Rival encounter: the one leading it and everybody who came with them, each
-// promoted and each on their cooldown, the way one Rival always was (CBRivalEscapedByPlayerFor), and
-// each encounter closed. `onlyGone` counts only those whose body has left the world; otherwise anybody
-// still standing or streamed out counts too. Somebody lying there breathing is not counted here: their
-// mercy settles that (CBHandleSpared). Returns how many were counted.
+// V got away from the Rival encounter: the one leading it and everybody who came with them, each promoted and each on
+// their cooldown, the way one Rival always was (CBRivalEscapedByPlayerFor), and each encounter closed. `onlyGone`
+// counts only those whose body has left the world; otherwise anybody still standing or streamed out counts too.
 public func CBRivalsShakenOff(sys: ref<CyberbaneSystem>, game: GameInstance, onlyGone: Bool) -> Int32 {
   if !IsDefined(sys) {
     return 0;
   }
   if sys.GetActiveRivalId() > 0 {
-    CBUiSound(game, n"ui_gmpl_stealth_avoid_combat", n"ShookThemOff", 30.0);   // 2.7.7
+    CBUiSound(game, n"ui_gmpl_stealth_avoid_combat", n"ShookThemOff", 30.0);
   }
   // A list of ids first: every close below changes the team and can move the lead.
   let ids: array<Int32>;
@@ -696,8 +563,8 @@ public func CBRivalsShakenOff(sys: ref<CyberbaneSystem>, game: GameInstance, onl
     let r = sys.FindRivalById(id);
     if IsDefined(r) && r.state == EnumInt(ECBRivalState.Hunting) && EntityID.IsDefined(r.spawnedEntityId) {
       let body = GameInstance.FindEntityByID(game, r.spawnedEntityId) as ScriptedPuppet;
-      // On their way out of the world is gone too (2.4.2): CBStillStanding reads nothing from a body that is not
-      // attached and calls it not standing, which left one caught mid-stream filed as out after V.
+      // On their way out of the world is gone too: CBStillStanding reads nothing from a body that is not attached and
+      // calls it not standing, which left one caught mid-stream filed as out after V.
       let counts = !IsDefined(body) || !body.IsAttached() || (!onlyGone && CBStillStanding(body));
       if counts {
         CBRivalEscapedByPlayerFor(sys, game, r);

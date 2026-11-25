@@ -1,32 +1,15 @@
-// Cyberbane - The Hub as a tab of the game's own menu (1.7.3)
+// Cyberbane - The Hub as a tab of the game's menu
 //
 // The row across the top of the game's menu (Cyberware, Inventory, Map, Character, Journal) is drawn
 // from a list, one label per entry, so an entry on that list is a real tab: the same label, the same
 // underline, reached by the same keys and mouse as the others.
-//
-// A tab has to open a screen, and the game only knows the screens in its own menu file. Adding one
-// would mean shipping a new interface file, which Cyberbane does not do and does not require anything
-// to do. So the tab opens the game's Stats screen, which nothing reaches from this row, with a marker
-// handed to it. That screen sees the marker, puts its own content out of sight and draws the Hub
-// page in its place. Everything around the page is then the game's: the row above it, the background
-// behind it, the button hints below it, opening and closing, and Esc, which closes the menu here as it
-// does on any other tab. The page itself is built from the game's parts on this screen (CBHud).
-//
-// This is where the Hub lives unless the player turns on "Hub in the pause menu" (Mod Settings, Messages and HUD), the
-// way out for a player whose tab does not show. Then the entry is not added, nothing can hand the Stats screen the
-// marker, the Stats screen goes on being the Stats screen, and the Hub is Escape > Cyberbane (UI/PauseMenuEntry.reds).
-// The setting is read each time the menu opens. From 2.4.6 to 2.5.6 the switch had come loose from its field and moved
-// nothing (Settings/CyberbaneSettings.reds).
-//
-// Mod Settings is the one thing the page cannot link to from here. It is a screen of the pause menu's,
-// and this is not the pause menu, so the page does not offer the button.
 
 // What tells the Stats screen it is being opened for Cyberbane.
 public class CBHubTabData {
   public let opened: Bool;
 }
 
-// An identifier the game's own list will never use: its items stop at HubMenuItems.Count.
+// An identifier the game's list will never use: its items stop at HubMenuItems.Count.
 public func CBHubTabId() -> Int32 = 7731
 public func CBHubTabScreen() -> CName = n"temp_stats"
 public func CBHubTabLabel() -> String = CBT(n"Cyberbane-HubTab-CYBERBANE")
@@ -36,16 +19,8 @@ public func CBHubAsGameMenuTab() -> Bool {
   return !IsDefined(rt) || !rt.HasSettings() || !rt.GetSettings().hubInPauseMenu;
 }
 
-// The entry goes in where the hub hands its row to the screen, not where the game builds the list.
-// There are two hubs, and only one of them builds its list with HubMenuUtility.CreateMenuData: the
-// radial hub (the game's own option, `radial_hub_menu_enabled`) builds its own and never calls it, and
-// a mod that replaces that function from CET without calling the original drops anything added to it.
-// 1.7.3 added the tab there, and a player with several menu mods installed never saw it. Both hubs
-// pass their row through AddMenus on the panel that draws it, whoever built it.
-//
-// The standard hub's row is every entry with no parent, so the tab is one of those, at the end.
-// The radial hub's row is the group of the screen that is open, so the tab joins Character's group,
-// beside Character and Stats: open Character from the wheel and it is in the row.
+// The entry goes in where the hub hands its row to the screen, not where the game builds the list. Both hubs pass their
+// row through AddMenus on the panel that draws it, whoever built it.
 @wrapMethod(SubMenuPanelLogicController)
 public func AddMenus(const selectedMenu: script_ref<MenuData>, const menuDataArray: script_ref<array<MenuData>>,
                      opt subMenuData: MenuData, opt forceRefreshLines: Bool) -> Void {
@@ -114,7 +89,7 @@ private let m_cbHub: ref<CBHud>;
 // whichever comes second is the one that finds both.
 @wrapMethod(StatsMainGameController)
 protected cb func OnSetUserData(userData: ref<IScriptable>) -> Bool {
-  wrappedMethod(userData);   // as a statement (2.6.8): never typed off what the game's event returns
+  wrappedMethod(userData);   // as a statement: never typed off what the game's event returns
   if IsDefined(userData as CBHubTabData) {
     this.m_cbHubWanted = true;
     this.CBBringHub();
@@ -124,7 +99,7 @@ protected cb func OnSetUserData(userData: ref<IScriptable>) -> Bool {
 
 @wrapMethod(StatsMainGameController)
 protected cb func OnInitialize() -> Bool {
-  wrappedMethod();   // as a statement (2.6.8): never typed off what the game's event returns
+  wrappedMethod();   // as a statement: never typed off what the game's event returns
   this.m_cbHubReady = true;
   this.CBBringHub();
   return true;
@@ -160,7 +135,7 @@ private func CBBringHub() -> Void {
   if hub.Show(this, sys, game, true) {
     this.m_cbHub = hub;
     sys.HubTabOpened(hub);
-    // Beside the game's own Close, already on this screen.
+    // Beside the game's Close, already on this screen.
     if IsDefined(this.m_buttonHintsController) {
       this.m_buttonHintsController.AddButtonHint(n"select", GetLocalizedText("UI-UserActions-Select"));
     }

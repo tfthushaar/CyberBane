@@ -1,52 +1,7 @@
-// Cyberbane - Marking the ones who are here for you (spec 12.3)
+// Cyberbane - Marking the ones who are here for you (spec §12.3)
 //
-// A player reported the honest version of this problem: "I get a notification that somebody has
-// caught up to me, but I don't really see them, or know if a certain enemy on the street is a
-// relevant enemy from the mod." On a busy street a Rival looks exactly like any other ganger
-// until they open fire.
-//
-// So everybody Cyberbane sends carries a marker of Cyberbane's own, through the game's own mappin
-// system rather than anything drawn by hand. `RegisterMappinWithObject` binds the pin to the NPC
-// instead of to a position, so it follows them as they come for you and needs no updating from us.
-//
-// ---- Why it looks the way it does (1.7.0) ----
-//
-// The markers have been wrong twice, and both times for the same reason: a pin's look was left to
-// its variant, and every variant already means something. 1.4.7 moved off the yellow quest diamond
-// to `GangWatchVariant`, which reads as gang business in the tweak files and is an NCPD scanner
-// hustle everywhere a player can see it: `map_bounty` on the map, in the police group, and treated
-// as an NCPD scanner by the minimap's POI controller (minimapMappins.script, IsNcpdScanner). So
-// everybody hunting V was marked as police, which is the report that replaced this. There is no
-// variant that means "Cyberbane's".
-//
-// A pin that carries `GameplayRoleMappinData` does not take its look from its variant at all. This
-// is how the game marks what you can interact with: `MinimapContainerController.CreateMappinUIProfile`
-// sends any pin with that data to the device mappin, and `MinimapDeviceMappinController.Update`
-// draws the icon named by the data's `m_textureID`, always, at any range, and colours it by the
-// data's quality. So the look is ours to set, in data, with no widget of ours and no hook:
-//
-//   the icon    the `bounty_hunt` part of the game's own mappin atlas, which the map itself never
-//               uses (BountyHuntVariant draws `gigs`), so on the minimap it means only this;
-//   the colour  gold for a Rival, purple for an apex squad, white for a crew, so the one that
-//               matters can be picked out of a street full.
-//
-// `Mappins.DeviceWorldMapMappinDefinition` shows on the minimap, over their heads and on the big map
-// (1.7.1; the plain device definition, used in 1.7.0, is the one with the map switched off).
-//
-// ---- And what stays from before ----
-//
-// `visibleThroughWalls` is off, so a pin is a place rather than a scan. A body that has gone takes
-// its pin with it.
-//
-// ---- The fight ----
-//
-// These used to come off for good, for everybody, the moment V was in combat with anybody, and
-// nothing put them back. So one scout was enough to take every marker off the map, and the crew
-// still walking in from behind had none. Now the minimap marker stays for as long as they are
-// alive. What the fight takes away is only the icon over the head of somebody who is actually
-// fighting V: the game already draws them, and twenty icons in a firefight was the complaint that
-// rule was written for. That is `m_isBroken`, which the world controller reads to hide the icon
-// (gameplayMappins.script, UpdateIcon) and the minimap controller does not read at all.
+// Everyone Cyberbane sends gets a map marker bound to them with RegisterMappinWithObject, so it follows them without
+// any updates from us.
 
 @addField(ScriptedPuppet)
 public let cbMappinId: NewMappinID;
@@ -76,9 +31,6 @@ public func CBMapMarkersOn() -> Bool {
 }
 
 // Is this one of ours worth a pin, at the scope the player chose?
-//
-// A Rival and the members of an apex squad are people: one name, one role, one reason they are
-// here. Everyone, the default, adds the crews and the escorts.
 func CBWorthMarking(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Bool {
   let scope = CBMarkerScope();
   if Equals(scope, ECBMarkerScope.Off) {
@@ -92,7 +44,7 @@ func CBWorthMarking(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Bool {
     return false;
   }
   let id = puppet.GetEntityID();
-  // Somebody a favour is about, and a bagman or a favour's lookout (Spawn/LivingStreet.reds, 2.0.0).
+  // Somebody a favour is about, and a bagman or a favour's lookout (Spawn/LivingStreet.reds).
   if puppet.cbFavourMark {
     return true;
   }
@@ -145,18 +97,14 @@ public func CBTrackOnMap(game: GameInstance, puppet: ref<ScriptedPuppet>) -> Voi
   look.m_showOnMiniMap = true;
   look.m_visibleThroughWalls = false;
   let data: MappinData;
-  // DeviceWorldMapMappinDefinition is the same pin with the big map switched on. 1.7.0 used the
-  // plain device definition, which has showOnMap false, so moving off the NCPD icon also took
-  // everybody off the map: the pins stayed on the minimap and a player looking for a leader on the
-  // big map found nothing. The variant is here for the map's filters alone, because GenericRole is
-  // in none of them. Everything that draws this pin elsewhere goes by the role data, and the map
-  // draws it from the caption (UI/RivalPin.reds).
+  // The variant is here for the map's filters alone, because GenericRole is in none of them. Everything that draws this
+  // pin elsewhere goes by the role data, and the map draws it from the caption (UI/RivalPin.reds).
   data.mappinType = t"Mappins.DeviceWorldMapMappinDefinition";
   data.variant = gamedataMappinVariant.ApartmentVariant;
   data.active = true;
   data.visibleThroughWalls = false;
   data.scriptData = look;
-  // Somebody out for V wears the hunter's caption; anybody else of ours says what they are (2.5.4, CBMarkerNote).
+  // Somebody out for V wears the hunter's caption; anybody else of ours says what they are (CBMarkerNote).
   let note = CBMarkerNote(game, puppet);
   data.debugCaption = StrLen(note) > 0 ? CBMarkedPinCaption(CBMarkerName(game, puppet), note)
                                        : CBHunterPinCaption(CBMarkerName(game, puppet));
@@ -200,13 +148,13 @@ func CBMarkerName(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
     return CBRivalDisplayName(sys.GetContent(), who);
   }
   // One of the hunters' ladder by their own name, a passer-by by what a favour says of them, and the street's people by
-  // what they are doing (2.5.4). Everybody of no gang was "Crew".
+  // what they are doing. Everybody of no gang was "Crew".
   if des.IsTagged(id, n"CB_Bounty") {
     let hunter = CBBountyScannerName(puppet);
     return StrLen(hunter) > 0 ? hunter : CBT(n"Cyberbane-Tracking-BountyHunter");
   }
   let gang = CBCapFirst(CBFactionLabel(CBClassifyFaction(puppet)));
-  // A corporation's contract (2.7.7): the mark, and their guards.
+  // A corporation's contract: the mark, and their guards.
   if des.IsTagged(id, n"CB_Mark") {
     let lifeC = CBStreetLifeFor(game);
     let client = IsDefined(lifeC) ? CBFactionLabel(lifeC.FavourFaction()) : "";
@@ -218,7 +166,7 @@ func CBMarkerName(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
   if puppet.cbFavourMark || des.IsTagged(id, n"CB_Debtor") {
     let life = CBStreetLifeFor(game);
     let owed = IsDefined(life) ? CBFactionLabel(life.FavourFaction()) : "";
-    // Money, said as money (2.5.5): "Owes the Valentinos" alone read as easily as a contract on them as a debt.
+    // Money, said as money: "Owes the Valentinos" alone read as easily as a contract on them as a debt.
     return StrLen(owed) > 0 ? CBTf(n"Cyberbane-Tracking-OwesMoney", [owed]) : CBT(n"Cyberbane-Tracking-OwesAGangMoney");
   }
   if des.IsTagged(id, n"CB_Wannabe") {
@@ -244,7 +192,7 @@ func CBMarkerName(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
   return gang + " " + what;
 }
 
-// The line under the name for somebody of ours who is not out for V, "" for somebody who is (2.5.4).
+// The line under the name for somebody of ours who is not out for V, "" for somebody who is.
 func CBMarkerNote(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) || !IsDefined(puppet) {
@@ -255,7 +203,7 @@ func CBMarkerNote(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
     return CBT(n"Cyberbane-Tracking-ContractNote");
   }
   if puppet.cbFavourMark || des.IsTagged(id, n"CB_Debtor") {
-    // What does it, said plainly (2.6.4): words first, fists if they swing, never a body.
+    // What does it, said plainly: words first, fists if they swing, never a body.
     return CBT(n"Cyberbane-Tracking-ADebtToCollectTalkThem");
   }
   if des.IsTagged(id, n"CB_Lair") {
@@ -289,12 +237,6 @@ func CBMarkerNote(game: GameInstance, puppet: ref<ScriptedPuppet>) -> String {
 }
 
 // Take down any pin whose owner has left the world.
-//
-// A pin on an object goes to an unpredictable place when the object does (psiberx's map pin sample
-// says so outright). An NPC who streams out never reaches CBUntrackOnMap, and its id went with the
-// puppet, so nothing could take that pin down. On the minimap it was never noticed. On the big map
-// it would be a marker on somebody who is not there. The owner and the pin are kept on the system
-// for this, and only the entity's id is looked up, so nothing here touches anybody who has gone.
 func CBMarkerSweep(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let ms = GameInstance.GetMappinSystem(game);
   if !IsDefined(ms) {
@@ -328,11 +270,9 @@ public func CBUntrackOnMap(game: GameInstance, puppet: ref<ScriptedPuppet>) -> V
   }
 }
 
-// Every marker Cyberbane has put on anybody, off, from the system's own list of them (NoteMarker): so
-// none is missed whatever tag its owner wears now, or if they wear none - a favour's mark is on a
-// passer-by (Spawn/LivingStreet.reds), and a body handed to the orphan sweep keeps its pin. Used when
-// markers are switched off and on a start over, which each took them off by tag and left those behind.
-// Last first, one entry at a time, so the list can never shift under the walk.
+// Every marker Cyberbane has put on anybody, off, from the system's own list of them (NoteMarker): so none is missed
+// whatever tag its owner wears now, or if they wear none - a favour's mark is on a passer-by (Spawn/LivingStreet.reds),
+// and a body handed to the orphan sweep keeps its pin.
 public func CBUntrackAllMarkers(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   let ms = GameInstance.GetMappinSystem(game);
   if !IsDefined(sys) || !IsDefined(ms) {
@@ -354,10 +294,6 @@ public func CBUntrackAllMarkers(sys: ref<CyberbaneSystem>, game: GameInstance) -
 
 // Clear the markers off everyone wearing one of our tags. Harmless on tags that were never
 // marked, since each puppet checks its own flag.
-//
-// The pin is bound to the entity, so an NPC that streams out takes its pin with it. This is for
-// the cases where the encounter ends while they are still standing there: outrunning them, the
-// session sweep, the switch being turned off.
 public func CBUntrackTagged(game: GameInstance, tag: CName) -> Void {
   let des = GameInstance.GetDynamicEntitySystem();
   if !IsDefined(des) {

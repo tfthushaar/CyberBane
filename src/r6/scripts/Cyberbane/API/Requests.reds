@@ -1,13 +1,8 @@
-// Cyberbane - what an add-on may ask for (extension API level 1, 2.7.4)
+// Cyberbane - what an add-on may ask for (extension API level 1)
 //
 // People, pins, texts and standing, each through the same gates Cyberbane's own go through, so an add-on can never push
 // the world past the 18-spawn ceiling, place somebody during a scene, text past "Where messages go" or move a standing the
 // player has frozen. The add-on asks; Cyberbane decides and does it.
-//
-// People (RequestGroup): placed with Cyberbane's own spawning (near V out of sight, or round a point), tagged CB_Api so the
-// sanctuary hold, the combat release and every sweep reach them, set up by Cyberbane (the killable clamp, a crew's or an
-// apex's build, hostile or on V's side) and removed only the safe way (ReleaseGroup). A handle names the group; 0 means no
-// group, and GroupWhyNot says why.
 
 public func CBApiPlaceNearV() -> Int32 = 0
 public func CBApiPlaceAt() -> Int32 = 1
@@ -82,7 +77,7 @@ public class CBApiRequests extends ScriptableSystem {
     return handle > 0 && ArrayContains(this.m_handles, handle);
   }
 
-  // Any group asked for on V's side still held: the crew's pairing looks for their people only then (R6).
+  // Any group asked for on V's side still held: the crew's pairing looks for their people only then.
   public func AnySide() -> Bool {
     for s in this.m_side {
       if s {
@@ -126,7 +121,7 @@ public class CBApiRequests extends ScriptableSystem {
     return true;
   }
 
-  // The pin moved where it stands, the game's own call (2.7.5, API level 2: MovePin).
+  // The pin moved where it stands, the game's call (API level 2: MovePin).
   public func MovePin(ms: ref<MappinSystem>, id: Int32, pos: Vector4) -> Bool {
     let i = ArrayFindFirst(this.m_pinIds, id);
     if i < 0 || i >= ArraySize(this.m_pins) {
@@ -352,12 +347,12 @@ public func CBApiRequestsTick(game: GameInstance) -> Void {
   if IsDefined(reg) {
     reg.ExpirePins(game);
   }
-  // V's answers to an add-on's questions, told here and not from the phone's own handler (2.7.5, R7).
+  // V's answers to an add-on's questions, told here and not from the phone's own handler.
   let asks = CBApiAsks.Get(game);
   if IsDefined(asks) {
     asks.DeliverAnswers(game);
   }
-  // Level 2 (2.7.5): sides kept set against each other, and wrecks dressed once they are in the world.
+  // Level 2: sides kept set against each other, and wrecks dressed once they are in the world.
   let sys = CyberbaneSystem.Get(game);
   if IsDefined(sys) && sys.GetTickCount() % 2 == 1 {
     CBApiPairsTick(sys, game);
@@ -387,7 +382,7 @@ public class CBApiAsks extends ScriptableSystem {
   private let m_prices: array<Int32>;
   private let m_tokens: array<Int32>;
   private let m_listeners: array<ref<CBApiAnswerListener>>;
-  // Answers waiting for the tick (R7).
+  // Answers waiting for the tick.
   private let m_qListener: array<ref<CBApiAnswerListener>>;
   private let m_qToken: array<Int32>;
   private let m_qChoice: array<Int32>;
@@ -522,7 +517,7 @@ public func CBApiAskChoices(game: GameInstance, name: String) -> array<String> {
 }
 
 // V answered: V's line into the thread, the price taken for the first answer, then the add-on told on the next tick
-// (2.7.5, R7): this runs inside the phone's reply handler, and an add-on that starts something in the world from an answer
+//: this runs inside the phone's reply handler, and an add-on that starts something in the world from an answer
 // must never do it from there.
 public func CBApiAskReply(game: GameInstance, store: ref<CBPhone>, thread: Int32, name: String, choice: Int32) -> Void {
   let asks = CBApiAsks.Get(game);

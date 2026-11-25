@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Fails if Cyberbane's localization keys do not line up (2.7.1).
+  Fails if Cyberbane's localization keys do not line up.
 
 .DESCRIPTION
   Every line Cyberbane shows the player is a key, with its English in

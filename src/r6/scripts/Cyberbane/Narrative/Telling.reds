@@ -1,27 +1,7 @@
-// Cyberbane - Telling it (2.4.6)
+// Cyberbane - Telling it
 //
-//   [79] voices                 the people Cyberbane moves speak in their own game voices at its moments, with the
-//                               game's own voiceset lines (only names the game itself plays: enemy_warning, fear_beg,
-//                               start_combat, combat_ended), through the context the talk wrap already lets through
-//   [80] panic in the dark      when V picks off a crew unseen, the rest grow afraid: who is not answering, by name,
-//                               and nerve that falls with each one, until somebody runs
-//   [81] the screamsheet        headlines from the last day on the History page, in the tabloids' voice
-//   [82] the legend, told       a button on the History page that tells V's story from the biggest things in it
-//   [83] the morning brief      one broker text at dawn: the night's news, who is after V, what is coming
-//   [84] a Rival's story        their page tells it from what is known of them
-//   [87] Street Cred            the biggest deeds give a little of the game's own Street Cred, the way the game's
-//                               own bounties do (ExperiencePointsEvent)
-//   [90] presets with a shape   Blood feud, Turf war and Quiet life (Settings/CyberbaneSettings.reds)
-//   [91] events other mods hear Cyberbane/RivalSlain, Cyberbane/HuntStarted and the rest, through the game's callback
-//                               system
-//   [U13] phone threads         a gang's thread can be threatened, stalled or insulted, and a Rival's answered
-//                               (UI/RealPhone.reds)
-//   [U14] the scanner           a scout's job, and how a gang sees V, under the name
-//   [U15] titles                for the ladder, the war, gang life, trophies and the gang V belongs to
-//   [L5] the lines              everything said here draws on what Cyberbane knows: V's name on the street, where V
-//                               is, the hour, the weather, who is involved and what V did to them
-//
-// Everything here reads the books and the History; nothing new is saved.
+// Voices at Cyberbane's moments, panic in a crew V picks off unseen, the screamsheet, the morning brief, Rival stories,
+// Street Cred, preset shapes, events other mods can hear, phone threads and the scanner.
 
 public func CBVoicesOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -83,7 +63,7 @@ public func CBWhenTail(game: GameInstance) -> String {
 
 // ---- [79] Voices ------------------------------------------------------------------------------------------------
 
-// One of the game's own voiceset lines from this person, through the context Cyberbane's talk wrap lets through.
+// One of the game's voiceset lines from this person, through the context Cyberbane's talk wrap lets through.
 public func CBSayVoiced(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, line: CName) -> Void {
   if !CBVoicesOn() || !CBNpcSafe(sys, npc) || npc.IsDead() {
     return;
@@ -161,7 +141,7 @@ public func CBPanicInDark(sys: ref<CyberbaneSystem>, game: GameInstance, dead: r
 
 // ---- [87] Street Cred follows the legend ---------------------------------------------------------------------------
 
-// A little of the game's own Street Cred, the way the game's own bounties give it (bountyManager.script).
+// A little of the game's Street Cred, the way the game's bounties give it (bountyManager.script).
 public func CBGiveStreetCred(game: GameInstance, amount: Int32) -> Void {
   let player = GetPlayer(game);
   if !CBStreetCredFollowsOn() || amount <= 0 || !IsDefined(player) || CBReputationFrozen() {
@@ -435,7 +415,7 @@ public func CBScannerStance(npc: ref<NPCPuppet>) -> String {
   if Equals(p, ECBPosture.Hostile) { word = CBT(n"Cyberbane-Telling-HOSTILETOYOU"); }
   if Equals(p, ECBPosture.Friendly) { word = CBT(n"Cyberbane-Telling-FRIENDLYTOYOU"); }
   if Equals(p, ECBPosture.Allied) { word = CBT(n"Cyberbane-Telling-ALLIEDWITHYOU"); }
-  // "ONE OF YOURS" read like V's own crew, whose line is YOUR CREW (2.5.5): this is the gang V belongs to.
+  // "ONE OF YOURS" read like V's own crew, whose line is YOUR CREW: this is the gang V belongs to.
   if Equals(CBOneOfTheirsGang(npc.GetGame()), faction) { word = CBT(n"Cyberbane-Telling-YOURGANG"); }
   return word;
 }

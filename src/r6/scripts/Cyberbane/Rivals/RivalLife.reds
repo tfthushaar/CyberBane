@@ -1,25 +1,6 @@
-// Cyberbane - Rivals with a life (1.9.9)
+// Cyberbane - Rivals with a life
 //
-// A Rival is a person with a history with V, and this is what makes them act like one:
-//
-//   A catchphrase   one line of their own, from how they came to be V's Rival and what they are like,
-//                   said when they arrive, in their texts and on their page. Derived from the id.
-//   The street's word on them   their page says where they are the way the street would.
-//   The announcement   when a Rival's people find V, somebody names them in the subtitles first: who
-//                   they are, what they survived, and the Rival's own line.
-//   Mercy           V decides. A Rival put down alive is spared when V holsters or walks away; killed if
-//                   V finishes them; and can be talked to where they lie: let them go, make them pay with
-//                   a name, or run them out of Night City (Reactions/CombatFlee.reds, Reactions/StreetTalk.reds).
-//   Kin             the one who steps into a slain Rival's place is sometimes family: the same surname,
-//                   geared against what killed them, and they say so.
-//   Send word       a Rival can be called out from the Hub, and a Rival may call V out instead of hunting:
-//                   they name a place and wait there, ready, with more of their people. Finishing it there
-//                   pays more.
-//   Bodyguards      a lieutenant or leader waiting at their place has their people with them. Each one V
-//                   drops before them costs the Rival some of their nerve, and they say so.
-//
-// Saves: kin links and words sent are the playthrough's (CBIntelBook, Reactions/StreetIntel.reds); the
-// rest is derived or session.
+// Catchphrases, the street's word on each Rival, their arrival announcement, mercy, kin, calling V out and bodyguards.
 
 public func CBMercyChoiceOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
@@ -98,8 +79,8 @@ public func CBRivalStreetStatus(sys: ref<CyberbaneSystem>, game: GameInstance, r
   if r.id == sys.GetLaneRivalId(CBLaneRival()) {
     return CBT(n"Cyberbane-RivalLife-GettingTheirPeopleTogetherYouLl");
   }
-  // In the HUD's own words for a countdown (CBWhen, 2.4.2). The cooldown is in fast ticks, a real second each,
-  // and this called every 150 of them an hour: an in-game hour is about 450, so the page said six hours for two.
+  // In the HUD's own words for a countdown (CBWhen). The cooldown is in fast ticks, a real second each, and this called
+  // every 150 of them an hour: an in-game hour is about 450, so the page said six hours for two.
   if r.huntTicks > 0 {
     return CBTf(n"Cyberbane-RivalLife-LickingTheirWoundsBack", [s"\(CBWhen(r.huntTicks))"]);
   }
@@ -155,7 +136,7 @@ public func CBRivalAnnounce(sys: ref<CyberbaneSystem>, game: GameInstance, r: re
   }
   CBAnnounceLater(game, crew, who, 0.3);
   CBAnnounceLater(game, name, CBRivalCatchphrase(r), 3.2);
-  // And one of their people says it in their own voice (Narrative/Telling.reds, [79], 2.4.6).
+  // And one of their people says it in their own voice (Narrative/Telling.reds, [79]).
   CBSayVoiced(sys, CBNearestTagged(sys, game, n"CB_Escort", CBConfig.PanicRange()), n"enemy_warning");
 }
 
@@ -186,7 +167,7 @@ public func CBSendWord(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
   if !IsDefined(r) || !IsDefined(book) || !IsDefined(player) || !CBSendWordOn() || CBWhereaboutsForSale(sys, game, r) != 0 {
     return false;
   }
-  // Calling V out, they name somewhere that matters if they can (2.4.4, [62]).
+  // Calling V out, they name somewhere that matters if they can ([62]).
   let why = "";
   let s = calledOut ? CBRivalMeaningfulPlace(sys, game, player, r, why) : null;
   if !IsDefined(s) {
@@ -226,10 +207,8 @@ public func CBRivalMayCallOut(sys: ref<CyberbaneSystem>, game: GameInstance, r: 
   return CBSendWord(sys, game, r, true);
 }
 
-// The meeting is off without V finishing it there: their encounter ended some other way, the lead ran
-// out, they were left lying at the place, or V forgot them. The word was only ever cleared by a kill, so
-// one that came to nothing stood for good: "Waiting for you at their place" in their file, an extra guard
-// whenever they were next put somewhere, and the called-out bonus paid for killing them anywhere later.
+// The meeting is off without V finishing it there: their encounter ended some other way, the lead ran out, they were
+// left lying at the place, or V forgot them.
 public func CBWithdrawWord(game: GameInstance, rivalId: Int32) -> Void {
   let book = CBIntelBook.Get(game);
   if IsDefined(book) && rivalId > 0 {
@@ -258,9 +237,8 @@ public func CBWordKept(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBR
 
 // ---- Bodyguards ------------------------------------------------------------------------------------------
 
-// Somebody senior waiting at their place has their people round them: one for a lieutenant, two for a
-// leader, one more when they are expecting V. Put near them the way the Rival was put, and set up the same
-// (CB_Lair: hostile, no orders, cleared with the place).
+// Somebody senior waiting at their place has their people round them: one for a lieutenant, two for a leader, one more
+// when they are expecting V.
 public func CBLairGuards(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, r: ref<CBRival>, at: Vector4) -> Void {
   let book = CBIntelBook.Get(game);
   let count = 0;
@@ -324,7 +302,7 @@ public func CBRivalMercyLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: 
     ArrayPush(out, c);
   }
   ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-RivalLife-ExileLeaveNightCityTonightDon"), CBTalkActExile(), t"ChoiceCaptionParts.BackOutIcon"));
-  // A fourth way to leave them (2.4.4, [55]), and a fifth: set them on somebody of a gang at war with theirs ([57]).
+  // A fourth way to leave them ([55]), and a fifth: set them on somebody of a gang at war with theirs ([57]).
   ArrayPush(out, CBTalkMakeLine(CBT(n"Cyberbane-RivalLife-HumiliateLookAtYouCrawlingEverybody"), CBTalkActHumiliate(), TDBID.None()));
   let r = sys.FindRivalById(t.rivalId);
   let target = CBFeudTargetFor(sys, game, r);
@@ -333,7 +311,7 @@ public func CBRivalMercyLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: 
                             CBTalkActSetOn(), t"ChoiceCaptionParts.BountyHuntIcon");
     ArrayPush(out, so);
   }
-  // [C1] Work for V (Reactions/Crew.reds, 2.5.0): a Rival V has spared before.
+  // [C1] Work for V (Reactions/Crew.reds): a Rival V has spared before.
   let recruit = CBCrewRecruitLine(sys, game, r);
   if IsDefined(recruit) {
     ArrayPush(out, recruit);

@@ -1,41 +1,14 @@
-// Cyberbane - A code for each gang ([10]-[19], 2.3.2)
+// Cyberbane - A code for each gang
 //
-// The gangs differed in numbers and colours. Each now has a code: what it respects, what it never forgives,
-// how it fights and how it makes peace. Every part of it is a number one of the existing systems already
-// uses, so nothing is kept twice and every switch that already governs a system still governs it:
-//
-//   mercy      standing a gang gives for one of theirs left breathing (CBCreditMercy)
-//   grudge     standing a gang takes for one of theirs put down, by how (CBApplyKill); the Animals despise a
-//              gun and respect fists, the Aldecaldos are one family
-//   shotHands  more taken for shooting one with their hands up (the Valentinos never forget it)
-//   nerve      how easily their people break, run or hold back from V (Reactions/Morale.reds): Barghest
-//              never, the Animals barely, the Scavengers easily
-//   surrender  how often a beaten one gives up (Spawn/LivingStreet.reds): Barghest never, the Mox often
-//   peace      their price to call it off (Economy/Peace.reds): the Claws are business, Barghest an army
-//   insult     what a slight in talk costs (CBTalkSlight): the Claws' face, the Valentinos' honour
-//   crew       how many they send (CBCrewSizeFor): the Mox and the Voodoo Boys send few, Barghest more
-//   apex       whether they send their best at all (the Mox never)
-//   forgive    how fast a grudge fades (Model/Decay.reds): the Aldecaldos remember
-//   toughness  extra health on their crews (Spawn/FactionApex.reds, the crew build): the Animals
-//   kin        how often a fallen Rival's family takes their place (the Valentinos)
-//   home       the districts their grudge stays in (Barghest and the Scrappers: Dogtown; the Wraiths: the
-//              Badlands and where the city meets it, 2.7.4)
-//   guards     a district whose ordinary people they guard (6th Street: Santo Domingo; the Mox: Westbrook,
-//              Jig-Jig Street)
-//   everybody  killing them is a favour to every other gang (the Scavengers), who also make no Rivals
-//   chrome     how well they see chrome under clothes (Maelstrom)
-//
-// Off (Mod Settings, Gangs: Gang codes), every number is 1.0 and every flag is off: the gangs behave as they
-// did before 2.3.2. The Hub's gang page says what each code is, a line at a time as V learns it (CBCodeLines).
+// What each gang respects, what it never forgives, how it fights and how it makes peace. Every value feeds a system
+// that already exists, so a code is just numbers on the gang's profile.
 
 public func CBGangCodesOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
   return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().gangCodes;
 }
 
-// Since 2.7.4 every number below is read from the faction's profile (Data/FactionProfiles.reds, generated from the
-// chains of names these functions used to be, and checked against them faction by faction), so a new faction, or an
-// add-on's, is one block of data. Each function still answers with the neutral value when Gang codes is off.
+// Each function still answers with the neutral value when Gang codes is off.
 
 // A faction's code, from its profile; nothing for a faction without one.
 public func CBCodeOf(f: CName) -> ref<CBGangCode> {
@@ -44,9 +17,8 @@ public func CBCodeOf(f: CName) -> ref<CBGangCode> {
   return IsDefined(p) ? p.code : null;
 }
 
-// What one group's people are called (2.7.4), as a key for CBT: "gang" for most, "clan" for the Aldecaldos, "raffen" for
-// the Wraiths, "corporation", "law", "army". For lines that name a group's own people; rule lines that speak of gangs in
-// general stay as they are.
+// What one group's people are called, as a key for CBT: "gang" for most, "clan" for the Aldecaldos, "raffen" for the
+// Wraiths, "corporation", "law", "army".
 public func CBFactionNoun(f: CName) -> CName {
   let content = CyberbaneContent.Get();
   let p = IsDefined(content) && NotEquals(f, n"") ? content.GetFaction(f) : null;
@@ -129,8 +101,8 @@ public func CBCodeKin(f: CName) -> Float {
   return CBGangCodesOn() && IsDefined(c) ? c.kin : 1.0;
 }
 
-// The districts their grudge keeps to (2.7.4: more than one; the Wraiths keep to the Badlands and the city's edge), empty
-// for a gang that comes anywhere.
+// The districts their grudge keeps to (more than one; the Wraiths keep to the Badlands and the city's edge), empty for
+// a gang that comes anywhere.
 public func CBCodeHomes(f: CName) -> array<CName> {
   let none: array<CName>;
   let c = CBCodeOf(f);

@@ -1,12 +1,8 @@
-// Cyberbane - an add-on's cards on the Hub (extension API level 1, 2.7.4)
+// Cyberbane - an add-on's cards on the Hub (extension API level 1)
 //
 // Data only, drawn by Cyberbane's own row and body code (crash rule: UI goes in as data, never as injected widgets). A
-// card is a row in the Gangs page's list (Show as a list): its title, a subtitle, a colour and a bar of pips; picked, its
-// lines fill the page and its actions (three at most) are the page's buttons. A click records a request; the next settled
-// tick hands it to the add-on's listener (a Hub button never acts on the world itself). A page of cards (RegisterPage)
-// is listed the same way under its own title: the Hub's eight tabs are the game's own menu tabs, so it gets no ninth.
-//
-// The add-on keeps its card objects and changes them as it likes; the Hub reads them each time it draws.
+// card is a row in the Gangs page's list (Show as a list): its title, a subtitle, a colour and a bar of pips; picked,
+// its lines fill the page and its actions (three at most) are the page's buttons.
 
 public func CBHubCardCyan() -> Int32 = 0
 public func CBHubCardGreen() -> Int32 = 1

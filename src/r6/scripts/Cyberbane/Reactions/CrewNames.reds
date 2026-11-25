@@ -1,18 +1,7 @@
-// Cyberbane - The names V gives the crew, and where they text from (2.7.6)
+// Cyberbane - Crew names and threads
 //
-// "Give users the ability to rename their crew members, individual message threads for crew members, and a group chat
-// which exists for relevant stuff only."
-//
-// A name V gives somebody is kept here, in a class of its own: a new field on the crew's records would wipe every saved
-// crew (the 1.7.8 rule), and a String cannot be saved at all. So it is kept the way the crew's own name is, as places in
-// CBCrewNameAlphabet (Reactions/CrewKit.reds). It stands in for the name they came with wherever their name is said
-// (CBCrewName, CBCrewFirst, CBCrewBoxName, CBCrewPastName); a nickname they have earned still goes with it. An empty name
-// gives them back the one they came with.
-//
-// Texts (CBCrewText): what one of them says about themselves comes in their own thread, under the name V knows them by,
-// where V can answer them alone (Come to me, Head home). What concerns the whole crew comes in the crew's group chat,
-// under the crew's name: a call and how it ended, the cut, the kitty, somebody fallen or turned, a promotion. The two
-// threads keep the same names for the whole session, so a nickname earned does not start a new one.
+// Names V gives crew members, stored as positions in CBCrewNameAlphabet like the crew's own name; an empty name gives
+// back the one they came with. Also which phone thread each member texts from.
 
 public class CBCrewGivenName {
   public persistent let member: Int32;

@@ -14,10 +14,8 @@ func CBGangClothes(c: ref<CyberbaneContent>, record: TweakDBID, faction: CName) 
 }
 
 public func CBSeedLooks(c: ref<CyberbaneContent>) -> Void {
-  // The gang clothing that exists, as exact records. Faction Disguises read this table and nothing
-  // had ever been put in it, so the setting did nothing. This is everything in the game's clothing
-  // files that belongs to a gang by name: the nomads, and one Wraiths vest. Other gangs' colours
-  // are on their NPCs' appearances, which are not items V can wear.
+  // The gang clothing that exists, as exact records. Faction Disguises read this table and nothing had ever been put in
+  // it, so the setting did nothing.
   let nomads: array<TweakDBID> = [t"Items.Nomad_01_Set_Boots", t"Items.Nomad_01_Set_Jacket", t"Items.Nomad_01_Set_Mask",
                 t"Items.Nomad_01_Set_Pants", t"Items.Nomad_01_Set_TShirt", t"Items.Q000_Nomad_Boots",
                 t"Items.Q000_Nomad_Pants", t"Items.Q000_Nomad_TShirt", t"Items.Q000_Nomad_Vest",
@@ -31,11 +29,8 @@ public func CBSeedLooks(c: ref<CyberbaneContent>) -> Void {
   }
   CBGangClothes(c, t"Items.SQ021_Wraiths_Vest", n"Wraiths");
 
-  // tag, score, disguise, factionTag
-  // Nine tags used to be seeded here (FaceMask, Hood, MilitaryOuterwear and so on). None of them
-  // is a tag any item in the game carries, so they matched nothing. What clothing does carry is
-  // read in Signals/LookSignal.reds (CBGarmentLookScore, CBGarmentGang); this list is now only
-  // what other mods add through CyberbaneAPI.RegisterLookTag (1.9.3).
+  // tag, score, disguise, factionTag Nine tags used to be seeded here (FaceMask, Hood, MilitaryOuterwear and so on).
+  // None of them is a tag any item in the game carries, so they matched nothing.
 
   // Character-customization options (spec §7.4), resolved in S-10.
   c.AddCustomization(CBMakeCustomization(n"FaceChrome",  10.0));

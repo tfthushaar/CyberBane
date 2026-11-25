@@ -1,9 +1,7 @@
-// Cyberbane - Hunters who regroup (2.7.7)
+// Cyberbane - Hunters who regroup
 //
-// A crew sent after V used to fight to the last body. Now one losing badly (two thirds of it down, the rest still
-// standing) pulls back: the ones left break and run, the way any broken ganger does (CBMoraleBreak, Reactions/Morale.reds),
-// their gang says so, and it sends more a little later through the same lane any crew comes by. Once a crew. An apex squad,
-// and a crew that came with its apex squad, never pulls back: they are the gang's last word.
+// A crew that's losing badly (two thirds down) breaks and runs, and its gang sends another one a little later through
+// the usual lane. Once per crew, never with an apex squad.
 
 // One of the crew sent after V went down (Signals/CombatSignals.reds, a frame after the death).
 public func CBSquadLostOne(sys: ref<CyberbaneSystem>, game: GameInstance, gone: EntityID) -> Void {

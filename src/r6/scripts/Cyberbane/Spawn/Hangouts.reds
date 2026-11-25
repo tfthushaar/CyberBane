@@ -1,14 +1,8 @@
-// Cyberbane - Hangouts (2.6.1)
-//
-// "The Mox should have a meeting place besides the ones in vanilla: it's almost impossible to come by Moxes to talk to."
+// Cyberbane - Hangouts
 //
 // Some gangs are hard to find on their own streets: the game puts few of their people out, and everything Cyberbane
 // lets V do with a gang through its people (ask around, a favour, a lead, being lent somebody, joining them) needs one
-// to talk to. So now and then, on a gang's own turf where none of theirs are about, a few of them are hanging out a
-// street or two from V, marked on the map as such. Talkable like anybody on the street, neutral to V, never sent after
-// V. Once a day for each gang, one hangout at a time, never for a gang hostile to V, never while the story, a job or a
-// scene has V, and they pack up (out of V's sight) once V has gone or a couple of hours have passed. Under Gang life's
-// Gatherings switch. Session only: nothing is saved.
+// to talk to.
 
 public class CBHangoutState extends ScriptableSystem {
   public let gang: CName;
@@ -63,7 +57,7 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
     if over {
       CBHangoutEnd(game, st);
     } else {
-      // A friendly gang's people greet V walking past (2.7.7), in their own voice.
+      // A friendly gang's people greet V walking past, in their own voice.
       if !player.IsInCombat() && Vector4.Distance(player.GetWorldPosition(), st.at) <= CBConfig.HangoutGreetDistance() {
         CBVoiceNearest(sys, game, n"CB_Hangout", CBConfig.HangoutGreetDistance(), n"greeting", n"HangoutGreet", 60.0);
       }
@@ -75,8 +69,6 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
   }
   st.lookedTick = sys.GetTickCount();
   // Never into the story, a job, a scene, a fight, a safe place or a car; and only with room for them.
-  // Nor with anybody out after V or on their way (2.7.8), as bagmen, turf patrols and wannabes have always waited: the
-  // play log had a Mox hangout set up half a minute into a fight V's crew had been called to, a Rival on the way.
   if sys.GetStoryHold() != CBStoryNone() || sys.IsInQuestArea() || sys.IsOnJob() || CBPlayerInScene(game) || player.IsInCombat()
      || sys.IsInSafeZone() || IsDefined(player.GetMountedVehicle()) || CBSpawnRoom(game) <= CBConfig.TurfPatrolKeepRoom()
      || CBHomeKeepsOut(sys) || CBHuntersOut(sys, game) || CBHuntPending(sys) {
@@ -88,7 +80,7 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
   if !IsDefined(score) || !IsDefined(reg) {
     return;
   }
-  // A gang's home V is close to (2.7.2, Spawn/GangHomes.reds): somebody is there, whatever the dice say, once a day.
+  // A gang's home V is close to (Spawn/GangHomes.reds): somebody is there, whatever the dice say, once a day.
   let homeAt: Vector4;
   let home = CBGangHomesOn() ? CBGangHomeNear(game, player.GetWorldPosition(), CBConfig.GangHomeReach(), homeAt) : -1;
   if home >= 0 {
@@ -105,8 +97,8 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
     if CBFactionOn(g) && CBFactionFieldsSquads(g) && !st.DoneToday(g, day)
        && !Equals(posture, ECBPosture.Hostile) && !Equals(posture, ECBPosture.Vendetta) && CBHangoutScarce(sys, game, reg, g) {
       st.MarkDone(g, day);   // asked once a day, placed or not
-      // Night and weather, and whose streets these are (2.7.7): the gang holding the district hangs out on it more, the
-      // ones who lost it less.
+      // Night and weather, and whose streets these are: the gang holding the district hangs out on it more, the ones
+      // who lost it less.
       let holderHere = CBTurfHolder(sys, game, sys.GetCurrentDistrict());
       let held = IsNameValid(holderHere) ? (Equals(holderHere, g) ? CBConfig.HeldDistrictHangoutMult() : CBConfig.LostDistrictHangoutMult()) : 1.0;
       if RandF() < CBConfig.HangoutChance() * CBStreetLifeMood(game) * held {
@@ -117,7 +109,7 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
   }
 }
 
-// How much is going on in the street (2.7.7): more after dark, less in the rain, least in a downpour by day.
+// How much is going on in the street: more after dark, less in the rain, least in a downpour by day.
 public func CBStreetLifeMood(game: GameInstance) -> Float {
   let mood = CBIsNight(game) ? CBConfig.StreetNightMult() : 1.0;
   let rain = CBRainLevel(game);
@@ -132,14 +124,6 @@ public func CBStreetLifeMood(game: GameInstance) -> Float {
 }
 
 // None of theirs about to talk to: nobody of the gang within HangoutScarceRange of V whom V could talk to.
-//
-// To talk to (2.7.8). "With Lizzie's Braindances installed there are no Cyberbane Mox hanging out at Lizzie's." That mod
-// stands a braindance seller at Lizzie's reception for as long as the club is loaded: one of the game's own Lizzie's
-// Mox (Character.lizzies_mox_female, a main-quest record), put there by its scene and selling through its own menu. Mox
-// by her record, so she was "a Mox about" and the Mox home never got its hangout; written by the story, so Cyberbane's
-// talk never let V speak to her. Lizzie's own bouncer is the same kind of person (a quest record, Invulnerable) without
-// the mod. Hangouts exist because these gangs' people are hard to find to talk to, so only somebody V can talk to,
-// by who they are (CBTalkableByWho), says they are about. Somebody of theirs in a fight or a car is still about.
 func CBHangoutScarce(sys: ref<CyberbaneSystem>, game: GameInstance, reg: ref<CBNpcRegistry>, gang: CName) -> Bool {
   let player = GetPlayer(game);
   let ppos = player.GetWorldPosition();
@@ -158,7 +142,7 @@ func CBHangoutStart(sys: ref<CyberbaneSystem>, game: GameInstance, st: ref<CBHan
   if !TDBID.IsValid(record) {
     return;
   }
-  // At their home when there is one to go to (2.7.2), else a street or two from V.
+  // At their home when there is one to go to, else a street or two from V.
   let atHome = home.X != 0.0 || home.Y != 0.0;
   if atHome {
     if CBPlaceAround(sys, game, record, home, CBConfig.HangoutSize(), n"CB_Hangout") <= 0 {

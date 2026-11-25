@@ -1,24 +1,7 @@
 // Cyberbane - Deed catalogue seed (spec Appendix F)
 //
-// requiredState: 0 = Succeeded, 1 = Failed, 2 = Any-finished. The deed effects (Renown, Dread,
-// faction standing, rumor, titles) have always been complete here; what was missing was anything
-// to fire them. Generic gigs/hustles are handled by their own path (CBApplyHustle).
-//
-// `d.fact` is the game's own record that this happened, read with QuestsSystem.GetFact on the
-// slow tick (Model/DeedEngine.reds, CBDeedFactTick). The convention is `<questid>_done` and is
-// confirmed by the shipped scripts, which contain q005_done, q101_done, q201_done..q204_done,
-// mq048_done, mq057_done, mq058_done, sq024_done and q001_ripperdoc_done.
-//
-// Only the ones whose exact fact name appears in the game's own source are wired. A wrong name
-// reads 0 for ever and the deed simply never fires, so a guess cannot break anything - but it
-// also cannot be told apart from the bug this is fixing, which is the whole reason the rest are
-// left empty rather than filled in optimistically. To confirm the others: set Mod Settings >
-// Cyberbane > Debug > Log level to Verbose, finish the job, and CBProbeDeedFacts prints the
-// candidates and their values.
-//
-// Deliberately NOT guessed: DEED_PICKUP_DEAL and DEED_PICKUP_ROYCE are opposite endings of the
-// same quest (q003), so a single `q003_done` would fire the wrong one half the time. Those two
-// need the branch fact, not the quest fact.
+// requiredState: 0 = Succeeded, 1 = Failed, 2 = Any-finished. Deeds are fired by the journal signal; generic gigs and
+// hustles go through CBApplyHustle instead.
 
 public func CBSeedDeeds(c: ref<CyberbaneContent>) -> Void {
   let d: ref<CBDeedDef>;
