@@ -18,6 +18,9 @@ public class CyberbaneRuntime extends ScriptableService {
   // bodies are set up after the seed has moved on, and read their names from here (Spawn/ApexSquad.reds, CBApexMemberName).
   public let lastApexFaction: CName;
   public let lastApexSeed: Int32;
+  // What CBDropWayIn found for the last few places V came near (Spawn/StreetStories.reds), so the walk is not asked
+  // again on every tick while V stands there.
+  public let wayIn: array<ref<CBWayInAnswer>>;
   // Street talk's list, held on screen through the game's clears (Reactions/StreetTalk.reds, CBTalkHeldList): what it
   // is, the line picked, and until when it holds (sim seconds), renewed by talk's own tick while it is up.
   public let talkList: DialogChoiceHubs;
@@ -31,7 +34,10 @@ public class CyberbaneRuntime extends ScriptableService {
   // the playthrough loaded when it was chosen, or with nothing loaded, to the next save to load.
   private let m_separateRequested: Bool;
   private let m_separateFor: CName;
-  private let m_ngpDetected: Int32;    // same three states, for New Game Plus
+  // A home marked or forgotten where V stands (Mod Settings): 1 mark, 2 forget, and the playthrough it was asked in.
+  private let m_homeAsk: Int32;
+  private let m_homeAskFor: CName;
+  private let m_ngpDetected: Int32;    // the three states of m_twrDetected, for New Game Plus
   // Why the last arrival was refused (CBBlock*). Diagnostic only, session-only.
   private let m_lastSpawnBlock: Int32;
   private let m_spawnBlockTally: array<Int32>;   // refusals per reason for the placement under way
@@ -580,6 +586,30 @@ public class CyberbaneRuntime extends ScriptableService {
       return false;
     }
     return true;
+  }
+
+  // Make where V stands a home, or forget the home V stands in: carried out on the next settled tick. Asked from the main
+  // menu there is nowhere V stands, so it is dropped.
+  public func RequestHomeMark() -> Void {
+    this.m_homeAsk = 1;
+    this.m_homeAskFor = this.m_sessionPlaythrough;
+  }
+
+  public func RequestHomeForget() -> Void {
+    this.m_homeAsk = 2;
+    this.m_homeAskFor = this.m_sessionPlaythrough;
+  }
+
+  // 1 mark, 2 forget, 0 nothing for this playthrough.
+  public func TakeHomeRequest(playthroughId: CName) -> Int32 {
+    let ask = this.m_homeAsk;
+    let forId = this.m_homeAskFor;
+    this.m_homeAsk = 0;
+    this.m_homeAskFor = n"";
+    if ask == 0 || !IsNameValid(forId) || NotEquals(forId, playthroughId) {
+      return 0;
+    }
+    return ask;
   }
 
   // Which playthrough is loaded. Set at session start and after a reset, cleared when the session

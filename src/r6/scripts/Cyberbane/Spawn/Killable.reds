@@ -268,3 +268,103 @@ public func CBIsSubdermalAbility(id: TweakDBID) -> Bool {
       || id == t"Ability.HasSubdermalArmorLow" || id == t"Ability.HasSubdermalArmorHigh_Mechanical"
       || id == t"Ability.HasSubdermalArmorMedium_Mechanical" || id == t"Ability.HasSubdermalArmorLow_Mechanical";
 }
+
+// ---- Hits that would do nothing -------------------------------------------------------------------------------
+//
+// The game drops a hit to nothing before any damage is worked out when the target is invulnerable (god mode, or the
+// IsInvulnerable stat from a status effect or its record), and stops death for an immortal one. Such a hit never reaches
+// StatPoolsManager.ApplyDamage, so the watch above cannot see it. So the check runs at the start of the game's own
+// pipeline, on every hit V's side lands on one of ours: whatever makes them untouchable comes off before the hit is
+// weighed. The moment of grace the game gives right after a defeat (InvulnerableAfterDefeated) stays, and so does
+// anything protecting V's own people.
+
+@addField(ScriptedPuppet)
+public let cbHittableLogged: Bool;      // said once in the log that something had made them untouchable
+
+@addField(ScriptedPuppet)
+public let cbInvulnCut: Bool;           // the record's own invulnerability has been cancelled with a stat modifier
+
+@wrapMethod(DamageSystem)
+private func PreProcess(hitEvent: ref<gameHitEvent>, cache: ref<CacheData>) -> Bool {
+  if IsDefined(hitEvent) {
+    CBKeepHittable(hitEvent);
+  }
+  return wrappedMethod(hitEvent, cache);
+}
+
+public func CBKeepHittable(hitEvent: ref<gameHitEvent>) -> Void {
+  let p = hitEvent.target as ScriptedPuppet;
+  if !IsDefined(p) || p.cbKillLimit <= 0.0 || !p.IsAttached() || p.IsDead()
+     || !CBKillableHitter(hitEvent.attackData.GetInstigator()) {
+    return;
+  }
+  if CBKillableFriend(p) || ScriptedPuppet.IsDefeated(p) {
+    return;
+  }
+  let game = p.GetGame();
+  let id = p.GetEntityID();
+  let gms = GameInstance.GetGodModeSystem(game);
+  let stats = GameInstance.GetStatsSystem(game);
+  let godded = IsDefined(gms) && (gms.HasGodMode(id, gameGodModeType.Invulnerable) || gms.HasGodMode(id, gameGodModeType.Immortal));
+  let flagged = IsDefined(stats) && stats.GetStatValue(Cast<StatsObjectID>(id), gamedataStatType.IsInvulnerable) > 0.0;
+  if !godded && !flagged {
+    return;
+  }
+  if godded {
+    CBDisarmGodMode(game, p);
+  }
+  if flagged {
+    CBDropInvulnerableEffects(game, p);
+    let left = stats.GetStatValue(Cast<StatsObjectID>(id), gamedataStatType.IsInvulnerable);
+    if left > 0.0 && !p.cbInvulnCut {
+      // From the record itself, with no effect to take off.
+      let m = RPGManager.CreateStatModifier(gamedataStatType.IsInvulnerable, gameStatModifierType.Additive, -left);
+      if IsDefined(m) {
+        stats.AddModifier(Cast<StatsObjectID>(id), m);
+        p.cbInvulnCut = true;
+      }
+    }
+  }
+  if !p.cbHittableLogged {
+    p.cbHittableLogged = true;
+    CBLog.Info(n"Spawn", s"One of ours could not be hurt (god mode \(godded), invulnerable stat \(flagged)); that came off before V's hit landed.");
+  }
+}
+
+// Status effects that make them invulnerable, except the game's short grace after a defeat.
+func CBDropInvulnerableEffects(game: GameInstance, p: ref<ScriptedPuppet>) -> Void {
+  let ses = GameInstance.GetStatusEffectSystem(game);
+  if !IsDefined(ses) {
+    return;
+  }
+  let id = p.GetEntityID();
+  let effects: array<ref<StatusEffect>>;
+  ses.GetAppliedEffects(id, effects);
+  let i = 0;
+  while i < ArraySize(effects) {
+    let rec = IsDefined(effects[i]) ? effects[i].GetRecord() : null;
+    i += 1;
+    if IsDefined(rec) && rec.GetID() != t"BaseStatusEffect.InvulnerableAfterDefeated" && CBEffectMakesInvulnerable(rec) {
+      CBTrace("stats: an invulnerability effect off one of ours");
+      ses.RemoveStatusEffect(id, rec.GetID());
+    }
+  }
+}
+
+func CBEffectMakesInvulnerable(rec: wref<StatusEffect_Record>) -> Bool {
+  let packages: array<wref<GameplayLogicPackage_Record>>;
+  rec.Packages(packages);
+  for pkg in packages {
+    if IsDefined(pkg) {
+      let mods: array<wref<StatModifier_Record>>;
+      pkg.Stats(mods);
+      for mod in mods {
+        let stat = IsDefined(mod) ? mod.StatType() : null;
+        if IsDefined(stat) && Equals(stat.StatType(), gamedataStatType.IsInvulnerable) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}

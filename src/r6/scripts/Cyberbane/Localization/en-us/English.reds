@@ -136,6 +136,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-StreetTalk-Desc", "Look at somebody up close with your hands empty and a Talk prompt comes up; press F and the game's own choice list opens: Greet, questions, deals, Dismiss, Antagonize, Intimidate and more. Scroll and press F to choose. How they answer, and what it does to your standing, depends on whether they know you, how much they and their gang fear and respect you, and how you work.");
     this.Text("Cyberbane-Settings-TalkShakedowns", "Shake-downs pay");
     this.Text("Cyberbane-Settings-TalkShakedowns-Desc", "Whether a ganger you intimidate may pay you to go away, once a day per gang. It costs you Conduct. Off, they only give up a Rival's hiding place or leave.");
+    this.Text("Cyberbane-Settings-TalkExplain", "Say why someone won't talk");
+    this.Text("Cyberbane-Settings-TalkExplain-Desc", "When you stand in front of somebody who won't talk to you for a reason you can't see, a short message says why. Off, nothing is said.");
     this.Text("Cyberbane-Settings-TalkFirst", "Ask first");
     this.Text("Cyberbane-Settings-TalkFirst-Desc", "On: looking at somebody up close brings up a single Talk prompt, and F opens the lines, the way the game's own conversations start. Off: the lines come up straight away.");
     this.Text("Cyberbane-Settings-TalkStopWalkers", "Passers-by stop to talk");
@@ -289,6 +291,10 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-SleepPeace-Desc", "Sleep in one of your own beds and nobody is sent after you for this many in-game hours afterwards. Anybody already on their way still comes. 0 turns it off.");
     this.Text("Cyberbane-Settings-HomeGround", "Home ground");
     this.Text("Cyberbane-Settings-HomeGround-Desc", "The building around each of your apartments, with its lobby, corridors and car park: about a hundred metres around the apartment, at any height. Cyberbane learns each one the first time you are inside it or sleep there. Quiet: nobody Cyberbane sends comes for you there, people already looking for you won't find you there, and no bagmen, gang events or street fights start there. A fight that followed you in carries on. Quiet except a vendetta: the same, except a gang at Vendetta may still come for you there. Open: home ground is like anywhere else.");
+    this.Text("Cyberbane-Settings-MarkHome", "Make where I stand a home");
+    this.Text("Cyberbane-Settings-MarkHome-Desc", "Stand in a home Cyberbane doesn't know about, like a house from another mod, and turn this on: the building around you becomes home ground, the same as your apartments. Turn it off before you mark another place.");
+    this.Text("Cyberbane-Settings-ForgetHome", "Forget the home I stand in");
+    this.Text("Cyberbane-Settings-ForgetHome-Desc", "Stand in a place Cyberbane treats as your home and turn this on, and it stops being home ground. One of your own apartments is learned again the next time you are inside it.");
     this.Text("Cyberbane-Settings-TurfWars-Desc", "Hurting a gang weakens it, most of all on its own streets. A broken gang loses its districts to its enemies next door, and they stay taken until somebody takes them back. Off keeps every gang on its own streets.");
     this.Text("Cyberbane-Settings-VendettaApexSquad-Desc", "Every crew a gang sends is led by its apex squad: a heavy, a shooter, a blade and a netrunner. Off sends the crew alone.");
     this.Text("Cyberbane-Settings-ApexArrivalSound-Desc", "Plays the game's own MaxTac descent horn when a gang sends its apex squad.");
@@ -305,6 +311,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-HudLine-Desc", "The line of text at the top of the screen. Everything: the full story, all the time. Hunts only: only while somebody is on their way or out looking. Off: hidden. The Rival and apex bars under it are a setting of their own: Rival and apex bars, under Messages and HUD.");
     this.Text("Cyberbane-Settings-ShowCountdowns-Desc", "Show exact times on the Hub and the HUD line. Off says soon, any moment or later instead.");
     this.Text("Cyberbane-Settings-Bounties-Desc", "Putting down a Rival, a crew or an apex squad earns you eddies, paid by a gang at war with theirs a few in-game hours later, once word has reached them. This is a reward to you, not the price on your head (that is A price on your head, under Being hunted).");
+    this.Text("Cyberbane-Settings-MoneyMult", "How much Cyberbane pays");
+    this.Text("Cyberbane-Settings-MoneyMult-Desc", "Scales the money Cyberbane gives you: bounties, contracts, jobs, tribute, sales and the cash its people carry. Lower it if you play with an economy mod. Money already in your crew's kitty is not changed.");
     this.Text("Cyberbane-Settings-ApexTraits-Desc", "Each apex gets two traits of its own, so no two fight the same way. Stands down on its own when New Game Plus is installed.");
     this.Text("Cyberbane-Settings-TwrCompat-Desc", "Auto or On: They Will Remember or Night City Remembers decides who is hostile to you, and Cyberbane follows it: every gang it has hostile is hostile here, hostility on sight is left to it, and nobody it has hostile offers you a word. They Will Remember also takes over crews and disguises. Night City Remembers sends nobody after you, so Cyberbane's crews still come. Off: Cyberbane decides; turn hostility off in the other mod's own settings so the two do not disagree.");
     this.Text("Cyberbane-Settings-LogLevel-Desc", "How much Cyberbane writes to its log. Only worth raising for a bug report.");
@@ -522,6 +530,8 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Settings-UnseenDread-Desc", "How much a killing nobody witnessed still adds to how frightening you are. Zero counts only what people saw.");
     this.Text("Cyberbane-Settings-BrutalConduct", "Melee kills cost Conduct");
     this.Text("Cyberbane-Settings-BrutalConduct-Desc", "Whether killing with a blade, bare hands or a takedown counts against your Conduct. Witnessed kills only.");
+    this.Text("Cyberbane-Settings-HelplessConduct", "Shooting someone who gave up costs Conduct");
+    this.Text("Cyberbane-Settings-HelplessConduct-Desc", "Whether killing somebody with their hands up counts against your Conduct. A burn, a poison or a shock you started before they gave up never counts, and neither does one that finishes somebody you put down.");
     this.Text("Cyberbane-Settings-EncounterGap", "Minutes between encounters");
     this.Text("Cyberbane-Settings-MessageHold", "How long words stay on screen");
     this.Text("Cyberbane-Settings-WordTravel", "Word travels (in-game minutes)");
@@ -597,6 +607,11 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
   protected func DefineHomeGround() -> Void {
     // A note when Cyberbane first learns one of V's homes. Notes start lower case: the game puts "Cyberbane: " in front.
     this.Text("Cyberbane-Home-Learned", "this building counts as your home ground now. While you are in it, Cyberbane's people leave you be (Home ground, under How often they come).");
+    this.Text("Cyberbane-Home-Marked", "this place is home now: nobody Cyberbane sends comes into it.");
+    this.Text("Cyberbane-Home-AlreadyHome", "this place is already one of your homes.");
+    this.Text("Cyberbane-Home-BookFull", "you have as many homes as Cyberbane can keep. Forget one first.");
+    this.Text("Cyberbane-Home-Forgotten", "this place is not one of your homes any more.");
+    this.Text("Cyberbane-Home-NotAHome", "this is not one of your homes.");
     // After a night in V's own bed. {0} is a number of in-game hours.
     this.Text("Cyberbane-Home-Rested", "a night in your own bed. Nobody new comes looking for you for the next {0} hours.");
     // Why nobody is on their way, on the Hub ("waiting:...").
@@ -5911,7 +5926,7 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-HelpCallCrew", "Calls everybody who's free, the same as the crew key.");
     this.Text("Cyberbane-Hud-HelpCrewPage", "The crew itself: wars, the cut and the kitty, its name, colours and home, the fallen.");
     // {0} eddies
-    this.Text("Cyberbane-Hud-PayTheirCut", "Pay them their cut, {0} eb");
+    this.Text("Cyberbane-Hud-PayTheirCut", "Pay them their cut, {0} eddies");
     this.Text("Cyberbane-Hud-GiveThemTheDayOff", "Give them the day off");
     this.Text("Cyberbane-Hud-TheyAskedForIt", "they asked you for it");
     this.Text("Cyberbane-Hud-HelpPayCut", "What they asked for. Pay it and they think better of you; leave it and they notice.");

@@ -167,7 +167,7 @@ func CBWarBackedCut(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBW
   if streets <= 0 {
     return;
   }
-  let cut = CBConfig.BackedCutPerDistrict() * streets;
+  let cut = CBReward(CBConfig.BackedCutPerDistrict() * streets);
   CBStreetGiveMoney(game, cut);
   CBFileLog(sys, n"WeeklyCut", now, CBEventDistrict(sys, game), gang, Cast<Float>(cut));
   if CBToastsOn() {
@@ -234,6 +234,7 @@ func CBWarOwnStreets(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CB
     if CBMyCrewOn() && IsDefined(crew) && crew.Count() >= 2 {
       toll = RoundF(Cast<Float>(toll) * 1.25);
     }
+    toll = CBReward(toll);
     CBStreetGiveMoney(game, toll);
     CBFileLog(sys, n"OwnToll", now, CBEventDistrict(sys, game), n"", Cast<Float>(toll));
     CBEventSay(game, CBTf(n"Cyberbane-War-TheGangsPaidTheirWayThrough", [s"\(toll)"]));

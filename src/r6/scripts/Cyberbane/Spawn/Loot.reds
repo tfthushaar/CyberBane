@@ -26,6 +26,29 @@ public func CBLootLevelScale(game: GameInstance) -> Float {
   return 1.0 + ClampF(level / 60.0, 0.0, 1.0) * CBConfig.LootLevelScaleMax();
 }
 
+// What a bounty is worth at V's level: BountyLowShare at level 1, all of it from BountyFullLevel.
+public func CBBountyLevelScale(game: GameInstance) -> Float {
+  let player = GetPlayer(game);
+  let stats = GameInstance.GetStatsSystem(game);
+  if !IsDefined(player) || !IsDefined(stats) {
+    return 1.0;
+  }
+  let level = stats.GetStatValue(Cast<StatsObjectID>(player.GetEntityID()), gamedataStatType.Level);
+  let low = CBConfig.BountyLowShare();
+  return low + (1.0 - low) * ClampF((level - 1.0) / MaxF(CBConfig.BountyFullLevel() - 1.0, 1.0), 0.0, 1.0);
+}
+
+// "How much Cyberbane pays" in Mod Settings, on money worked out for V, before anything says how much: to the nearest
+// ten, and never down to nothing.
+public func CBReward(amount: Int32) -> Int32 {
+  let rt = CyberbaneRuntime.Get();
+  let mult = IsDefined(rt) && rt.HasSettings() ? ClampF(rt.GetSettings().moneyMult, 0.1, 2.0) : 1.0;
+  if amount <= 0 || AbsF(mult - 1.0) < 0.001 {
+    return amount;
+  }
+  return Max(10, RoundF(Cast<Float>(amount) * mult / 10.0) * 10);
+}
+
 // Loot tiers.
 public func CBLootTierCrew() -> Int32 = 1
 public func CBLootTierApex() -> Int32 = 4
@@ -184,7 +207,7 @@ public class CBLootDropCallback extends DelayCallback {
     }
     // Crews carry some cash. Six of them is worth going through.
     if this.tier <= 1 {
-      let cash = RoundF(Cast<Float>(RandRange(CBConfig.CrewEddiesMin(), CBConfig.CrewEddiesMax() + 1)) * scale);
+      let cash = CBReward(RoundF(Cast<Float>(RandRange(CBConfig.CrewEddiesMin(), CBConfig.CrewEddiesMax() + 1)) * scale));
       if cash > 0 {
         ArrayPush(ids, t"Items.money");
         ArrayPush(counts, cash);
@@ -358,7 +381,7 @@ public class CBPayoutBook extends ScriptableSystem {
 // A bounty earned: on its way, not in V's hand yet.
 func CBPayBounty(sys: ref<CyberbaneSystem>, game: GameInstance, victimFaction: CName, baseAmount: Int32, kind: Int32,
                  rivalId: Int32) -> Void {
-  let amount = RoundF(Cast<Float>(baseAmount) * sys.WornPerk().bountyMult / 50.0) * 50;
+  let amount = CBReward(RoundF(Cast<Float>(baseAmount) * CBBountyLevelScale(game) * sys.WornPerk().bountyMult / 50.0) * 50);
   let book = CBPayoutBook.Get(game);
   if amount <= 0 || !CBBountiesOn() || !IsDefined(book) {
     return;

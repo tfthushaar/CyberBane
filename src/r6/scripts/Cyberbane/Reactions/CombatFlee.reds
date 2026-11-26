@@ -53,6 +53,9 @@ public func CBSparedCheck(sys: ref<CyberbaneSystem>, game: GameInstance, puppet:
   }
 
   puppet.cbSparedLogged = true;
+  if puppet.cbHelplessAt <= 0.0 {
+    puppet.cbHelplessAt = CBSimNow(game);
+  }
   // Classified now, scored later.
   let mercy: ref<CBKillInfo>;
   if puppet.cbDamagedByPlayer {

@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.7.10.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.8.0.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -110,8 +110,8 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 - **Home ground (2.7.1).** The building around each of your apartments counts as home: the lobby, the corridors and the
   car park. Nobody Cyberbane sends comes for you there, people already looking for you don't find you there, and no
   bagmen, gang events or street fights start there. A fight that followed you in carries on. Cyberbane learns each home
-  the first time you are inside it or sleep there. **Home ground** under **How often they come** sets it, and can let a
-  gang at Vendetta through.
+  the first time you are inside it or sleep there; a house from another mod you mark yourself (see Settings). **Home
+  ground** under **How often they come** sets it, and can let a gang at Vendetta through.
 - **A moment of peace (2.7.1).** After any fight, everybody rests: no Rival, crew or apex squad is lined up until the
   breather is over, and **Minutes between encounters** now goes up to 120. A night in your own bed buys a few quiet
   hours as well.
@@ -331,6 +331,16 @@ at the top of the screen, and map markers. The pages after it go deeper, one sub
 - **Crew jobs, Rivals' chrome and strongholds:** **Crew jobs and the kitty** and **Challenges to your crew** are under
   **Your crew**, **Goods in stolen bags** under **Gang life**, and **Signature chrome** and **Strongholds** under
   **Rivals**. All are on by default.
+- **A house from another mod:** stand inside it and turn on **Make where I stand a home** under **How often they
+  come**. It becomes home ground like your apartments. **Forget the home I stand in** undoes it. Turn the switch off
+  again before you use it somewhere else.
+- **Playing with an economy mod:** **How much Cyberbane pays**, under **Reputation and money**, scales every eddie
+  Cyberbane gives you: bounties, contracts, jobs, tribute and the cash its people carry.
+- **Conduct with quickhacks, burns and poison:** a burn, a poison or a shock you started never costs Conduct when it
+  finishes someone you put down or who gave up. **Shooting someone who gave up costs Conduct**, under **Reputation and
+  money**, switches off the cost of finishing them on purpose.
+- **Fewer notes from street talk:** **Say why someone won't talk**, under **Street talk**, stops the short message about
+  why somebody won't talk to you. It never shows during the game's own conversations.
 - **Fewer messages:** **How much you hear**, on the first page, spaces out the street's chatter (word going round and
   lines overheard). Warnings, demands, offers, your crew and answers to what you did always come through.
 - **Start over:** **Reset all Cyberbane data** under **Advanced** (or Start over on the Hub's History

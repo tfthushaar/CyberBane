@@ -495,7 +495,8 @@ func CBCrewBagResolve(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
   let label = CBFactionLabel(gang);
   let where = CBGangHomeDistrict(sys, game, gang);
   if RandF() < odds {
-    let take = CBConfig.CrewBagTakeBase() + CBConfig.CrewBagTakePerRank() * CBCrewRankOf(game, m) + RandRange(0, CBConfig.CrewBagTakeBase());
+    let take = CBReward(CBConfig.CrewBagTakeBase() + CBConfig.CrewBagTakePerRank() * CBCrewRankOf(game, m)
+                        + RandRange(0, CBConfig.CrewBagTakeBase()));
     let kept = RoundF(Cast<Float>(take) * (1.0 - CBConfig.CrewBagMemberShare()));
     if IsDefined(jb) {
       jb.AddKitty(kept);

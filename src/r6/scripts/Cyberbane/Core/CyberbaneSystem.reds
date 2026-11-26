@@ -992,6 +992,18 @@ public class CyberbaneSystem extends ScriptableSystem {
       this.ScheduleFastTick();
       return;
     }
+    // A home marked or forgotten in Mod Settings, where V stands. After the check above, so it waits out a braindance.
+    let homeAsk = IsDefined(rtReset) ? rtReset.TakeHomeRequest(this.m_playthroughId) : 0;
+    if homeAsk > 0 {
+      let homes = CBHomeBook.Get(game);
+      if IsDefined(homes) {
+        if homeAsk == 1 {
+          homes.MarkHere(game);
+        } else {
+          homes.ForgetHere(game);
+        }
+      }
+    }
     // A death on record from another save of this playthrough (StartSession). After the check above:
     // only V's own world has V's killer in it.
     if this.m_ledgerDue {

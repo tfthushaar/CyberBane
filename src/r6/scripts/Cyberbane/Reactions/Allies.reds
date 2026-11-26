@@ -475,7 +475,7 @@ func CBHandOverBuyer(sys: ref<CyberbaneSystem>, game: GameInstance, faction: CNa
 }
 
 func CBRansomAsk(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBook>, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
-  let amount = Max(500, RoundF(CBConfig.RansomBase() * CBLootLevelScale(game) / 100.0) * 100);
+  let amount = CBReward(Max(500, RoundF(CBConfig.RansomBase() * CBLootLevelScale(game) / 100.0) * 100));
   war.ransomNpc = t.npc;
   war.ransomGang = t.faction;
   war.ransomAmount = amount;

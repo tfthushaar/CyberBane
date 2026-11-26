@@ -897,7 +897,7 @@ public func CBCorpInterestRoll(sys: ref<CyberbaneSystem>, game: GameInstance, da
   if Equals(target, n"") {
     return;
   }
-  let pay = CBBountyRound(Cast<Float>(CBConfig.CorpContractPay()) * CBLootLevelScale(game));
+  let pay = CBReward(CBBountyRound(Cast<Float>(CBConfig.CorpLeaderContractPay()) * CBLootLevelScale(game)));
   book.SetCorp(StringToName(NameToString(corp) + ":" + NameToString(target)), now);
   CBFileLog(sys, n"CorpOffer", now, CBEventDistrict(sys, game), target, Cast<Float>(pay));
   CBPhoneSendTinted(game, CBBountyContact(corp),
@@ -912,7 +912,7 @@ func CBCorpContractSlain(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
   let corp = CBCorpContractCorp(book);
   let player = GetPlayer(game);
   let ts = GameInstance.GetTransactionSystem(game);
-  let pay = CBBountyRound(Cast<Float>(CBConfig.CorpContractPay()) * CBLootLevelScale(game));
+  let pay = CBReward(CBBountyRound(Cast<Float>(CBConfig.CorpLeaderContractPay()) * CBLootLevelScale(game)));
   // Done: no target left, the week still counts. "Arasaka:" rather than "Arasaka", which is what a warning leaves, so a
   // contract they put out on V later does not open with "We told you to stop" to a merc who did their job for them.
   book.SetCorp(StringToName(NameToString(corp) + ":"), book.CorpAt());
@@ -922,7 +922,7 @@ func CBCorpContractSlain(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
   if !CBReputationFrozen() {
     let fs = sys.EnsureFaction(corp);
     if IsDefined(fs) {
-      fs.standing = ClampF(fs.standing + CBConfig.CorpContractStanding(), -100.0, 100.0);
+      fs.standing = ClampF(fs.standing + CBConfig.CorpLeaderContractStanding(), -100.0, 100.0);
     }
   }
   CBFileLog(sys, n"CorpContractDone", CBGameSeconds(game), CBEventDistrict(sys, game), corp, Cast<Float>(pay));

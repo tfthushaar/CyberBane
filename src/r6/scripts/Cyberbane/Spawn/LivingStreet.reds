@@ -538,7 +538,7 @@ public class CBStreetLife {
   }
 
   private func Robbed(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-    let take = CBConfig.BagmanTakeBase() + RandRange(0, CBConfig.BagmanTakeBase() + 1);
+    let take = CBReward(CBConfig.BagmanTakeBase() + RandRange(0, CBConfig.BagmanTakeBase() + 1));
     // Now and then it is the gang's goods instead of cash (Reactions/CrewJobs.reds). Taken quietly (the bagman only
     // knocked out, and no fight on) the gang has to hear of it first.
     let bagman = GameInstance.FindEntityByID(game, this.m_bagBody) as ScriptedPuppet;
@@ -762,8 +762,8 @@ public class CBStreetLife {
     if !TDBID.IsValid(record) {
       return;
     }
-    // No way in to the place any more (2.7.10, Spawn/StreetStories.reds, CBDropWayIn): they wait just outside instead,
-    // and the pin moves with them. Placed only where V can walk, they were never placed at all, and the favour ran out.
+    // No way in to the place (Spawn/StreetStories.reds, CBDropWayIn): they wait just outside instead, and the pin moves
+    // with them.
     let outside: Vector4;
     if CBDropWayIn(sys, game, player, center, outside) {
       center = outside;
@@ -939,6 +939,7 @@ public class CBStreetLife {
     if this.m_favKind == 2 {
       pay += CBConfig.FavourPay();   // the debt, less their cut, for a trip across town
     }
+    pay = CBReward(pay);
     let beaten = this.m_favKind == 2 && this.m_favFight == 2;
     CBStreetGiveMoney(game, pay);
     CBTalkWarm(sys, game, faction, CBConfig.FavourWarmth(), CBConfig.PostureAllied() - 1.0);
@@ -1008,7 +1009,7 @@ public class CBStreetLife {
     this.m_favTarget = null;
     this.m_favChain = 0;
     this.m_favUntil = now + CBConfig.CorpContractLifeTicks();
-    this.m_contractPay = CBConfig.CorpContractPay() + RandRange(0, CBConfig.CorpContractPay() / 2 + 1);
+    this.m_contractPay = CBReward(CBConfig.CorpWorkPay() + RandRange(0, CBConfig.CorpWorkPay() / 2 + 1));
     let place = NotEquals(where, n"") && NotEquals(where, sys.GetCurrentDistrict()) ? CBDistrictLabel(where) : CBT(n"Cyberbane-Allies-AFewBlocksOver");
     this.FavourPin(game, at, CBTf(n"Cyberbane-Contracts-Pin", [CBFactionLabel(client), CBFactionLabel(mark)]));
     this.RestGang(game, client);
@@ -1166,7 +1167,7 @@ public class CBStreetLife {
     let client = this.m_favFaction;
     let pay = this.m_contractPay;
     CBStreetGiveMoney(game, pay);
-    CBCreditContract(sys, client, CBConfig.CorpContractStanding());
+    CBCreditContract(sys, client, CBConfig.CorpWorkStanding());
     CBTalkSlight(sys, game, this.m_favMark, CBConfig.CorpContractMarkSlight());
     let mult = 1.0;
     let rt = CyberbaneRuntime.Get();
@@ -1313,6 +1314,7 @@ public class CBStreetLife {
     CBTalkHold(npc, CBConfig.SurrenderHoldSeconds());
     npc.cbSurrendered = true;
     npc.cbGaveUp = true;
+    npc.cbHelplessAt = CBSimNow(game);
     CBSayVoiced(sys, npc, n"fear_beg");   // in their own voice (Narrative/Telling.reds, [79])
     npc.SetScannerDirty(true);   // the scanner says so (UI/ScannerName.reds)
     ArrayPush(this.m_gaveUp, npc);

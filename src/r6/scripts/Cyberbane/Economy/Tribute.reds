@@ -64,7 +64,7 @@ func CBPayTribute(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<Gam
   let floorFear = CBConfig.TributeFearThreshold();
   let span = MaxF(100.0 - floorFear, 1.0);
   let raw = (500.0 + 2500.0 * ClampF((ff - floorFear) / span, 0.0, 1.0)) * tributeMult * sys.WornPerk().tributeMult;
-  let amount = RoundF(raw / 50.0) * 50;
+  let amount = CBReward(RoundF(raw / 50.0) * 50);
   if amount <= 0 {
     return;
   }

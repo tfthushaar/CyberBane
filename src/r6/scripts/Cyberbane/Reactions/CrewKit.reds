@@ -1698,6 +1698,7 @@ func CBCrewEarnTick(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
       }
     }
   }
+  total = CBReward(total);
   if total <= 0 {
     return;
   }

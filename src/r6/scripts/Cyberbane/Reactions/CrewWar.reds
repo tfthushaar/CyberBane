@@ -422,8 +422,8 @@ func CBCrewWarApply(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
       ArrayPush(hurtNames, weakest.id);
     }
     // The spoils: what their corners held, the kitty's; more when V was out there with them.
-    let spoils = RoundF(CBConfig.WarSpoilsPerMember() * Cast<Float>(n) * (decisive ? 1.0 : 0.6) * (0.5 + strengthBefore / 100.0)
-                        * (1.0 + CBCrewWarVHelp(game, gang, false)));
+    let spoils = CBReward(RoundF(CBConfig.WarSpoilsPerMember() * Cast<Float>(n) * (decisive ? 1.0 : 0.6) * (0.5 + strengthBefore / 100.0)
+                        * (1.0 + CBCrewWarVHelp(game, gang, false))));
     let jb = CBCrewJobBook.Get(game);
     if IsDefined(jb) && spoils > 0 {
       jb.AddKitty(spoils);

@@ -373,7 +373,7 @@ func CBStrongholdRoll(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
   }
 }
 
-// The base a hold stood on has no way in any more (2.7.10, CBStrongholdPlace): the Rival takes another, by the daily
+// The base a hold stood on has no way in (CBStrongholdPlace): the Rival takes another, by the daily
 // roll's rules (a base not already held, on streets their gang holds, not round V's homes), on a fresh clock, with the
 // pin moved and word sent. With nowhere else, the stronghold ends and the street says so.
 func CBStrongholdReroll(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBBaseBook>, h: Int32, r: ref<CBRival>,
@@ -576,12 +576,11 @@ func CBStrongholdPlace(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
     }
     return;
   }
-  // A way in from where V is (2.7.10). A base is the pin of a gig V finished, and the game locks many a gig's building once
-  // it is done, so the ground inside is still there behind a door nobody can open: the garrison stood where V could not
-  // go, and the stronghold could never be cleared. A locked door is no path for a person (the game opens a door to
-  // somebody only when it is unlocked), so a walk from V to the base is the test. Far off, a long route can fail for
-  // reasons of its own (not loaded, too long to search), so it only counts once V is near; twice there and the base is
-  // dropped, and the Rival sets up at another one (CBStrongholdReroll).
+  // A way in from where V is. A base is the pin of a gig V finished, and the game locks many a gig's building once it is
+  // done, leaving the ground inside behind a door nobody can open. A locked door is no path for a person (the game
+  // opens a door to somebody only when it is unlocked), so a walk from V to the base is the test. Far off, a long route
+  // can fail for reasons of its own (not loaded, too long to search), so it only counts once V is near; twice there and
+  // the base is dropped, and the Rival sets up at another one (CBStrongholdReroll).
   let vGround: Vector4;
   if !CBNavPointUnder(game, player.GetWorldPosition(), vGround) {
     book.nextTryTick = sys.GetTickCount() + 6;   // V is off the walkable ground (a car roof, a ledge): ask again shortly
@@ -648,9 +647,10 @@ func CBStrongholdLeave(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<
 func CBStrongholdCleared(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName, place: String) -> Void {
   CBWeakenGang(sys, game, gang, CBConfig.StrongholdGangLoss());
   CBTurfNoteLocalLoss(sys, game, gang, CBConfig.StrongholdTurfLoss());
-  CBStreetGiveMoney(game, CBConfig.StrongholdPay());
-  CBFileLog(sys, n"StrongholdCleared", CBGameSeconds(game), CBEventDistrict(sys, game), gang, Cast<Float>(CBConfig.StrongholdPay()));
-  CBSystemNote(game, CBTf(n"Cyberbane-Strongholds-Cleared", [place, CBFactionLabel(gang), s"\(CBConfig.StrongholdPay())"]), 8.0);
+  let pay = CBReward(CBConfig.StrongholdPay());
+  CBStreetGiveMoney(game, pay);
+  CBFileLog(sys, n"StrongholdCleared", CBGameSeconds(game), CBEventDistrict(sys, game), gang, Cast<Float>(pay));
+  CBSystemNote(game, CBTf(n"Cyberbane-Strongholds-Cleared", [place, CBFactionLabel(gang), s"\(pay)"]), 8.0);
   CBLog.Info(n"Rivals", s"V cleared a stronghold of \(NameToString(gang)).");
 }
 

@@ -76,6 +76,8 @@ public class CBHomeBook extends ScriptableSystem {
   private let m_stepHome: Int32;
   private let m_stepFrom: Vector4;
   private let m_stepTick: Int32;
+  // A flat forgotten while V stood in it, by kind: not learned again until V has left it.
+  private let m_forgotKind: Int32;
 
   public static func Get(game: GameInstance) -> ref<CBHomeBook> {
     let c = GameInstance.GetScriptableSystemsContainer(game);
@@ -89,6 +91,7 @@ public class CBHomeBook extends ScriptableSystem {
     this.m_restedRead = false;
     this.m_rested = false;
     this.m_stepHome = 0;
+    this.m_forgotKind = 0;
   }
 
   public func Count() -> Int32 {
@@ -190,6 +193,77 @@ public class CBHomeBook extends ScriptableSystem {
     ArrayResize(this.m_parkZ, n);
   }
 
+  // A home out of the book, from every list. The watch posted there goes on its next tick, as when V walks off home ground.
+  private func Forget(i: Int32) -> Void {
+    let n = this.Count();
+    if i < 0 || i >= n {
+      return;
+    }
+    this.TrimTo(n);
+    ArrayErase(this.m_kind, i);
+    ArrayErase(this.m_x, i);
+    ArrayErase(this.m_y, i);
+    ArrayErase(this.m_z, i);
+    ArrayErase(this.m_doorX, i);
+    ArrayErase(this.m_doorY, i);
+    ArrayErase(this.m_doorZ, i);
+    ArrayErase(this.m_parkX, i);
+    ArrayErase(this.m_parkY, i);
+    ArrayErase(this.m_parkZ, i);
+    this.m_here = 0;
+    this.m_inFlat = 0;
+    this.m_stepHome = 0;
+  }
+
+  // Make where I stand a home (Mod Settings): a house the street can't tell is V's, like one from another mod.
+  public func MarkHere(game: GameInstance) -> Void {
+    let player = GetPlayer(game);
+    if !IsDefined(player) {
+      return;
+    }
+    let at = player.GetWorldPosition();
+    if this.HomeAt(at) >= 0 {
+      CBMenuNote(game, CBT(n"Cyberbane-Home-AlreadyHome"), 5.0);
+      return;
+    }
+    let kind = CBHomeKindOf(CBSubDistrictName(game));
+    let made = this.Learn(kind, at);
+    if made < 0 {
+      CBMenuNote(game, CBT(n"Cyberbane-Home-BookFull"), 6.0);
+      return;
+    }
+    this.m_forgotKind = 0;
+    this.m_here = made + 1;
+    CBLog.Info(n"Spawn", s"A home marked where V stands (kind \(kind)): \(this.Count()) known.");
+    CBMenuNote(game, CBT(n"Cyberbane-Home-Marked"), 6.0);
+  }
+
+  // Forget the home I stand in (Mod Settings): every home whose ground V is on, so V is off home ground after it.
+  public func ForgetHere(game: GameInstance) -> Void {
+    let player = GetPlayer(game);
+    if !IsDefined(player) {
+      return;
+    }
+    let at = player.GetWorldPosition();
+    let flat = CBHomeKindOf(CBSubDistrictName(game));
+    let gone = 0;
+    let i = this.HomeAt(at);
+    while i >= 0 && gone < CBConfig.HomeMax() {
+      if flat > 0 && this.m_kind[i] == flat {
+        this.m_forgotKind = flat;
+      }
+      this.Forget(i);
+      gone += 1;
+      i = this.HomeAt(at);
+    }
+    if gone == 0 {
+      CBMenuNote(game, CBT(n"Cyberbane-Home-NotAHome"), 5.0);
+      return;
+    }
+    CBLog.Info(n"Spawn", s"V forgot the home they stand in: \(this.Count()) known.");
+    CBMenuNote(game, CBT(n"Cyberbane-Home-Forgotten"), 6.0);
+  }
+
   // The crew's posts at a home (Reactions/CrewHome.reds); all zero is not learned yet.
   public func DoorAt(i: Int32) -> Vector4 {
     return i >= 0 && i < this.Count() ? new Vector4(this.m_doorX[i], this.m_doorY[i], this.m_doorZ[i], 1.0)
@@ -230,7 +304,10 @@ public class CBHomeBook extends ScriptableSystem {
     // to its door.
     if !heavyStreaming && (tick % 10 == 4 || (this.m_inFlat > 0 && tick % 2 == 0)) {
       let kind = CBHomeKindOf(CBSubDistrictName(game));
-      if kind > 0 {
+      if kind != this.m_forgotKind {
+        this.m_forgotKind = 0;
+      }
+      if kind > 0 && kind != this.m_forgotKind {
         let known = this.HomeOfKind(kind);
         if known < 0 {
           known = this.Learn(kind, at);

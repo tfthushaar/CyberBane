@@ -437,6 +437,12 @@ public func CBStreetTalkOn() -> Bool {
   return IsDefined(rt) && rt.IsEnabled() && (!rt.HasSettings() || rt.GetSettings().streetTalk);
 }
 
+// "Say why someone won't talk" in Mod Settings: the message V gets for a reason V can't see (Explain).
+public func CBTalkExplainOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().talkExplain;
+}
+
 public func CBShakedownsOn() -> Bool {
   let rt = CyberbaneRuntime.Get();
   return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().talkShakedowns;
@@ -637,6 +643,8 @@ public class CBStreetTalk {
   private let m_whyLogAt: Float;
   // When V was last told why somebody would not talk (Explain), in game time. 0 = not yet this session.
   private let m_explainedAt: Float;
+  // V has been told once this session that story people are left alone: it is the same every time.
+  private let m_storyExplained: Bool;
 
   // When the targeting query may next be asked (LookedAt).
   private let m_queryIn: Float;
@@ -688,6 +696,7 @@ public class CBStreetTalk {
     this.m_whyLogged = "";
     this.m_whyLogAt = 0.0;
     this.m_explainedAt = 0.0;
+    this.m_storyExplained = false;
     // Talk bubbles from before a load are the old world's (Reactions/StreetIntel.reds).
     this.GetIntel().ClearBubbles(game);
     // Nor is a list held through the game's clears.
@@ -1844,7 +1853,7 @@ public class CBStreetTalk {
     if !IsDefined(npc) || !IsDefined(player) || StrLen(words) == 0 || !dwelled || CBPlayerAiming(game)
        || (player.IsInCombat() && !Equals(why, CBTalkWhyVInCombat()))
        || Vector4.Distance(player.GetWorldPosition(), npc.GetWorldPosition()) > CBConfig.TalkRange()
-       || (!this.m_noteUp && CBNativePromptKind(game) != CBPromptNone()) {
+       || (!this.m_noteUp && CBNativePromptKind(game) != CBPromptNone()) || CBStoryTalking(game, npc) {
       this.HideNote(game);
       return;
     }
@@ -1871,13 +1880,23 @@ public class CBStreetTalk {
 
   private func Explain(game: GameInstance, npc: ref<ScriptedPuppet>, why: String) -> Void {
     // Where messages go set to Off is silence, and this is a message. Nor when the greyed prompt says it already.
-    if !IsDefined(npc) || npc.cbTalkExplained || this.m_whyFor < CBConfig.TalkDwell() * 2.0 || !CBMessagesOn() || this.m_noteUp {
+    if !IsDefined(npc) || npc.cbTalkExplained || this.m_whyFor < CBConfig.TalkDwell() * 2.0 || !CBMessagesOn() || this.m_noteUp
+       || !CBTalkExplainOn() {
+      return;
+    }
+    let story = Equals(why, CBTalkWhyStory());
+    if story && this.m_storyExplained {
       return;
     }
     let line = CBTalkWhyHint(why);
     let player = GetPlayer(game);
     if StrLen(line) == 0 || !IsDefined(player) || IsDefined(GameObject.GetActiveWeapon(player))
        || Vector4.Distance(player.GetWorldPosition(), npc.GetWorldPosition()) > CBConfig.TalkRange() {
+      return;
+    }
+    // Never over the game's own moment: its dialogue, its prompt, or a scene this person is in. Asked last, since it
+    // reads the scene system.
+    if (!Equals(why, CBTalkWhyGamePrompt()) && CBNativePromptKind(game) != CBPromptNone()) || CBStoryTalking(game, npc) {
       return;
     }
     let ts = GameInstance.GetTimeSystem(game);
@@ -1887,6 +1906,9 @@ public class CBStreetTalk {
     }
     npc.cbTalkExplained = true;
     this.m_explainedAt = MaxF(now, 1.0);
+    if story {
+      this.m_storyExplained = true;
+    }
     CBSystemNote(game, line, 5.0);
   }
 
@@ -2676,6 +2698,26 @@ public func CBTalkScreenNote(game: GameInstance) -> String {
   let first = ArraySize(prompt.choices) > 0 ? prompt.choices[0].localizedName : "";
   let loot = FromVariant<LootData>(bb.GetVariant(defs.LootData));
   return s"lists [\(lists)], active list \(bb.GetInt(defs.ActiveChoiceHubID)); game prompt \(prompt.active ? "up" : "down") id \(prompt.id) with \(ArraySize(prompt.choices)) \"\(first)\"; loot \(loot.isActive)";
+}
+
+// The game's story is talking: V or this person is in one of its dialogues, or this person is in one of its scenes
+// (sceneSystem.script; the game asks the same before it lets a conversation be skipped). Between two choices of a quest
+// conversation no list is on screen, and only this tells it is still on.
+public func CBStoryTalking(game: GameInstance, npc: wref<ScriptedPuppet>) -> Bool {
+  let scenes = GameInstance.GetSceneSystem(game);
+  let si = IsDefined(scenes) ? scenes.GetScriptInterface() : null;
+  if !IsDefined(si) {
+    return false;
+  }
+  let player = GetPlayer(game);
+  if IsDefined(player) && si.IsEntityInDialogue(player.GetEntityID()) {
+    return true;
+  }
+  if !IsDefined(npc) {
+    return false;
+  }
+  let id = npc.GetEntityID();
+  return si.IsEntityInDialogue(id) || si.IsEntityInScene(id);
 }
 
 // Is one of the game's dialogues on screen (a hub that is not street talk's)? Texts wait for it.
@@ -3737,8 +3779,8 @@ func CBTalkShakedown(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
     return 0;
   }
   let level = IsDefined(stats) ? stats.GetStatValue(Cast<StatsObjectID>(player.GetEntityID()), gamedataStatType.Level) : 1.0;
-  let amount = Min(CBConfig.TalkTaxMax(), RoundF(CBConfig.TalkTaxBase() + level * CBConfig.TalkTaxPerLevel()
-                                                * RandRangeF(0.7, 1.3)));
+  let amount = CBReward(Min(CBConfig.TalkTaxMax(), RoundF(CBConfig.TalkTaxBase() + level * CBConfig.TalkTaxPerLevel()
+                                                * RandRangeF(0.7, 1.3))));
   if amount <= 0 {
     return 0;
   }

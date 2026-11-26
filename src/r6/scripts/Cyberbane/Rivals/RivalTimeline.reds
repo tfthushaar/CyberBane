@@ -222,7 +222,7 @@ public func CBRivalTimelineTick(sys: ref<CyberbaneSystem>, game: GameInstance) -
   if !book.cardPinned && CBWorldStable(game) {
     book.cardPinned = CBPinPlace(game, book.CardAt(), CBTf(n"Cyberbane-RivalTimeline-CardPin", [CBRivalDisplayName(sys.GetContent(), r)]), book.cardPin);
   }
-  // No way in to where they left it any more (2.7.10, Spawn/StreetStories.reds, CBDropWayIn): it is just outside instead.
+  // No way in to where they left it (Spawn/StreetStories.reds, CBDropWayIn): it goes just outside instead.
   let outside: Vector4;
   if CBWorldStable(game) && CBDropWayIn(sys, game, player, book.CardAt(), outside) {
     book.SetCard(book.CardRival(), outside, book.CardUntil(), book.CardDistrict());
@@ -237,7 +237,7 @@ public func CBRivalTimelineTick(sys: ref<CyberbaneSystem>, game: GameInstance) -
     return;
   }
   // Found: their mark, and what they left.
-  let pay = CBConfig.RivalCardEddies() * Max(1, r.rank);
+  let pay = CBReward(CBConfig.RivalCardEddies() * Max(1, r.rank));
   CBStreetGiveMoney(game, pay);
   CBSystemNote(game, CBTf(n"Cyberbane-RivalTimeline-CardFound", [CBRivalNickname(sys, r), s"\(pay)"]), 8.0);
   if CBMessagesOn() {

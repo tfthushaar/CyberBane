@@ -1202,7 +1202,7 @@ public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: re
     return;
   }
   if Equals(ev.kind, CBEvRacket()) {
-    let take = CBConfig.RacketTakeBase() + RandRange(0, CBConfig.RacketTakeBase() + 1);
+    let take = CBReward(CBConfig.RacketTakeBase() + RandRange(0, CBConfig.RacketTakeBase() + 1));
     CBStreetGiveMoney(game, take);
     CBWarSpend(game, ev.a, Cast<Float>(take) * CBConfig.BagmanChestShare());
     CBTalkSlight(sys, game, ev.a, CBConfig.BagmanStandingLoss());
@@ -1775,7 +1775,7 @@ public func CBFightOver(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<C
     if ev.vSide > 0 {
       let mine = ev.vSide == 1 ? ev.a : ev.b;
       if Equals(mine, winner) {
-        let pay = CBConfig.FrontLineSidePay();
+        let pay = CBReward(CBConfig.FrontLineSidePay());
         CBStreetGiveMoney(game, pay);
         CBTalkWarm(sys, game, mine, CBConfig.FrontLineSideWarmth(), CBConfig.PostureAllied() + 1.0);
         CBTalkSlight(sys, game, loser, CBConfig.FrontLineSideCost());

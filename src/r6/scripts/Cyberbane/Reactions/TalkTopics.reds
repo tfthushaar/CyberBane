@@ -802,7 +802,7 @@ public func CBTalkFanGift(sys: ref<CyberbaneSystem>, game: GameInstance, player:
   }
   // tally.tips counts a friend's tips for a gang; for people of no gang, whom no gang tips through, it
   // counts the drinks.
-  let amount = RoundF((CBConfig.TalkFanGiftBase() + score.GetRenown() * CBConfig.TalkFanGiftPerRenown()) / 10.0) * 10;
+  let amount = CBReward(RoundF((CBConfig.TalkFanGiftBase() + score.GetRenown() * CBConfig.TalkFanGiftPerRenown()) / 10.0) * 10);
   if amount <= 0 {
     return 0;
   }

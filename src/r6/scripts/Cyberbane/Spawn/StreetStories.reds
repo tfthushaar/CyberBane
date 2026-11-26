@@ -50,11 +50,67 @@ public func CBGangDropPlace(sys: ref<CyberbaneSystem>, game: GameInstance, playe
   return false;
 }
 
-// A place V was sent to and cannot walk into (2.7.10): a place the street remembers can be inside a building the game has
-// locked since (a gig's, once the gig is done), and the debtor, the ransom or the calling card waited there for a V who
-// could never reach it. Asked once V is within DropWayInCheck of it, where a walk can be trusted (Rivals/Strongholds.reds
-// tests the same way). True, with `moved`, when there is no way in from where V stands and a spot just outside is open
-// ground V can walk to; false when the place is fine, V is still far, off the walkable ground, or nowhere better is found.
+// What CBDropWayIn found for one place: asked from where, when (sim seconds), and whether it had to move.
+public class CBWayInAnswer {
+  public let at: Vector4;
+  public let from: Vector4;
+  public let when: Float;
+  public let blocked: Bool;
+  public let spot: Vector4;
+}
+
+// The answer for this place while it still holds: V near where it was asked, and not long ago.
+func CBWayInRecall(at: Vector4, ppos: Vector4, now: Float) -> ref<CBWayInAnswer> {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) {
+    return null;
+  }
+  for a in rt.wayIn {
+    if IsDefined(a) && Vector4.Distance(a.at, at) < 1.0 && now >= a.when && now - a.when < CBConfig.DropWayInReaskSeconds()
+       && Vector4.Distance(a.from, ppos) < CBConfig.DropWayInReaskMove() {
+      return a;
+    }
+  }
+  return null;
+}
+
+// Kept in the place's own slot, else a free one, else over the oldest of four.
+func CBWayInRemember(at: Vector4, ppos: Vector4, now: Float, blocked: Bool, spot: Vector4) -> Void {
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(rt) {
+    return;
+  }
+  let a = new CBWayInAnswer();
+  a.at = at;
+  a.from = ppos;
+  a.when = now;
+  a.blocked = blocked;
+  a.spot = spot;
+  let slot = -1;
+  let oldest = 0;
+  let i = 0;
+  while i < ArraySize(rt.wayIn) {
+    let old = rt.wayIn[i];
+    if !IsDefined(old) || Vector4.Distance(old.at, at) < 1.0 {
+      slot = i;
+    }
+    if IsDefined(old) && IsDefined(rt.wayIn[oldest]) && old.when < rt.wayIn[oldest].when {
+      oldest = i;
+    }
+    i += 1;
+  }
+  if slot < 0 && ArraySize(rt.wayIn) < 4 {
+    ArrayPush(rt.wayIn, a);
+    return;
+  }
+  rt.wayIn[slot >= 0 ? slot : oldest] = a;
+}
+
+// A place V was sent to and cannot walk into: a place the street remembers can be inside a building the game has locked
+// since (a gig's, once the gig is done). Asked once V is within DropWayInCheck of it, where a walk can be trusted
+// (Rivals/Strongholds.reds tests the same way), and again only once V has moved a few steps or a little time has passed.
+// True, with `moved`, when there is no way in from where V stands and a spot just outside is open ground V can walk to;
+// false when the place is fine, V is still far or off the walkable ground, or nowhere better is found.
 public func CBDropWayIn(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, at: Vector4,
                         out moved: Vector4) -> Bool {
   if !IsDefined(sys) || !IsDefined(player) || (at.X == 0.0 && at.Y == 0.0) {
@@ -63,6 +119,14 @@ public func CBDropWayIn(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   let ppos = player.GetWorldPosition();
   if Vector4.Distance(ppos, at) > CBConfig.DropWayInCheck() || IsDefined(player.GetMountedVehicle()) {
     return false;
+  }
+  let now = CBSimNow(game);
+  let known = CBWayInRecall(at, ppos, now);
+  if IsDefined(known) {
+    if known.blocked {
+      moved = known.spot;
+    }
+    return known.blocked;
   }
   let vGround: Vector4;
   if !CBNavPointUnder(game, ppos, vGround) {
@@ -73,7 +137,9 @@ public func CBDropWayIn(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
   if CBNavPointUnder(game, at, onMesh) {
     target = onMesh;
   }
+  let none: Vector4;
   if CBPointReachable(game, vGround, target) {
+    CBWayInRemember(at, ppos, now, false, none);
     return false;
   }
   // Rings round the place, nearest first: the first spot of open ground V can walk to, usable as any Rival's place is.
@@ -90,11 +156,13 @@ public func CBDropWayIn(sys: ref<CyberbaneSystem>, game: GameInstance, player: r
          && CBSettleOnGround(game, snapped, spot) && !CBPointCovered(game, spot)
          && CBLairPointUsable(sys, game, spot) && CBPointReachable(game, vGround, spot) {
         moved = spot;
+        CBWayInRemember(at, ppos, now, true, spot);
         return true;
       }
     }
     ring += 1;
   }
+  CBWayInRemember(at, ppos, now, false, none);
   return false;
 }
 
@@ -362,7 +430,7 @@ public func CBRansomDropTick(sys: ref<CyberbaneSystem>, game: GameInstance, war:
     CBRansomDropEnd(game, war);
     return;
   }
-  // No way in to the drop any more (2.7.10, CBDropWayIn): the bag is left just outside, and the pin moves with it.
+  // No way in to the drop (CBDropWayIn): the bag is left just outside, and the pin moves with it.
   let outside: Vector4;
   if CBDropWayIn(sys, game, player, war.dropAt, outside) {
     war.dropAt = outside;

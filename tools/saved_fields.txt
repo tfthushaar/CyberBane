@@ -1,0 +1,612 @@
+# Every class with saved fields, and its fields in order, as the code had them when this was last written.
+# Written by tools/check_saved_fields.ps1 -Update. A change to a class listed here wipes its data in old saves.
+
+class CBApiBook
+  m_epoch: Int32
+
+class CBLedgerEntry
+  id: Int32
+  playthroughId: CName
+  at: Float
+  district: CName
+  killerRecordID: TweakDBID
+  killerAppearance: CName
+  killerFaction: CName
+  killerRivalId: Int32
+  method: Int32
+
+class CBForgetNote
+  playthroughId: CName
+  rivalUpTo: Int32
+  ledgerUpTo: Int32
+
+class CBForgottenRival
+  playthroughId: CName
+  rivalId: Int32
+  recordID: TweakDBID
+
+class CBSighting
+  playthroughId: CName
+  rivalId: Int32
+  recordID: TweakDBID
+  x: Float
+  y: Float
+  z: Float
+  district: CName
+  seenAt: Float
+  tippedAt: Float
+  tipFaction: CName
+
+class CBGangPower
+  playthroughId: CName
+  faction: CName
+  strength: Float
+  at: Float
+
+class CBTalkTally
+  playthroughId: CName
+  faction: CName
+  day: Int32
+  warmth: Float
+  slight: Float
+  fear: Float
+  conduct: Float
+  taxes: Int32
+  leaks: Int32
+  tips: Int32
+
+class CBPlaythroughBirth
+  playthroughId: CName
+  bornAt: Float
+  lifepath: Int32
+  splitFrom: CName
+  formerBornAt: Float
+  legacyClaim: Bool
+  disputed: Bool
+
+class CyberbaneService
+  m_schemaVersion: Int32
+  m_nextLedgerId: Int32
+  m_ledger: array<ref<CBLedgerEntry>>
+  m_forgetNotes: array<ref<CBForgetNote>>
+  m_retiredIds: array<CName>
+  m_sightings: array<ref<CBSighting>>
+  m_gangPower: array<ref<CBGangPower>>
+  m_forgottenRivals: array<ref<CBForgottenRival>>
+  m_births: array<ref<CBPlaythroughBirth>>
+  m_talkTallies: array<ref<CBTalkTally>>
+  m_resetSwitch: Int32
+  m_separateSwitch: Int32
+
+class CyberbaneSystem
+  m_schemaVersion: Int32
+  m_playthroughId: CName
+  m_bootstrapped: Bool
+  m_installedAt: Float
+  m_renownPoints: Float
+  m_killDreadPoints: Float
+  m_deedDreadPoints: Float
+  m_heatPoints: Float
+  m_archetype: array<Float>
+  m_primaryArchetype: Int32
+  m_lastNotifiedTier: Int32
+  m_code: Float
+  m_lastHeatStage: Int32
+  m_lastSlowTickAt: Float
+  m_factions: array<ref<CBFactionState>>
+  m_districts: array<ref<CBDistrictState>>
+  m_deedsDone: array<CName>
+  m_titles: array<CName>
+  m_activeTitle: CName
+  m_stats: ref<CBStats>
+  m_killsByClass: array<Int32>
+  m_rumors: array<ref<CBRumor>>
+  m_nextRumorId: Int32
+  m_rivals: array<ref<CBRival>>
+  m_nextRivalId: Int32
+  m_log: array<ref<CBLogEntry>>
+  m_appliedLedgerIds: array<Int32>
+  m_cooldowns: ref<CBCooldowns>
+  m_peaceDeals: array<ref<CBPeaceDeal>>
+  m_iconicsGiven: array<TweakDBID>
+  m_schedDay: Int32
+  m_slotLane: array<Int32>
+  m_slotAt: array<Float>
+  m_slotEnd: array<Float>
+  m_slotSpent: array<Bool>
+  m_schedRolled: Bool
+  m_laneDayRival: Int32
+  m_laneDaySquad: Int32
+  m_laneDayApex: Int32
+  m_laneSentRival: Int32
+  m_laneSentSquad: Int32
+  m_laneSentApex: Int32
+
+class CBFactionState
+  id: CName
+  standing: Float
+  renown: Float
+  renownPeak: Float
+  kills: Int32
+  brutalKills: Int32
+  officersKilled: Int32
+  bossesKilled: Int32
+  spared: Int32
+  lastIncidentAt: Float
+  vendettaSince: Float
+  lastTributeAt: Float
+  tributes: Int32
+  lastHitSquadAt: Float
+  lastPeaceAt: Float
+  sampleRecord: TweakDBID
+  roleTankRecord: TweakDBID
+  roleAssaultRecord: TweakDBID
+  roleBladeRecord: TweakDBID
+  roleNetrunnerRecord: TweakDBID
+  eliteRecord: TweakDBID
+  apexAtKills: Int32
+  leaderRivalId: Int32
+  lt1RivalId: Int32
+  lt2RivalId: Int32
+  lt3RivalId: Int32
+
+class CBDistrictState
+  id: CName
+  renown: Float
+  renownPeak: Float
+  kills: Int32
+  lethalOrBrutal: Int32
+  quietTakedowns: Int32
+  lastIncidentAt: Float
+
+class CBStats
+  nonLethal: Int32
+  psychosKilled: Int32
+  psychosPacified: Int32
+  massacres: Int32
+  flawless: Int32
+  encounters: Int32
+  deaths: Int32
+  rivalsSlain: Int32
+  rivalsSpared: Int32
+  apexKills: Int32
+  tributeEddies: Int32
+  timesRecognized: Int32
+  maxHeat: Int32
+  quickhackKills: Int32
+  unattributed: Int32
+
+class CBRumor
+  id: Int32
+  kind: CName
+  magnitude: Float
+  origin: CName
+  faction: CName
+  createdAt: Float
+  lastSpreadAt: Float
+  hops: Int32
+  witnessed: Bool
+  reachedMask: Int32
+
+class CBRival
+  id: Int32
+  recordID: TweakDBID
+  appearance: CName
+  faction: CName
+  rank: Int32
+  source: Int32
+  state: Int32
+  firstName: Int32
+  lastName: Int32
+  epithet: Int32
+  traitMask: Int32
+  weaknessMask: Int32
+  scarMask: Int32
+  arrivalCheckTicks: Int32
+  encounters: Int32
+  escapes: Int32
+  killedV: Int32
+  sparedByV: Int32
+  origin: CName
+  createdAt: Float
+  lastSeenAt: Float
+
+class CBLogEntry
+  kind: CName
+  at: Float
+  district: CName
+  faction: CName
+  value: Float
+
+class CBCooldowns
+  lastHitSquadAt: Float
+  lastRivalEncounterAt: Float
+  lastTributeCheckAt: Float
+  lastPromotionAt: Float
+  lastGrapevineAt: Float
+
+class CBPeaceDeal
+  faction: CName
+  at: Float
+  cost: Int32
+
+class CBCrewTurfBook
+  m_foot: array<Float>
+  m_footAt: array<Float>
+  m_day: Int32
+  m_home: CName
+
+class CBLedgerBook
+  m_gang: array<CName>
+  m_guns: array<Float>
+  m_melee: array<Float>
+  m_hacks: array<Float>
+  m_blast: array<Float>
+  m_quiet: array<Float>
+  m_adapt: array<Int32>
+
+class CBStreetBook
+  m_placeKind: array<CName>
+  m_placeGang: array<CName>
+  m_placeDistrict: array<CName>
+  m_placeX: array<Float>
+  m_placeY: array<Float>
+  m_placeZ: array<Float>
+  m_placeAt: array<Float>
+  m_knownKind: array<Int32>
+  m_knownRecord: array<TweakDBID>
+  m_knownSeen: array<Int32>
+  m_knownAt: array<Float>
+  m_watchDistrict: CName
+  m_watchUntil: Float
+  m_watchName: CName
+
+class CBTurfBook
+  m_holders: array<CName>
+  m_since: array<Float>
+  m_from: array<CName>
+  m_challengers: array<CName>
+  m_challengeAt: array<Float>
+  m_pushAt: array<Float>
+  m_lossKeys: array<CName>
+  m_lossValues: array<Float>
+  m_lossAt: array<Float>
+
+class CBWarBook
+  m_gang: array<CName>
+  m_chest: array<Float>
+  m_men: array<Float>
+  m_peaceCut: array<Float>
+  m_haggledAt: array<Float>
+  m_truceWith: array<CName>
+  m_truceUntil: array<Float>
+  m_backed: CName
+  m_backedSince: Float
+  m_cutPaidAt: Float
+  m_ownMask: Int32
+  m_ownPaidAt: Float
+  m_inciteA: CName
+  m_inciteB: CName
+  m_inciteUntil: Float
+  m_protectDue: Float
+  m_protectAmount: Int32
+  m_protectAskedAt: Float
+  m_protectSeen: Float
+  m_favourFor: CName
+  m_favourUntil: Float
+  m_openGang: CName
+  m_openUntil: Float
+  m_oneOfTheirs: CName
+
+class CBCrewMember
+  id: Int32
+  kind: Int32
+  record: TweakDBID
+  look: CName
+  faction: CName
+  rival: Int32
+  seed: Int32
+  loyalty: Int32
+  wins: Int32
+  scars: Int32
+  seat: Int32
+  home: CName
+  hurtUntil: Float
+  calledAt: Float
+  joinedAt: Float
+  killsSeen: Int32
+  warnedDay: Int32
+  lastWhy: Int32
+
+class CBCrewPast
+  id: Int32
+  kind: Int32
+  faction: CName
+  rival: Int32
+  seed: Int32
+  end: Int32
+  at: Float
+  by: Int32
+  district: CName
+
+class CBCrewBook
+  m_members: array<ref<CBCrewMember>>
+  m_past: array<ref<CBCrewPast>>
+  m_nextId: Int32
+  m_cutDueAt: Float
+  m_cutOwed: Int32
+  m_dayDone: Int32
+
+class CBCrewFallen
+  id: Int32
+  kind: Int32
+  faction: CName
+  rival: Int32
+  seed: Int32
+  seat: Int32
+  wins: Int32
+  rank: Int32
+  hadWeapon: Bool
+  weapon: TweakDBID
+  weaponTier: Int32
+  chrome0: TweakDBID
+  chrome1: TweakDBID
+  chrome2: TweakDBID
+  chrome3: TweakDBID
+  trained: Int32
+  spars: Int32
+  cause: Int32
+  gang: CName
+  by: Int32
+  district: CName
+  joinedAt: Float
+  at: Float
+
+class CBCrewBannerBook
+  m_colour: Int32
+  m_standGang: array<CName>
+  m_standValue: array<Int32>
+  m_standDay: Int32
+  m_fallen: array<ref<CBCrewFallen>>
+  m_recruiter: Int32
+
+class CBGuardBook
+  m_members: array<Int32>
+
+class CBArmoryBook
+  m_member: array<Int32>
+  m_item: array<ItemID>
+
+class CBCrewJobBook
+  m_member: array<Int32>
+  m_kind: array<Int32>
+  m_rival: array<Int32>
+  m_gang: array<CName>
+  m_until: array<Float>
+  m_odds: array<Float>
+  m_kitty: Int32
+  m_runners: array<Int32>
+  m_runDue: Float
+  m_chGang: CName
+  m_chUntil: Float
+  m_chNext: Float
+  m_rollDay: Int32
+
+class CBGoodsBook
+  m_gang: array<CName>
+  m_worth: array<Int32>
+  m_how: array<Int32>
+  m_at: array<Float>
+
+class CBCrewKit
+  id: Int32
+  hasWeapon: Bool
+  weapon: ItemID
+  weaponType: Int32
+  weaponTier: Int32
+  chrome0: TweakDBID
+  chrome1: TweakDBID
+  chrome2: TweakDBID
+  chrome3: TweakDBID
+  trained: Int32
+  trainUntil: Float
+  warUntil: Float
+  warOn: CName
+  spars: Int32
+  sparDay: Int32
+  sharpUntil: Float
+  earning: Bool
+
+class CBCrewKitBook
+  m_kits: array<ref<CBCrewKit>>
+  m_name: array<Int32>
+  m_warsWon: Int32
+  m_earnDay: Int32
+
+class CBCrewLifeBook
+  m_killId: array<Int32>
+  m_killN: array<Int32>
+  m_histId: array<Int32>
+  m_histKind: array<Int32>
+  m_histAt: array<Float>
+  m_histPlace: array<CName>
+  m_histValue: array<Int32>
+  m_second: Int32
+  m_askId: Int32
+  m_askKind: Int32
+  m_askUntil: Float
+  m_askValue: Int32
+  m_askNextAt: Float
+  m_restId: array<Int32>
+  m_restUntil: array<Float>
+  m_funeralPast: Int32
+  m_funeralDistrict: CName
+  m_funeralAt: Float
+  m_funeralState: Int32
+  m_homeSet: Bool
+  m_homeX: Float
+  m_homeY: Float
+  m_homeZ: Float
+  m_homeDistrict: CName
+  m_taxDistrict: array<CName>
+  m_taxOwed: array<Int32>
+  m_caDistrict: CName
+  m_caGang: CName
+  m_caAt: Float
+  m_caState: Int32
+  m_warHelpGang: array<CName>
+  m_warHelpKills: array<Int32>
+  m_warHereSaid: array<CName>
+
+class CBCrewGivenName
+  member: Int32
+  letters: array<Int32>
+
+class CBCrewNameBook
+  m_names: array<ref<CBCrewGivenName>>
+
+class CBCrewWarBook
+  m_gang: array<CName>
+  m_start: array<Float>
+  m_end: array<Float>
+  m_phase: array<Int32>
+  m_odds: array<Float>
+
+class CBIntelBook
+  m_flawKnown: array<Int32>
+  m_infRival: array<Int32>
+  m_infFaction: array<CName>
+  m_infTips: array<Int32>
+  m_infNextAt: array<Float>
+  m_infSetup: array<Bool>
+  m_word: array<Int32>
+  m_kinRival: array<Int32>
+  m_kinOf: array<Int32>
+
+class CBRivalNameBook
+  m_names: array<CName>
+
+class CBRivalBook
+  m_id: array<Int32>
+  m_bondWith: array<Int32>
+  m_bondKind: array<Int32>
+  m_ending: array<Int32>
+  m_endedAt: array<Float>
+  m_flags: array<Int32>
+  m_chrome: array<Int32>
+  m_placeX: array<Float>
+  m_placeY: array<Float>
+  m_placeZ: array<Float>
+  m_placeDistrict: array<CName>
+  m_feudA: Int32
+  m_feudB: Int32
+  m_feudAt: Float
+
+class CBRivalTimelineBook
+  m_rival: array<Int32>
+  m_kind: array<Int32>
+  m_at: array<Float>
+  m_place: array<CName>
+  m_cardRival: Int32
+  m_cardX: Float
+  m_cardY: Float
+  m_cardZ: Float
+  m_cardUntil: Float
+  m_cardDistrict: CName
+  m_turnDay: Int32
+
+class CBRivalBodyBook
+  m_rival: array<Int32>
+  m_sex: array<Int32>
+
+class CBBaseBook
+  m_wHash: array<Int32>
+  m_wX: array<Float>
+  m_wY: array<Float>
+  m_wZ: array<Float>
+  m_bHash: array<Int32>
+  m_bX: array<Float>
+  m_bY: array<Float>
+  m_bZ: array<Float>
+  m_bDistrict: array<CName>
+  m_bFails: array<Int32>
+  m_sBase: array<Int32>
+  m_sRival: array<Int32>
+  m_sGang: array<CName>
+  m_sUntil: array<Float>
+  m_rollDay: Int32
+
+class CBHoldStashBook
+  m_owed: Bool
+  m_x: Float
+  m_y: Float
+  m_z: Float
+  m_hash: Int32
+
+class CBClearBook
+  m_x: array<Float>
+  m_y: array<Float>
+  m_z: array<Float>
+  m_gang: array<CName>
+  m_until: array<Float>
+
+class CBHomeBook
+  m_kind: array<Int32>
+  m_x: array<Float>
+  m_y: array<Float>
+  m_z: array<Float>
+  m_doorX: array<Float>
+  m_doorY: array<Float>
+  m_doorZ: array<Float>
+  m_parkX: array<Float>
+  m_parkY: array<Float>
+  m_parkZ: array<Float>
+  m_peaceUntil: Float
+
+class CBHuntBook
+  m_haunt: array<Float>
+  m_trackedBy: CName
+  m_trackedUntil: Float
+  m_bountyBy: CName
+  m_bountyAmount: Int32
+  m_bountySince: Float
+  m_hunterSeed: array<Int32>
+  m_hunterRank: array<Int32>
+  m_hunterState: array<Int32>
+  m_ladderRank: Int32
+  m_hunterNext: Float
+  m_corpBy: CName
+  m_corpAt: Float
+
+class CBPayoutBook
+  m_amount: array<Int32>
+  m_victim: array<CName>
+  m_kind: array<Int32>
+  m_rival: array<Int32>
+  m_due: array<Float>
+
+class CBGangLifeBook
+  m_gang: CName
+  m_heir: Int32
+  m_rival: Int32
+  m_until: Float
+  m_winner: Int32
+
+class CBMapMemory
+  id: Int32
+  kind: Int32
+  x: Float
+  y: Float
+  z: Float
+  at: Float
+  subject: Int32
+  a: CName
+  b: CName
+  what: CName
+  district: CName
+  byV: Bool
+
+class CBMapBook
+  m_memories: array<ref<CBMapMemory>>
+  m_nextId: Int32
+  m_filterSeeded: Bool

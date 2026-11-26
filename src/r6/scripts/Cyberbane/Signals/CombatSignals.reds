@@ -11,6 +11,14 @@ public let cbDamagedByPlayer: Bool;
 @addField(ScriptedPuppet)
 public let cbLastAttackType: gamedataAttackType;
 
+// When V last hit them with something other than a damage-over-time tick, and when they went down or put their hands
+// up (sim seconds). Together they tell a deliberate finishing blow from a burn or a poison V started earlier.
+@addField(ScriptedPuppet)
+public let cbLastDirectHitAt: Float;
+
+@addField(ScriptedPuppet)
+public let cbHelplessAt: Float;
+
 @addField(ScriptedPuppet)
 // How V last hit this one, as a CBMethod* bit. The weapon only exists on the hit event, and scoring happens on death or
 // defeat long after that event is gone, so the classification has to be done here and carried on the puppet.
@@ -237,6 +245,9 @@ func CBOnPuppetHit(puppet: ref<ScriptedPuppet>, evt: ref<gameHitEvent>) -> Void 
     puppet.cbLastHitByOther = false;
     puppet.cbLastHitVehicle = CBNoEntity();
     puppet.cbLastAttackType = evt.attackData.GetAttackType();
+    if !AttackData.IsDoT(puppet.cbLastAttackType) {
+      puppet.cbLastDirectHitAt = CBSimNow(puppet.GetGame());
+    }
     puppet.cbScarMask = CBMaskSet(puppet.cbScarMask, CBScarBitFor(puppet.cbLastAttackType));
     puppet.cbLastMethodMask = CBMethodMaskFor(evt.attackData);
     let weapon = evt.attackData.GetWeapon();
@@ -327,6 +338,18 @@ func CBOnVsSide(game: GameInstance, p: wref<ScriptedPuppet>) -> Bool {
   return CBNpcSafe(CyberbaneSystem.Get(game), p) && p.IsPlayerCompanion();
 }
 
+// Killed by something already running when they became helpless (a burn, a poison, a shock): V's last direct hit came
+// before they went down or gave up, and the killing blow was a damage-over-time tick.
+public func CBDiedOfLingering(puppet: ref<ScriptedPuppet>) -> Bool {
+  return IsDefined(puppet) && puppet.cbHelplessAt > 0.0 && AttackData.IsDoT(puppet.cbLastAttackType)
+      && puppet.cbLastDirectHitAt <= puppet.cbHelplessAt;
+}
+
+public func CBHelplessConductOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return !IsDefined(rt) || !rt.HasSettings() || rt.GetSettings().helplessConduct;
+}
+
 func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   let game = puppet.GetGame();
   // Hurt by V, then killed by somebody else: not V's kill, for everything below that asks. Read here, a frame after the
@@ -341,11 +364,13 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
   }
   CBUntrackOnMap(game, puppet);   // no marker left hanging over a body
   // Shot with their hands up (Spawn/LivingStreet.reds, experimental surrender).
-  if puppet.cbSurrendered && puppet.cbDamagedByPlayer {
+  if puppet.cbSurrendered && puppet.cbDamagedByPlayer && !CBDiedOfLingering(puppet) {
     puppet.cbSurrendered = false;
     let sysS = CyberbaneSystem.Get(game);
     if IsDefined(sysS) {
-      sysS.AddCode(-CBConfig.SurrenderShotCode());
+      if CBHelplessConductOn() {
+        sysS.AddCode(-CBConfig.SurrenderShotCode());
+      }
       // What their gang takes on top of the kill, by its code (the Valentinos never forget it).
       let gaveUp = CBClassifyFaction(puppet);
       let extra = CBConfig.SurrenderShotStanding() * (CBCodeShotHands(gaveUp) - 1.0);
@@ -538,8 +563,9 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
 
   let info = CBBuildKillInfo(sys, game, puppet, true);
 
-  // They were put down alive earlier and V has now finished them.
-  if puppet.cbSparedLogged && puppet.cbMercyScored {
+  // They were put down alive earlier and V has now finished them. A burn or a poison V started before they went down
+  // is not V finishing them: the mercy stands.
+  if puppet.cbSparedLogged && puppet.cbMercyScored && !CBDiedOfLingering(puppet) {
     CBRevokeMercy(sys, info.faction, puppet.cbMercyInfo, puppet.cbMercyPsycho);
     puppet.cbMercyScored = false;
     puppet.cbMercyInfo = null;

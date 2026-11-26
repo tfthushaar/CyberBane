@@ -2,7 +2,23 @@
 
 The major changes in each version, newest first. Your progress always carries over.
 
-**Jump to:** [2.7](#27) · [2.6](#26) · [2.5](#25) · [2.4](#24) · [2.0 to 2.3](#20-to-23) · [1.x](#1x) · [0.1](#01)
+**Jump to:** [2.8](#28) · [2.7](#27) · [2.6](#26) · [2.5](#25) · [2.4](#24) · [2.0 to 2.3](#20-to-23) · [1.x](#1x) · [0.1](#01)
+
+## 2.8
+
+### 2.8.0 (26 November 2026)
+- **Mark your own home.** A house from another mod, like V's Mansion, can be home ground now: stand inside and turn on
+  **Make where I stand a home** in Mod Settings, and nobody Cyberbane sends comes into it, the same as your apartments.
+  **Forget the home I stand in** undoes it.
+- **No more unkillable Rivals.** A Rival who shrugged off every bullet and quickhack can be hurt and killed again.
+- **Quickhack and burn builds keep their Conduct.** Someone you knocked down, or who gave up, dying later to a burn, a
+  poison or a shock that was already on them no longer costs you Conduct. **Shooting someone who gave up costs
+  Conduct** turns off the cost of finishing them on purpose too.
+- **Quiet during quests.** "They belong to a story" no longer pops up during the game's own conversations, and comes at
+  most once a session. **Say why someone won't talk** turns these notes off.
+- **Your pay, your economy.** **How much Cyberbane pays** scales every eddie Cyberbane gives you, for playing alongside
+  an economy mod. Bounties start smaller early on and reach their full size by level 25.
+- **Fixed:** corporate work and a corporation's contract on a gang leader paid the same amount; each pays its own again.
 
 ## 2.7
 

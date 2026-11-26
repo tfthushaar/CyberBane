@@ -53,6 +53,10 @@ if ($offenders) {
 & (Join-Path $PSScriptRoot 'check_talk_ids.ps1')
 # Wrapped game events call wrappedMethod as a statement (see check_wraps.ps1).
 & (Join-Path $PSScriptRoot 'check_wraps.ps1')
+# No class a save already holds has its saved fields changed (see check_saved_fields.ps1).
+& (Join-Path $PSScriptRoot 'check_saved_fields.ps1')
+# No function is declared twice (see check_duplicates.ps1).
+& (Join-Path $PSScriptRoot 'check_duplicates.ps1')
 
 # --- stamp the version -----------------------------------------------------
 # Read/write as UTF-8 without BOM via .NET so the file's encoding is preserved

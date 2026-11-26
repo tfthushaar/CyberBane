@@ -40,6 +40,10 @@ foreach ($p in @($scc, $vanilla, $cwScripts, $msDir)) {
 & (Join-Path $PSScriptRoot 'check_talk_ids.ps1')
 # Wrapped game events call wrappedMethod as a statement (see check_wraps.ps1).
 & (Join-Path $PSScriptRoot 'check_wraps.ps1')
+# No class a save already holds has its saved fields changed (see check_saved_fields.ps1).
+& (Join-Path $PSScriptRoot 'check_saved_fields.ps1')
+# No function is declared twice (see check_duplicates.ps1).
+& (Join-Path $PSScriptRoot 'check_duplicates.ps1')
 
 $sandbox = Join-Path ([System.IO.Path]::GetTempPath()) ("cyberbane-validate-" + [Guid]::NewGuid().ToString('N'))
 $scripts = Join-Path $sandbox 'scripts'

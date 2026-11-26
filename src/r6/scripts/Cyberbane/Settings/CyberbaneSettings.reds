@@ -237,6 +237,22 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.displayValues.QuietButVendetta", "Cyberbane-Settings-Value-HomeGround-QuietButVendetta")
   public let homeGround: ECBHomeGround = ECBHomeGround.Quiet;
 
+  // Homes Cyberbane cannot find on its own (a house from another mod): marked where V stands, or forgotten there. Each
+  // acts on the way from off to on, as the reset switch does.
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
+  @runtimeProperty("ModSettings.category.order", "2")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MarkHome")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MarkHome-Desc")
+  public let markHomeHere: Bool = false;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
+  @runtimeProperty("ModSettings.category.order", "2")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-ForgetHome")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ForgetHome-Desc")
+  public let forgetHomeHere: Bool = false;
+
   // Before V is known (CBMercStanding): until Street Cred 20, about the Heist, V's name carries less far.
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Pacing")
@@ -1105,6 +1121,14 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
   @runtimeProperty("ModSettings.category.order", "12")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkExplain")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkExplain-Desc")
+  @runtimeProperty("ModSettings.dependency", "streetTalk")
+  public let talkExplain: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Talk")
+  @runtimeProperty("ModSettings.category.order", "12")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-TalkLiars")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-TalkLiars-Desc")
   @runtimeProperty("ModSettings.dependency", "streetTalk")
@@ -1347,6 +1371,13 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-BrutalConduct-Desc")
   public let brutalConduct: Bool = true;
 
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "14")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-HelplessConduct")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-HelplessConduct-Desc")
+  public let helplessConduct: Bool = true;
+
   // Whether anything V wears is read at all (Signals/Concealment.reds, CBClothingCounts).
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
@@ -1404,6 +1435,17 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.step", "0.05")
   @runtimeProperty("ModSettings.dependency", "gigBonus")
   public let gigBonusMult: Float = 1.0;
+
+  // Everything Cyberbane pays V, scaled (Spawn/Loot.reds, CBReward).
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "14")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-MoneyMult")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MoneyMult-Desc")
+  @runtimeProperty("ModSettings.min", "0.1")
+  @runtimeProperty("ModSettings.max", "2.0")
+  @runtimeProperty("ModSettings.step", "0.05")
+  public let moneyMult: Float = 1.0;
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
@@ -1945,6 +1987,11 @@ public class CyberbaneSettings {
   // frequency sliders once, while later hand-tweaks to those sliders still stick.
   private let m_appliedPreset: ECBPreset = ECBPreset.Default;
 
+  // The home switches as last seen this session: 0 not yet, 1 off, 2 on. A switch left on from an earlier session is
+  // only recorded, never acted on, so turning it off and on again is what marks or forgets.
+  private let m_markHomeSeen: Int32;
+  private let m_forgetHomeSeen: Int32;
+
   // ---- Registration & lifecycle ----------------------------------------
   public func Register() -> Void {
     CBModSettingsListen(this);   // only when Mod Settings is installed (Settings/ModSettingsBridge.reds)
@@ -1981,6 +2028,14 @@ public class CyberbaneSettings {
     if this.SwitchFlipped(svc, this.separateThisSave, false) && IsDefined(rt) {
       rt.RequestSeparate();
     }
+    if CBSwitchTurnedOn(this.markHomeHere, this.m_markHomeSeen) && IsDefined(rt) {
+      rt.RequestHomeMark();
+    }
+    this.m_markHomeSeen = this.markHomeHere ? 2 : 1;
+    if CBSwitchTurnedOn(this.forgetHomeHere, this.m_forgetHomeSeen) && IsDefined(rt) {
+      rt.RequestHomeForget();
+    }
+    this.m_forgetHomeSeen = this.forgetHomeHere ? 2 : 1;
     if IsDefined(rt) {
       rt.SetEnabled(this.enabled);
       rt.SetLogLevel(this.GetLogLevelInt());
@@ -2138,4 +2193,9 @@ public class CyberbaneSettings {
     }
     return EnumInt(own) - 1;
   }
+}
+
+// Off a moment ago, on now; never the first look of a session.
+public func CBSwitchTurnedOn(on: Bool, seen: Int32) -> Bool {
+  return on && seen == 1;
 }

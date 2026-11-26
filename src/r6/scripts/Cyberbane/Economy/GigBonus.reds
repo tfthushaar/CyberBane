@@ -81,7 +81,7 @@ public final static func GiveReward(gameInstance: GameInstance, rewardID: TweakD
   if frac <= 0.0 {
     return;
   }
-  let bonus = RoundF(Cast<Float>(delta) * frac / 50.0) * 50;   // nearest 50 eddies
+  let bonus = CBReward(RoundF(Cast<Float>(delta) * frac / 50.0) * 50);   // nearest 50 eddies
   if bonus <= 0 {
     return;
   }

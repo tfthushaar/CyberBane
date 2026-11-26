@@ -492,8 +492,8 @@ public abstract class CBConfig {
   public static func CorpInterestChancePerDay() -> Float = 0.35
   public static func CorpWarnStanding() -> Float = -25.0
   public static func CorpContractDays() -> Float = 7.0
-  public static func CorpContractPay() -> Int32 = 30000
-  public static func CorpContractStanding() -> Float = 10.0
+  public static func CorpLeaderContractPay() -> Int32 = 30000
+  public static func CorpLeaderContractStanding() -> Float = 10.0
   // Street clashes ([N1], Spawn/Clashes.reds): the last four of each side the Director saw; who is at war here worked
   // out every 15 ticks; a try every two minutes at 35%, then ten minutes before the next; up to two pairs, each within
   // 35 m of each other and 15 to 70 m from V; over at three minutes or with V 140 m off; two points of strength.
@@ -1549,12 +1549,15 @@ public abstract class CBConfig {
   public static func StrongholdDays() -> Float = 7.0
   public static func StrongholdChancePerDay() -> Float = 0.25
   public static func StrongholdReach() -> Float = 150.0
-  // Within this of a stronghold's base, no walk from V to it counts against the base (Rivals/Strongholds.reds, the way
-  // in, 2.7.10); further off a long route may simply not be found yet, and it is asked again as V comes closer.
+  // Within this of a stronghold's base, finding no walk from V to it counts against the base (Rivals/Strongholds.reds).
+  // Further off, a long route may just not be found yet, so it is asked again as V comes closer.
   public static func StrongholdWayInCheck() -> Float = 60.0
   // The same for a drop, a debtor's place or a calling card (Spawn/StreetStories.reds, CBDropWayIn): within this, no walk
   // from V to it moves it just outside, to open ground V can reach.
   public static func DropWayInCheck() -> Float = 60.0
+  // Its answer for a place holds until V has moved this far from where it was asked, or for this long (sim seconds).
+  public static func DropWayInReaskMove() -> Float = 6.0
+  public static func DropWayInReaskSeconds() -> Float = 15.0
   public static func StrongholdLeave() -> Float = 250.0
   public static func StrongholdMinRoom() -> Int32 = 6
   public static func StrongholdSize() -> Int32 = 8
@@ -1861,6 +1864,10 @@ public abstract class CBConfig {
   public static func CrewEddiesMin() -> Int32 = 40
   public static func CrewEddiesMax() -> Int32 = 120
   public static func BountyCrew() -> Int32 = 2500
+  // Bounties by V's level, the way the game's own pay by the target's (bounty_rewards.tweak, puppet_bounty_scaling): a
+  // beginner's share at level 1, the whole bounty from level 25.
+  public static func BountyLowShare() -> Float = 0.35
+  public static func BountyFullLevel() -> Float = 25.0
   // Renown lost with a gang whose crew or apex squad V ran from.
   public static func RunRenownLoss() -> Float = 3.0
 
@@ -2033,8 +2040,8 @@ public abstract class CBConfig {
   public static func CorpContractEveryTicks() -> Int32 = 300
   public static func CorpContractChance() -> Float = 0.4
   public static func CorpContractLifeTicks() -> Int32 = 3600
-  public static func CorpContractPay() -> Int32 = 2500
-  public static func CorpContractStanding() -> Float = 8.0
+  public static func CorpWorkPay() -> Int32 = 2500
+  public static func CorpWorkStanding() -> Float = 8.0
   public static func CorpContractMarkSlight() -> Float = 4.0
   public static func CorpContractGuards() -> Int32 = 2
   public static func CorpContractRenown() -> Float = 6.0
