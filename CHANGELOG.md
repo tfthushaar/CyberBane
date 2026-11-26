@@ -6,6 +6,27 @@ The major changes in each version, newest first. Your progress always carries ov
 
 ## 2.8
 
+### 2.8.1 (27 November 2026)
+- **Hunters no longer turn up on top of you.** A crew searching for you looks where the street says you are, and finds
+  you by seeing or hearing you. Whoever is sent after you arrives from further off.
+- **V speaks your language.** With Change V's Native Language, or the game's voices in another language, V no longer
+  switches to English in Cyberbane's conversations. With Cosmopolitan Night City, the people you talk to answer in their
+  own languages.
+- **More voices.** V offers a war's truce, and tells nomads and corporate staff where V comes from, in V's own voice.
+  Ten more of the answers you get are spoken too.
+- **Your crew drive after you.** Drive off with your crew and they come along: the ones with no seat in your car, or who
+  hadn't reached it when you pulled away, get a car of their own and follow you, and get out when you do. Before,
+  driving off sent everybody home. **Your crew drive after you** in Mod Settings turns the second car off.
+- **A crew as strong as its rank.** The extra damage your crew was given never reached their guns; now it does, and
+  every rank is an even step up. A Rookie fights like anybody off the street; a Legend hits and holds out for at least
+  four fifths of what you do and stands up to MaxTac. Their damage is raised only on your enemies, never on you.
+- **Real numbers on the Crew page.** A member's health, armour and damage a second, set against yours, instead of
+  multipliers. Chrome shows what it changes in the same numbers before it goes in.
+- **For mod authors:** API level 3 (`Cyberbane.Api3`), with signals between add-ons; see README. An add-on's convoy no
+  longer races along its route before you reach it.
+- **Translators:** three option lines changed wording (`War-DealWhatWouldItTakeTo`, `TalkTopics-NomadOutInTheBadlandsWe`,
+  `TalkTopics-CorpoIKnowHowYourBosses`).
+
 ### 2.8.0 (26 November 2026)
 - **Mark your own home.** A house from another mod, like V's Mansion, can be home ground now: stand inside and turn on
   **Make where I stand a home** in Mod Settings, and nobody Cyberbane sends comes into it, the same as your apartments.

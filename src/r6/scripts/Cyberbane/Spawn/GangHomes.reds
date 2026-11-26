@@ -262,13 +262,13 @@ public func CBGangHomeTalkLine(t: ref<CBTalkTarget>) -> ref<CBTalkLine> {
 public func CBTalkAnswerHome(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarget>, again: Bool) -> ref<CBTalkAnswer> {
   let i = CBGangHomeOf(t.faction);
   if i < 0 {
-    return CBTalkSay(CBT(n"Cyberbane-GangHomes-NowhereYouDBeWelcome"), n"");
+    return CBTalkSay(CBT(n"Cyberbane-GangHomes-NowhereYouDBeWelcome"), n"rep_ask_to_leave");
   }
   if again {
     return CBTalkSay(CBT(n"Cyberbane-TalkTopics-SameAsFiveMinutesAgo"), n"");
   }
   if t.mood == CBTalkHostile() {
-    return CBTalkSay(CBT(n"Cyberbane-GangHomes-NotTellingYou"), n"");
+    return CBTalkSay(CBT(n"Cyberbane-GangHomes-NotTellingYou"), n"rep_ask_to_leave");
   }
   let place = CBGangHomePlace(i);
   let area = CBGangHomeArea(i);

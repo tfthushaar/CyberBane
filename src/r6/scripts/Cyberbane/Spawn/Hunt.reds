@@ -32,7 +32,7 @@ public func CBHuntBegin(sys: ref<CyberbaneSystem>, game: GameInstance, faction: 
     // Nobody has laid eyes on V yet: they are working from a tip, and the tip firms up the
     // longer they ask around (CBHuntSearchCenter).
     sys.SetHuntFromTip(true);
-    sys.SetHuntTipWord(p, sys.GetTickCount());
+    sys.SetHuntTipWord(CBHuntWordNear(p), sys.GetTickCount());
     CBHuntStartSearch(sys);
     // A new hunt: nobody has been picked off unseen yet, and other mods can hear it started.
     let huntBook = CBHuntBook.Get(game);
@@ -49,6 +49,23 @@ func CBHuntTipNear(p: Vector4) -> Vector4 {
   let err = CBConfig.HuntTipError();
   let ang = RandRangeF(0.0, 6.2831);
   return new Vector4(p.X + CosF(ang) * RandRangeF(err * 0.3, err), p.Y + SinF(ang) * RandRangeF(err * 0.3, err), p.Z, 1.0);
+}
+
+// The street's later word: closer than the first tip, but still a rumour. V's own spot here would walk every search
+// onto V within a minute, seen or not.
+func CBHuntWordNear(p: Vector4) -> Vector4 {
+  let ang = RandRangeF(0.0, 6.2831);
+  let d = RandRangeF(CBConfig.HuntWordErrorMin(), CBConfig.HuntWordErrorMax());
+  return new Vector4(p.X + CosF(ang) * d, p.Y + SinF(ang) * d, p.Z, 1.0);
+}
+
+// Searching on word alone, a point this close to V would be V's position under another name.
+func CBHuntTooCloseToV(sys: ref<CyberbaneSystem>, game: GameInstance, at: Vector4) -> Bool {
+  if !sys.IsHuntFromTip() {
+    return false;   // searching where they last saw V: going back there is fair
+  }
+  let player = GetPlayer(game);
+  return IsDefined(player) && Vector4.Distance2D(at, player.GetWorldPosition()) < CBConfig.HuntKeepOffV();
 }
 
 // A search starts: how long they will give it, varied every time, and where V was when it began.
@@ -204,7 +221,7 @@ public func CBHuntPickSearchPoint(sys: ref<CyberbaneSystem>, game: GameInstance,
       let near: Vector4;
       let spread = CBConfig.ApexSearchSpread();
       if CBHuntStandAt(game, shared.X + RandRangeF(-spread, spread), shared.Y + RandRangeF(-spread, spread), shared.Z, near)
-         && CBPointReachable(game, puppet.GetWorldPosition(), near) {
+         && !CBHuntTooCloseToV(sys, game, near) && CBPointReachable(game, puppet.GetWorldPosition(), near) {
         point = near;
         return true;
       }
@@ -244,6 +261,7 @@ func CBHuntPickOwnPoint(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: r
     // Searchers are never sent into a job site.
     if CBHuntStandAt(game, center.X + vx * d, center.Y + vy * d, center.Z, at)
        && !sys.NearQuestPins(at, CBConfig.QuestSpawnClearance())
+       && !CBHuntTooCloseToV(sys, game, at)
        && CBPointReachable(game, from, at) {
       point = at;
       return true;
@@ -253,7 +271,8 @@ func CBHuntPickOwnPoint(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: r
   // The middle of the search itself. Orders are not given at all while V is on a job
   // (CBHuntTick), so this is never a walk into one.
   let mid: Vector4;
-  if CBHuntStandAt(game, center.X, center.Y, center.Z, mid) && CBPointReachable(game, from, mid) {
+  if CBHuntStandAt(game, center.X, center.Y, center.Z, mid) && !CBHuntTooCloseToV(sys, game, mid)
+     && CBPointReachable(game, from, mid) {
     point = mid;
     return true;
   }
@@ -265,6 +284,7 @@ func CBHuntPickOwnPoint(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: r
     let step: Vector4;
     if CBHuntStandAt(game, from.X - ux * hop, from.Y - uy * hop, from.Z, step)
        && !sys.NearQuestPins(step, CBConfig.QuestSpawnClearance())
+       && !CBHuntTooCloseToV(sys, game, step)
        && CBPointReachable(game, from, step) {
       point = step;
       return true;
@@ -355,7 +375,7 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
         sys.SetHuntLastSeenTick(waiting);
         sys.SetHuntSearchStartTick(waiting);
         sys.SetHuntLkp(CBHuntTipNear(vAt));
-        sys.SetHuntTipWord(vAt, waiting);
+        sys.SetHuntTipWord(CBHuntWordNear(vAt), waiting);
       }
     }
     sys.SetChaseAwayTicks(0);
@@ -411,7 +431,8 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
     sys.SetHuntFromTip(false);   // from here on they search where they last saw V
     sys.SetSpotTicks(0);
     if was != CBHuntLocated() {
-      CBHuntOnLocated(sys, game);
+      let how = contact >= 2 ? "fighting or heard you" : "saw you";
+      CBHuntOnLocated(sys, game, s"\(how), nearest of ours \(RoundF(CBNearestHunterDistance(sys, game, des, ppos)))m");
     }
   } else {
     if sys.GetHuntState() == CBHuntLocated()
@@ -433,7 +454,7 @@ public func CBHuntTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   // The street's word on where V is, while they are still working from the tip. Refreshed only every so often, so it is
   // a rumour that firms up, not a fix (CBHuntSearchCenter).
   if sys.IsHuntFromTip() && now - sys.GetHuntTipWordTick() >= CBConfig.HuntTipWordTicks() && !CBSlipSlipped(game, sys.GetHuntFaction()) {
-    sys.SetHuntTipWord(ppos, now);
+    sys.SetHuntTipWord(CBHuntWordNear(ppos), now);
   }
 
   // Over? Either V has been gone a long time while they searched, or V has simply put a lot of
@@ -653,14 +674,14 @@ public func CBHuntCrewPulledUp(sys: ref<CyberbaneSystem>, game: GameInstance) ->
   sys.SetHuntFromTip(false);
   sys.SetSpotTicks(0);
   if was != CBHuntLocated() {
-    CBHuntOnLocated(sys, game);
+    CBHuntOnLocated(sys, game, "their car pulled up beside you");
   }
 }
 
 // The moment they find V. A Rival says so, once per arrival: the text that used to arrive with
 // them, when there was nothing to find.
-func CBHuntOnLocated(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
-  CBLog.Info(n"Spawn", "Hunters have found you.");
+func CBHuntOnLocated(sys: ref<CyberbaneSystem>, game: GameInstance, how: String) -> Void {
+  CBLog.Info(n"Spawn", s"Hunters have found you: \(how).");
   let r = sys.FindRivalById(sys.GetActiveRivalId());
   if IsDefined(r) && sys.GetRivalSpottedTexted() != r.id && CBLiveRivalPresent(sys, game) {
     sys.SetRivalSpottedTexted(r.id);

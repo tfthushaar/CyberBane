@@ -669,7 +669,7 @@ public class CBStreetLife {
   // Asked in a conversation (Reactions/StreetTalk.reds). Starts one and says what it is, or says no.
   public func OfferFavour(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
     if this.FavourOpen() || !CBStreetLifeOn(n"favours") {
-      return CBTalkSay(CBT(n"Cyberbane-LivingStreet-NotRightNowComeBackAnother"), n"");
+      return CBTalkSay(CBT(n"Cyberbane-LivingStreet-NotRightNowComeBackAnother"), n"urge");
     }
     let now = sys.GetTickCount();
     // A lookout of a gang at war with theirs, first.
@@ -988,15 +988,24 @@ public class CBStreetLife {
       return;
     }
     let client = this.ContractClient(sys, game);
+    if IsNameValid(client) {
+      this.ContractFor(sys, game, player, client, now);
+    }
+  }
+
+  // A contract from this corporation, now: from the clock above, or asked for by an add-on (OfferCorpWork). False when
+  // there is no rival gang to send V after or nowhere to put the mark.
+  public func ContractFor(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, client: CName,
+                          now: Int32) -> Bool {
     let mark = IsNameValid(client) ? this.ContractMarkGang(sys, client) : n"";
     if !IsNameValid(mark) {
-      return;
+      return false;
     }
     let at: Vector4;
     let where: CName;
     if !this.DebtPlace(sys, game, player, at, where) {
       CBLog.Info(n"Street", "No contract this time: nowhere to put the mark.");
-      return;
+      return false;
     }
     this.m_favFaction = client;
     this.m_favKind = 3;
@@ -1015,6 +1024,23 @@ public class CBStreetLife {
     this.RestGang(game, client);
     CBPhoneFromAlly(game, client, CBTf(n"Cyberbane-Contracts-Offer", [CBFactionLabel(mark), place, s"\(this.m_contractPay)"]));
     CBLog.Info(n"Street", s"A contract from \(NameToString(client)): one of \(NameToString(mark))'s people in \(NameToString(where)), \(this.m_contractPay)eb.");
+    return true;
+  }
+
+  // An add-on asking for a corporation's work on V's behalf (API level 3, OfferCorpWork): the same contract the clock
+  // offers, from a corporation that is on, doesn't hate V and isn't resting.
+  public func OfferContractFrom(sys: ref<CyberbaneSystem>, game: GameInstance, client: CName) -> Bool {
+    let player = GetPlayer(game);
+    let score = sys.GetScore();
+    if !IsDefined(player) || !IsDefined(score) || this.FavourOpen() || !CBCorpWorkOn() || !CBMessagesOn()
+       || !CBIsCorpFaction(client) || !CBFactionOn(client) || this.GangResting(game, client) || player.IsInCombat() {
+      return false;
+    }
+    let posture = score.GetPosture(client);
+    if Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta) {
+      return false;
+    }
+    return this.ContractFor(sys, game, player, client, sys.GetTickCount());
   }
 
   // Who offers: a corporation that is on, doesn't hate V and has a rival to send V after, more often the better it

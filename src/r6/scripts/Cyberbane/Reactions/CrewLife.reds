@@ -608,12 +608,19 @@ public func CBCrewStoryLines(sys: ref<CyberbaneSystem>, game: GameInstance, m: r
 
 // What a rank lets them do that the one below did not, in the player's words.
 public func CBCrewRankGains(rank: Int32) -> String {
-  if rank >= 6 { return CBT(n"Cyberbane-CrewLife-GainsLegend"); }
-  if rank == 5 { return CBT(n"Cyberbane-CrewLife-GainsEnforcer"); }
-  if rank == 4 { return CBT(n"Cyberbane-CrewLife-GainsLieutenant"); }
-  if rank == 3 { return CBT(n"Cyberbane-CrewLife-GainsVeteran"); }
-  if rank == 2 { return CBT(n"Cyberbane-CrewLife-GainsSoldier"); }
-  return CBT(n"Cyberbane-CrewLife-GainsRookie");
+  let share = s"\(RoundF(CBCrewVShare(rank) * 100.0))";
+  if rank >= 6 {
+    return CBT(n"Cyberbane-CrewLife-GainsLegend") + " " + CBTf(n"Cyberbane-CrewLife-GainsShareLegend", [share]);
+  }
+  let said = CBT(n"Cyberbane-CrewLife-GainsRookie");
+  if rank == 5 { said = CBT(n"Cyberbane-CrewLife-GainsEnforcer"); }
+  if rank == 4 { said = CBT(n"Cyberbane-CrewLife-GainsLieutenant"); }
+  if rank == 3 { said = CBT(n"Cyberbane-CrewLife-GainsVeteran"); }
+  if rank == 2 { said = CBT(n"Cyberbane-CrewLife-GainsSoldier"); }
+  if rank >= 2 {
+    said += " " + CBTf(n"Cyberbane-CrewLife-GainsShare", [share]);
+  }
+  return said;
 }
 
 // Somebody climbed (a fight won, a training finished): their story, the group chat with what they can do now, and the

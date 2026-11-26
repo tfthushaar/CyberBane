@@ -28,6 +28,7 @@ public class CBConvoySpec {
   public let hostile: Bool;                // its people are hostile to V
   public let rams: Bool;                   // its escorts ram once it comes to a fight
   public let leadFlees: Bool;              // its lead runs for it once it comes to a fight, rather than carry on
+  public let friendly: Bool;               // level 3: on V's side; in a fight its escorts stop and defend it
 }
 
 public class CBConvoyRun {
@@ -129,8 +130,9 @@ public func CBConvoyPaperPos(run: ref<CBConvoyRun>, now: Float, out pos: Vector4
   if n == 0 {
     return false;
   }
+  // Speed is metres per real second; `now` and setOff are game seconds.
   let speed = run.spec.speed > 0.0 ? run.spec.speed : 14.0;
-  let travelled = MaxF(now - run.setOff, 0.0) * speed;
+  let travelled = MaxF(now - run.setOff, 0.0) / CBGameSecondsPerReal() * speed;
   let i = 0;
   pos = route[0];
   leg = 1;
@@ -279,7 +281,10 @@ public func CBApiConvoySetUp(sys: ref<CyberbaneSystem>, game: GameInstance, pupp
   if !IsDefined(run) {
     return;
   }
-  CBSetUpStreet(sys, game, puppet, run.spec.hostile);
+  CBSetUpStreet(sys, game, puppet, run.spec.hostile && !run.spec.friendly);
+  if run.spec.friendly {
+    CBCrewFriendlyToV(game, puppet);
+  }
   CBKitSquadMember(puppet);
   CBApplyCrewBuild(sys, game, puppet);
   let k = ArrayFindFirst(run.crewIds, puppet.GetEntityID());
@@ -373,17 +378,23 @@ func CBConvoyContact(game: GameInstance, run: ref<CBConvoyRun>, player: ref<Play
           CBConvoyOrder(car, panic);
         }
       } else {
-        let chase = new AIVehicleChaseCommand();
-        chase.needDriver = true;
-        chase.target = player;
-        chase.distanceMin = CBConfig.ChaseDistanceMin();
-        chase.distanceMax = CBConfig.ChaseDistanceMax();
-        chase.forcedStartSpeed = CBConfig.ChaseStartSpeed();
-        chase.aggressiveRamming = run.spec.rams;
-        chase.ignoreChaseVehiclesLimit = true;
-        chase.boostDrivingStats = true;
-        CBTrace("vehicle: convoy escort chase");
-        CBConvoyOrder(car, chase);
+        // On V's side: the escort pulls up and its people get out to fight whoever hit them (the stop below lets them
+        // out). Told to chase, it would have run V down.
+        if run.spec.friendly {
+          car.ForceBrakesUntilStoppedOrFor(CBConfig.ArrivalBrakeSeconds());
+        } else {
+          let chase = new AIVehicleChaseCommand();
+          chase.needDriver = true;
+          chase.target = player;
+          chase.distanceMin = CBConfig.ChaseDistanceMin();
+          chase.distanceMax = CBConfig.ChaseDistanceMax();
+          chase.forcedStartSpeed = CBConfig.ChaseStartSpeed();
+          chase.aggressiveRamming = run.spec.rams;
+          chase.ignoreChaseVehiclesLimit = true;
+          chase.boostDrivingStats = true;
+          CBTrace("vehicle: convoy escort chase");
+          CBConvoyOrder(car, chase);
+        }
       }
     }
     i += 1;

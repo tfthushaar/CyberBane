@@ -5133,17 +5133,18 @@ public class CBHud {
     let now = CBGameSeconds(game);
     let kb = CBCrewKitBook.Get(game);
     let k = IsDefined(kb) ? kb.Find(m.id) : null;
-    let n = CBCrewKitPreview(game, m);
+    let n = CBCrewNumbersNow(sys, game, book, m);
     let lay = CBHudLayoutMember();
     let row = 0;
-    this.SetRow(row, lay, CBHudGreen(), false, false, CBT(n"Cyberbane-Hud-StatHealth"), CBHudMult(n.health), "", "", "", "");
-    this.SetRowHelp(row, CBT(n"Cyberbane-Hud-HelpStats"));
+    this.SetRow(row, lay, CBHudGreen(), false, false, CBT(n"Cyberbane-Hud-StatHealth"), CBCrewHealthText(n), "", "", "", CBCrewShareText(n.ToughShare()));
+    this.SetRowHelp(row, CBCrewStatHelp(n, 0));
     row += 1;
-    this.SetRow(row, lay, CBHudCyan(), false, false, CBT(n"Cyberbane-Hud-StatArmour"), CBHudMult(n.armour), "", "", "", "");
-    this.SetRowHelp(row, CBT(n"Cyberbane-Hud-HelpStats"));
+    this.SetRow(row, lay, CBHudCyan(), false, false, CBT(n"Cyberbane-Hud-StatArmour"), CBCrewArmourText(n), "", "", "",
+                n.vArmour > 0.0 ? StrUpper(CBTf(n"Cyberbane-Hud-StatYours", [CBHudNum(n.vArmour)])) : "");
+    this.SetRowHelp(row, CBCrewStatHelp(n, 1));
     row += 1;
-    this.SetRow(row, lay, CBHudRed(), false, false, CBT(n"Cyberbane-Hud-StatDamage"), CBHudMult(n.damage), "", "", "", "");
-    this.SetRowHelp(row, CBT(n"Cyberbane-Hud-HelpStats"));
+    this.SetRow(row, lay, CBHudRed(), false, false, CBT(n"Cyberbane-Hud-StatDamage"), CBCrewDamageText(n), "", "", "", CBCrewShareText(n.DpsShare()));
+    this.SetRowHelp(row, CBCrewStatHelp(n, 2));
     row += 1;
     let extras = CBCrewKitExtrasLine(n);
     this.SetRow(row, lay, CBHudAmber(), false, false, CBT(n"Cyberbane-Hud-StatChrome"), StrLen(extras) > 0 ? extras : CBT(n"Cyberbane-Hud-StatNothingMore"), "", "", "", "");
@@ -6545,12 +6546,7 @@ func CBRivalsAllLyingLow(sys: ref<CyberbaneSystem>) -> Bool {
 
 // In-game hours as the real time they will actually take, using the clock rate measured at the start of the session.
 func CBHudRealFromGameHours(hrs: Float) -> String {
-  let ratio = 1.0;
-  let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) && rt.GetClockRatio() > 0.0 {
-    ratio = rt.GetClockRatio();
-  }
-  let secs = hrs * 3600.0 / ratio;
+  let secs = hrs * 3600.0 / CBGameSecondsPerReal();
   if secs >= 3600.0 {
     return CBTf(n"Cyberbane-Hud-H", [s"\(RoundF(secs / 3600.0))"]);
   }
@@ -7044,12 +7040,7 @@ public func CBHudSince(now: Float, then: Float) -> String {
   if then <= 0.0 || now <= then {
     return "";
   }
-  let ratio = 1.0;
-  let rt = CyberbaneRuntime.Get();
-  if IsDefined(rt) && rt.GetClockRatio() > 0.0 {
-    ratio = rt.GetClockRatio();
-  }
-  let secs = (now - then) / ratio;
+  let secs = (now - then) / CBGameSecondsPerReal();
   if secs >= 86400.0 {
     return CBTf(n"Cyberbane-Hud-D", [s"\(RoundF(secs / 86400.0))"]);
   }
@@ -7541,7 +7532,7 @@ func CBHudLogLine(sys: ref<CyberbaneSystem>, e: ref<CBLogEntry>, now: Float, opt
   // An add-on's reason (CyberbaneAPI.AdjustStanding): its key is the entry's kind, and reads as its own text.
   // Cyberbane's own kinds never carry a dash.
   if StrLen(line) == 0 && StrContains(NameToString(e.kind), "-") {
-    line = CBT(e.kind);
+    line = CBTf(e.kind, [gang]);   // {0} is the faction's label (API level 3, FileHistoryFor)
   }
   let place = CBDistrictLabel(e.district);
   let ago = CBHudSince(now, e.at);

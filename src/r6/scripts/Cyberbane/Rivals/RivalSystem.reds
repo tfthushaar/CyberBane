@@ -1215,6 +1215,10 @@ public func CBRivalSlain(sys: ref<CyberbaneSystem>, game: GameInstance, rival: r
   rival.state = EnumInt(ECBRivalState.Slain);
   rival.lastSeenAt = at;
   CBApiRivalEvent(rival, n"Slain");
+  // Level 3: told apart for add-ons that pay only for V's own kill. Not a second moment on the Rival's timeline.
+  if byV && rival.id > 0 {
+    CBApiNote(CBApiQRival(), n"SlainByV", rival.id, 0);
+  }
   CBCrewLifeRivalDied(game, rival.id);   // revenge one of V's crew asked for (Reactions/CrewLife.reds)
 
   if byV {

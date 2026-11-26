@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.8.0.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.8.1.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -142,8 +142,10 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   would be.
 - **Enemies measured against you.** Apex squads, Rivals and bounty hunters read your level, attributes, armour, best
   weapon and chrome from the game, and come ready for how you fight.
-- **A crew that can outgrow an apex squad**, with its rank and the way to the next one on every card, and Cyberbane's
-  people by name in your scanner.
+- **A crew that grows with its rank**, with the rank and the way to the next one on every card, and Cyberbane's people by
+  name in your scanner. A Rookie fights like anybody off the street; a Legend hits and holds out for at least four
+  fifths of what you do and stands up to MaxTac. The Member view shows their health, armour and damage a second next
+  to yours.
 - **Pick a side** in a street fight between two gangs, find a gang's people at their **hangouts**, and news that takes
   time to get round.
 - **Your crew, kitted out.** Hand them a weapon from your bag, have spare chrome put in, send them to train, spar with
@@ -225,8 +227,9 @@ Optional: [TweakXL](https://www.nexusmods.com/cyberpunk2077/mods/4197) gives Cyb
 CYBERBANE box in the map's custom filters. Everything else works without it.
 
 Optional: [AudioXL](https://www.nexusmods.com/cyberpunk2077/mods/33442) lets V say more of the conversation options in
-V's own voice: 28 of them are V's own words from the story, and AudioXL plays them. Cyberbane brings the sounds; you only
-install AudioXL. Without it those options are subtitles alone.
+V's own voice: 31 of them are V's own words from the story, and AudioXL plays them. Cyberbane brings the sounds; you only
+install AudioXL. Without it those options are subtitles alone. These recordings are in English, so they stay silent when
+V speaks another language (see Compatibility).
 
 Use the framework versions that match your game:
 
@@ -272,6 +275,8 @@ lives in your saves: a save made while the mod is removed loses it.
   jobs** changes that. Cutscenes, the main story's own missions and safe places like your
   apartment keep them out. If they can't come, or have to leave, they say why. They can be killed like anybody else, and the fallen go
   on the memorial; turn off **Your crew can die** and the game protects them the way it protects its own companions.
+  Drive off and they ride with you; the ones your car has no seat for, or who hadn't reached it when you pulled away,
+  get a car of their own and follow you, and get out when you do (**Your crew drive after you** turns that off).
 - **Your crew at home:** on a member's **Orders**, the Work row goes through earning, recruiting and **Watch the
   house**. Members on watch stand at your building's door and car park while you are on home ground: once you have gone
   in and out of the apartment and parked there, they know where. Stand near your stash and **Give them a weapon** lists
@@ -379,6 +384,23 @@ on an older Cyberbane instead of breaking every script mod on the install.
   - Names and records: `FactionName`, `FactionLabel` (a registered faction's `nameKey` and `labelKey`), `RivalIds`,
     `RivalFaction`, `RivalRank`, `RivalName`, `RivalAlive`, `FileHistory` (a History line that moves no standing; keys
     carry a dash), `StartEventFrom` (an event announced by your own contact).
+- **API level 3 (`Cyberbane.Api3`, 2.8.1):**
+  - Signals between add-ons: `Emit(name, faction, value)` and `CBListener.OnSignal`, delivered on the tick. Names carry
+    the sender's prefix; Cyberbane's own (`Cyberbane/RivalSlain`, `Cyberbane/BountyPosted`, `Cyberbane/LadderRank`,
+    `Cyberbane/HuntStarted`) arrive the same way.
+  - Listen: `OnNpcKilledBy` (record and rarity), `OnStandingAdjusted` (every `AdjustStanding` with its reason), and the
+    Rival event `SlainByV` beside `Slain`.
+  - Clocks and place: `ClockHeld`, `PlaceId` (the game's district enum name), `FindPlacesIn`, `IsSandstorm`, `IsNight`.
+  - The event slot: `StartEventFromFor` (your own window), `EndEvent`, `EventSlotBusy`, and a fair turn between
+    Cyberbane and add-ons.
+  - Standing: `PostureOf`, `ReputationFrozen`, `AddPostureLayer` + `RemovePostureLayer` (how a faction acts, without
+    touching what V earned), `AddPriceFactor` + `RemovePriceFactor`, `FactionRegistered`.
+  - Hunting and money: `ClaimFaction` + `ReleaseFaction` (Cyberbane sends none of that faction's crews), `PostBounty`,
+    `CancelBounty`, `BountyOn`, `OfferCorpWork`.
+  - Titles and history: `UnlockTitle` and `CBTitleDef.conditionKey`; `FileHistoryFor` (`{0}` is the faction's name).
+  - Groups and cards: `CBSpawnSpec.neutralToV` with `GroupSideTaken`; `CBConvoySpec.friendly`; `CBHubCardSpec.order`.
+- An add-on's text contact can't share a name with one of Cyberbane's own threads (a gang, a district's broker, an
+  unknown number); its texts are refused and the log says why.
 - An API function is never removed or renamed; a retired one stays and does nothing. Every change is compiled on the
   game patches Cyberbane supports.
 - Keep your own saved data in your own `ScriptableSystem`, your own localization prefix, and your own settings page.
@@ -406,6 +428,10 @@ on an older Cyberbane instead of breaking every script mod on the install.
   tags every helmet that way, so take the tag off an open helmet in WEAVE's wardrobe if you want your face seen.
 - **Lizzie's Braindances:** works alongside. Its braindance seller keeps to her own business, and the Mox still turn
   up at Lizzie's to talk to.
+- **Change V's Native Language and Cosmopolitan Night City:** work alongside, and so does playing with the game's voices
+  in another language. When V speaks a language other than English, V's English recordings in conversations stay
+  silent, and V's own voice lines come out in V's language. The people you talk to answer in the language Cosmopolitan
+  Night City gives them, with Cyberbane's words in the subtitles.
 - **Phone Extension:** works alongside.
 - **Companions** (the game's and modded ones) fight the people Cyberbane sends after you.
 - **Story characters, quest NPCs, AMM and romance mods** are never touched.
@@ -428,7 +454,8 @@ Every line Cyberbane shows is in `r6\scripts\Cyberbane\Localization\en-us\Englis
 The top of the file explains the rest. Lines you have not translated yet show in English, so after an update you can
 compare your file with the new `English.reds` to find what was added. Rival nicknames are translatable too (`DefineEpithets`): a translation changes only what the
 player reads, never who a Rival is, so switching language renames nobody in a save. The log says whether your translation
-loaded ("Translation for ... loaded"). Share your translation as a mod of its own on Nexus, with Cyberbane as a requirement.
+loaded ("Translation for ... loaded"), and once a launch whether translations can load at all ("Translations can load
+here"). Share your translation as a mod of its own on Nexus, with Cyberbane as a requirement.
 
 ## Reporting a bug
 

@@ -162,6 +162,7 @@ public class CBTitleDef {
   public let display: String;      // display name (English; localized in the Hub later)
   public let priority: Int32;      // higher wins for the auto active title
   public let hidden: Bool;         // shown as ??? until unlocked
+  public let conditionKey: CName;  // an add-on's title: what it takes, as a localization key (API level 3)
   // What going by it does (Data/Titles.reds). One title is worn at a time, so these never stack with
   // each other, and every one of them only moves a number Cyberbane itself owns.
   public let effect: String;

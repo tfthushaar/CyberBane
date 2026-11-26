@@ -814,7 +814,7 @@ public func CBRivalFacedownAnswer(sys: ref<CyberbaneSystem>, game: GameInstance,
     let i = CBIntelGive(sys, game, player, n"", true, r.id);
     CBFacedownLetGo(sys, game, book, r, body);
     if i.kind == CBIntelNone() {
-      return CBTalkSay(CBT(n"Cyberbane-RivalMoments-IDonTKnowAnythingI"), n"");
+      return CBTalkSay(CBT(n"Cyberbane-RivalMoments-IDonTKnowAnythingI"), n"fear_beg");
     }
     return CBTalkSay(CBTf(n"Cyberbane-RivalMoments-NowWeReDone", [CBIntelSpoken(i)]), n"");
   }

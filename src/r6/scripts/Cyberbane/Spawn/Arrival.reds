@@ -211,7 +211,8 @@ func CBCarSpawnPoint(game: GameInstance, dist: Float, out pos: Vector4, out ori:
     let p = pts[i];
     i += 1;
     let ground: Vector4;
-    if Vector4.Distance(p, ppos) >= CBConfig.SpawnMinDistance()
+    // The game's fallback points ignore the range asked for, so the distance is checked again here.
+    if Vector4.Distance(p, ppos) >= CBArrivalMinAway(dist)
        && AbsF(p.Z - ppos.Z) <= CBConfig.GroundMaxDrop()
        && CBSettleOnGround(game, p, ground)
        && CBPointOutOfSight(game, ppos, fwd, ground)
@@ -800,6 +801,7 @@ func CBAmbushSpot(game: GameInstance, out pos: Vector4, out ori: Quaternion) -> 
   let r = 0;
   while r < ArraySize(reach) {
     let centre = new Vector4(ppos.X + fwd.X * reach[r], ppos.Y + fwd.Y * reach[r], ppos.Z, 1.0);
+    let minAway = CBArrivalMinAway(reach[r]);
     r += 1;
     let pts: array<Vector4>;
     if CBPursuitPoints(game, centre, fwd, CBConfig.CarPointCandidates(), 8.0, 40.0, pts) {
@@ -810,7 +812,7 @@ func CBAmbushSpot(game: GameInstance, out pos: Vector4, out ori: Quaternion) -> 
         let ground: Vector4;
         let toSpot = Vector4.Normalize2D(new Vector4(p.X - ppos.X, p.Y - ppos.Y, 0.0, 0.0));
         if Vector4.Dot2D(toSpot, Vector4.Normalize2D(fwd)) >= CBConfig.AmbushAheadCosine()
-           && Vector4.Distance(p, ppos) >= CBConfig.SpawnMinDistance()
+           && Vector4.Distance(p, ppos) >= minAway
            && AbsF(p.Z - ppos.Z) <= CBConfig.GroundMaxDrop()
            && CBSettleOnGround(game, p, ground)
            && CBPointOutOfSight(game, ppos, fwd, ground)

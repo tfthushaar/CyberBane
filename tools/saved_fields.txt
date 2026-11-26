@@ -1,6 +1,25 @@
 # Every class with saved fields, and its fields in order, as the code had them when this was last written.
 # Written by tools/check_saved_fields.ps1 -Update. A change to a class listed here wipes its data in old saves.
 
+class CBApiBountyBook
+  m_payer: CName
+  m_since: Float
+
+class CBApiLayers
+  m_next: Int32
+  m_handle: array<Int32>
+  m_faction: array<CName>
+  m_delta: array<Float>
+  m_until: array<Float>
+  m_reason: array<CName>
+
+class CBApiPrices
+  m_next: Int32
+  m_handle: array<Int32>
+  m_key: array<CName>
+  m_factor: array<Float>
+  m_until: array<Float>
+
 class CBApiBook
   m_epoch: Int32
 
@@ -464,6 +483,14 @@ class CBCrewGivenName
 
 class CBCrewNameBook
   m_names: array<ref<CBCrewGivenName>>
+
+class CBCrewStatBook
+  m_id: array<Int32>
+  m_health: array<Float>
+  m_armour: array<Float>
+  m_dps: array<Float>
+  m_rarity: array<Int32>
+  m_level: array<Float>
 
 class CBCrewWarBook
   m_gang: array<CName>

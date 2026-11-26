@@ -346,7 +346,7 @@ public func CBTalkAnswerMenuAsk(t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
     return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-WWhatDoYouWantTo"), CBT(n"Cyberbane-TalkTopics-IDonTKnowAnythingI"), CBT(n"Cyberbane-TalkTopics-OkayOkayWhat")), n"fear_beg");
   }
   if t.mood == CBTalkHostile() {
-    return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-TalkFast"), CBT(n"Cyberbane-TalkTopics-YouVeGotAMinuteLess")), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-TalkTopics-TalkFast"), CBT(n"Cyberbane-TalkTopics-YouVeGotAMinuteLess")), n"urge");
   }
   return CBTalkSay(CBPick3(CBT(n"Cyberbane-TalkTopics-MakeItQuick"), CBT(n"Cyberbane-TalkTopics-Depends"), CBT(n"Cyberbane-TalkTopics-WhatAbout")), n"");
 }

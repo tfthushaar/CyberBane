@@ -1150,6 +1150,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBRivalMomentsTick(this, game);     // a facedown, and a Rival's taunts
     CBAlliesTick(this, game);           // a borrowed crew, a ransom, a sergeant's parley
     CBMyCrewTick(this, game);           // V's own crew, out with V
+    CBCrewDriveTick(this, game);        // and in a car of their own when V's is full (Reactions/CrewDrive.reds)
     CBCrewLifeTick(this, game);         // and their own lives: kit texts as one, asks, funerals (Reactions/CrewLife.reds)
     CBRivalTimelineTick(this, game);    // a Rival's calling card, and the ones who turn (Rivals/RivalTimeline.reds)
     CBChippinInTick(this, game);        // and one of them listening in on an apex fight (Reactions/ChippinIn.reds)
@@ -3418,6 +3419,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBCrewRivalsOffBoard(this, game);            // a Rival on the crew is no Rival on the board
     CBInformantsDaily(this, game, elapsedDays);  // an informant's gang may find out
     CBMorningBriefTick(this, game);              // a broker's text at dawn
+    CBApiLevel3SlowTick(game);                   // add-ons' standing layers and price factors that have run out
     CBRivalProgressionTick(this, game);
     CBRivalEncounterTick(this, game);
     CBTipTick(this, game);          // somebody texts V where a Rival was seen (Rivals/Whereabouts.reds)
@@ -3773,6 +3775,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(hunt) {
       hunt.Clear();       // and nobody knows where V spends time
     }
+    CBApiLevel3Clear(game);   // an add-on's price on V, standing layers and price factors were the old name's
     let rivalBook = CBRivalBook.Get(game);
     if IsDefined(rivalBook) {
       rivalBook.Clear();  // and no Rival has a bond, an ending or a place
@@ -3784,6 +3787,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     let kitBook = CBCrewKitBook.Get(game);
     if IsDefined(kitBook) {
       kitBook.Clear();    // nor carries anything of V's, nor has a name
+    }
+    let statBook = CBCrewStatBook.Get(game);
+    if IsDefined(statBook) {
+      statBook.Clear();   // nor has been out with V
     }
     let nameBook = CBCrewNameBook.Get(game);
     if IsDefined(nameBook) {

@@ -20,6 +20,13 @@ public abstract class CBListener extends IScriptable {
   // API level 2: every couple of seconds on Cyberbane's settled tick, for an add-on's own clocks. Never during a load,
   // a scene, a menu or the settle after a fast travel; CyberbaneAPI.WorldStable answers the same question.
   public func OnTick(game: GameInstance) -> Void {}
+  // API level 3: a signal from Cyberbane or another add-on (CyberbaneAPI.Emit). Names carry the sender's prefix
+  // ("Cyberbane/RivalSlain", "Madmax/ConvoyBroken", "Corpo/Tier").
+  public func OnSignal(game: GameInstance, name: CName, faction: CName, value: Int32) -> Void {}
+  // API level 3: told alongside OnNpcKilled, with who it was: their record, and their rarity as gamedataNPCRarity.
+  public func OnNpcKilledBy(game: GameInstance, faction: CName, byV: Bool, record: TweakDBID, rarity: Int32) -> Void {}
+  // API level 3: a standing change an add-on made through AdjustStanding, with the reason key it gave.
+  public func OnStandingAdjusted(game: GameInstance, faction: CName, delta: Float, reasonKey: CName) -> Void {}
 }
 
 public func CBApiQKilled() -> Int32 = 1
@@ -28,6 +35,9 @@ public func CBApiQPosture() -> Int32 = 3
 public func CBApiQSettled() -> Int32 = 4
 public func CBApiQReset() -> Int32 = 5
 public func CBApiQBorn() -> Int32 = 6
+public func CBApiQSignal() -> Int32 = 7
+public func CBApiQKilledBy() -> Int32 = 8
+public func CBApiQStanding() -> Int32 = 9
 
 public class CBApiBook extends ScriptableSystem {
   // Resets on this playthrough. Its own book: a field added to an existing one would wipe that one's save data.
@@ -37,6 +47,9 @@ public class CBApiBook extends ScriptableSystem {
   private let m_qName: array<CName>;
   private let m_qA: array<Int32>;
   private let m_qB: array<Int32>;
+  private let m_qName2: array<CName>;
+  private let m_qF: array<Float>;
+  private let m_qRec: array<TweakDBID>;
   private let m_settled: Bool;
   private let m_ticks: Int32;
 
@@ -50,6 +63,9 @@ public class CBApiBook extends ScriptableSystem {
     ArrayClear(this.m_qName);
     ArrayClear(this.m_qA);
     ArrayClear(this.m_qB);
+    ArrayClear(this.m_qName2);
+    ArrayClear(this.m_qF);
+    ArrayClear(this.m_qRec);
     this.m_settled = false;
   }
 
@@ -76,7 +92,7 @@ public class CBApiBook extends ScriptableSystem {
   // a scene or a fast travel.
   public func Unsettle() -> Void { this.m_settled = false; }
 
-  public func Queue(kind: Int32, name: CName, a: Int32, b: Int32) -> Void {
+  public func Queue(kind: Int32, name: CName, a: Int32, b: Int32, opt name2: CName, opt f: Float, opt rec: TweakDBID) -> Void {
     if ArraySize(this.m_listeners) == 0 {
       return;
     }
@@ -84,12 +100,18 @@ public class CBApiBook extends ScriptableSystem {
     ArrayPush(this.m_qName, name);
     ArrayPush(this.m_qA, a);
     ArrayPush(this.m_qB, b);
+    ArrayPush(this.m_qName2, name2);
+    ArrayPush(this.m_qF, f);
+    ArrayPush(this.m_qRec, rec);
     // A queue nobody drains (the tick stopped) never grows without end.
     while ArraySize(this.m_qKind) > 256 {
       ArrayErase(this.m_qKind, 0);
       ArrayErase(this.m_qName, 0);
       ArrayErase(this.m_qA, 0);
       ArrayErase(this.m_qB, 0);
+      ArrayErase(this.m_qName2, 0);
+      ArrayErase(this.m_qF, 0);
+      ArrayErase(this.m_qRec, 0);
     }
   }
 
@@ -100,7 +122,8 @@ public class CBApiBook extends ScriptableSystem {
       this.Queue(CBApiQSettled(), n"", 0, 0);
     }
     this.m_settled = stable;
-    let n = Min(Min(ArraySize(this.m_qKind), ArraySize(this.m_qName)), Min(ArraySize(this.m_qA), ArraySize(this.m_qB)));
+    let n = Min(Min(Min(ArraySize(this.m_qKind), ArraySize(this.m_qName)), Min(ArraySize(this.m_qA), ArraySize(this.m_qB))),
+                Min(Min(ArraySize(this.m_qName2), ArraySize(this.m_qF)), ArraySize(this.m_qRec)));
     if n > 0 {
       this.Tell(game, n);
     }
@@ -121,16 +144,22 @@ public class CBApiBook extends ScriptableSystem {
     let names = this.m_qName;
     let avals = this.m_qA;
     let bvals = this.m_qB;
+    let names2 = this.m_qName2;
+    let fvals = this.m_qF;
+    let recs = this.m_qRec;
     ArrayClear(this.m_qKind);
     ArrayClear(this.m_qName);
     ArrayClear(this.m_qA);
     ArrayClear(this.m_qB);
+    ArrayClear(this.m_qName2);
+    ArrayClear(this.m_qF);
+    ArrayClear(this.m_qRec);
     let listeners = this.m_listeners;
     let i = 0;
     while i < n {
       for l in listeners {
         if IsDefined(l) {
-          CBApiTell(game, l, kinds[i], names[i], avals[i], bvals[i]);
+          CBApiTell(game, l, kinds[i], names[i], avals[i], bvals[i], names2[i], fvals[i], recs[i]);
         }
       }
       i += 1;
@@ -138,7 +167,11 @@ public class CBApiBook extends ScriptableSystem {
   }
 }
 
-func CBApiTell(game: GameInstance, l: ref<CBListener>, kind: Int32, name: CName, a: Int32, b: Int32) -> Void {
+func CBApiTell(game: GameInstance, l: ref<CBListener>, kind: Int32, name: CName, a: Int32, b: Int32, name2: CName, f: Float,
+               rec: TweakDBID) -> Void {
+  if kind == CBApiQSignal() { l.OnSignal(game, name, name2, a); return; }
+  if kind == CBApiQKilledBy() { l.OnNpcKilledBy(game, name, a != 0, rec, b); return; }
+  if kind == CBApiQStanding() { l.OnStandingAdjusted(game, name, f, name2); return; }
   if kind == CBApiQKilled() { l.OnNpcKilled(game, name, a != 0); return; }
   if kind == CBApiQRival() { l.OnRivalEvent(game, a, name); return; }
   if kind == CBApiQPosture() { l.OnPostureChanged(game, name, a, b); return; }
@@ -148,10 +181,10 @@ func CBApiTell(game: GameInstance, l: ref<CBListener>, kind: Int32, name: CName,
 }
 
 // Written down where it happens; told on the next tick.
-public func CBApiNote(kind: Int32, name: CName, a: Int32, b: Int32) -> Void {
+public func CBApiNote(kind: Int32, name: CName, a: Int32, b: Int32, opt name2: CName, opt f: Float, opt rec: TweakDBID) -> Void {
   let book = CBApiBook.Get(GetGameInstance());
   if IsDefined(book) {
-    book.Queue(kind, name, a, b);
+    book.Queue(kind, name, a, b, name2, f, rec);
   }
 }
 
@@ -163,8 +196,9 @@ public func CBApiRivalEvent(r: ref<CBRival>, kind: CName) -> Void {
   }
 }
 
-// The API level this Cyberbane offers (API/ApiModule.reds and API/Api2Module.reds say the same to compile-time guards).
-public func CBApiLevel() -> Int32 = 2
+// The API level this Cyberbane offers (API/ApiModule.reds, Api2Module.reds and Api3Module.reds say the same to
+// compile-time guards).
+public func CBApiLevel() -> Int32 = 3
 
 public func CBApiListening(game: GameInstance) -> Bool {
   let book = CBApiBook.Get(game);

@@ -62,9 +62,17 @@ func CBBoardWithV(owner: ref<ScriptedPuppet>, vehicle: wref<VehicleObject>, inst
   let ai = vehicle.GetAIComponent();
   let now = CBSimNow(game);
   // Given a seat in this car a moment ago and still walking to it: it is theirs, and nothing new is sent.
-  if Equals(owner.cbSeatCar, carId) && IsNameValid(owner.cbSeatName) && now >= owner.cbSeatAt
-     && now - owner.cbSeatAt < CBConfig.SeatWalkSeconds() && VehicleComponent.IsSlotAvailable(game, vehicle, owner.cbSeatName) {
+  if CBWalkingToSeat(game, owner, vehicle) && VehicleComponent.IsSlotAvailable(game, vehicle, owner.cbSeatName) {
     return true;
+  }
+  // Nobody on foot catches a car that is driving off: no seat is handed out until it stops, and the ones left standing
+  // get a car of their own (Reactions/CrewDrive.reds).
+  if !instant && CBCarDrivingOff(vehicle) {
+    if IsDefined(ai) {
+      ai.ReleaseSeatReservedBy(id);
+    }
+    owner.cbSeatName = n"";
+    return false;
   }
   if IsDefined(ai) {
     ai.ReleaseSeatReservedBy(id);   // whatever they held in this car before is asked for again below
@@ -124,6 +132,21 @@ func CBFreeSeat(game: GameInstance, vehicle: wref<VehicleObject>, forWhom: Entit
   return n"";
 }
 
+// Going faster than anybody walks.
+public func CBCarDrivingOff(vehicle: wref<VehicleObject>) -> Bool {
+  return IsDefined(vehicle) && AbsF(vehicle.GetCurrentSpeed()) > CBConfig.SeatWalkCarSpeed();
+}
+
+// Given a seat in this car a moment ago and still on the way to it. Only while the car waits for them: once it drives
+// off, nobody walking is getting in, however recent their seat.
+public func CBWalkingToSeat(game: GameInstance, p: ref<ScriptedPuppet>, vehicle: wref<VehicleObject>) -> Bool {
+  if !IsDefined(p) || !IsDefined(vehicle) || !IsNameValid(p.cbSeatName) || NotEquals(p.cbSeatCar, vehicle.GetEntityID()) {
+    return false;
+  }
+  let now = CBSimNow(game);
+  return now >= p.cbSeatAt && now - p.cbSeatAt < CBConfig.SeatWalkSeconds() && !CBCarDrivingOff(vehicle);
+}
+
 // Is this seat of this car one that another of V's people was given and is still walking to? Read off their own seat
 // notes, so it holds for a car with no seat AI to reserve it.
 func CBSeatClaimed(game: GameInstance, vehicle: wref<VehicleObject>, seat: CName, except: EntityID) -> Bool {
@@ -131,22 +154,37 @@ func CBSeatClaimed(game: GameInstance, vehicle: wref<VehicleObject>, seat: CName
   if !IsDefined(des) || !IsDefined(vehicle) {
     return false;
   }
-  let carId = vehicle.GetEntityID();
-  let now = CBSimNow(game);
   let tags: array<CName> = [n"CB_Own", n"CB_Follower"];
   for tag in tags {
     let ids = des.GetTaggedIDs(tag);
     for id in ids {
       if NotEquals(id, except) {
         let p = GameInstance.FindEntityByID(game, id) as ScriptedPuppet;
-        if IsDefined(p) && Equals(p.cbSeatCar, carId) && Equals(p.cbSeatName, seat) && now >= p.cbSeatAt
-           && now - p.cbSeatAt < CBConfig.SeatWalkSeconds() {
+        if Equals(p.cbSeatName, seat) && CBWalkingToSeat(game, p, vehicle) {
           return true;
         }
       }
     }
   }
   return false;
+}
+
+// Their seat in a car they are not going to reach, given back to it.
+public func CBGiveSeatBack(p: ref<ScriptedPuppet>, vehicle: wref<VehicleObject>) -> Void {
+  if !IsDefined(p) {
+    return;
+  }
+  let human = p.GetAIControllerComponent();
+  if IsDefined(human) {
+    human.ReleaseReservedSeat();
+  }
+  if IsDefined(vehicle) {
+    let ai = vehicle.GetAIComponent();
+    if IsDefined(ai) {
+      ai.ReleaseSeatReservedBy(p.GetEntityID());
+    }
+  }
+  p.cbSeatName = n"";
 }
 
 // Done riding with V: their seat given back, and asked out of the car they are in. Before their follower role goes, which

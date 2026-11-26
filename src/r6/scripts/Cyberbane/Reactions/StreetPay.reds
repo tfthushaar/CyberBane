@@ -70,7 +70,7 @@ public func CBStreetPayAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pla
   let npc = t.npc;
   if choice == CBTalkActHushPay() {
     if !CBIsTeller(game, npc) && !CBIsLookout(npc) {
-      return CBTalkSay(CBT(n"Cyberbane-StreetPay-AlreadyToldYouISawNothing"), n"");
+      return CBTalkSay(CBT(n"Cyberbane-StreetPay-AlreadyToldYouISawNothing"), n"fear_foll");
     }
     if !CBTalkTakeMoney(game, player, CBHushPrice(sys)) {
       return CBTalkSay(CBPick2(CBT(n"Cyberbane-StreetPay-ThatSNotEnoughToForget"), CBT(n"Cyberbane-StreetPay-ComeBackWithTheEddiesOr")), n"");

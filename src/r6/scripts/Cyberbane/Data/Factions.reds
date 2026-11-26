@@ -72,6 +72,8 @@ public func CBActingStanding(faction: CName, earned: Float) -> Float {
   let hostile = CBConfig.PostureHostile();
   let vendetta = CBConfig.PostureVendetta();
   if view == 0 {
+    // An add-on's layers (API level 3, AddPostureLayer) move how they act, never what V earned with them.
+    let layered = earned + CBApiPostureLayers(faction);
     if CBTwrOwnsHostility(faction) {
       let says = CBTwrGangHostile(GetGameInstance(), faction);
       // It could not be asked: what its people do is the next best answer. Hostile on sight lately, by any hand but
@@ -83,13 +85,13 @@ public func CBActingStanding(faction: CName, earned: Float) -> Float {
         }
       }
       if says == 1 {
-        return earned <= hostile ? earned : (vendetta + hostile) / 2.0;
+        return layered <= hostile ? layered : (vendetta + hostile) / 2.0;
       }
       if says == 0 {
-        return earned > hostile ? earned : 0.0;
+        return layered > hostile ? layered : 0.0;
       }
     }
-    return earned;
+    return ClampF(layered, -100.0, 100.0);
   }
   if view == 1 {
     return earned >= allied ? earned : (allied + 100.0) / 2.0;

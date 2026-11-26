@@ -416,7 +416,7 @@ public func CBScoutTalkLines(sys: ref<CyberbaneSystem>, game: GameInstance, t: r
 
 public func CBScoutTalkAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   if !CBIsScoutBody(sys, t.npc) {
-    return CBTalkSay(CBT(n"Cyberbane-Hunted-FindWhatIMJustWalking"), n"");
+    return CBTalkSay(CBT(n"Cyberbane-Hunted-FindWhatIMJustWalking"), n"fear_foll");
   }
   let price = CBScoutBribePrice(sys);
   if !CBTalkTakeMoney(game, player, price) {

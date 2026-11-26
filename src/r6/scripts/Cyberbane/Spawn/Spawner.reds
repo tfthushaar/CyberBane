@@ -240,15 +240,23 @@ public func CBSimNow(game: GameInstance) -> Float {
   return IsDefined(ts) ? EngineTime.ToFloat(ts.GetSimTime()) : 0.0;
 }
 
-// May somebody arriving be put here, as far as V's eyes go?
-func CBArrivalUnseen(game: GameInstance, ppos: Vector4, fwd: Vector4, at: Vector4, side: Bool, inSightOk: Bool) -> Bool {
+// The nearest anybody sent from `dist` may be put down. A wall between them and V is not distance: the engine holds a
+// spawn while its spot is in front of the camera, and V can walk most of the way to it in that time.
+public func CBArrivalMinAway(dist: Float) -> Float {
+  return MaxF(CBConfig.SpawnMinDistance(), dist * CBConfig.SpawnNearestShare());
+}
+
+// May somebody arriving be put here, as far as V's eyes go? `minAway` is CBArrivalMinAway of the distance they were sent
+// from.
+func CBArrivalUnseen(game: GameInstance, ppos: Vector4, fwd: Vector4, at: Vector4, side: Bool, inSightOk: Bool,
+                     minAway: Float) -> Bool {
   if inSightOk {
     return true;
   }
   if side {
     return CBPointOutOfSight(game, ppos, fwd, at);
   }
-  if Vector4.Distance(ppos, at) < CBConfig.SpawnMinDistance() {
+  if Vector4.Distance(ppos, at) < minAway {
     return false;
   }
   return CBPointHiddenFrom(game, ppos, fwd, at);
@@ -325,7 +333,9 @@ func CBNavAnchor(game: GameInstance, dist: Float, out anchor: Vector4) -> Bool {
             facing = (fwd.X * toPoint.X + fwd.Y * toPoint.Y) / (flatLen * away);
           }
         }
-        if facing <= CBConfig.SpawnMaxFacingCosine() && away >= CBConfig.SpawnMinDistance()
+        // The call moves the point `dist` from the seed and promises nothing about V, so the distance is checked here,
+        // the way the game checks it after the same call.
+        if facing <= CBConfig.SpawnMaxFacingCosine() && away >= CBArrivalMinAway(dist)
            && AbsF(found.Z - ppos.Z) <= CBConfig.GroundMaxDrop() {
           // A point they cannot walk from is a point they will stand on forever.
           if CBPointReachable(game, found, ppos) {
@@ -372,7 +382,7 @@ func CBSpawnDistanceScale(attempt: Int32) -> Float {
   if attempt == 1 {
     return 0.66;
   }
-  return 0.4;
+  return CBConfig.SpawnNearestShare();
 }
 
 // Queue one NPC. Split out so the placement loop stays readable.
@@ -404,6 +414,10 @@ func CBCreateSpawn(des: ref<DynamicEntitySystem>, record: TweakDBID, appearance:
   if IsDefined(rt) && EntityID.IsDefined(created) {
     rt.lastSpawnAt = pos;
     rt.NoteSpawnPoint(pos, CBSimNow(GetGameInstance()));   // nobody else is put here for a few seconds (CBPointIsFree)
+    let player = GetPlayer(GetGameInstance());
+    if IsDefined(player) {
+      rt.NotePlaced(created, Vector4.Distance(pos, player.GetWorldPosition()));
+    }
   }
   return EntityID.IsDefined(created);
 }
@@ -543,6 +557,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   let openAir = CBArrivalOpenAir(game, ppos);
   // On V's side (CBSafeAreaBlocksSpawn): V's crew and people lent to V go where their own gate lets them.
   let side = Equals(squadTag, n"CB_Own") || Equals(squadTag, n"CB_Ally");
+  let minAway = CBArrivalMinAway(dist);
 
   // Where the group forms up. The navmesh anchor is the good answer; the flat offset behind V
   // is the old one, kept because interiors and some streamed-in areas have no navmesh and a
@@ -579,6 +594,10 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   if speed > CBConfig.SpawnAheadMinSpeed() {
     let cf = car.GetWorldForward();
     let lead = CBConfig.SpawnAheadNear() + (CBConfig.SpawnAheadFar() - CBConfig.SpawnAheadNear()) * ClampF(speed / 30.0, 0.0, 1.0);
+    // The car is closing on the spot while the engine builds them, so the circle starts past the nearest they may be put.
+    if !side {
+      lead = MaxF(lead, minAway + 15.0);
+    }
     let ahead = new Vector4(ppos.X + cf.X * lead, ppos.Y + cf.Y * lead, ppos.Z, 1.0);
     foundPts = CBPursuitPointsAround(game, ppos, ahead, count, 4.0, 30.0, navPts);
   }
@@ -607,7 +626,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       // Nobody appears where the player is looking (CBArrivalUnseen). V's own side asks it of the first body only, and
       // the rest form up within SpawnGroupRadius; everybody else asks it of every body.
       if ok && (ArraySize(used) == 0 || !side) {
-        ok = CBArrivalUnseen(game, ppos, fwd, at, side, inSightOk);
+        ok = CBArrivalUnseen(game, ppos, fwd, at, side, inSightOk, minAway);
         if !ok {
           CBNoteSpawnBlock(CBBlockInView());
         }
@@ -664,7 +683,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
       let standing: Vector4;
       if CBNavSnap(game, ax, ay, baseZ, snapped) && CBSettleOnGround(game, snapped, standing)
          && CBPointIsFree(used, standing) && !CBSafeAreaBlocksSpawn(game, standing, side)
-         && ((side && ArraySize(used) > 0) || CBArrivalUnseen(game, ppos, fwd, standing, side, inSightOk))
+         && ((side && ArraySize(used) > 0) || CBArrivalUnseen(game, ppos, fwd, standing, side, inSightOk, minAway))
          && CBPointArrivable(game, standing, used, ppos, openAir) {
         if CBCreateSpawn(des, record, appearance, standing, orient, squadTag, lastSpawned, extraTag) {
           spawned += 1;
@@ -698,7 +717,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
            && CBStandOnNavmesh(game, px, py, gz, stand) {
           // Only a usable point ends this lane: placed, or the engine itself turned it down. A point taken, in V's
           // sight or with no way to V is the wrong point, not a refusal, so the next bearing is tried.
-          if (ArraySize(used) == 0 || !side) && !CBArrivalUnseen(game, ppos, fwd, stand, side, inSightOk) {
+          if (ArraySize(used) == 0 || !side) && !CBArrivalUnseen(game, ppos, fwd, stand, side, inSightOk, minAway) {
             CBNoteSpawnBlock(CBBlockInView());
           } else {
             if !CBPointIsFree(used, stand) || !CBPointArrivable(game, stand, used, ppos, openAir) {
@@ -719,8 +738,8 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
     }
     // Last resort: close in, and still on a floor.
     if !placed {
-      let fx = ppos.X - fwd.X * (dist * 0.4 + rankBack) + rx * lane * 2.5;
-      let fy = ppos.Y - fwd.Y * (dist * 0.4 + rankBack) + ry * lane * 2.5;
+      let fx = ppos.X - fwd.X * (dist * CBConfig.SpawnNearestShare() + rankBack) + rx * lane * 2.5;
+      let fy = ppos.Y - fwd.Y * (dist * CBConfig.SpawnNearestShare() + rankBack) + ry * lane * 2.5;
       let fz: Float;
       let fallback: Vector4;
       if CBGroundAt(game, fx, fy, ppos.Z, fz) && AbsF(fz - ppos.Z) <= CBConfig.GroundMaxDrop()
@@ -730,7 +749,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
         if CBSafeAreaBlocksSpawn(game, fallback, side) {
           // noted by the gate itself
         } else {
-          if !CBArrivalUnseen(game, ppos, fwd, fallback, side, inSightOk) {
+          if !CBArrivalUnseen(game, ppos, fwd, fallback, side, inSightOk, minAway) {
             CBNoteSpawnBlock(CBBlockInView());
           } else {
             if !CBPointIsFree(used, fallback) {
@@ -1430,7 +1449,25 @@ func CBSpawnSetupBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet: ref
       }
     }
   }
-  CBLog.Info(n"Spawn", "One of ours is up and coming for you.");
+  CBLog.Info(n"Spawn", s"One of ours is up and coming for you\(CBArrivedLine(game, puppet, riding)).");
+}
+
+// Where they turned up against where they were put down. A body that appears far nearer than it was placed means V
+// walked or drove onto the spot while the engine was still building it.
+func CBArrivedLine(game: GameInstance, puppet: ref<ScriptedPuppet>, riding: Bool) -> String {
+  let player = GetPlayer(game);
+  let rt = CyberbaneRuntime.Get();
+  if !IsDefined(player) || !IsDefined(rt) {
+    return "";
+  }
+  let now = RoundF(Vector4.Distance(puppet.GetWorldPosition(), player.GetWorldPosition()));
+  let placed = rt.TakePlaced(puppet.GetEntityID());
+  let how = riding ? ", in a car" : "";
+  if placed < 0.0 {
+    return s": appeared \(now)m from V\(how)";
+  }
+  let driving = IsDefined(player.GetMountedVehicle()) ? ", V driving" : "";
+  return s": appeared \(now)m from V, put down \(RoundF(placed))m out\(how)\(driving)";
 }
 
 // The chase used to be kept going here by handing every hunter V's position every few seconds, which is why nobody

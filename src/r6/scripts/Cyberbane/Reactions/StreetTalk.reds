@@ -3587,7 +3587,7 @@ func CBTalkFriendTip(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
 func CBTalkOnDismiss(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, t: ref<CBTalkTarget>) -> ref<CBTalkAnswer> {
   let gang = NotEquals(t.faction, n"") && !t.cop;
   if t.cop {
-    return CBTalkSay(CBPick2(CBT(n"Cyberbane-StreetTalk-WatchTheAttitude"), CBT(n"Cyberbane-StreetTalk-SureMoveAlong")), n"");
+    return CBTalkSay(CBPick2(CBT(n"Cyberbane-StreetTalk-WatchTheAttitude"), CBT(n"Cyberbane-StreetTalk-SureMoveAlong")), n"rep_ask_to_leave");
   }
   if t.mood == CBTalkAfraid() {
     if gang {

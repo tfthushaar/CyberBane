@@ -361,7 +361,7 @@ public func CBRivalMercyAnswer(sys: ref<CyberbaneSystem>, game: GameInstance, pl
   if choice == CBTalkActCollect() {
     let i = CBIntelGive(sys, game, player, n"", true, r.id);
     if i.kind == CBIntelNone() {
-      return CBTalkSay(CBT(n"Cyberbane-RivalLife-IDonTKnowAnythingWorth"), n"");
+      return CBTalkSay(CBT(n"Cyberbane-RivalLife-IDonTKnowAnythingWorth"), n"fear_beg");
     }
     return CBTalkSay(CBTf(n"Cyberbane-RivalLife-WeReEven", [CBIntelSpoken(i)]), n"");
   }

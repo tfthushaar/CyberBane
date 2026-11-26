@@ -85,6 +85,12 @@ public func CBTitleRequirement(sys: ref<CyberbaneSystem>, id: CName) -> String {
   if !IsDefined(score) || !IsDefined(stats) {
     return "";
   }
+  // An add-on's title says what it takes in its own words.
+  let content = sys.GetContent();
+  let def = IsDefined(content) ? content.GetTitle(id) : null;
+  if IsDefined(def) && IsNameValid(def.conditionKey) {
+    return CBT(def.conditionKey);
+  }
   let renown = RoundF(score.GetRenown());
   if Equals(id, n"T_NUMBER_ONE") { return CBT(n"Cyberbane-TitleEngine-ReachTheTopOfTheHunters"); }
   if Equals(id, n"T_WARLORD") { return CBT(n"Cyberbane-TitleEngine-MakeADistrictYourOwnA"); }

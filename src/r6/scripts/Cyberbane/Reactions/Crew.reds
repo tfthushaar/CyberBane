@@ -1635,7 +1635,10 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
           seenM.calledAt = now;
         }
       }
-      if Vector4.Distance(p.GetWorldPosition(), ppos) <= CBConfig.MyCrewLeaveDistance() {
+      // In the crew's own car, or waiting on it, they can fall further behind on the road without being lost
+      // (Reactions/CrewDrive.reds).
+      let reach = (p.cbCrewCarRider || CBCrewCarWaitingFor(game, book.outBody[k])) ? CBConfig.CrewCarLostDistance() : CBConfig.MyCrewLeaveDistance();
+      if Vector4.Distance(p.GetWorldPosition(), ppos) <= reach {
         near = true;
       }
     } else {
@@ -1730,7 +1733,8 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     book.reqHome = false;
     why = 6;
   }
-  if book.driving >= CBConfig.MyCrewDriveTicks() {
+  // V drove off without them. Riding with V, or in a car of their own behind V, is coming along.
+  if book.driving >= CBConfig.MyCrewDriveTicks() && !CBCrewRidesWithV(sys, game, book, player) {
     why = 1;
   }
   if !near && tick % 5 == 0 {

@@ -18,6 +18,7 @@ public class CBSpawnSpec {
   public let at: Vector4;       // for CBApiPlaceAt
   public let onVsSide: Bool;    // the crew's gate (a fight V chose) instead of the arrivals gate; friendly to V
   public let grade: Int32;      // CBApiGradeCrew, CBApiGradeApex: built and measured against V the way those are
+  public let neutralToV: Bool;  // level 3: neither friend nor foe until V picks a side (GroupSideTaken)
 }
 
 public class CBApiRequests extends ScriptableSystem {
@@ -25,6 +26,8 @@ public class CBApiRequests extends ScriptableSystem {
   private let m_handles: array<Int32>;
   private let m_side: array<Bool>;
   private let m_grade: array<Int32>;
+  private let m_neutral: array<Bool>;
+  private let m_taken: array<Int32>;   // a neutral group's side: 0 not yet, 1 V stood with it, 2 V fought it
   private let m_lastWhy: String;
   private let m_pinIds: array<Int32>;
   private let m_pins: array<NewMappinID>;
@@ -41,26 +44,68 @@ public class CBApiRequests extends ScriptableSystem {
   public func LastWhy() -> String { return this.m_lastWhy; }
   public func SetWhy(why: String) -> Void { this.m_lastWhy = why; }
 
-  public func NewHandle(side: Bool, grade: Int32) -> Int32 {
+  public func NewHandle(side: Bool, grade: Int32, opt neutral: Bool) -> Int32 {
     this.m_next += 1;
     ArrayPush(this.m_handles, this.m_next);
     ArrayPush(this.m_side, side);
     ArrayPush(this.m_grade, grade);
+    ArrayPush(this.m_neutral, neutral && !side);
+    ArrayPush(this.m_taken, 0);
     while ArraySize(this.m_handles) > 64 {
-      ArrayErase(this.m_handles, 0);
-      ArrayErase(this.m_side, 0);
-      ArrayErase(this.m_grade, 0);
+      this.EraseAt(0);
     }
     return this.m_next;
   }
 
   public func Drop(handle: Int32) -> Void {
     let i = ArrayFindFirst(this.m_handles, handle);
-    if i >= 0 && i < ArraySize(this.m_side) && i < ArraySize(this.m_grade) {
-      ArrayErase(this.m_handles, i);
-      ArrayErase(this.m_side, i);
-      ArrayErase(this.m_grade, i);
+    if i >= 0 && i < this.Rows() {
+      this.EraseAt(i);
     }
+  }
+
+  // Parallel lists, read by the shortest.
+  private func Rows() -> Int32 {
+    return Min(Min(ArraySize(this.m_handles), ArraySize(this.m_side)), Min(Min(ArraySize(this.m_grade),
+               ArraySize(this.m_neutral)), ArraySize(this.m_taken)));
+  }
+
+  private func EraseAt(i: Int32) -> Void {
+    if i < ArraySize(this.m_handles) { ArrayErase(this.m_handles, i); }
+    if i < ArraySize(this.m_side) { ArrayErase(this.m_side, i); }
+    if i < ArraySize(this.m_grade) { ArrayErase(this.m_grade, i); }
+    if i < ArraySize(this.m_neutral) { ArrayErase(this.m_neutral, i); }
+    if i < ArraySize(this.m_taken) { ArrayErase(this.m_taken, i); }
+  }
+
+  public func NeutralOf(handle: Int32) -> Bool {
+    let i = ArrayFindFirst(this.m_handles, handle);
+    return i >= 0 && i < this.Rows() && this.m_neutral[i];
+  }
+
+  public func TakenOf(handle: Int32) -> Int32 {
+    let i = ArrayFindFirst(this.m_handles, handle);
+    return i >= 0 && i < this.Rows() ? this.m_taken[i] : 0;
+  }
+
+  public func SetTaken(handle: Int32, side: Int32) -> Void {
+    let i = ArrayFindFirst(this.m_handles, handle);
+    if i >= 0 && i < this.Rows() {
+      this.m_taken[i] = side;
+    }
+  }
+
+  // Neutral groups V has not picked a side over yet.
+  public func UndecidedNeutral() -> array<Int32> {
+    let out: array<Int32>;
+    let i = 0;
+    while i < this.Rows() {
+      if this.m_neutral[i] && this.m_taken[i] == 0 {
+        ArrayPush(out, this.m_handles[i]);
+      }
+      i += 1;
+    }
+    return out;
   }
 
   // The group a body belongs to, by its group tag; 0 for none.
@@ -157,6 +202,61 @@ public class CBApiRequests extends ScriptableSystem {
     let i = ArrayFindFirst(this.m_senderIds, id);
     return i >= 0 && i < ArraySize(this.m_senderKeys) ? this.m_senderKeys[i] : n"";
   }
+
+  // Senders already refused for clashing with one of Cyberbane's threads, so the log says it once.
+  private let m_senderRefused: array<CName>;
+
+  public func NoteSenderRefused(id: CName) -> Bool {
+    if ArrayContains(this.m_senderRefused, id) {
+      return false;
+    }
+    ArrayPush(this.m_senderRefused, id);
+    return true;
+  }
+}
+
+// A name Cyberbane's own threads go under: the unknown number, a district's broker, a gang speaking. Threads are kept by
+// the name shown, so an add-on contact with one of these names would write into Cyberbane's thread.
+public func CBIsOwnSenderName(game: GameInstance, name: String) -> Bool {
+  let low = StrLower(name);
+  if StrLen(low) == 0 || Equals(low, StrLower(CBPhoneUnknownSender())) {
+    return true;
+  }
+  let d = 0;
+  while d < 8 {
+    if Equals(low, StrLower(CBPhoneDistrictSender(CBDistrictAt(d)))) {
+      return true;
+    }
+    d += 1;
+  }
+  let content = CBContent(game);
+  if IsDefined(content) {
+    let factions = content.GetFactions();
+    for f in factions {
+      if IsDefined(f) && Equals(low, StrLower(CBFactionName(f.id))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// The name an add-on's contact writes under, or "" when it is not registered or would write into one of Cyberbane's
+// threads. Every add-on text and question goes through here.
+public func CBApiSenderName(game: GameInstance, sender: CName) -> String {
+  let reg = CBApiRequests.Get(game);
+  let key = IsDefined(reg) && IsNameValid(sender) ? reg.SenderKey(sender) : n"";
+  if !IsNameValid(key) {
+    return "";
+  }
+  let name = CBT(key);
+  if CBIsOwnSenderName(game, name) {
+    if reg.NoteSenderRefused(sender) {
+      CBLog.Info(n"Api", s"An add-on's contact \(NameToString(sender)) is called '\(name)', a name one of Cyberbane's own threads uses: its texts are not sent.");
+    }
+    return "";
+  }
+  return name;
 }
 
 public func CBApiGroupTag(handle: Int32) -> CName {
@@ -206,7 +306,7 @@ public func CBApiRequestGroup(game: GameInstance, spec: ref<CBSpawnSpec>) -> Int
     reg.SetWhy("no record that is a person");
     return 0;
   }
-  let handle = reg.NewHandle(spec.onVsSide, spec.grade);
+  let handle = reg.NewHandle(spec.onVsSide, spec.grade, spec.neutralToV);
   let tag = CBApiGroupTag(handle);
   let before = des.GetTaggedIDs(n"CB_Api");
   let placed = 0;
@@ -251,7 +351,12 @@ public func CBApiSetUpBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
     CBCrewFriendlyToV(game, puppet);
     return;
   }
-  CBSetUpStreet(sys, game, puppet, true);
+  // A neutral group stays as it stands until V picks a side (CBApiNeutralTick); one that already has is set that way.
+  let taken = reg.TakenOf(handle);
+  CBSetUpStreet(sys, game, puppet, !reg.NeutralOf(handle) || taken == 2);
+  if taken == 1 {
+    CBCrewFriendlyToV(game, puppet);
+  }
   if reg.GradeOf(handle) == CBApiGradeApex() {
     CBKitApexMember(puppet);
     CBApplyApexBuild(sys, game, puppet, 1.0, CBApexStrengthFraction(), 1.0);
@@ -316,12 +421,11 @@ public func CBApiPinPlace(game: GameInstance, captionKey: CName, pos: Vector4, u
 
 // ---- Texts: the add-on's own contact, through the hearsay queue, Where messages go and How much you hear.
 public func CBApiSendAside(game: GameInstance, sender: CName, text: String) -> Bool {
-  let reg = CBApiRequests.Get(game);
-  let key = IsDefined(reg) ? reg.SenderKey(sender) : n"";
-  if !IsNameValid(key) || StrLen(text) == 0 || !CBMessagesOn() {
+  let name = CBApiSenderName(game, sender);
+  if StrLen(name) == 0 || StrLen(text) == 0 || !CBMessagesOn() {
     return false;
   }
-  CBHearsayTinted(game, CBT(key), text, CBHudCyan(), n"", n"");
+  CBHearsayTinted(game, name, text, CBHudCyan(), n"", n"");
   return true;
 }
 
@@ -339,6 +443,8 @@ public func CBApiAdjustStanding(game: GameInstance, faction: CName, delta: Float
   if CBApiReasonKeyOk(reasonKey) {
     CBFileLog(sys, reasonKey, CBGameSeconds(game), CBEventDistrict(sys, game), faction, delta);
   }
+  // Level 3: every listener hears it, with the reason (OnStandingAdjusted).
+  CBApiNote(CBApiQStanding(), faction, 0, 0, reasonKey, delta);
   return true;
 }
 
@@ -358,6 +464,10 @@ public func CBApiRequestsTick(game: GameInstance) -> Void {
     CBApiPairsTick(sys, game);
   }
   CBApiVehiclesTick(game);
+  // Level 3: neutral groups, once V has picked a side.
+  if IsDefined(sys) {
+    CBApiNeutralTick(sys, game);
+  }
 }
 
 // ---- Questions by text (AskPriced): an add-on's contact asks, V answers in the thread like any of Cyberbane's own.
@@ -486,14 +596,12 @@ public class CBApiAsks extends ScriptableSystem {
 // Posted straight to the thread (a question is not hearsay), when messages go to the phone.
 public func CBApiAskPriced(game: GameInstance, sender: CName, text: String, options: array<String>, price: Int32, token: Int32,
                            listener: ref<CBApiAnswerListener>) -> Bool {
-  let reg = CBApiRequests.Get(game);
   let asks = CBApiAsks.Get(game);
-  let key = IsDefined(reg) ? reg.SenderKey(sender) : n"";
-  if !IsNameValid(key) || !IsDefined(asks) || ArraySize(options) == 0 || StrLen(text) == 0 || !CBMessagesOn()
+  let name = CBApiSenderName(game, sender);
+  if StrLen(name) == 0 || !IsDefined(asks) || ArraySize(options) == 0 || StrLen(text) == 0 || !CBMessagesOn()
      || NotEquals(CBMessageDelivery(), ECBMessageDelivery.Phone) {
     return false;
   }
-  let name = CBT(key);
   asks.Ask(name, options, price, token, listener);
   CBPhoneSendTinted(game, name, text, CBHudCyan());
   return true;

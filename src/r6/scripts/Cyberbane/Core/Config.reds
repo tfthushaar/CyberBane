@@ -553,6 +553,12 @@ public abstract class CBConfig {
   public static func CrewHitCapRookie() -> Float = 30.0
   public static func CrewHitCapLegend() -> Float = 9.0
   public static func CrewLegendEvasion() -> Float = 8.0
+  // Measured against V: a Legend hits for at least this share of V's damage per second and holds out for at least this
+  // share of V's effective health, and stands up to a MaxTac operative of their level. A Rookie gets none of it, and
+  // each rank between is an even step; a MaxTac's match comes on slower, most of it in the last two ranks. Whatever
+  // their weapon and chrome add, their damage stops at this share of V's.
+  public static func CrewVShareLegend() -> Float = 0.8
+  public static func CrewVShareCeiling() -> Float = 1.0
   // Training: the first costs this, each one after it more; away this many game hours, more each time; at most this many.
   public static func CrewTrainCostBase() -> Int32 = 2500
   public static func CrewTrainHoursBase() -> Float = 8.0
@@ -840,6 +846,27 @@ public abstract class CBConfig {
   public static func WarVKillWeight() -> Float = 0.08
   public static func WarVKillCeiling() -> Float = 0.6
   public static func MyCrewDriveTicks() -> Int32 = 4
+  // The crew's own car (Reactions/CrewDrive.reds): ticks V sits in a car before the ones with no seat get one; how long
+  // the car may take to appear and they to get in; cars a call may ask for, and how often; how close the old car must
+  // be to use it again; how far behind a rider may fall before the crew counts as lost; where a car may be put near
+  // them; the walk past which they are seated straight away; the follow distances; when to get out; when to give up and
+  // send the ones with no car home; and how far V must be from a spent car before it is taken away.
+  public static func CrewCarWaitTicks() -> Int32 = 3
+  public static func CrewCarComeTicks() -> Int32 = 20
+  public static func CrewCarBoardTicks() -> Int32 = 15
+  public static func CrewCarMaxPerCall() -> Int32 = 3
+  public static func CrewCarRetryTicks() -> Int32 = 8
+  public static func CrewCarReuseDistance() -> Float = 40.0
+  public static func CrewCarLostDistance() -> Float = 250.0
+  public static func CrewCarSpotMin() -> Float = 8.0
+  public static func CrewCarSpotMax() -> Float = 35.0
+  public static func CrewCarWalkDistance() -> Float = 30.0
+  public static func CrewCarFollowMin() -> Float = 10.0
+  public static func CrewCarFollowMax() -> Float = 22.0
+  public static func CrewCarOutSpeed() -> Float = 1.5
+  public static func CrewCarOutWaitTicks() -> Int32 = 10
+  public static func CrewCarGiveUpTicks() -> Int32 = 15
+  public static func CrewCarGoneDistance() -> Float = 150.0
   public static func MyCrewLeaveDistance() -> Float = 120.0
   public static func MyCrewStayedDistance() -> Float = 35.0
   public static func MyCrewTurnTicks() -> Int32 = 10
@@ -1143,8 +1170,10 @@ public abstract class CBConfig {
   public static func ChipInMaxDownSeconds() -> Float = 14.0
   public static func ChipInReachDistance() -> Float = 4.0
   // V's people in V's car (Reactions/CrewCar.reds): how long a seat just given stays theirs while they walk to it, how
-  // long somebody asked out of a car may sit there before being lifted out, and how slow the car must be for that.
+  // fast the car may go for that to hold (metres a second, a brisk walk), how long somebody asked out of a car may sit
+  // there before being lifted out, and how slow the car must be for that.
   public static func SeatWalkSeconds() -> Float = 8.0
+  public static func SeatWalkCarSpeed() -> Float = 3.0
   public static func UnmountStuckSeconds() -> Float = 5.0
   public static func UnmountStillSpeed() -> Float = 1.0
   // How long a spawn point stays taken for every other group (CBPointIsFree), and how many are remembered.
@@ -1164,6 +1193,8 @@ public abstract class CBConfig {
   public static func SpawnMaxFacingCosine() -> Float = 0.342
   // And the shortest distance worth queuing an out-of-view spawn at.
   public static func SpawnMinDistance() -> Float = 25.0
+  // Nobody sent from a distance is put down nearer than this share of it (the innermost ring the spawner tries).
+  public static func SpawnNearestShare() -> Float = 0.4
   // Bearings tried around V before giving up, starting directly behind and widening.
   public static func SpawnBearingTries() -> Int32 = 9
   public static func SpawnPerRank() -> Int32 = 4
@@ -1697,6 +1728,24 @@ public abstract class CBConfig {
   // ---- The hunt (Spawn/Hunt.reds) ----------------------------------------
   // How far off the tip a hunt starts with can be, in metres.
   public static func HuntTipError() -> Float = 25.0
+  // What the street says about where V is, while they are still asking around: somewhere this far off V, never V's
+  // own spot. They find V by seeing or hearing V.
+  public static func HuntWordErrorMin() -> Float = 12.0
+  public static func HuntWordErrorMax() -> Float = 24.0
+  // Searching on word alone, nobody is sent to look closer than this to where V really is.
+  public static func HuntKeepOffV() -> Float = 15.0
+
+  // ---- Extension API level 3 (API/Level3.reds) ------------------------------
+  // The event slot's fair turn, in real seconds: an add-on's events at least this far apart; the grace the longest waiter
+  // gets once the slot comes free; and how long a wait counts before it is stale.
+  public static func ApiEventGapSeconds() -> Float = 1200.0
+  public static func ApiTurnGraceSeconds() -> Float = 180.0
+  public static func ApiWaitStaleSeconds() -> Float = 900.0
+  // An add-on event's own window, in game seconds, kept between these.
+  public static func ApiEventWindowMin() -> Float = 600.0
+  public static func ApiEventWindowMax() -> Float = 21600.0
+  // The longest a standing layer or a price factor may last, in game days.
+  public static func ApiLayerMaxDays() -> Float = 30.0
   // The ring closing on the last known position: wide at first, tight after HuntNarrowTicks.
   public static func HuntSearchRadiusStart() -> Float = 40.0
   public static func HuntSearchRadiusMin() -> Float = 8.0

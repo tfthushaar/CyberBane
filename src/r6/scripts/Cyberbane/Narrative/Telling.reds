@@ -164,6 +164,8 @@ public class CBModEvent extends CallbackSystemEvent {
 // A name other mods register for (Cyberbane/RivalSlain, Cyberbane/HuntStarted, Cyberbane/BountyPosted,
 // Cyberbane/LadderRank, Cyberbane/StreetEvent), with the gang and a number. Nothing waits on the answer.
 public func CBEmit(name: CName, faction: CName, value: Float) -> Void {
+  // To add-ons on API level 3, on the next tick (OnSignal).
+  CBApiNote(CBApiQSignal(), name, RoundF(value), 0, faction);
   let cbs = GameInstance.GetCallbackSystem();
   if !IsDefined(cbs) {
     return;

@@ -189,7 +189,12 @@ public class CBEventEngine {
 
   public func Tick(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<DynamicEntitySystem>, player: ref<PlayerPuppet>,
                    busy: Bool) -> Void {
+    CBApiTurnWatch(game, IsDefined(this.m_ev));
     if IsDefined(this.m_ev) {
+      // Cyberbane's own next event is due while an add-on's holds the slot: it waits its turn like anybody else's.
+      if sys.GetTickCount() >= this.m_next && !CBEventKindIsOwn(this.m_ev.kind) {
+        CBApiTurnWaiting(game, n"Cyberbane");
+      }
       this.Run(sys, game, des, player);
       return;
     }
@@ -293,7 +298,10 @@ public class CBEventEngine {
     let district = sys.GetCurrentDistrict();
     let a = n"";
     let b = n"";
-    this.m_why = "";
+    this.m_why = CBApiTurnWhyNot(game, n"Cyberbane");
+    if StrLen(this.m_why) > 0 {
+      return false;
+    }
     if Equals(kind, CBEvFuneral()) || Equals(kind, CBEvCelebration()) {
       a = Equals(kind, CBEvFuneral()) ? this.m_funeralFor : this.m_partyFor;
       // On their own streets: only where they are, near V.
@@ -394,6 +402,7 @@ public class CBEventEngine {
     }
     CBLog.Info(n"Street", s"A \(NameToString(kind)) is set: \(NameToString(a)) \(NameToString(b)).");
     CBEmit(StringToName("Cyberbane/StreetEvent/" + NameToString(kind)), a, 0.0);   // [91]
+    CBApiTurnSet(game, n"Cyberbane");
     return true;
   }
 
@@ -757,12 +766,19 @@ public class CBEventEngine {
   // An add-on's kind takes the one event slot (API/EventKinds.reds): set where it says, starting on the quarter hour, its
   // window as long as a gathering's, announced in the handler's words from the district.
   public func StartApi(sys: ref<CyberbaneSystem>, game: GameInstance, kind: CName, side: CName, at: Vector4, inGameSeconds: Float,
-                       sender: CName) -> Bool {
+                       sender: CName, opt window: Float) -> Bool {
+    let owner = CBEventOwner(kind);
     if IsDefined(this.m_ev) {
+      CBApiTurnWaiting(game, owner);
       return false;
     }
     let api = CBApiEventHandler(game, kind);
     if !IsDefined(api) {
+      return false;
+    }
+    let notYet = CBApiTurnWhyNot(game, owner);
+    if StrLen(notYet) > 0 {
+      CBLog.Info(n"Street", s"An add-on's \(NameToString(kind)) waits: \(notYet).");
       return false;
     }
     let now = CBGameSeconds(game);
@@ -772,20 +788,39 @@ public class CBEventEngine {
     ev.at = at;
     ev.district = sys.GetCurrentDistrict();
     ev.from = CBQuarterUp(now + MaxF(inGameSeconds, 0.0));
-    ev.until = ev.from + CBConfig.EventWindowSeconds();
+    ev.until = ev.from + (window > 0.0 ? ClampF(window, CBConfig.ApiEventWindowMin(), CBConfig.ApiEventWindowMax())
+                                      : CBConfig.EventWindowSeconds());
     this.m_ev = ev;
+    CBApiTurnSet(game, owner);
     this.KeepPin(game);
     let text = api.Announce(game, ev);
-    let reqs = CBApiRequests.Get(game);
-    let senderKey = IsNameValid(sender) && IsDefined(reqs) ? reqs.SenderKey(sender) : n"";
+    let senderName = CBApiSenderName(game, sender);
     if StrLen(text) > 0 && CBMessagesOn() {
-      if IsNameValid(senderKey) {
-        CBPhoneSendTinted(game, CBT(senderKey), text, CBHudCyan());
+      if StrLen(senderName) > 0 {
+        CBPhoneSendTinted(game, senderName, text, CBHudCyan());
       } else {
         CBPhoneFromDistrict(game, ev.district, text);
       }
     }
     CBLog.Info(n"Street", s"An add-on's \(NameToString(kind)) is set for \(CBClockWord(ev.from)).");
+    return true;
+  }
+
+  // An add-on ending its own event early (API level 3, EndEvent): told Ended like any other ending, its people released.
+  public func EndApi(game: GameInstance, kind: CName) -> Bool {
+    let ev = this.m_ev;
+    if !IsDefined(ev) || !Equals(ev.kind, kind) || CBEventKindIsOwn(kind) {
+      return false;
+    }
+    let api = CBApiEventHandler(game, kind);
+    if IsDefined(api) {
+      api.Ended(game, ev, ev.placed);
+    }
+    if ev.apiHandle > 0 {
+      CBApiReleaseGroup(game, ev.apiHandle);
+    }
+    CBLog.Info(n"Street", s"An add-on ended its \(NameToString(kind)) (placed: \(ev.placed)).");
+    this.End(game);
     return true;
   }
 
@@ -840,9 +875,10 @@ func CBEventFarPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<
 }
 
 // The fast-travel points of a district between two distances from a point, where somebody can stand, with their names:
-// where the street's events are held, and what an add-on's FindPlaces answers.
+// where the street's events are held, and what an add-on's FindPlaces answers. `within`, when given, keeps to the points
+// filed under that district of the game's or one inside it ("Badlands_BiotechnicaFlats"), whatever `district` says.
 func CBFastTravelPlaces(sys: ref<CyberbaneSystem>, game: GameInstance, district: CName, from: Vector4, minDistance: Float,
-                        maxDistance: Float, out picks: array<Vector4>, out names: array<String>) -> Int32 {
+                        maxDistance: Float, out picks: array<Vector4>, out names: array<String>, opt within: CName) -> Int32 {
   ArrayClear(picks);
   ArrayClear(names);
   // Never while a load or a fast travel is under way: the crash came during a quickload, with the travel points and
@@ -853,7 +889,8 @@ func CBFastTravelPlaces(sys: ref<CyberbaneSystem>, game: GameInstance, district:
   let container = GameInstance.GetScriptableSystemsContainer(game);
   let fts = IsDefined(container) ? container.Get(n"FastTravelSystem") as FastTravelSystem : null;
   let ms = GameInstance.GetMappinSystem(game);
-  if Equals(district, n"") || !IsDefined(fts) || !IsDefined(ms) {
+  let narrow = IsNameValid(within);
+  if (Equals(district, n"") && !narrow) || !IsDefined(fts) || !IsDefined(ms) {
     return 0;
   }
   let points = fts.GetFastTravelPoints();
@@ -866,15 +903,18 @@ func CBFastTravelPlaces(sys: ref<CyberbaneSystem>, game: GameInstance, district:
       // FastTravelFromAnywhereToAnyFastTravelPoint, or not ready during a load) took the game down inside it, before
       // any check here could run.
       let dRec: ref<District_Record>;
+      let districtId: TweakDBID;
       if IsDefined(rec) && !rec.SubwayStation() {
         let flat = pointId;
         TDBID.Append(flat, t".district");   // the point's own district link, as an id
-        let districtId = TweakDBInterface.GetForeignKey(flat, TDBID.None());
+        districtId = TweakDBInterface.GetForeignKey(flat, TDBID.None());
         if TDBID.IsValid(districtId) {
           dRec = TweakDBInterface.GetDistrictRecord(districtId);
         }
       }
-      if IsDefined(dRec) && Equals(CBMapGameDistrict(dRec.EnumName()), district) {
+      let matches = IsDefined(dRec) && (narrow ? CBDistrictWithin(districtId, within)
+                                               : Equals(CBMapGameDistrict(dRec.EnumName()), district));
+      if matches {
         let pin = ms.GetMappin(pt.mappinID);
         if IsDefined(pin) {
           let at = pin.GetWorldPosition();
@@ -1937,4 +1977,22 @@ public func CBPowerStruggleOnSlain(sys: ref<CyberbaneSystem>, game: GameInstance
 
 func CBRivalStillAround(r: ref<CBRival>) -> Bool {
   return IsDefined(r) && r.state != EnumInt(ECBRivalState.Slain) && r.state != EnumInt(ECBRivalState.Retired);
+}
+
+// Is this district of the game's, or one it lies inside, the one named? Parents are read as ids, the way a travel point's
+// own district is, never through ParentDistrict(), which dereferences whatever its link resolves to.
+public func CBDistrictWithin(districtId: TweakDBID, within: CName) -> Bool {
+  let id = districtId;
+  let depth = 0;
+  while TDBID.IsValid(id) && depth < 4 {
+    let rec = TweakDBInterface.GetDistrictRecord(id);
+    if IsDefined(rec) && Equals(StringToName(rec.EnumName()), within) {
+      return true;
+    }
+    let up = id;
+    TDBID.Append(up, t".parentDistrict");
+    id = TweakDBInterface.GetForeignKey(up, TDBID.None());
+    depth += 1;
+  }
+  return false;
 }

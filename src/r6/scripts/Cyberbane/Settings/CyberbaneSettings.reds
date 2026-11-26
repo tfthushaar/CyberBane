@@ -580,6 +580,14 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
   @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewOwnCars")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewOwnCars-Desc")
+  @runtimeProperty("ModSettings.dependency", "myCrew")
+  public let crewOwnCars: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
+  @runtimeProperty("ModSettings.category.order", "5")
   @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-CrewPace")
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewPace-Desc")
   @runtimeProperty("ModSettings.displayValues.Easy", "Cyberbane-Settings-Value-CrewPace-Easy")

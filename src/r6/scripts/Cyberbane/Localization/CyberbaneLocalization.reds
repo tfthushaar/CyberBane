@@ -13,8 +13,13 @@ public class CBLocalizationProvider extends ModLocalizationProvider {
   private let m_english: ref<ModLocalizationPackage>;
   private let m_langs: array<CName>;
   private let m_packs: array<ref<ModLocalizationPackage>>;
+  private let m_checked: Bool;
 
   public func GetPackage(language: CName) -> ref<ModLocalizationPackage> {
+    if !this.m_checked {
+      this.m_checked = true;
+      CBTranslationCheck();
+    }
     if Equals(language, n"en-us") {
       if !IsDefined(this.m_english) {
         this.m_english = new CBLocalizationEnUs();
@@ -37,7 +42,7 @@ public class CBLocalizationProvider extends ModLocalizationProvider {
 }
 
 // The translation for a language, if one is installed: a package class whose name ends in CyberbaneText_<language>.
-func CBFindTranslation(language: CName) -> ref<ModLocalizationPackage> {
+func CBFindTranslation(language: CName, opt quiet: Bool) -> ref<ModLocalizationPackage> {
   let want = "CyberbaneText_" + StrReplaceAll(NameToString(language), "-", "_");
   let classes = Reflection.GetDerivedClasses(n"Codeware.Localization.ModLocalizationPackage");
   if ArraySize(classes) == 0 {
@@ -46,18 +51,37 @@ func CBFindTranslation(language: CName) -> ref<ModLocalizationPackage> {
   for cls in classes {
     if IsDefined(cls) && !cls.IsAbstract() && !cls.IsNative() && StrEndsWith(NameToString(cls.GetName()), want)
        && (cls.IsA(n"Codeware.Localization.ModLocalizationPackage") || cls.IsA(n"ModLocalizationPackage")) {
-      // The compiler warns this cast "cannot succeed": MakeHandle is declared to hand back
-      // an ISerializable, and the two patches' scripts disagree on how IScriptable relates to it (2.5 calls them
-      // unrelated, 2.31 calls a cast between them redundant), so no static cast is quiet on both. `as` is checked at
-      // run time against the object's own class, which is the translator's package, so it holds; the log says either
-      // way, for the first translation anybody tests.
+      // The compiler warns this cast "cannot succeed": MakeHandle is declared to return an ISerializable, which 2.5's
+      // script declarations don't relate to IScriptable (2.31's call the same cast redundant), so no cast is quiet on
+      // both. `as` checks the object's real class at run time; CBTranslationCheck proves it once a launch.
       let pkg = cls.MakeHandle() as ModLocalizationPackage;
       if IsDefined(pkg) {
-        FTLog(s"[Cyberbane][Localization] Translation for \(NameToString(language)) loaded from \(NameToString(cls.GetName())).");
+        if !quiet {
+          FTLog(s"[Cyberbane][Localization] Translation for \(NameToString(language)) loaded from \(NameToString(cls.GetName())).");
+        }
         return pkg;
       }
-      FTLog(s"[Cyberbane][Localization] Translation class \(NameToString(cls.GetName())) found for \(NameToString(language)), but it could not be made: English stays.");
+      if !quiet {
+        FTLog(s"[Cyberbane][Localization] Translation class \(NameToString(cls.GetName())) found for \(NameToString(language)), but it could not be made: English stays.");
+      }
     }
   }
   return null;
+}
+
+// Once a launch: Cyberbane's own one-line package, made the way a translation is, so the log says whether translations
+// can load on this setup before anybody has shipped one.
+func CBTranslationCheck() -> Void {
+  let pkg = CBFindTranslation(n"cb-check", true);
+  if IsDefined(pkg) {
+    FTLog("[Cyberbane][Localization] Translations can load here: Cyberbane's test package was made the way a translation is.");
+  } else {
+    FTLog("[Cyberbane][Localization] Translations cannot load here: Cyberbane's test package could not be made. Please report this with your log.");
+  }
+}
+
+public class CyberbaneText_cb_check extends ModLocalizationPackage {
+  protected func DefineTexts() -> Void {
+    this.Text("Cyberbane-LoaderCheck", "ok");
+  }
 }

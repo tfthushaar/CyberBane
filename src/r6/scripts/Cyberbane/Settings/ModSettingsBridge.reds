@@ -40,3 +40,27 @@ public func CBModSettingsPresent() -> Bool = true
 
 @if(!ModuleExists("ModSettingsModule"))
 public func CBModSettingsPresent() -> Bool = false
+
+// The stored value of an enum setting another mod keeps in Mod Settings, found by its mod and label keys. -1 when there
+// is no such setting.
+@if(ModuleExists("ModSettingsModule"))
+public func CBModSettingsEnumByLabel(mod: CName, label: CName) -> Int32 {
+  let cats = ModSettings.GetCategories(mod);
+  let c = 0;
+  while c < ArraySize(cats) {
+    let vars = ModSettings.GetVars(mod, cats[c]);
+    let v = 0;
+    while v < ArraySize(vars) {
+      let e = vars[v] as ModConfigVarEnum;
+      if IsDefined(e) && Equals(e.GetDisplayName(), label) {
+        return e.GetValue();
+      }
+      v += 1;
+    }
+    c += 1;
+  }
+  return -1;
+}
+
+@if(!ModuleExists("ModSettingsModule"))
+public func CBModSettingsEnumByLabel(mod: CName, label: CName) -> Int32 = -1

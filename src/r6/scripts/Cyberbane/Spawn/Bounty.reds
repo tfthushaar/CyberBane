@@ -183,6 +183,11 @@ public func CBBountyPayOff(sys: ref<CyberbaneSystem>, game: GameInstance) -> Int
 // Does whoever put the price up still want V dead? Gone, square with V, or switched off: the price comes down.
 func CBBountyStands(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBHuntBook>) -> Bool {
   let by = book.BountyBy();
+  // Put up by an add-on (API level 3, PostBounty): it stands until they take it down or its term runs out.
+  let apiBook = CBApiBountyBook.Get(game);
+  if IsDefined(apiBook) && Equals(apiBook.Payer(), by) && IsNameValid(by) {
+    return CBApiBountyHeld(game, by);
+  }
   let rid = CBBountyRivalId(by);
   if rid > 0 {
     let r = sys.FindRivalById(rid);
@@ -212,6 +217,7 @@ func CBBountyEnd(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBHunt
   let who = CBBountyPosterName(sys, game, by);
   let gang = CBBountyGang(sys, by);
   book.SetBounty(n"", 0, 0.0);
+  CBApiBountyForget(game);
   book.comingSlot = 0;
   book.comingPair = 0;
   book.comingTicks = 0;
@@ -775,7 +781,7 @@ public func CBSetUpBountyHunter(sys: ref<CyberbaneSystem>, game: GameInstance, p
   if rank <= CBConfig.HunterBossBarRank() {
     CBShowBossBar(puppet);
   }
-  CBLog.Info(n"Spawn", s"A bounty hunter, rank \(rank), is up and coming for you.");
+  CBLog.Info(n"Spawn", s"A bounty hunter, rank \(rank), is up and coming for you\(CBArrivedLine(game, puppet, riding)).");
 }
 
 // What the scanner calls them: their name, and their place on the ladder under it.

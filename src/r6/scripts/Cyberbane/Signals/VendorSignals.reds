@@ -58,6 +58,7 @@ func CBVendorBuyModifier(sys: ref<CyberbaneSystem>) -> Float {
   // Whose turf this is, and where V stands with them (Model/GangRivalries.reds).
   m += CBTurfPriceModifier(sys);
   m += sys.WornPerk().priceMod;
+  m += CBApiPriceMod(sys);   // an add-on's factors (API level 3, AddPriceFactor)
 
   let maxDisc = CBConfig.VendorMaxDiscount();
   let rt = CyberbaneRuntime.Get();

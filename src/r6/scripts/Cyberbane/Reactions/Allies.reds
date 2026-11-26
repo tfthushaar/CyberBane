@@ -560,7 +560,7 @@ func CBHandOver(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<CBTalkTarg
   if CBMessagesOn() {
     CBPhoneFromAlly(game, buyer, CBT(n"Cyberbane-Allies-WeLlTakeItFromHere"));
   }
-  return CBTalkSay(CBPick2(CBT(n"Cyberbane-Allies-NoNoNotThemAnybodyBut"), CBT(n"Cyberbane-Allies-YouReHandingMeToTHEM")), n"");
+  return CBTalkSay(CBPick2(CBT(n"Cyberbane-Allies-NoNoNotThemAnybodyBut"), CBT(n"Cyberbane-Allies-YouReHandingMeToTHEM")), n"fear_beg");
 }
 
 // ---- [69] Feed the street a lie --------------------------------------------------------------------------------------

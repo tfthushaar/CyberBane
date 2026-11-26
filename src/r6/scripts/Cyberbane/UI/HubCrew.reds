@@ -21,6 +21,94 @@ public func CBHudMult(v: Float) -> String {
   return "x" + FloatToStringPrec(v, 2);
 }
 
+// A whole number with its thousands marked: "12,450".
+public func CBHudNum(v: Float) -> String {
+  let n = RoundF(MaxF(v, 0.0));
+  let out = "";
+  while n >= 1000 {
+    let part = n % 1000;
+    let pad = part < 10 ? "00" : (part < 100 ? "0" : "");
+    out = "," + pad + s"\(part)" + out;
+    n = n / 1000;
+  }
+  return s"\(n)" + out;
+}
+
+// Their numbers for the Member view: worked out from what their body had when last out, or read off the body itself
+// while they are out with V.
+public func CBCrewNumbersNow(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, m: ref<CBCrewMember>) -> ref<CBCrewKitNumbers> {
+  let n = CBCrewKitPreview(game, m);
+  if !IsDefined(book) || !IsDefined(m) {
+    return n;
+  }
+  let k = book.OutIndexOfMember(m.id);
+  if k < 0 {
+    return n;
+  }
+  let p = GameInstance.FindEntityByID(game, book.outBody[k]) as ScriptedPuppet;
+  let stats = GameInstance.GetStatsSystem(game);
+  let pools = GameInstance.GetStatPoolsSystem(game);
+  if !IsDefined(p) || !p.IsAttached() || p.IsDead() || !p.cbCrewKitted || !CBNpcSafe(sys, p) || !IsDefined(stats) || !IsDefined(pools) {
+    return n;
+  }
+  let id = Cast<StatsObjectID>(p.GetEntityID());
+  n.known = true;
+  n.maxHealth = stats.GetStatValue(id, gamedataStatType.Health);
+  n.armourPoints = MaxF(stats.GetStatValue(id, gamedataStatType.Armor), 0.0);
+  n.toughness = CBEffectiveHealth(game, stats, id);
+  n.dps = MaxF(stats.GetStatValue(id, gamedataStatType.NPCDamage), 0.0) * MaxF(p.cbCrewHitMult, 1.0);
+  n.current = pools.GetStatPoolValue(id, gamedataStatPoolType.Health, false);
+  return n;
+}
+
+public func CBCrewHealthText(n: ref<CBCrewKitNumbers>) -> String {
+  if !n.known {
+    return CBT(n"Cyberbane-Hud-StatAfterFirstCall");
+  }
+  if n.current > 0.0 {
+    return CBTf(n"Cyberbane-Hud-StatHealthOut", [CBHudNum(n.current), CBHudNum(n.maxHealth), CBHudNum(n.toughness)]);
+  }
+  return CBTf(n"Cyberbane-Hud-StatHealthValue", [CBHudNum(n.maxHealth), CBHudNum(n.toughness)]);
+}
+
+public func CBCrewArmourText(n: ref<CBCrewKitNumbers>) -> String {
+  return n.known ? CBHudNum(n.armourPoints) : CBT(n"Cyberbane-Hud-StatAfterFirstCall");
+}
+
+public func CBCrewDamageText(n: ref<CBCrewKitNumbers>) -> String {
+  if n.known && n.dps > 0.0 {
+    return CBTf(n"Cyberbane-Hud-StatDamageValue", [CBHudNum(n.dps)]);
+  }
+  return n.share > 0.0 ? CBTf(n"Cyberbane-Hud-StatAtLeastYours", [s"\(RoundF(n.share * 100.0))"]) : CBT(n"Cyberbane-Hud-StatOffTheStreet");
+}
+
+// "82% of you", or nothing when either side can't be read.
+public func CBCrewShareText(share: Float) -> String {
+  return share > 0.0 ? StrUpper(CBTf(n"Cyberbane-Hud-StatShareOfYou", [s"\(RoundF(share * 100.0))"])) : "";
+}
+
+// The help line under each of the three: what the number is, and V's own beside it.
+public func CBCrewStatHelp(n: ref<CBCrewKitNumbers>, which: Int32) -> String {
+  let out = CBT(n"Cyberbane-Hud-HelpStatDamage");
+  if which == 0 {
+    out = CBT(n"Cyberbane-Hud-HelpStatHealth");
+  }
+  if which == 1 {
+    out = CBT(n"Cyberbane-Hud-HelpStatArmour");
+  }
+  if which == 0 && n.vHealth > 0.0 {
+    out += " " + CBTf(n"Cyberbane-Hud-HelpStatYourHealth", [CBHudNum(n.vHealth), CBHudNum(n.vToughness)]);
+  }
+  if which == 2 && n.vDps > 0.0 {
+    out += " " + CBTf(n"Cyberbane-Hud-HelpStatYourDamage", [CBHudNum(n.vDps)]);
+  }
+  out += " " + CBTf(n"Cyberbane-Hud-HelpStatRankShare", [s"\(RoundF(n.share * 100.0))", s"\(RoundF(CBConfig.CrewVShareLegend() * 100.0))"]);
+  if !n.known {
+    out += " " + CBT(n"Cyberbane-Hud-HelpStatNotSeen");
+  }
+  return out;
+}
+
 // How far they are to their next rank by fights won, 0 to 1 (1 at the top of what wins alone can bring).
 public func CBCrewRankProgress(game: GameInstance, m: ref<CBCrewMember>) -> Float {
   if !IsDefined(m) || CBCrewRankOf(game, m) >= 6 {
@@ -116,6 +204,19 @@ public func CBCrewChromeChange(game: GameInstance, m: ref<CBCrewMember>, rec: Tw
   let before = CBCrewKitPreview(game, m);
   let after = CBCrewKitPreview(game, m, rec);
   let out = "";
+  if before.known {
+    // Their real numbers: "armour 380 to 420, damage 352 to 380 a second".
+    if RoundF(after.armourPoints) != RoundF(before.armourPoints) {
+      out = CBTf(n"Cyberbane-Hud-ChangeNumbers", [CBT(n"Cyberbane-Hud-StatArmourWord"), CBHudNum(before.armourPoints), CBHudNum(after.armourPoints)]);
+    }
+    if RoundF(after.dps) != RoundF(before.dps) {
+      out += (StrLen(out) > 0 ? ", " : "") + CBTf(n"Cyberbane-Hud-ChangeDamage", [CBHudNum(before.dps), CBHudNum(after.dps)]);
+    }
+    if RoundF(after.maxHealth) != RoundF(before.maxHealth) {
+      out += (StrLen(out) > 0 ? ", " : "") + CBTf(n"Cyberbane-Hud-ChangeNumbers", [CBT(n"Cyberbane-Hud-StatHealthWord"), CBHudNum(before.maxHealth), CBHudNum(after.maxHealth)]);
+    }
+    return out;
+  }
   if AbsF(after.armour - before.armour) >= 0.005 {
     out = CBTf(n"Cyberbane-Hud-ChangeFromTo", [CBT(n"Cyberbane-Hud-StatArmourWord"), FloatToStringPrec(before.armour, 2), FloatToStringPrec(after.armour, 2)]);
   }

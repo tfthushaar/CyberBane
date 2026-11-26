@@ -1,7 +1,8 @@
 // Cyberbane - Voices in a conversation
 //
 // The person V talks to answers with a line from their own voiceset. V says the picked option from V's voiceset or,
-// with AudioXL installed, from V's recorded story lines; options without a matching recording stay text only.
+// with AudioXL installed and V speaking English, from V's recorded story lines; options without a matching recording
+// stay text only.
 
 public func CBTalkVoiceUnder() -> Int32 = 1
 public func CBTalkVoiceTheirs() -> Int32 = 2
@@ -259,6 +260,9 @@ public func CBTalkVoiceForV(line: ref<CBTalkLine>) -> ref<CBTalkVoiceV> {
   }
   if CBTalkVoiceIs(w, n"Cyberbane-RivalLife-NotYetStayDownIHaven") { return CBTalkVoiceVFile("stay_put", 2.2); }               // Just stay put an' quiet.
   if CBTalkVoiceIs(w, n"Cyberbane-StreetEvents-RespectsIMSorryForYour") { return CBTalkVoiceVFile("sorry", 1.8); }             // I'm so sorry.
+  if CBTalkVoiceIs(w, n"Cyberbane-War-DealWhatWouldItTakeTo") { return CBTalkVoiceVFile("war_settle", 3.6); }                 // Look, we can settle this...
+  if CBTalkVoiceIs(w, n"Cyberbane-TalkTopics-NomadOutInTheBadlandsWe") { return CBTalkVoiceVFile("life_nomad", 3.0); }         // I'm V. Rode with the Bakkers.
+  if CBTalkVoiceIs(w, n"Cyberbane-TalkTopics-CorpoIKnowHowYourBosses") { return CBTalkVoiceVFile("life_corpo", 4.2); }         // I used to work for Arasaka counterintel...
   // Not a word, under Cyberbane's words: V's laugh at a Rival on the ground.
   if line.act == CBTalkActHumiliate() { return CBTalkVoiceVSet(n"generic_21", 1.5); }
   return null;
@@ -288,7 +292,8 @@ public func CBTalkVoiceSayV(sys: ref<CyberbaneSystem>, game: GameInstance, line:
   if StrLen(said.file) > 0 {
     let name = StringToName(said.file + (CBVSpeaksMale(game, player) ? "_m" : "_f"));
     let audio = GameInstance.GetAudioSystem(game);
-    if !IsDefined(audio) || !CBAudioXLHas(name) {
+    // The recordings are English: a V who speaks another language says these options in silence (Compat/NativeLanguage.reds).
+    if !IsDefined(audio) || !CBVSpeaksEnglish(game) || !CBAudioXLHas(name) {
       return 0.0;
     }
     CBTrace("voice: one of V's lines from the story, through AudioXL, for the option V chose");

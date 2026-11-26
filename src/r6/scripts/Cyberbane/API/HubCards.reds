@@ -19,6 +19,7 @@ public class CBHubCardSpec {
   public let pips: Int32;          // 0 to 5, drawn as a bar
   public let lines: array<String>;
   public let actions: array<String>;   // labels, three at most
+  public let order: Int32;             // level 3: lower comes first, whichever add-on registered first (0 by default)
 }
 
 public class CBHubPageSpec {
@@ -47,9 +48,24 @@ public class CBApiHub extends ScriptableSystem {
     if !IsDefined(card) || !IsNameValid(card.id) || IsDefined(this.Card(card.id)) {
       return false;
     }
-    ArrayPush(this.m_cards, card);
-    ArrayPush(this.m_cardListener, listener);
-    ArrayPush(this.m_pageTitles, pageTitle);
+    // Kept in order: after every card of the same order or lower, so cards of one order stay as they were registered.
+    let at = this.Count();
+    let i = this.Count() - 1;
+    while i >= 0 {
+      if IsDefined(this.m_cards[i]) && this.m_cards[i].order > card.order {
+        at = i;
+      }
+      i -= 1;
+    }
+    if at >= this.Count() {
+      ArrayPush(this.m_cards, card);
+      ArrayPush(this.m_cardListener, listener);
+      ArrayPush(this.m_pageTitles, pageTitle);
+    } else {
+      ArrayInsert(this.m_cards, at, card);
+      ArrayInsert(this.m_cardListener, at, listener);
+      ArrayInsert(this.m_pageTitles, at, pageTitle);
+    }
     return true;
   }
 

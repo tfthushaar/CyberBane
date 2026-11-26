@@ -34,6 +34,10 @@
     {"name": "cyberbane_v_leave_nevermind_m", "type": "axl_voice_2d", "file": "cyberbane_v_leave_nevermind_m.ogg"},
     {"name": "cyberbane_v_leave_whatever_f", "type": "axl_voice_2d", "file": "cyberbane_v_leave_whatever_f.ogg"},
     {"name": "cyberbane_v_leave_whatever_m", "type": "axl_voice_2d", "file": "cyberbane_v_leave_whatever_m.ogg"},
+    {"name": "cyberbane_v_life_corpo_f", "type": "axl_voice_2d", "file": "cyberbane_v_life_corpo_f.ogg"},
+    {"name": "cyberbane_v_life_corpo_m", "type": "axl_voice_2d", "file": "cyberbane_v_life_corpo_m.ogg"},
+    {"name": "cyberbane_v_life_nomad_f", "type": "axl_voice_2d", "file": "cyberbane_v_life_nomad_f.ogg"},
+    {"name": "cyberbane_v_life_nomad_m", "type": "axl_voice_2d", "file": "cyberbane_v_life_nomad_m.ogg"},
     {"name": "cyberbane_v_life_streetkid_f", "type": "axl_voice_2d", "file": "cyberbane_v_life_streetkid_f.ogg"},
     {"name": "cyberbane_v_life_streetkid_m", "type": "axl_voice_2d", "file": "cyberbane_v_life_streetkid_m.ogg"},
     {"name": "cyberbane_v_owe_me_f", "type": "axl_voice_2d", "file": "cyberbane_v_owe_me_f.ogg"},
@@ -55,6 +59,8 @@
     {"name": "cyberbane_v_toll_howmuch_f", "type": "axl_voice_2d", "file": "cyberbane_v_toll_howmuch_f.ogg"},
     {"name": "cyberbane_v_toll_howmuch_m", "type": "axl_voice_2d", "file": "cyberbane_v_toll_howmuch_m.ogg"},
     {"name": "cyberbane_v_walk_away_f", "type": "axl_voice_2d", "file": "cyberbane_v_walk_away_f.ogg"},
-    {"name": "cyberbane_v_walk_away_m", "type": "axl_voice_2d", "file": "cyberbane_v_walk_away_m.ogg"}
+    {"name": "cyberbane_v_walk_away_m", "type": "axl_voice_2d", "file": "cyberbane_v_walk_away_m.ogg"},
+    {"name": "cyberbane_v_war_settle_f", "type": "axl_voice_2d", "file": "cyberbane_v_war_settle_f.ogg"},
+    {"name": "cyberbane_v_war_settle_m", "type": "axl_voice_2d", "file": "cyberbane_v_war_settle_m.ogg"}
   ]
 }

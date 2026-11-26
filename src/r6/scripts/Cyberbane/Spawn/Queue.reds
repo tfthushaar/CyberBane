@@ -744,8 +744,9 @@ public func CBCrewReason(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, pos
   if !IsDefined(sys) || !IsDefined(fs) {
     return -1.0;
   }
-  // A corporation sends nobody of its own: it puts a price on V and hires the ladder (Spawn/Bounty.reds).
-  if CBCorpHiresKillers(fs.id) {
+  // A corporation sends nobody of its own: it puts a price on V and hires the ladder (Spawn/Bounty.reds). Nor anybody an
+  // add-on has taken over (API level 3, ClaimFaction).
+  if CBSendsNoneOfItsOwn(fs.id) {
     return -1.0;
   }
   // Where V put a pile of their people in the ground, recently: they are slow to come back there
@@ -815,7 +816,7 @@ public func CBApexRecordFor(fs: ref<CBFactionState>) -> TweakDBID {
 // can promise an apex squad another will not send.
 public func CBGangMaySend(sys: ref<CyberbaneSystem>, faction: CName) -> Bool {
   if !IsDefined(sys) || Equals(faction, n"") || !CBHitSquadsOn() || !CBFactionFieldsSquads(faction)
-     || CBCorpHiresKillers(faction) {
+     || CBSendsNoneOfItsOwn(faction) {
     return false;
   }
   let score = sys.GetScore();
@@ -828,7 +829,7 @@ public func CBGangMaySend(sys: ref<CyberbaneSystem>, faction: CName) -> Bool {
 
 public func CBApexEligible(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> Bool {
   if !IsDefined(sys) || !IsDefined(fs) || !CBFactionFieldsSquads(fs.id)
-     || !TDBID.IsValid(CBApexRecordFor(fs)) || CBCorpHiresKillers(fs.id) {
+     || !TDBID.IsValid(CBApexRecordFor(fs)) || CBSendsNoneOfItsOwn(fs.id) {
     return false;
   }
   let score = sys.GetScore();
@@ -895,6 +896,9 @@ public func CBApexProgressLine(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState
   // A corporation sends nobody: it pays the ladder (Spawn/Bounty.reds).
   if CBCorpHiresKillers(fs.id) {
     return CBT(n"Cyberbane-Queue-TheyHireKillersInsteadOfSending");
+  }
+  if CBFactionClaimed(fs.id) {
+    return "";
   }
   // Nothing to count towards for a gang with no best to send: one whose code never sends them (the Mox), one with no
   // apex records, or with Apex squads off. Each of them was promised "apex squad in 20 kills".

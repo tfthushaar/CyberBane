@@ -592,4 +592,138 @@ public abstract class CyberbaneAPI {
   public static func FileHistory(game: GameInstance, faction: CName, reasonKey: CName) -> Bool {
     return CBApiFileHistory(game, faction, reasonKey);
   }
+
+  // ======== API level 3: guard each call with @if(ModuleExists("Cyberbane.Api3")) ========
+  //
+  // Also on level 3: CBListener.OnSignal, OnNpcKilledBy and OnStandingAdjusted; the Rival event kind n"SlainByV" beside
+  // n"Slain"; CBSpawnSpec.neutralToV; CBConvoySpec.friendly; CBHubCardSpec.order; CBTitleDef.conditionKey.
+
+  // ---- Signals to every listener on the next tick (OnSignal). The name carries the sender's prefix ("Madmax/..."); only
+  // Cyberbane sends "Cyberbane/..." names.
+  public static func Emit(game: GameInstance, name: CName, faction: CName, value: Int32) -> Void {
+    CBApiEmit(game, name, faction, value);
+  }
+
+  // ---- True while Cyberbane's own clocks stand still (a load, a menu, the story on stage, V down): stop yours too.
+  public static func ClockHeld(game: GameInstance) -> Bool {
+    return CBApiClockHeld(game);
+  }
+
+  // ---- Where V is, as the game's district enum name ("Badlands_BiotechnicaFlats"); n"" when the game has not said.
+  public static func PlaceId(game: GameInstance) -> CName {
+    return CBApiPlaceId(game);
+  }
+
+  // FindPlaces kept to one district of the game's and the ones inside it.
+  public static func FindPlacesIn(game: GameInstance, placeId: CName, minDistance: Float, maxDistance: Float,
+                                  out positions: array<Vector4>, out names: array<String>) -> Int32 {
+    return CBApiFindPlacesIn(game, placeId, minDistance, maxDistance, positions, names);
+  }
+
+  // ---- The event slot. StartEventFromFor gives the event its own window in game seconds (10 minutes to 6 hours; 0 for
+  // the usual). Starts honour the fair turn: false while another waited longer, or within 20 real minutes of the same
+  // add-on's last event.
+  public static func StartEventFromFor(game: GameInstance, kind: CName, side: CName, at: Vector4, inGameSeconds: Float,
+                                       sender: CName, windowSeconds: Float) -> Bool {
+    return CBApiStartEvent(game, kind, side, at, inGameSeconds, sender, windowSeconds);
+  }
+
+  // Ends the add-on's own event now: its handler hears Ended and its people are released. False when it is not running.
+  public static func EndEvent(game: GameInstance, kind: CName) -> Bool {
+    return CBApiEndEvent(game, kind);
+  }
+
+  public static func EventSlotBusy(game: GameInstance) -> Bool {
+    return CBApiEventSlotBusy(game);
+  }
+
+  // ---- A title the add-on registered (RegisterTitle), unlocked now: Renown and the word on the street, as Cyberbane's own.
+  public static func UnlockTitle(game: GameInstance, id: CName) -> Bool {
+    return CBApiUnlockTitle(game, id);
+  }
+
+  // ---- Whether a faction id is registered, Cyberbane's own or an add-on's (FactionOn answers true for unknown ids).
+  public static func FactionRegistered(id: CName) -> Bool {
+    return CBApiFactionRegistered(id);
+  }
+
+  // ---- A faction's hunting handed to the add-on: Cyberbane sends none of its crews or apex squads; prices on V stay
+  // Cyberbane's. For the session: claim again on OnSettled after a load.
+  public static func ClaimFaction(game: GameInstance, faction: CName) -> Bool {
+    return CBApiClaimFaction(game, faction);
+  }
+
+  public static func ReleaseFaction(game: GameInstance, faction: CName) -> Void {
+    CBApiReleaseFaction(game, faction);
+  }
+
+  // ---- The price on V's head. One at a time: false while another payer's stands. It runs a corporation contract's term
+  // at most, and stands meanwhile whatever the payer's standing does. CancelBounty takes down a price this payer put up.
+  public static func PostBounty(game: GameInstance, payer: CName, amount: Int32, reasonKey: CName) -> Bool {
+    return CBApiPostBounty(game, payer, amount, reasonKey);
+  }
+
+  public static func CancelBounty(game: GameInstance, payer: CName) -> Bool {
+    return CBApiCancelBounty(game, payer);
+  }
+
+  public static func BountyOn(game: GameInstance, out payers: array<CName>, out amounts: array<Int32>) -> Int32 {
+    return CBApiBountyOn(game, payers, amounts);
+  }
+
+  // ---- Prices at shops: keyed by a district id (n"CityCenter") or a faction (the streets it holds). factor 1.1 is ten
+  // per cent dearer, kept between 0.5 and 2 and inside Cyberbane's own limits. A handle, or 0.
+  public static func AddPriceFactor(game: GameInstance, faction: CName, factor: Float, untilGameSeconds: Float) -> Int32 {
+    return CBApiAddPriceFactor(game, faction, factor, untilGameSeconds);
+  }
+
+  public static func RemovePriceFactor(game: GameInstance, handle: Int32) -> Void {
+    CBApiRemovePriceFactor(game, handle);
+  }
+
+  // ---- How a faction acts towards V, moved by delta (standing points) until then, without touching what V earned. At
+  // most 30 game days; never while the player has set that faction's view by hand. A handle, or 0.
+  public static func AddPostureLayer(game: GameInstance, faction: CName, delta: Float, untilGameSeconds: Float,
+                                     reasonKey: CName) -> Int32 {
+    return CBApiAddPostureLayer(game, faction, delta, untilGameSeconds, reasonKey);
+  }
+
+  public static func RemovePostureLayer(game: GameInstance, handle: Int32) -> Void {
+    CBApiRemovePostureLayer(game, handle);
+  }
+
+  // ---- The posture Cyberbane gives a faction now, layers included: the values of ECBPosture (Allied 0 ... Vendetta 4).
+  public static func PostureOf(game: GameInstance, faction: CName) -> Int32 {
+    return CBApiPostureOf(game, faction);
+  }
+
+  // ---- Freeze reputation: while it is on, AdjustStanding refuses.
+  public static func ReputationFrozen() -> Bool {
+    return CBReputationFrozen();
+  }
+
+  // ---- Weather and time of day.
+  public static func IsSandstorm(game: GameInstance) -> Bool {
+    return CBApiIsSandstorm(game);
+  }
+
+  public static func IsNight(game: GameInstance) -> Bool {
+    return CBIsNight(game);
+  }
+
+  // ---- Cyberbane's own Work for the corporations contract from this corporation, now. False when it can't offer one.
+  public static func OfferCorpWork(game: GameInstance, faction: CName) -> Bool {
+    return CBApiOfferCorpWork(game, faction);
+  }
+
+  // ---- A History line whose key's text has {0} for the faction's label ("{0} closed your file").
+  public static func FileHistoryFor(game: GameInstance, faction: CName, reasonKey: CName) -> Bool {
+    return IsNameValid(faction) && CBApiFileHistory(game, faction, reasonKey);
+  }
+
+  // ---- A group asked for with neutralToV: 0 V has picked no side yet, 1 V stood with it, 2 V fought it.
+  public static func GroupSideTaken(game: GameInstance, group: Int32) -> Int32 {
+    let reg = CBApiRequests.Get(game);
+    return IsDefined(reg) ? reg.TakenOf(group) : 0;
+  }
 }

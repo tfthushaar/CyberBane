@@ -14,6 +14,8 @@ public class CyberbaneRuntime extends ScriptableService {
   // Where the last of ours was put down (Spawn/Spawner.reds, CBCreateSpawn), for a place pin before the body is in the
   // world (a favour's lookout, Spawn/LivingStreet.reds).
   public let lastSpawnAt: Vector4;
+  // What the log last said about the language V speaks (Compat/NativeLanguage.reds): 0 nothing yet, 1 English, 2 not.
+  public let vLanguageSaid: Int32;
   // The apex squad last sent and the seed its warning named it from (Spawn/FactionApex.reds, CBProcessPendingApex): the
   // bodies are set up after the seed has moved on, and read their names from here (Spawn/ApexSquad.reds, CBApexMemberName).
   public let lastApexFaction: CName;
@@ -57,6 +59,7 @@ public class CyberbaneRuntime extends ScriptableService {
   // How many game seconds pass per real second, measured once a session. About 8.1 by default; a mod like CP Chronology
   // that slows the world clock brings it near 1.
   private let m_clockRatio: Float = 1.0;
+  private let m_clockMeasured: Bool;
   // Sim time of the last on-screen message, so two never land on top of each other.
   private let m_lastMessageAt: Float;
   // Equipment-EX's outfit functions, looked up once a launch (Signals/Concealment.reds).
@@ -335,6 +338,35 @@ public class CyberbaneRuntime extends ScriptableService {
     this.m_recentSpawnAt = keepAt;
   }
 
+  // How far from V each of the last few bodies was put down, so their setup can log how far off they really appeared.
+  private let m_placedIds: array<EntityID>;
+  private let m_placedAway: array<Float>;
+
+  public func NotePlaced(id: EntityID, away: Float) -> Void {
+    if ArraySize(this.m_placedIds) >= 32 || ArraySize(this.m_placedAway) >= 32 {
+      ArrayErase(this.m_placedIds, 0);
+      ArrayErase(this.m_placedAway, 0);
+    }
+    ArrayPush(this.m_placedIds, id);
+    ArrayPush(this.m_placedAway, away);
+  }
+
+  // -1 when this body was not put down by the spawner (a car's crew, a body streaming back in).
+  public func TakePlaced(id: EntityID) -> Float {
+    let n = Min(ArraySize(this.m_placedIds), ArraySize(this.m_placedAway));
+    let i = 0;
+    while i < n {
+      if Equals(this.m_placedIds[i], id) {
+        let away = this.m_placedAway[i];
+        ArrayErase(this.m_placedIds, i);
+        ArrayErase(this.m_placedAway, i);
+        return away;
+      }
+      i += 1;
+    }
+    return -1.0;
+  }
+
   // Fenix Rebirth's word on V's rebirths (Compat/FenixRebirth.reds).
   private let m_fenixProbe: ref<CBFenixProbe>;
 
@@ -417,7 +449,12 @@ public class CyberbaneRuntime extends ScriptableService {
   public func SetClockRatio(v: Float) -> Void {
     if v > 0.0 {
       this.m_clockRatio = v;
+      this.m_clockMeasured = true;
     }
+  }
+
+  public func ClockMeasured() -> Bool {
+    return this.m_clockMeasured;
   }
 
   public func NoteSaid(line: String) -> Void {
@@ -625,4 +662,13 @@ public class CyberbaneRuntime extends ScriptableService {
   public func SetLogLevel(value: Int32) -> Void {
     this.m_logLevel = value;
   }
+}
+
+// Game seconds per real second: measured a minute into each session (CyberbaneSystem), the game's usual 8 before that.
+public func CBGameSecondsPerReal() -> Float {
+  let rt = CyberbaneRuntime.Get();
+  if IsDefined(rt) && rt.ClockMeasured() && rt.GetClockRatio() > 0.0 {
+    return rt.GetClockRatio();
+  }
+  return 8.0;
 }
