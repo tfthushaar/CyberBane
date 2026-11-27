@@ -1394,6 +1394,14 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-ClothingCounts-Desc")
   public let clothingCounts: Bool = true;
 
+  // Whether the street keeps its own opinion of V, district by district (Model/Esteem.reds).
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
+  @runtimeProperty("ModSettings.category.order", "14")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-EsteemCounts")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-EsteemCounts-Desc")
+  public let esteemCounts: Bool = true;
+
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-Reputation")
   @runtimeProperty("ModSettings.category.order", "14")

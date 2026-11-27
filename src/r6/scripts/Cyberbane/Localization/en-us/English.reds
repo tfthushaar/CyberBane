@@ -1118,11 +1118,11 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-TitleEngine-BecomeOneOfAGangS", "Become one of a gang's own.");
     this.Text("Cyberbane-TitleEngine-ReachThisMuchRenown", "Reach this much Renown");
     this.Text("Cyberbane-TitleEngine-InstalledChromeScoreFromHowMuch", "Installed chrome score, from how much of your cyberware capacity or slots you fill and how good the implants are");
-    this.Text("Cyberbane-TitleEngine-QuickhackKillsBuildIt", "Quickhack kills build it.");
+    this.Text("Cyberbane-TitleEngine-QuickhackKillsBuildIt", "Quickhack kills build it, quickhack knockouts a little.");
     this.Text("Cyberbane-TitleEngine-KillPeopleWithQuickhacks", "Kill people with quickhacks");
     this.Text("Cyberbane-TitleEngine-KillCyberpsychos", "Kill cyberpsychos");
     this.Text("Cyberbane-TitleEngine-TakeCyberpsychosDownWithoutKillingThem", "Take cyberpsychos down without killing them");
-    this.Text("Cyberbane-TitleEngine-FistsAndBluntWeaponsBuildIt", "Fists and blunt weapons build it, knockouts included.");
+    this.Text("Cyberbane-TitleEngine-FistsAndBluntWeaponsBuildIt", "Fists, blunt weapons and Gorilla Arms build it, knockouts included.");
     this.Text("Cyberbane-TitleEngine-PutPeopleDownDeadOrBreathing", "Put people down, dead or breathing");
     this.Text("Cyberbane-TitleEngine-WinFightsOf2OrMore", "Win fights of 2 or more kills with your health never under 95%");
     // {0} CBConfig.MassacreTotalKills, {1} CBConfig.MassacreWindowKills, {2} RoundF(CBConfig.MassacreWindowSeconds)
@@ -1139,9 +1139,9 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-TitleEngine-75KilledFear", "{0}: {1}/75 killed, fear {2}/{3}.");
     // {0} fearNeed, {1} (Equals(gang, n"") ? "You have not fought one yet.": CBCa
     this.Text("Cyberbane-TitleEngine-OneGangHasToLose75", "One gang has to lose 75 people to you and fear you at {0} or more.\n{1}");
-    this.Text("Cyberbane-TitleEngine-KillingPeopleBuildsItBrutallyFaster", "Killing people builds it, brutally faster.");
+    this.Text("Cyberbane-TitleEngine-KillingPeopleBuildsItBrutallyFaster", "Kills build it: a little each, more in an open fight or with explosives, most for brutal ones (finishers, dismemberment, blades, fists, mantis blades, monowire).");
     this.Text("Cyberbane-TitleEngine-KillsInOneDistrict", "Kills in one district");
-    this.Text("Cyberbane-TitleEngine-TakingPeopleDownUnseenBuildsIt", "Taking people down unseen builds it.");
+    this.Text("Cyberbane-TitleEngine-TakingPeopleDownUnseenBuildsIt", "Unseen work builds it: kills nobody sees, and takedowns out of a fight.");
     this.Text("Cyberbane-TitleEngine-QuietNonLethalTakedownsInOne", "Quiet non-lethal takedowns in one district");
     this.Text("Cyberbane-TitleEngine-ReachThisMuchDread", "Reach this much Dread");
     this.Text("Cyberbane-TitleEngine-ReachThisMuchRenownInOne", "Reach this much Renown in one district");
@@ -4697,6 +4697,12 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-Hud-TributeTakenEbPaidOutFor", "        tribute taken {0} eddies      paid out for peace {1} eddies\n");
     // {0} style
     this.Text("Cyberbane-Hud-Style", "        style {0}\n");
+    // {0} the main style, {1} its share, {2} the others with theirs
+    this.Text("Cyberbane-Hud-StyleShares", "        style {0} ({1}%), then {2}\n");
+    this.Text("Cyberbane-Hud-StyleOnly", "        style {0}\n");
+    // {0} what V has done so far, {1} what it takes
+    this.Text("Cyberbane-Hud-StyleNotSettled", "        style not settled yet ({0} of {1})\n");
+    this.Text("Cyberbane-Hud-StyleGuide", "        Your style is whatever you have done most of, fading slowly, and a new one has to pull clearly ahead. Butcher: kills, more in open fights and with explosives, most for brutal ones (finishers, blades, fists, mantis blades, monowire). Ghost: kills nobody sees, and takedowns out of a fight. Operator: putting people down alive in an open fight. Brawler: fists, clubs and Gorilla Arms, knockouts too. Netrunner: quickhacks. Chromed: fighting with a Sandevistan, Kerenzikov or Berserk running.\n");
     this.Text("Cyberbane-Hud-WarmedToYou", "warmed to you");
     this.Text("Cyberbane-Hud-TookOffence", "took offence");
     this.Text("Cyberbane-Hud-FearYouMore", "fear you more");
@@ -5848,6 +5854,39 @@ public class CBLocalizationEnUs extends ModLocalizationPackage {
     this.Text("Cyberbane-CrewLife-StoryKillOne", "Has put one enemy down.");
     this.Text("Cyberbane-CrewLife-StoryKillCount", "Has put {0} enemies down.");
     this.Text("Cyberbane-CrewLife-GainsLegend", "They break guards and dodge like nobody else.");
+    this.Text("Cyberbane-CrewDoor-JoinMyCrew", "Join my crew");
+    this.Text("Cyberbane-Settings-EsteemCounts", "The street makes up its own mind");
+    this.Text("Cyberbane-Settings-EsteemCounts-Desc", "Each district keeps its own opinion of you. Never hurt the people there, put down the ones who prey on them and leave the beaten alive, and they stop backing away from you and start greeting you. Hurt them and they remember. Off, the street only ever fears you.");
+    this.Text("Cyberbane-Esteem-TheirHero", "their hero");
+    this.Text("Cyberbane-Esteem-AFriendOfTheBlock", "a friend of the block");
+    this.Text("Cyberbane-Esteem-OneOfTheGoodOnes", "one of the good ones");
+    this.Text("Cyberbane-Esteem-NobodyInParticular", "nobody in particular");
+    this.Text("Cyberbane-Esteem-HudSoured", "\nThe people here have not forgotten what you did to one of them. Nothing you do here counts with them for a while.\n");
+    this.Text("Cyberbane-Esteem-HudNotYet", "\nThe people here have no opinion of you yet. Leave them be, deal with the ones who prey on them, and they will.\n");
+    // {0} CBEsteemWord, {1} the number
+    this.Text("Cyberbane-Esteem-HudHere", "\nTo the people here you are {0} ({1} of 100).");
+    this.Text("Cyberbane-Esteem-HudTheyGreetYou", " The ones who know your face greet you instead of backing away.");
+    this.Text("Cyberbane-Esteem-Whisper1", "That's V. Cleared the gangers off our corner and never touched one of us.");
+    this.Text("Cyberbane-Esteem-Whisper2", "Say what you want about mercs. That one looks out for the block.");
+    this.Text("Cyberbane-Esteem-Whisper3", "V's around? Good. Nobody starts anything when V's around.");
+    this.Text("Cyberbane-Esteem-Whisper4", "My kid wants to be V when she grows up. Could be worse.");
+    this.Text("Cyberbane-Esteem-Whisper5", "Dangerous, sure. But not to us.");
+    this.Text("Cyberbane-Esteem-Whisper6", "Wave if you see V. V waves back.");
+    this.Text("Cyberbane-Esteem-PeoplesMerc", "The People's Merc");
+    this.Text("Cyberbane-Esteem-PeoplesMercPerk", "Crowds back off from you a third less, the street comes round to you faster, and people greet you sooner.");
+    // {0} PeoplesMercEsteem
+    this.Text("Cyberbane-Esteem-ReqDistricts", "Districts where the people think of you at {0} or more");
+    this.Text("Cyberbane-Esteem-ReqConduct", "Conduct");
+    // {0} PeoplesMercCleanDays
+    this.Text("Cyberbane-Esteem-ReqClean", "And nobody of the street hurt by you for {0} days");
+    this.Text("Cyberbane-CrewDoor-YourCrewIsSwitchedOff", "Your crew is switched off in Mod Settings.");
+    this.Text("Cyberbane-CrewDoor-NobodyToBring", "There is nobody there to bring in.");
+    this.Text("Cyberbane-CrewDoor-AlreadyOneOfYours", "They are already one of your crew.");
+    this.Text("Cyberbane-CrewDoor-SoThisIsYourCrew", "So this is your crew. Count me in.");
+    this.Text("Cyberbane-CrewDoor-YouWantMeIMIn", "You want me with your people? I'm in. Call when you need me.");
+    this.Text("Cyberbane-CrewDoor-AFriendWhoThrewInWithYou", "a friend who threw in with you");
+    this.Text("Cyberbane-CrewDoor-AFriend", "a friend");
+    this.Text("Cyberbane-CrewDoor-TailAlly", " We go back, you and me. That's why I said yes.");
     this.Text("Cyberbane-CrewLife-GainsShareLegend", "They hold out and hit for at least {0}% of what you do, and stand up to MaxTac.");
     this.Text("Cyberbane-CrewLife-GainsShare", "They hold out and hit for at least {0}% of what you do.");
     this.Text("Cyberbane-CrewLife-GainsEnforcer", "They shrug off stuns and takedowns.");

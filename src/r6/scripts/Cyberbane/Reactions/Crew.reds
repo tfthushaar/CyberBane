@@ -33,6 +33,7 @@ public func CBCrewOwed() -> Int32 = 0
 public func CBCrewFrightened() -> Int32 = 1
 public func CBCrewPaid() -> Int32 = 2
 public func CBCrewLent() -> Int32 = 3
+public func CBCrewAlly() -> Int32 = 4    // came over from another mod's companions (Reactions/CrewDoor.reds)
 
 // How somebody left.
 public func CBCrewEndFell() -> Int32 = 0
@@ -678,6 +679,7 @@ public func CBCrewFromWords(m: ref<CBCrewMember>) -> String {
   if m.kind == CBCrewOwed() { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Crew-OnceOfWhoOwesYouA", [s"\(gang)"]) : CBT(n"Cyberbane-Crew-WhoOwesYouALife"); }
   if m.kind == CBCrewFrightened() { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Crew-OnceOfScaredIntoWorkingFor", [s"\(gang)"]) : CBT(n"Cyberbane-Crew-ScaredIntoWorkingForYou"); }
   if m.kind == CBCrewLent() { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Crew-OnLoanFrom", [s"\(gang)"]) : CBT(n"Cyberbane-Crew-OnLoan"); }
+  if m.kind == CBCrewAlly() { return CBT(n"Cyberbane-CrewDoor-AFriendWhoThrewInWithYou"); }
   return CBT(n"Cyberbane-Crew-ASoloPaidByTheWeek");
 }
 
@@ -691,6 +693,7 @@ public func CBCrewFromShort(m: ref<CBCrewMember>) -> String {
   if m.kind == CBCrewOwed() { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Crew-OwesYouALifeEx", [s"\(gang)"]) : CBT(n"Cyberbane-Crew-OwesYouALife"); }
   if m.kind == CBCrewFrightened() { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Crew-ScaredEx", [s"\(gang)"]) : CBT(n"Cyberbane-Crew-ScaredIntoIt"); }
   if m.kind == CBCrewLent() { return StrLen(gang) > 0 ? CBTf(n"Cyberbane-Crew-OnLoan-2", [s"\(gang)"]) : CBT(n"Cyberbane-Crew-OnLoan"); }
+  if m.kind == CBCrewAlly() { return CBT(n"Cyberbane-CrewDoor-AFriend"); }
   return CBT(n"Cyberbane-Crew-PaidSolo");
 }
 
@@ -1409,11 +1412,12 @@ public func CBCrewCall(sys: ref<CyberbaneSystem>, game: GameInstance, unasked: B
   }
   let book = CBCrewBook.Get(game);
   let now = CBGameSeconds(game);
-  // Called with nothing to fight, they walk with V: two of them, until V sends them home. Up to then the call was only
-  // ever "Nothing to call them for" outside a fight.
+  // V's own call brings everybody who can come, as far as there is room in the world for them; with nothing to fight
+  // they walk with V until V sends them home. The ones who come on their own (unasked) come fewer.
   let joining = book.OutCount() > 0;
   let escort = joining ? book.escort : (!unasked && !CBCrewTrouble(sys, game));
-  let want = only > 0 ? Min(1, CBSpawnRoom(game)) : Min(escort ? CBConfig.MyCrewEscortOut() : CBConfig.MyCrewOut(), CBSpawnRoom(game));
+  let few = escort ? CBConfig.MyCrewEscortOut() : CBConfig.MyCrewOut();
+  let want = only > 0 ? Min(1, CBSpawnRoom(game)) : Min(unasked ? few : book.Count(), CBSpawnRoom(game));
   let order: array<ref<CBCrewMember>>;
   if only > 0 {
     let one = book.Find(only);
@@ -1757,6 +1761,18 @@ public func CBMyCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
   }
 }
 
+// Why a call ended, for the log.
+func CBCrewEndWhyWord(why: Int32) -> String {
+  if why == 0 { return "the fight is over, or it went quiet"; }
+  if why == 1 { return "V drove off without them"; }
+  if why == 2 { return "they lost V"; }
+  if why == 3 { return "the story, a scene, a safe place or a job's rule"; }
+  if why == 4 { return "nobody left standing"; }
+  if why == 5 { return "Your crew switched off"; }
+  if why == 6 { return "sent home"; }
+  return s"\(why)";
+}
+
 // One of them sent home on their own from their orders on the Hub, the rest staying with V. The last one out ends the
 // call the way the whole crew's home does, which counts how it went (CBCrewEndCall).
 public func CBCrewSendOneHome(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, id: Int32) -> Void {
@@ -1801,6 +1817,7 @@ public func CBCrewSendOneHome(sys: ref<CyberbaneSystem>, game: GameInstance, boo
 // What happened to each is counted here: a win, a wound, and whether V stood over them when they went down.
 func CBCrewEndCall(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, why: Int32) -> Void {
   let player = GetPlayer(game);
+  CBLog.Info(n"Crew", s"The call is over: \(CBCrewEndWhyWord(why)).");
   let now = CBGameSeconds(game);
   // A win needs a fight, and is counted when that fight is over (CBCrewBattleTick). One won and over a moment ago, the
   // call cut short before the tick counted it (sent home, a car, a held place, V gone on), counts here.

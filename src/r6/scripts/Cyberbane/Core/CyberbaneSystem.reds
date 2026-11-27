@@ -3792,6 +3792,10 @@ public class CyberbaneSystem extends ScriptableSystem {
     if IsDefined(statBook) {
       statBook.Clear();   // nor has been out with V
     }
+    let esteemBook = CBEsteemBook.Get(game);
+    if IsDefined(esteemBook) {
+      esteemBook.Clear();   // and the street thinks nothing of V yet
+    }
     let nameBook = CBCrewNameBook.Get(game);
     if IsDefined(nameBook) {
       nameBook.Clear();   // nor goes by a name V gave them

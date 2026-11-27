@@ -385,6 +385,10 @@ func CBOnPuppetDeath(puppet: ref<ScriptedPuppet>) -> Void {
         fsS.standing = ClampF(fsS.standing - extra, -100.0, 100.0);
       }
       CBFileLog(sysS, n"ShotSurrendered", CBGameSeconds(game), CBEventDistrict(sysS, game), CBClassifyFaction(puppet), 0.0);
+      let esteemBook = CBEsteemBook.Get(game);
+      if IsDefined(esteemBook) && CBEsteemOn() && !CBReputationFrozen() {
+        esteemBook.Add(CBEventDistrict(sysS, game), -CBConfig.EsteemShotSurrendered());
+      }
       if CBMessagesOn() {
         CBHearsayFromStreet(game, CBT(n"Cyberbane-CombatSignals-YouShotSomebodyWithTheirHands"), n"");
       }

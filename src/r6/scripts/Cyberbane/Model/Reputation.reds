@@ -260,6 +260,9 @@ public func CBApplyKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Voi
     }
   }
 
+  // What the street around it makes of it (Model/Esteem.reds).
+  CBEsteemForKill(sys, info);
+
   CBLog.Verbose(n"Model", s"Kill applied: class=\(info.victimClass) faction=\(NameToString(info.faction)) lethal=\(info.lethal) witnessed=\(info.witnessed).");
 }
 
@@ -308,15 +311,12 @@ func CBAccrueArchetypeForKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>, 
     if hands {
       sys.AddArchetype(EnumInt(ECBArchetype.Brawler), 1.5);
     }
-    // Quiet work, out of any fight or unseen, is a ghost's.
+    // Quiet work, out of any fight or unseen, is a ghost's: once, however quiet it was.
     if (!hands && !info.loud) || info.stealth {
-      sys.AddArchetype(EnumInt(ECBArchetype.Ghost), 1.5);
+      sys.AddArchetype(EnumInt(ECBArchetype.Ghost), CBConfig.GhostPerQuietTakedown());
     }
     if !hands && info.loud && !info.stealth {
       sys.AddArchetype(EnumInt(ECBArchetype.Professional), 1.0);
-    }
-    if info.stealth {
-      sys.AddArchetype(EnumInt(ECBArchetype.Ghost), 1.0);
     }
     if info.mQuickhack {
       sys.AddArchetype(EnumInt(ECBArchetype.Netrunner), 0.5);
@@ -325,6 +325,58 @@ func CBAccrueArchetypeForKill(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>, 
       }
     }
   }
+  CBAccrueStyleFromKit(sys, info);
+}
+
+// What V fought with, as the implant table says each piece leans (Data/Implants.reds): the arm chrome the blow came
+// from, and a Sandevistan, Kerenzikov, Berserk or optical camo running when it landed. Without this the table's leanings
+// were read nowhere, and Chromed was a style nobody could have.
+func CBAccrueStyleFromKit(sys: ref<CyberbaneSystem>, info: ref<CBKillInfo>) -> Void {
+  let content = sys.GetContent();
+  let player = GetPlayer(sys.GetGameInstance());
+  if !IsDefined(content) || !IsDefined(player) || !info.instigatorIsPlayer {
+    return;
+  }
+  let families: array<CName>;
+  let arm = CBArmChromeFamily(info.weaponRecord);
+  if IsNameValid(arm) {
+    ArrayPush(families, arm);
+  }
+  if StatusEffectSystem.ObjectHasStatusEffectWithTag(player, n"BerserkBuff") {
+    ArrayPush(families, n"Berserk");
+  }
+  if StatusEffectSystem.ObjectHasStatusEffectWithTag(player, n"SandevistanPlayerBuff") {
+    ArrayPush(families, n"Sandevistan");
+  }
+  if StatusEffectSystem.ObjectHasStatusEffect(player, t"BaseStatusEffect.KerenzikovPlayerBuff") {
+    ArrayPush(families, n"Kerenzikov");
+  }
+  if StatusEffectSystem.ObjectHasStatusEffectWithTag(player, n"CamoActiveOnPlayer") {
+    ArrayPush(families, n"OpticalCamo");
+  }
+  for f in families {
+    let def = content.GetImplant(f);
+    if IsDefined(def) && def.archetype >= 0 {
+      sys.AddArchetype(def.archetype, info.lethal ? CBConfig.StyleKitPerKill() : CBConfig.StyleKitPerKill() * 0.5);
+    }
+  }
+}
+
+// The implant family a weapon record belongs to when it is arm chrome, n"" otherwise.
+func CBArmChromeFamily(weapon: TweakDBID) -> CName {
+  if !TDBID.IsValid(weapon) {
+    return n"";
+  }
+  let rec = TweakDBInterface.GetItemRecord(weapon);
+  if !IsDefined(rec) || !IsDefined(rec.ItemType()) {
+    return n"";
+  }
+  let t = rec.ItemType().Type();
+  if Equals(t, gamedataItemType.Cyb_MantisBlades) { return n"MantisBlades"; }
+  if Equals(t, gamedataItemType.Cyb_StrongArms) { return n"GorillaArms"; }
+  if Equals(t, gamedataItemType.Cyb_NanoWires) { return n"Monowire"; }
+  if Equals(t, gamedataItemType.Cyb_Launcher) { return n"ProjectileLaunchSystem"; }
+  return n"";
 }
 
 // When did each gang swear its vendetta?

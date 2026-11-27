@@ -188,6 +188,11 @@ public func CBWhisperLine(sys: ref<CyberbaneSystem>, game: GameInstance,
                                       CBT(n"Cyberbane-Whispers-HeardTheyRunACrew")]));
     }
   }
+  // A street that thinks well of V says so (Model/Esteem.reds).
+  if !st.masked && CBEsteemHere(sys, game) >= CBConfig.EsteemGreet() {
+    bag.Add(n"esteem", 3.0, CBLineOf([CBT(n"Cyberbane-Esteem-Whisper1"), CBT(n"Cyberbane-Esteem-Whisper2"), CBT(n"Cyberbane-Esteem-Whisper3"),
+                                      CBT(n"Cyberbane-Esteem-Whisper4"), CBT(n"Cyberbane-Esteem-Whisper5"), CBT(n"Cyberbane-Esteem-Whisper6")]));
+  }
   // V's crew walking with V, by name: passers-by and gangers notice who V brought.
   let crewWith = CBCrewWalkingWith(sys, game);
   if !st.masked && StrLen(crewWith) > 0 {

@@ -54,6 +54,23 @@ func CBVisibleInArea(data: ref<EquipmentSystemPlayerData>, area: gamedataEquipme
   return data.GetActiveItem(area);
 }
 
+// The garment attached to one of V's slots, the way the game's own equipment code reads it (GetItemInSlot): an item
+// object in the slot, whatever put it there. GetActiveItemInSlot answers only for an item made active in its slot, the
+// weapon kind, so the preview copies the wardrobe and Equipment-EX draw clothes with read as an empty slot.
+public func CBGarmentInSlot(ts: ref<TransactionSystem>, player: ref<GameObject>, slot: TweakDBID) -> ItemID {
+  if !IsDefined(ts) || !IsDefined(player) {
+    return ItemID.None();
+  }
+  let obj = ts.GetItemInSlot(player, slot);
+  if IsDefined(obj) {
+    let id = obj.GetItemID();
+    if ItemID.IsValid(id) {
+      return id;
+    }
+  }
+  return ts.GetActiveItemInSlot(player, slot);
+}
+
 // Is this item one of these? By value, item by item.
 func CBItemListHas(list: array<ItemID>, id: ItemID) -> Bool {
   for known in list {
@@ -462,14 +479,17 @@ public func CBLogEquippedTags(game: GameInstance) -> Void {
   let bySlot = 0;
   let j = 0;
   while j < ArraySize(slots) {
-    let id = ts.GetActiveItemInSlot(player, slots[j]);
+    let id = CBGarmentInSlot(ts, player, slots[j]);
     if ItemID.IsValid(id) {
       bySlot += 1;
       CBLog.Info(n"Signals", s"Worn (slot): \(TDBID.ToStringDEBUG(slots[j])) holds \(TDBID.ToStringDEBUG(ItemID.GetTDBID(id)))");
     }
     j += 1;
   }
-  CBLog.Info(n"Signals", s"Clothing check: \(byArea) by equipment area, \(byVisual) by wardrobe visual, \(bySlot) by attachment slot. Masked: \(CBPlayerMasked(game)).");
+  let eqexSlots: array<TweakDBID>;
+  let eqexOn = CBEqExOutfitSlots(game, eqexSlots);
+  CBLog.Info(n"Signals", s"Clothing check: \(byArea) by equipment area, \(byVisual) by wardrobe visual, \(bySlot) by attachment slot"
+                    + (eqexOn ? s", Equipment-EX outfit on with \(ArraySize(eqexSlots)) slots filled" : "") + s". Masked: \(CBPlayerMasked(game)).");
   // And what CBReadWorn makes of it all, which is what the chrome, the look and the mask go by, with
   // each garment's sleeves as the game records them (1 long, 0 bare, -1 not on record).
   let worn = CBReadWorn(game, data);
@@ -512,16 +532,32 @@ public class CBEqExProbe {
         }
         if IsDefined(active) && IsDefined(used)
            && ArraySize(activeParams) == 0 && ArraySize(usedParams) == 0
-           && CBReflectReturns(active, n"Bool") && CBReflectReturns(used, n"array:TweakDBID") {
+           && CBReflectReturns(active, n"Bool") && CBReflectReturnsArrayOf(used, n"TweakDBID") {
           this.isActive = active;
           this.usedSlots = used;
           this.state = 1;
           CBLog.Info(n"Signals", "Equipment-EX found: its outfits are read as what V is wearing.");
+        } else {
+          CBLog.Info(n"Signals", "Equipment-EX is installed, but its outfit calls are not the shape Cyberbane reads; its outfits go unread.");
         }
       }
     }
     return this.state == 1;
   }
+}
+
+// Does this function hand back an array of this type? By the kind of type and what it holds, not by how the array's
+// own name is spelled.
+func CBReflectReturnsArrayOf(fn: ref<ReflectionFunc>, innerName: CName) -> Bool {
+  if !IsDefined(fn) {
+    return false;
+  }
+  let ret = fn.GetReturnType();
+  if !IsDefined(ret) || !ret.IsArray() {
+    return false;
+  }
+  let inner = ret.GetInnerType();
+  return IsDefined(inner) && Equals(inner.GetName(), innerName);
 }
 
 // Does this function hand back exactly this type? Checked before any value it returns is taken out of
@@ -572,8 +608,8 @@ func CBReadEqExOutfit(game: GameInstance, worn: ref<CBWornRead>, slots: array<Tw
   let armSeen: array<Int32>;
   let legSeen: array<Int32>;
   for slot in slots {
-    // The garment the slot holds, by id (see the note above): its record is all that is read.
-    let id = ts.GetActiveItemInSlot(player, slot);
+    // The garment the slot holds: its record is all that is read.
+    let id = CBGarmentInSlot(ts, player, slot);
     if ItemID.IsValid(id) {
       if !CBGarmentRecordListed(worn.garments, id) {
         ArrayPush(worn.garments, id);

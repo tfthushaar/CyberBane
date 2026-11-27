@@ -103,10 +103,16 @@ public func CBFearReact(game: GameInstance, score: ref<CBScoreEngine>, npc: wref
   // A quarter either way. A share and not a flat amount, so turning the slider down quietens
   // everybody and cannot leave a few jumpy people reacting to nothing at all.
   let jumpy = 1.0 + Cast<Float>(npc.cbCrowdNerve - 26) / 100.0;
-  // One copy of the sum, in Model/ScoreMath.reds, because the Hub needs the same answer.
-  let fear = CBCrowdFear(score, intensity) * jumpy - brave;
+  // One copy of the sum, with what the street here thinks of V (Model/Esteem.reds), because the Hub needs the same answer.
+  let sys = CyberbaneSystem.Get(game);
+  let fear = CBCrowdFearHere(sys, game, score, intensity) * jumpy - brave;
 
   let stage = CBFearStage(fear, dist, reach);
+  // People who think well of V and know V's face greet V instead of backing off, when V gives them no reason not to.
+  if stage <= 1 && IsDefined(player) && (npc.IsCrowd() || npc.IsCharacterCivilian()) && IsDefined(sys)
+     && CBEsteemGreets(sys, game, player) && CBEsteemGreet(sys, game, npc, player, dist, tick) {
+    return true;
+  }
   if stage < 0 {
     return false;
   }

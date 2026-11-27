@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.8.1.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.8.2.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -15,6 +15,10 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   district by district, so you can be a legend in Watson while Pacifica has never heard of you.
 - **The street reacts.** People glance, step aside, freeze or run, depending on how frightening you
   are. Cover your chrome or wear a mask and they can't place you.
+- **The street makes up its own mind.** Each district keeps its own opinion of you. Never hurt the people there, put
+  down the gangers and cyberpsychos who prey on them and leave the beaten alive, and they stop backing away and start
+  greeting you, most of all on your own block. Hurt one of them and that district remembers. Earn it in enough districts
+  and you are **The People's Merc**.
 - **Gangs pick a side.** Help a gang's enemies and they warm to you: better prices on their turf and
   warnings when their enemies come for you. Keep hurting them and they send a crew, then their apex
   squad, by car or on foot. You can pay them off.
@@ -245,10 +249,18 @@ Use the framework versions that match your game:
 **By hand:** extract the zip into your Cyberpunk 2077 folder (the one with `bin` and `r6`). The
 scripts end up in `r6\scripts\Cyberbane\`. To update, extract the new zip over the old one.
 
-To uninstall, delete `r6\scripts\Cyberbane` or disable the mod in Vortex. Your Cyberbane progress
+To uninstall, delete `r6\scripts\Cyberbane` (and, with Night City Allies,
+`bin\x64\plugins\cyber_engine_tweaks\mods\NightCityAllies\Interactions\cyberbane_crew.lua`) or disable the mod in Vortex. Your Cyberbane progress
 lives in your saves: a save made while the mod is removed loses it.
 
 ## How to play
+
+**Your fighting style** is whatever you have done most of, fading slowly, and a new one has to pull clearly ahead to
+take over. The History page shows how every style stands. **Butcher**: kills, more in open fights and with explosives,
+most for brutal ones (finishers, blades, fists, mantis blades, monowire). **Ghost**: kills nobody sees, and takedowns
+out of a fight. **Operator**: putting people down alive in an open fight. **Brawler**: fists, clubs and Gorilla Arms,
+knockouts too. **Netrunner**: quickhacks. **Chromed**: fighting with a Sandevistan, Kerenzikov or Berserk running.
+
 
 - **The Hub:** open the game menu (Inventory, Map, Character...) and pick the **Cyberbane** tab, after
   Journal. With the game's radial menu, open Character and it is beside it. Can't find it? Turn on
@@ -268,8 +280,8 @@ lives in your saves: a save made while the mod is removed loses it.
   the hold is off. On hostile ground, where they shoot on sight, step out first.
 - **Calling your crew:** open the **My crew** thread on your phone and pick **Need you. Now.**, press **Call your
   crew** on the Hub's Crew page, or set a key for it (Mod Settings > Cyberbane > Your crew > **Call your crew (key)**).
-  In a fight, up to three come and go home once it is over; with nothing to fight, two come and walk with you until you
-  send them home (**Go home. I've got this.** on the phone, **Send your crew home** on the Hub, or the same key). To
+  Everybody who is free comes, as many as there is room for around you. In a fight they go home once it is over; with
+  nothing to fight they walk with you until you send them home (**Go home. I've got this.** on the phone, **Send your crew home** on the Hub, or the same key). To
   call or send home just one of them, pick them on the Crew page and press the first button, or use **Need you. Come
   to me.** and **Head home. I've got this.** in their own phone thread. They come to gigs and side jobs; **Your crew on
   jobs** changes that. Cutscenes, the main story's own missions and safe places like your
@@ -344,6 +356,11 @@ at the top of the screen, and map markers. The pages after it go deeper, one sub
 - **Conduct with quickhacks, burns and poison:** a burn, a poison or a shock you started never costs Conduct when it
   finishes someone you put down or who gave up. **Shooting someone who gave up costs Conduct**, under **Reputation and
   money**, switches off the cost of finishing them on purpose.
+- **The street's opinion of you:** each district comes to think well or badly of you by how you treat its people (see
+  What it does). **The street makes up its own mind**, under **Reputation and money**, turns it off; then the street
+  only ever fears you. Where you stand in the district you're in is on the Hub's Standing page, under the crowd's line.
+- **Your crew in cars:** when you drive off, the ones your car has no seat for get a car of their own. **Your crew drive
+  after you**, under **Your crew**, turns that off; they walk instead.
 - **Fewer notes from street talk:** **Say why someone won't talk**, under **Street talk**, stops the short message about
   why somebody won't talk to you. It never shows during the game's own conversations.
 - **Fewer messages:** **How much you hear**, on the first page, spaces out the street's chatter (word going round and
@@ -384,6 +401,11 @@ on an older Cyberbane instead of breaking every script mod on the install.
   - Names and records: `FactionName`, `FactionLabel` (a registered faction's `nameKey` and `labelKey`), `RivalIds`,
     `RivalFaction`, `RivalRank`, `RivalName`, `RivalAlive`, `FileHistory` (a History line that moves no standing; keys
     carry a dash), `StartEventFrom` (an event announced by your own contact).
+- **API level 4 (`Cyberbane.Api4`, 2.8.2):** `JoinCrew(game, record, look, name, source, loyalty)` makes a character of
+  yours one of V's crew (the member's id, 0 when they could not join; Cyberbane spawns its own body for them from then
+  on, so send yours away), and `CrewJoinBlocked(game, record)` says why one cannot join now ("" when they can). CET
+  scripts reach the same through `Game.GetScriptableSystemsContainer():Get("CBCrewDoor")`: `CanJoin(record)`,
+  `WhyNot(record)`, `Join(record, look, name, source, loyalty)` and `JoinLabel()`.
 - **API level 3 (`Cyberbane.Api3`, 2.8.1):**
   - Signals between add-ons: `Emit(name, faction, value)` and `CBListener.OnSignal`, delivered on the tick. Names carry
     the sender's prefix; Cyberbane's own (`Cyberbane/RivalSlain`, `Cyberbane/BountyPosted`, `Cyberbane/LadderRank`,
@@ -423,7 +445,7 @@ on an older Cyberbane instead of breaking every script mod on the install.
   bringing you back, and nobody is sent while you're its prisoner. Chippin' In stays off with Fenix installed.
 - **Smasher Encounters:** detected automatically. While Smasher is after you, Cyberbane sends nobody new and turns nobody
   on you at sight, and his Arasaka backup doesn't break and run. Your crew still comes when called.
-- **Equipment-EX, WEAVE and other outfit mods:** your outfit is read as it looks on V. A body suit in Equipment-EX's
+- **Equipment-EX, WEAVE and other outfit mods:** your outfit is read as it looks on V, Equipment-EX's outfits included. A body suit in Equipment-EX's
   body slots covers your arms and legs. With WEAVE, a helmet or mask it tags as covering the face hides yours; WEAVE
   tags every helmet that way, so take the tag off an open helmet in WEAVE's wardrobe if you want your face seen.
 - **Lizzie's Braindances:** works alongside. Its braindance seller keeps to her own business, and the Mox still turn
@@ -432,6 +454,14 @@ on an older Cyberbane instead of breaking every script mod on the install.
   in another language. When V speaks a language other than English, V's English recordings in conversations stay
   silent, and V's own voice lines come out in V's language. The people you talk to answer in the language Cosmopolitan
   Night City gives them, with Cyberbane's words in the subtitles.
+- **Night City Allies:** detected automatically, nothing to install or set. A companion with you gets **Join my crew** in
+  Night City Allies' own menu. They leave its squad and become one of your crew in Cyberbane, with their name, their look
+  and how much they like you. Without Night City Allies the file Cyberbane puts in its folder does nothing (CET notes
+  the folder once in its own log).
+- **Combat Evolved:** works alongside. Its damage multipliers count when Cyberbane sizes up how hard you hit, so the
+  people it builds to last against you still do, and your crew's strength next to yours stays true. It needs its own
+  requirements up to date (DigitalVixenCore and RedLogger); an old one stops every script mod from loading, Cyberbane
+  included.
 - **Phone Extension:** works alongside.
 - **Companions** (the game's and modded ones) fight the people Cyberbane sends after you.
 - **Story characters, quest NPCs, AMM and romance mods** are never touched.

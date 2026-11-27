@@ -6,6 +6,31 @@ The major changes in each version, newest first. Your progress always carries ov
 
 ## 2.8
 
+### 2.8.2 (27 November 2026)
+- **The street makes up its own mind.** Each district keeps its own opinion of you. Leave its people be, put down the
+  gangers and cyberpsychos who prey on them and spare the beaten, and they stop backing away and start greeting you,
+  most of all on your own block and your crew's streets. Hurt one of them and that district remembers. A new title, **The
+  People's Merc**, for being liked like that across the city. **The street makes up its own mind** turns it off.
+- **Your call brings the whole crew.** The call key, the phone and the Hub's **Call your crew** bring everybody who is
+  free, not two or three; calling one of them on their own stays on the Hub and in their thread.
+- **Your crew hit as hard as their rank says.** Their extra damage was sized from a number the game never gives a
+  person (their guns carry it), so only the small rank part ever reached them. Now their own damage is measured in their
+  first fight, and the Crew page shows it.
+- **Night City Allies companions can join your crew.** With Night City Allies installed, a companion with you gets **Join
+  my crew** in its own menu. Nothing to install or set.
+- **Your clothes count again with Equipment-EX.** An Equipment-EX outfit, and anything in your own slots while one is on,
+  was read as wearing nothing.
+- **Fighting styles you can see.** The History page shows how every style stands and what builds each. Chromed can be
+  your style at last (fighting with a Sandevistan, Kerenzikov or Berserk running), arm chrome counts toward its own
+  style, and a quiet takedown no longer counts twice toward Ghost.
+- **Combat Evolved:** its damage multipliers count when Cyberbane sizes up how hard you hit. Keep its requirements
+  (DigitalVixenCore, RedLogger) up to date: an old one stops every script mod from loading.
+- **For mod authors:** API level 4 (`Cyberbane.Api4`) lets an add-on bring one of its characters into your crew; see
+  README.
+- **Translators:** four lines under the titles changed wording (`TitleEngine-KillingPeopleBuildsItBrutallyFaster`,
+  `TitleEngine-TakingPeopleDownUnseenBuildsIt`, `TitleEngine-QuickhackKillsBuildIt`,
+  `TitleEngine-FistsAndBluntWeaponsBuildIt`), and Rookie's rank line too (`CrewLife-GainsRookie`).
+
 ### 2.8.1 (27 November 2026)
 - **Hunters no longer turn up on top of you.** A crew searching for you looks where the street says you are, and finds
   you by seeing or hearing you. Whoever is sent after you arrives from further off.

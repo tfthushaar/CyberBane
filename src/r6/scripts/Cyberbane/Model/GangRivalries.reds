@@ -105,6 +105,8 @@ public func CBCreditMercy(sys: ref<CyberbaneSystem>, faction: CName, amount: Flo
   }
   // Some gangs make more of mercy than others (Data/GangCodes.reds).
   fs.standing = ClampF(fs.standing + amount * sys.WornPerk().mercyMult * CBCodeMercy(faction), -100.0, CBConfig.MercyCeiling());
+  // And the street that watched it.
+  CBEsteemEarn(sys, sys.GetCurrentDistrict(), CBConfig.EsteemPerMercy());
 }
 
 // A corporation's contract done (Spawn/LivingStreet.reds): the one steady way to win a corporation over, whose people

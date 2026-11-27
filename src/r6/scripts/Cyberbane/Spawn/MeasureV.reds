@@ -16,6 +16,8 @@ public class CBVMeasure {
   public let armour: Float;
   public let armourFactor: Float;   // armour x effectiveness: a hit on V is cut by 1 / (1 + this)
   public let bestDps: Float;        // V's hardest-hitting equipped weapon
+  public let bestMelee: Bool;       // and whether it is a blade or a fist
+  public let dpsScale: Float;       // what another mod's damage step does to V's hits with it (Compat/CombatEvolved.reds)
   public let critChance: Float;     // fractions
   public let critDamage: Float;
   public let ram: Float;
@@ -37,9 +39,11 @@ public class CBVMeasure {
   public func Tech() -> Bool { return this.tech >= 15.0 || this.smartLink; }
   public func Marksman() -> Bool { return this.longGuns > 0; }
 
-  // V's damage as a fight sees it: the best weapon, with what V's critical hits add on average.
+  // V's damage as a fight sees it: the best weapon, with what V's critical hits add on average, and whatever another
+  // mod's damage step does to it.
   public func Dps() -> Float {
-    return this.bestDps * (1.0 + this.critChance * this.critDamage);
+    let scale = this.dpsScale > 0.0 ? this.dpsScale : 1.0;
+    return this.bestDps * (1.0 + this.critChance * this.critDamage) * scale;
   }
 
   public func Styles() -> String {
@@ -96,8 +100,12 @@ public func CBMeasureV(game: GameInstance) -> ref<CBVMeasure> {
       if ItemID.IsValid(item) {
         let data = ts.GetItemData(player, item);
         if IsDefined(data) {
-          m.bestDps = MaxF(m.bestDps, data.GetStatValueByType(gamedataStatType.EffectiveDPS));
+          let dps = data.GetStatValueByType(gamedataStatType.EffectiveDPS);
           let kind = data.GetItemType();
+          if dps > m.bestDps {
+            m.bestDps = dps;
+            m.bestMelee = CBCrewSeatForWeapon(kind) == 2;
+          }
           if CBCrewSeatForWeapon(kind) == 2 {
             m.blades += 1;
           }
@@ -108,6 +116,7 @@ public func CBMeasureV(game: GameInstance) -> ref<CBVMeasure> {
       }
     }
   }
+  m.dpsScale = CBOtherModsDamageScale(game, m.bestMelee, true);
   return m;
 }
 

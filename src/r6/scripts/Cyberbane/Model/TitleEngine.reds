@@ -24,6 +24,17 @@ public func CBEvaluateTitles(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
   }
 }
 
+// Liked in enough districts, Conduct high enough, and nobody of the street hurt by V for a fortnight.
+func CBPeoplesMercEarned(sys: ref<CyberbaneSystem>) -> Bool {
+  let game = sys.GetGameInstance();
+  let eb = CBEsteemBook.Get(game);
+  if !CBEsteemOn() || !IsDefined(eb) || sys.GetCode() < CBConfig.PeoplesMercConduct()
+     || eb.CountAtLeast(CBConfig.PeoplesMercEsteem()) < CBConfig.PeoplesMercDistricts() {
+    return false;
+  }
+  return eb.LastHarm() <= 0.0 || CBGameSeconds(game) - eb.LastHarm() >= CBConfig.PeoplesMercCleanDays() * CBConfig.SecondsPerDay();
+}
+
 func CBCheckTitleCondition(sys: ref<CyberbaneSystem>, id: CName) -> Bool {
   if !IsDefined(sys) {
     return false;
@@ -34,6 +45,7 @@ func CBCheckTitleCondition(sys: ref<CyberbaneSystem>, id: CName) -> Bool {
     return false;
   }
   if Equals(id, n"T_LIVING_LEGEND") { return score.GetRenown() >= CBConfig.TierLegend(); }
+  if Equals(id, n"T_PEOPLES_MERC") { return CBPeoplesMercEarned(sys); }
   if Equals(id, n"T_CHROME_SAINT") { return score.GetChrome() >= 85.0; }
   if Equals(id, n"T_GLITCH") {
     return sys.GetPrimaryArchetypeIndex() == EnumInt(ECBArchetype.Netrunner) && stats.quickhackKills >= 50;
@@ -100,6 +112,13 @@ public func CBTitleRequirement(sys: ref<CyberbaneSystem>, id: CName) -> String {
   if Equals(id, n"T_MADE") { return CBT(n"Cyberbane-TitleEngine-BecomeOneOfAGangS"); }
   if Equals(id, n"T_LIVING_LEGEND") {
     return CBReqNum(CBT(n"Cyberbane-TitleEngine-ReachThisMuchRenown"), renown, RoundF(CBConfig.TierLegend())) + ".";
+  }
+  if Equals(id, n"T_PEOPLES_MERC") {
+    let eb = CBEsteemBook.Get(sys.GetGameInstance());
+    let liked = IsDefined(eb) ? eb.CountAtLeast(CBConfig.PeoplesMercEsteem()) : 0;
+    return CBReqNum(CBTf(n"Cyberbane-Esteem-ReqDistricts", [s"\(RoundF(CBConfig.PeoplesMercEsteem()))"]), liked, CBConfig.PeoplesMercDistricts()) + "\n"
+         + CBReqNum(CBT(n"Cyberbane-Esteem-ReqConduct"), RoundF(sys.GetCode()), RoundF(CBConfig.PeoplesMercConduct())) + "\n"
+         + CBTf(n"Cyberbane-Esteem-ReqClean", [s"\(RoundF(CBConfig.PeoplesMercCleanDays()))"]) + ".";
   }
   if Equals(id, n"T_MERC_FROM") {
     return CBReqNum(CBT(n"Cyberbane-TitleEngine-ReachThisMuchRenown"), renown, RoundF(CBConfig.TierLocalName())) + ".";

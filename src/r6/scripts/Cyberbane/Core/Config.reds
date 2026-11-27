@@ -558,6 +558,11 @@ public abstract class CBConfig {
   // each rank between is an even step; a MaxTac's match comes on slower, most of it in the last two ranks. Whatever
   // their weapon and chrome add, their damage stops at this share of V's.
   public static func CrewVShareLegend() -> Float = 0.8
+  // Their own damage a second, measured in a fight (Reactions/CrewStats.reds): after this many hits over at least this
+  // many seconds of fighting, a pause between hits counted up to this long.
+  public static func CrewHitSampleHits() -> Int32 = 8
+  public static func CrewHitSampleSeconds() -> Float = 3.0
+  public static func CrewHitGapSeconds() -> Float = 1.5
   public static func CrewVShareCeiling() -> Float = 1.0
   // Training: the first costs this, each one after it more; away this many game hours, more each time; at most this many.
   public static func CrewTrainCostBase() -> Int32 = 2500
@@ -874,6 +879,50 @@ public abstract class CBConfig {
   public static func MyCrewLoyaltyOwed() -> Int32 = 80
   public static func MyCrewLoyaltyLent() -> Int32 = 65
   public static func MyCrewLoyaltyPaid() -> Int32 = 60
+  public static func MyCrewLoyaltyAlly() -> Int32 = 70
+  // What the street thinks of V (Model/Esteem.reds), 0 to 100 a district. Won: a ganger of a gang V is not friends
+  // with put down here, weighed by who they were and half again more when left breathing; a cyberpsycho put down, or
+  // more for one taken alive; a show of mercy. Each counts for as much as V's Conduct lets it, and a third when nobody
+  // saw. Lost: somebody of the street killed or hurt by V, most of it where it happened and a share everywhere, and
+  // nothing won there counts for a week after. It fades a little a day.
+  public static func EsteemPerThreat() -> Float = 1.0
+  public static func EsteemMercyMult() -> Float = 1.5
+  public static func EsteemPsychoKilled() -> Float = 4.0
+  public static func EsteemPsychoSaved() -> Float = 9.0
+  public static func EsteemPerMercy() -> Float = 1.5
+  public static func EsteemUnseenShare() -> Float = 0.35
+  public static func EsteemCivilianKilled() -> Float = 35.0
+  public static func EsteemCivilianHurt() -> Float = 10.0
+  public static func EsteemShotSurrendered() -> Float = 6.0
+  public static func EsteemHarmCityShare() -> Float = 0.15
+  public static func EsteemSourDays() -> Float = 7.0
+  public static func EsteemFadePerDay() -> Float = 0.7
+  // Where V lives this much more, and at least the floor; on streets V's crew holds the same, smaller. Only while V's
+  // Conduct is not below zero.
+  public static func EsteemHomeBonus() -> Float = 15.0
+  public static func EsteemHomeFloor() -> Float = 30.0
+  public static func EsteemCrewTurfBonus() -> Float = 10.0
+  public static func EsteemCrewTurfFloor() -> Float = 25.0
+  // How much of the crowd's fear of V esteem takes away at 100, outside a fight and in one.
+  public static func EsteemCalm() -> Float = 0.8
+  public static func EsteemCalmInFight() -> Float = 0.3
+  // From these on, the words the Hub uses; at EsteemGreet people who know V's face (that much renown in the district,
+  // or V's own block) greet V: within this many metres, at most once every so many Director ticks each, by this chance
+  // when they are passed, and a spoken greeting at most every few seconds across the street.
+  public static func EsteemKnown() -> Float = 15.0
+  public static func EsteemGreet() -> Float = 40.0
+  public static func EsteemHero() -> Float = 70.0
+  public static func EsteemKnownRenown() -> Float = 15.0
+  public static func EsteemGreetRadius() -> Float = 8.0
+  public static func EsteemGreetCooldownTicks() -> Int32 = 600
+  public static func EsteemGreetChance() -> Float = 0.35
+  public static func EsteemGreetVoiceSeconds() -> Float = 6.0
+  // The People's Merc: liked this much in this many districts, Conduct this high, and nobody of the street hurt by V
+  // for this many days.
+  public static func PeoplesMercEsteem() -> Float = 70.0
+  public static func PeoplesMercDistricts() -> Int32 = 3
+  public static func PeoplesMercConduct() -> Float = 40.0
+  public static func PeoplesMercCleanDays() -> Float = 14.0
   // Frightened recruits start at 60 and their fear wears off by 1 a day: at 35 and 3 they were under the betrayal line
   // against their old gang inside a day, and turned on V a third of the time when called.
   public static func MyCrewLoyaltyFrightened() -> Int32 = 60
@@ -1080,6 +1129,11 @@ public abstract class CBConfig {
   public static func ButcherPerBrutalKill() -> Float = 1.5
   // Lethal with nobody left to report it.
   public static func GhostPerUnseenKill() -> Float = 1.5
+  // A takedown that leaves them breathing, out of a fight or unseen.
+  public static func GhostPerQuietTakedown() -> Float = 1.5
+  // A kill with arm chrome, or with a Sandevistan, Kerenzikov, Berserk or camo running, toward the style the implant
+  // table gives it; half that for a takedown.
+  public static func StyleKitPerKill() -> Float = 1.0
   // On top of the plain kill, for one in an open fight: going in shooting is the body count Butcher measures.
   public static func ButcherPerLoudKill() -> Float = 0.6
 

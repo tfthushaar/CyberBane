@@ -720,6 +720,7 @@ func CBCrewLoreTail(m: ref<CBCrewMember>) -> String {
   if m.kind == CBCrewFrightened() { return CBT(n"Cyberbane-CrewHome-TailFrightened"); }
   if m.kind == CBCrewPaid() { return CBT(n"Cyberbane-CrewHome-TailPaid"); }
   if m.kind == CBCrewLent() { return CBT(n"Cyberbane-CrewHome-TailLent"); }
+  if m.kind == CBCrewAlly() { return CBT(n"Cyberbane-CrewDoor-TailAlly"); }
   return "";
 }
 

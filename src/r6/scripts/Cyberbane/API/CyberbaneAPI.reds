@@ -604,6 +604,20 @@ public abstract class CyberbaneAPI {
     CBApiEmit(game, name, faction, value);
   }
 
+  // ---- Level 4: somebody of yours into V's crew -------------------------------------------------------------------
+  // Why this character record cannot join V's crew now, "" when it can (the crew switched off, full, or one of them
+  // already on it).
+  public static func CrewJoinBlocked(game: GameInstance, record: TweakDBID) -> String {
+    return CBCrewJoinBlocked(game, record);
+  }
+
+  // They join as one of Cyberbane's own members and Cyberbane spawns its own body for them from then on: send yours
+  // away. `look` is their appearance (n"" for the record's own), `name` what you call them ("" for the record's own
+  // name), `source` your mod, for the log, `loyalty` 0..100. The member's id, or 0 when they could not join.
+  public static func JoinCrew(game: GameInstance, record: TweakDBID, look: CName, name: String, source: CName, loyalty: Int32) -> Int32 {
+    return CBCrewJoinFrom(game, record, look, name, source, loyalty);
+  }
+
   // ---- True while Cyberbane's own clocks stand still (a load, a menu, the story on stage, V down): stop yours too.
   public static func ClockHeld(game: GameInstance) -> Bool {
     return CBApiClockHeld(game);

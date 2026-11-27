@@ -410,6 +410,7 @@ public func CBCrewEpitaph(sys: ref<CyberbaneSystem>, game: GameInstance, f: ref<
   if f.kind == CBCrewOwed() { origin = StrLen(gang) > 0 ? CBTf(n"Cyberbane-CrewBanner-OnceOfWhoOwedYouA", [s"\(gang)"]) : CBT(n"Cyberbane-CrewBanner-WhoOwedYouALife"); }
   if f.kind == CBCrewFrightened() { origin = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Crew-OnceOfScaredIntoWorkingFor", [s"\(gang)"]) : CBT(n"Cyberbane-Crew-ScaredIntoWorkingForYou"); }
   if f.kind == CBCrewLent() { origin = StrLen(gang) > 0 ? CBTf(n"Cyberbane-Crew-OnLoanFrom", [s"\(gang)"]) : CBT(n"Cyberbane-Crew-OnLoan"); }
+  if f.kind == CBCrewAlly() { origin = CBT(n"Cyberbane-CrewDoor-AFriendWhoThrewInWithYou"); }
   out += CBTf(n"Cyberbane-CrewBanner-A", [s"\(CBCrewRankWord(f.rank))", s"\(CBCrewSeatWord(f.seat))", s"\(origin)"]);
   let how = CBT(n"Cyberbane-CrewBanner-DiedFightingBesideYou");
   let killers = IsNameValid(f.gang) ? CBFactionLabel(f.gang) : "";

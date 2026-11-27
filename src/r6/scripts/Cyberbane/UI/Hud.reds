@@ -6573,7 +6573,29 @@ func CBHudLegend(sys: ref<CyberbaneSystem>, game: GameInstance) -> String {
   }
   out += CBHudDreadReason(sys) + "\n";
   out += CBHudReactionState(sys);
+  out += CBHudEsteemLine(sys);
   return out;
+}
+
+// What the people here think of V, under the crowd's line (Model/Esteem.reds).
+func CBHudEsteemLine(sys: ref<CyberbaneSystem>) -> String {
+  if !CBEsteemOn() {
+    return "";
+  }
+  let game = sys.GetGameInstance();
+  let district = sys.GetCurrentDistrict();
+  if CBEsteemSoured(game, district) {
+    return CBT(n"Cyberbane-Esteem-HudSoured");
+  }
+  let esteem = CBEsteemHere(sys, game);
+  if esteem < CBConfig.EsteemKnown() {
+    return CBT(n"Cyberbane-Esteem-HudNotYet");
+  }
+  let line = CBTf(n"Cyberbane-Esteem-HudHere", [CBEsteemWord(esteem), s"\(RoundF(esteem))"]);
+  if esteem >= CBConfig.EsteemGreet() * sys.WornPerk().greetMult {
+    line += CBT(n"Cyberbane-Esteem-HudTheyGreetYou");
+  }
+  return line;
 }
 // A live readout of what the city is actually doing about you right now, and what it would
 // take to move the needle. This is the line that answers "is any of this working?".
@@ -6606,7 +6628,7 @@ func CBHudReactionState(sys: ref<CyberbaneSystem>) -> String {
   let chromeVisible = score.GetChromeVisible();
   // The crowd's own number, from the crowd's own formula, including the intensity slider the
   // player set. Working it out separately here is what let this screen disagree with the street.
-  let eff = CBCrowdFear(score, CBCivIntensity() * CBCrowdMomentMult(sys, GetGameInstance()));
+  let eff = CBCrowdFearHere(sys, GetGameInstance(), score, CBCivIntensity() * CBCrowdMomentMult(sys, GetGameInstance()));
   let reach = 1.0 + (chromeVisible / 100.0) * CBConfig.ChromeNoticeRangeBonus();
   if eff >= CBConfig.CivFearRun() {
     let r = RoundF(CBConfig.CivFleeRadius() * reach);
@@ -7074,10 +7096,8 @@ func CBHudLog(sys: ref<CyberbaneSystem>, opt filter: Int32) -> String {
     out += CBTf(n"Cyberbane-Hud-TributeTakenEbPaidOutFor", [s"\(stats.tributeEddies)", s"\(spent)"]);
     // How V fights, in a word. It left the Standing screen with the rest of the lifetime numbers,
     // and it is still worth saying once - this is the screen that says things once.
-    let style = CBArchetypeName(sys.GetPrimaryArchetypeIndex());
-    if NotEquals(style, CBArchetypeName(-1)) {   // the unknown one's own word, so it holds in any language
-      out += CBTf(n"Cyberbane-Hud-Style", [s"\(style)"]);
-    }
+    // How V fights, in a word, and how every style stands, with what builds each.
+    out += CBStyleLine(sys);
     out += "\n";
   }
 
@@ -7601,6 +7621,48 @@ func CBCivIntensity() -> Float {
     return rt.GetSettings().civIntensity;
   }
   return 1.0;
+}
+
+// The tally's style lines: the main one, the share each has of everything V has done so far, and what builds each.
+func CBStyleLine(sys: ref<CyberbaneSystem>) -> String {
+  let acc = sys.GetArchetypeAccumulators();
+  let total = 0.0;
+  for v in acc {
+    total += MaxF(v, 0.0);
+  }
+  let main = sys.GetPrimaryArchetypeIndex();
+  let out = "";
+  if main < 0 || total <= 0.0 {
+    out += CBTf(n"Cyberbane-Hud-StyleNotSettled", [s"\(RoundF(total))", s"\(RoundF(CBConfig.ArchetypeMinTotal()))"]);
+  } else {
+    // Largest first, the main one at the head whatever the order, every style with a share of its own.
+    let parts = "";
+    let used: array<Int32>;
+    ArrayPush(used, main);
+    let n = 0;
+    while n < ArraySize(acc) {
+      let best = -1;
+      let bestVal = 0.0;
+      let i = 0;
+      while i < ArraySize(acc) {
+        if !ArrayContains(used, i) && acc[i] > bestVal {
+          best = i;
+          bestVal = acc[i];
+        }
+        i += 1;
+      }
+      if best >= 0 && RoundF(100.0 * bestVal / total) >= 1 {
+        ArrayPush(used, best);
+        parts += (StrLen(parts) > 0 ? ", " : "") + CBArchetypeName(best) + " " + s"\(RoundF(100.0 * bestVal / total))%";
+      }
+      n += 1;
+    }
+    let mainShare = RoundF(100.0 * MaxF(acc[main], 0.0) / total);
+    out += StrLen(parts) > 0 ? CBTf(n"Cyberbane-Hud-StyleShares", [CBArchetypeName(main), s"\(mainShare)", parts])
+                             : CBTf(n"Cyberbane-Hud-StyleOnly", [CBArchetypeName(main)]);
+  }
+  out += CBT(n"Cyberbane-Hud-StyleGuide");
+  return out;
 }
 
 func CBArchetypeName(idx: Int32) -> String {

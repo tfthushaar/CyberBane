@@ -255,6 +255,12 @@ class CBCrewTurfBook
   m_day: Int32
   m_home: CName
 
+class CBEsteemBook
+  m_district: array<CName>
+  m_value: array<Float>
+  m_harmAt: array<Float>
+  m_lastHarm: Float
+
 class CBLedgerBook
   m_gang: array<CName>
   m_guns: array<Float>

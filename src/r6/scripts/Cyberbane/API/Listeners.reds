@@ -198,7 +198,7 @@ public func CBApiRivalEvent(r: ref<CBRival>, kind: CName) -> Void {
 
 // The API level this Cyberbane offers (API/ApiModule.reds, Api2Module.reds and Api3Module.reds say the same to
 // compile-time guards).
-public func CBApiLevel() -> Int32 = 3
+public func CBApiLevel() -> Int32 = 4
 
 public func CBApiListening(game: GameInstance) -> Bool {
   let book = CBApiBook.Get(game);

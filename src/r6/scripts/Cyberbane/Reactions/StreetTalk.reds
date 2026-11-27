@@ -2516,7 +2516,7 @@ public func CBTalkRead(sys: ref<CyberbaneSystem>, game: GameInstance, npc: ref<S
     if gang {
       fear = MaxF(score.GetFactionFear(faction) / 100.0, looks);
     } else {
-      fear = MaxF(CBCrowdFear(score, CBCrowdMomentMult(sys, game)) / 100.0, looks);
+      fear = MaxF(CBCrowdFearHere(sys, game, score, CBCrowdMomentMult(sys, game)) / 100.0, looks);
     }
   }
   if gang && CBGangBroken(sys, faction) {

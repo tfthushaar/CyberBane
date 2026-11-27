@@ -38,6 +38,7 @@ public func CBApplyDecay(sys: ref<CyberbaneSystem>, elapsedDays: Float) -> Void 
   sys.AddHeatPoints(sys.GetHeatPoints() * (PowF(0.98, quiet) - 1.0));
   sys.DecayArchetypes(PowF(0.995, f));
   sys.RefreshPrimaryArchetype();
+  CBEsteemFade(sys.GetGameInstance(), f);
 
   let content = sys.GetContent();
 

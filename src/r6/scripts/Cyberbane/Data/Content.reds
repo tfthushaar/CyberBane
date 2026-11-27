@@ -174,6 +174,8 @@ public class CBTitleDef {
   public let tributeMult: Float = 1.0;
   public let peaceMult: Float = 1.0;
   public let crowdMult: Float = 1.0;
+  public let esteemMult: Float = 1.0;   // how fast the street comes to think well of V (Model/Esteem.reds)
+  public let greetMult: Float = 1.0;    // and how much of it people need before they greet V
   public let breakMult: Float = 1.0;
   public let senseMult: Float = 1.0;
   public let giveUpMult: Float = 1.0;

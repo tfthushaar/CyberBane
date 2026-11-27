@@ -66,6 +66,8 @@ public class CyberbaneRuntime extends ScriptableService {
   private let m_eqexProbe: ref<CBEqExProbe>;
   // Whether WEAVE's auto-tagger is installed, looked up once a launch (Signals/Concealment.reds).
   private let m_weaveProbe: ref<CBWeaveProbe>;
+  // Combat Evolved's settings, looked up once a launch (Compat/CombatEvolved.reds).
+  private let m_ceProbe: ref<CBCeProbe>;
   // The conversation's answer being voiced (Reactions/TalkVoice.reds).
   private let m_talkVoice: ref<CBTalkVoiceNow>;
   // Whether AudioXL is installed to play V's lines from the story, looked up once a launch (Reactions/TalkVoice.reds).
@@ -201,6 +203,13 @@ public class CyberbaneRuntime extends ScriptableService {
       this.m_audioXLProbe = new CBAudioXLProbe();
     }
     return this.m_audioXLProbe;
+  }
+
+  public func GetCeProbe() -> ref<CBCeProbe> {
+    if !IsDefined(this.m_ceProbe) {
+      this.m_ceProbe = new CBCeProbe();
+    }
+    return this.m_ceProbe;
   }
 
   public func GetWeaveProbe() -> ref<CBWeaveProbe> {

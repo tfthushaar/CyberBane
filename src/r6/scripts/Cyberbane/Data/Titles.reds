@@ -8,6 +8,7 @@
 public func CBSeedTitles(c: ref<CyberbaneContent>) -> Void {
   c.AddTitle(CBMakeTitle(n"T_CYBERBANE",         CBT(n"Cyberbane-Titles-Cyberbane"),                100, true));
   c.AddTitle(CBMakeTitle(n"T_LIVING_LEGEND",     CBT(n"Cyberbane-Titles-LivingLegend"),             90, false));
+  c.AddTitle(CBMakeTitle(n"T_PEOPLES_MERC",      CBT(n"Cyberbane-Esteem-PeoplesMerc"),              80, false));
   c.AddTitle(CBMakeTitle(n"T_FACTION_NIGHTMARE", CBT(n"Cyberbane-Titles-AFactionSNightmare"),     60, false));
   c.AddTitle(CBMakeTitle(n"T_FACTION_FRIEND",    CBT(n"Cyberbane-Titles-FriendOfAFaction"),       55, false));
   c.AddTitle(CBMakeTitle(n"T_BUTCHER_OF",        CBT(n"Cyberbane-Titles-ButcherOfTheDistrict"),   50, false));
@@ -80,6 +81,11 @@ func CBSeedTitlePerks(c: ref<CyberbaneContent>) -> Void {
   t = CBPerkOf(c, n"T_FACTION_FRIEND", CBT(n"Cyberbane-Titles-PayingAGangOffCosts30"));
   t.peaceMult = 0.7;
   t.standingLossMult = 0.75;
+
+  t = CBPerkOf(c, n"T_PEOPLES_MERC", CBT(n"Cyberbane-Esteem-PeoplesMercPerk"));
+  t.crowdMult = 0.7;
+  t.esteemMult = 1.25;
+  t.greetMult = 0.6;
 
   t = CBPerkOf(c, n"T_BUTCHER_OF", CBT(n"Cyberbane-Titles-YourKillsHurtAGangS"));
   t.turfMult = 1.3;

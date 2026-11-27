@@ -56,7 +56,8 @@ public func CBCrewNumbersNow(sys: ref<CyberbaneSystem>, game: GameInstance, book
   n.maxHealth = stats.GetStatValue(id, gamedataStatType.Health);
   n.armourPoints = MaxF(stats.GetStatValue(id, gamedataStatType.Armor), 0.0);
   n.toughness = CBEffectiveHealth(game, stats, id);
-  n.dps = MaxF(stats.GetStatValue(id, gamedataStatType.NPCDamage), 0.0) * MaxF(p.cbCrewHitMult, 1.0);
+  let measured = CBCrewBaseOf(game, m.id);
+  n.dps = IsDefined(measured) ? measured.dps * MaxF(p.cbCrewHitMult, 1.0) * CBOtherModsDamageScale(game, false, false) : 0.0;
   n.current = pools.GetStatPoolValue(id, gamedataStatPoolType.Health, false);
   return n;
 }

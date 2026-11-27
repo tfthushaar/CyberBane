@@ -1079,6 +1079,14 @@ public class CBCrewKitNumbers {
   public let toughness: Float;                     // health with what armour adds, the way damage meets it
   public let dps: Float;
   public let current: Float;                       // health right now, while they are out (0 otherwise)
+  // Their damage before V is counted, what V gives them on top, the damage a second V's share stands for and the
+  // most they may deal (V's own), and the ceiling with V unknown: CBCrewDamageMult puts them together with whatever
+  // their own damage a second turns out to be (Reactions/CrewStats.reds, measured in a fight).
+  public let coreNoV: Float;
+  public let gear: Float;
+  public let targetDps: Float;
+  public let capDps: Float;
+  public let ceilNoV: Float;
   // V's, to set them against: 0 where the game can't say (no weapon out).
   public let vHealth: Float;
   public let vArmour: Float;
@@ -1106,6 +1114,17 @@ public class CBCrewKitNumbers {
   public func DpsShare() -> Float {
     return this.known && this.vDps > 0.0 ? this.dps / this.vDps : 0.0;
   }
+}
+
+// What their hits are multiplied by: their rank's own part, or V's share of damage a second over their own damage a
+// second when that is known, whichever is more, then what V gave them on top, never past V's own damage a second; with
+// their own damage unknown, the rank's part under the old ceiling.
+public func CBCrewDamageMult(coreNoV: Float, gear: Float, targetDps: Float, capDps: Float, ceilNoV: Float, ownDps: Float) -> Float {
+  if ownDps > 0.0 && targetDps > 0.0 {
+    let core = MaxF(coreNoV, targetDps / ownDps);
+    return MaxF(MinF(core * gear, MaxF(core, capDps / ownDps)), 1.0);
+  }
+  return MaxF(MinF(coreNoV * gear, MaxF(coreNoV, ceilNoV)), 1.0);
 }
 
 // How far up the ranks, 0 at Rookie and 1 at Legend.
@@ -1237,7 +1256,11 @@ public func CBCrewKitCalc(game: GameInstance, m: ref<CBCrewMember>, pl: Float, b
   damageCeiling = MaxF(damageCeiling, mtDamage);
   // V's own numbers, and the share of them this rank stands for: an even step a rank, and a spar's worth more.
   n.share = MinF(CBCrewVShare(rank) + sparred * climb, CBConfig.CrewVShareLegend() + CBConfig.CrewSmasherSparMax());
+  // V's damage a second as it lands, and the same before the damage step another mod scales everybody's hits in
+  // (Compat/CombatEvolved.reds): the crew's hits go through that step too, so they are matched to V before it.
+  let npcScale = CBOtherModsDamageScale(game, false, false);
   let vDps = IsDefined(measure) ? measure.Dps() : 0.0;
+  let vDpsLike = vDps / npcScale;
   n.vHealth = IsDefined(measure) ? measure.health : 0.0;
   n.vArmour = IsDefined(measure) ? measure.armour : 0.0;
   n.vToughness = IsDefined(measure) ? measure.health * (1.0 + measure.armourFactor) : 0.0;
@@ -1264,11 +1287,6 @@ public func CBCrewKitCalc(game: GameInstance, m: ref<CBCrewMember>, pl: Float, b
       health = MaxF(health, vHealthMult);
       healthCeiling = MaxF(healthCeiling, vHealthMult);
     }
-    if base.dps > 0.0 && vDps > 0.0 && n.share > 0.0 {
-      let vDamageMult = n.share * vDps / base.dps;
-      core = MaxF(core, vDamageMult);
-      damageCeiling = MaxF(damageCeiling, vDamageMult);
-    }
   }
   n.hitCap = CBConfig.CrewHitCapRookie() - (CBConfig.CrewHitCapRookie() - CBConfig.CrewHitCapLegend()) * climb;
   // What a rank brings with it, the game's abilities (gmpl_abilities/abilities.tweak).
@@ -1291,14 +1309,13 @@ public func CBCrewKitCalc(game: GameInstance, m: ref<CBCrewMember>, pl: Float, b
   }
   n.health = ClampF(health, 1.0, healthCeiling);
   n.armour = armour;
-  // What V gives them on top, and never past V's own damage; when V's damage can't be read, the old ceiling instead.
-  let damage = core * gear;
-  if known && base.dps > 0.0 && vDps > 0.0 {
-    damage = MinF(damage, MaxF(core, CBConfig.CrewVShareCeiling() * vDps / base.dps));
-  } else {
-    damage = MinF(damage, MaxF(core, damageCeiling));
-  }
-  n.damage = MaxF(damage, 1.0);
+  // V's share of damage a second, and V's own as the most, both before the step that scales everybody's hits.
+  n.coreNoV = core;
+  n.gear = gear;
+  n.ceilNoV = damageCeiling;
+  n.targetDps = vDps > 0.0 ? n.share * vDpsLike : 0.0;
+  n.capDps = vDps > 0.0 ? CBConfig.CrewVShareCeiling() * vDpsLike : 0.0;
+  n.damage = CBCrewDamageMult(n.coreNoV, n.gear, n.targetDps, n.capDps, n.ceilNoV, known ? base.dps : 0.0);
   if known {
     n.known = true;
     n.armourPoints = armourPoints;
@@ -1312,7 +1329,7 @@ public func CBCrewKitCalc(game: GameInstance, m: ref<CBCrewMember>, pl: Float, b
       n.maxHealth *= ceiling / n.toughness;
       n.toughness = ceiling;
     }
-    n.dps = base.dps * n.damage;
+    n.dps = base.dps * n.damage * npcScale;
   }
   return n;
 }
@@ -1344,6 +1361,10 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
   let base = CBCrewReadBase(game, puppet);
   let statBook = CBCrewStatBook.Get(game);
   if IsDefined(statBook) {
+    let before = statBook.Base(m.id);
+    if IsDefined(base) && IsDefined(before) && base.dps <= 0.0 {
+      base.dps = before.dps;
+    }
     statBook.Note(m.id, base);
   }
   let n = CBCrewKitCalc(game, m, stats.GetStatValue(id, gamedataStatType.PowerLevel), base);
@@ -1367,6 +1388,7 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
   CBAddMult(stats, id, gamedataStatType.Armor, n.armour);
   // Their damage goes on their hits on everybody but V (Reactions/CrewStats.reds), never on a stat V would feel too.
   puppet.cbCrewHitMult = n.damage;
+  CBCrewStartMeasuring(puppet, m.id, n);
   puppet.cbHitCap = n.hitCap;   // no single hit takes more than this share of them (Spawn/FactionApex.reds, ApplyDamage)
   CBKeepKillable(game, puppet, false);
   // Topped up to the new maximum, the way the game refills a pool.
@@ -1381,10 +1403,11 @@ public func CBCrewApplyKit(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
   }
   let maxHealth = stats.GetStatValue(id, gamedataStatType.Health);
   let tough = CBEffectiveHealth(game, stats, id);
-  let dps = IsDefined(base) ? base.dps * n.damage : 0.0;
+  let dps = IsDefined(base) ? base.dps * n.damage * CBOtherModsDamageScale(game, false, false) : 0.0;
+  let damageSaid = dps > 0.0 ? s"damage \(RoundF(dps)) a second (x\(n.damage))" : s"damage x\(n.damage) until their first fight measures them";
   CBLog.Info(n"Crew", s"Kitted for the call: rank \(n.rank), at least \(RoundF(n.share * 100.0))% of V. Health \(RoundF(maxHealth)) (x\(n.health)), "
-                    + s"\(RoundF(tough)) with armour against V's \(RoundF(n.vToughness)); damage \(RoundF(dps)) a second (x\(n.damage)) "
-                    + s"against V's \(RoundF(n.vDps)); no more than \(n.hitCap)% a hit." + (StrLen(n.chromeSaid) > 0 ? s" Chrome: \(n.chromeSaid)." : ""));
+                    + s"\(RoundF(tough)) with armour against V's \(RoundF(n.vToughness)); \(damageSaid) against V's \(RoundF(n.vDps)); "
+                    + s"no more than \(n.hitCap)% a hit." + (StrLen(n.chromeSaid) > 0 ? s" Chrome: \(n.chromeSaid)." : ""));
 }
 
 // The weapon back to V, wherever it was going: on request, and whenever they leave the crew.

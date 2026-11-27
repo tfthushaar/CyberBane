@@ -93,6 +93,16 @@ public class CBCrewStatBook extends ScriptableSystem {
     ArrayClear(this.m_rarity);
     ArrayClear(this.m_level);
   }
+
+
+  // Their own damage a second, measured in a fight (CBCrewNoteHit): half the old reading, half the new.
+  public func NoteDps(id: Int32, dps: Float) -> Void {
+    let i = this.IndexOf(id);
+    if i < 0 || i >= ArraySize(this.m_dps) || dps <= 0.0 {
+      return;
+    }
+    this.m_dps[i] = this.m_dps[i] > 0.0 ? 0.5 * (this.m_dps[i] + dps) : dps;
+  }
 }
 
 // What their body has before the kit: read in CBCrewApplyKit before anything goes on.
@@ -169,13 +179,71 @@ func CBRarityDpsMult(sds: ref<StatsDataSystem>, pl: Float, rarity: Int32) -> Flo
 
 // ---- Their damage, where the game scales a companion's ----------------------------------------------------------------
 //
-// An NPC's guns read only the game's NPCDamage for them (AttackModifier.PhysicalEnemyDamage, attack_stat_mods.tweak),
-// and that same stat is what they would hit V with. So the crew's damage goes on in the step where the game itself
-// scales a companion's hits on everybody else (DamageSystem.ProcessPlayerIncomingDamageMultiplier): on anybody but V
-// and V's own people, never on V.
+// The damage an NPC's guns do is the weapon's, not a stat of the person's (their own NPCDamage reads 0), and it is what
+// they would hit V with too. So the crew's damage goes on in the step where the game itself scales a companion's hits on
+// everybody else (DamageSystem.ProcessPlayerIncomingDamageMultiplier): on anybody but V and V's own people, never on V.
+// What they deal a second is measured there, over the hits of their first fight, and their multiplier is sized from it.
 
 @addField(ScriptedPuppet)
 public let cbCrewHitMult: Float;   // 0 = none
+
+@addField(ScriptedPuppet)
+public let cbCrewMeasure: ref<CBCrewHitMeasure>;
+
+public class CBCrewHitMeasure {
+  public let member: Int32;
+  public let coreNoV: Float;
+  public let gear: Float;
+  public let targetDps: Float;
+  public let capDps: Float;
+  public let ceilNoV: Float;
+  public let dealt: Float;      // their own damage, before the multiplier
+  public let engaged: Float;    // seconds of it: the gaps between hits, each counted up to CrewHitGapSeconds
+  public let lastAt: Float;
+  public let hits: Int32;
+  public let sized: Bool;       // said in the log once a call
+}
+
+public func CBCrewStartMeasuring(puppet: ref<ScriptedPuppet>, member: Int32, n: ref<CBCrewKitNumbers>) -> Void {
+  let mm = new CBCrewHitMeasure();
+  mm.member = member;
+  mm.coreNoV = n.coreNoV;
+  mm.gear = n.gear;
+  mm.targetDps = n.targetDps;
+  mm.capDps = n.capDps;
+  mm.ceilNoV = n.ceilNoV;
+  puppet.cbCrewMeasure = mm;
+}
+
+// One hit of theirs on somebody: counted, and their multiplier sized again once enough of them say what they deal.
+func CBCrewNoteHit(crew: ref<ScriptedPuppet>, raw: Float) -> Void {
+  let mm = crew.cbCrewMeasure;
+  if !IsDefined(mm) || raw <= 0.0 {
+    return;
+  }
+  let now = EngineTime.ToFloat(GameInstance.GetSimTime(crew.GetGame()));
+  if mm.lastAt > 0.0 && now >= mm.lastAt {
+    mm.engaged += MinF(now - mm.lastAt, CBConfig.CrewHitGapSeconds());
+  }
+  mm.lastAt = now;
+  mm.dealt += raw;
+  mm.hits += 1;
+  if mm.hits < CBConfig.CrewHitSampleHits() || mm.engaged < CBConfig.CrewHitSampleSeconds() {
+    return;
+  }
+  let own = mm.dealt / mm.engaged;
+  crew.cbCrewHitMult = CBCrewDamageMult(mm.coreNoV, mm.gear, mm.targetDps, mm.capDps, mm.ceilNoV, own);
+  if mm.hits % CBConfig.CrewHitSampleHits() == 0 {
+    let book = CBCrewStatBook.Get(crew.GetGame());
+    if IsDefined(book) {
+      book.NoteDps(mm.member, own);
+    }
+  }
+  if !mm.sized {
+    mm.sized = true;
+    CBLog.Info(n"Crew", s"Measured one of V's crew in a fight: \(RoundF(own)) a second of their own; their hits now x\(crew.cbCrewHitMult) for at least \(RoundF(mm.targetDps)) a second.");
+  }
+}
 
 @wrapMethod(DamageSystem)
 private func ProcessPlayerIncomingDamageMultiplier(hitEvent: ref<gameHitEvent>) -> Void {
@@ -188,7 +256,7 @@ public func CBCrewHitScale(hitEvent: ref<gameHitEvent>) -> Void {
     return;
   }
   let crew = hitEvent.attackData.GetInstigator() as ScriptedPuppet;
-  if !IsDefined(crew) || crew.cbCrewHitMult <= 1.0 || crew.IsDead() {
+  if !IsDefined(crew) || crew.cbCrewHitMult <= 0.0 || crew.IsDead() {
     return;
   }
   let target = hitEvent.target;
@@ -199,5 +267,8 @@ public func CBCrewHitScale(hitEvent: ref<gameHitEvent>) -> Void {
   if IsDefined(tp) && CBKillableFriend(tp) {
     return;
   }
-  hitEvent.attackComputed.MultAttackValue(crew.cbCrewHitMult);
+  CBCrewNoteHit(crew, hitEvent.attackComputed.GetTotalAttackValue(gamedataStatPoolType.Health));
+  if crew.cbCrewHitMult > 1.0 {
+    hitEvent.attackComputed.MultAttackValue(crew.cbCrewHitMult);
+  }
 }

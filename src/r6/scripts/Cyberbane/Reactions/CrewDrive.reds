@@ -43,6 +43,7 @@ public class CBCrewDriveBook extends ScriptableSystem {
   public let leftSince: Int32;
   public let boardFails: Int32;   // times nobody got into this car in time; twice and the car is given up
   public let gaveUp: Bool;        // no car could be had this drive: the ones left standing go home, nobody waits on one
+  public let toldOff: Bool;       // said in the log that crew cars are off, this drive
   public let orderTick: Int32;
 
   public static func Get(game: GameInstance) -> ref<CBCrewDriveBook> {
@@ -130,6 +131,35 @@ public func CBCrewCarWaitingFor(game: GameInstance, body: EntityID) -> Bool {
     return false;
   }
   return ArrayContains(drive.riders, body);
+}
+
+// Who is where as V drives off: in V's car, on the way to a seat, in the crew's car, or on foot.
+func CBCrewDriveReport(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBCrewBook>, drive: ref<CBCrewDriveBook>, vcar: ref<VehicleObject>) -> Void {
+  let inV = 0;
+  let walking = 0;
+  let riding = 0;
+  let onFoot = 0;
+  let k = 0;
+  while k < book.OutCount() {
+    let p = GameInstance.FindEntityByID(game, book.outBody[k]) as ScriptedPuppet;
+    if CBStillStanding(p) {
+      if VehicleComponent.IsMountedToProvidedVehicle(game, p.GetEntityID(), vcar) {
+        inV += 1;
+      } else {
+        if p.cbCrewCarRider {
+          riding += 1;
+        } else {
+          if CBWalkingToSeat(game, p, vcar) {
+            walking += 1;
+          } else {
+            onFoot += 1;
+          }
+        }
+      }
+    }
+    k += 1;
+  }
+  CBLog.Info(n"Crew", s"V drives off with \(book.OutCount()) of the crew out: \(inV) in V's car, \(walking) on the way to a seat, \(riding) in the crew's car, \(onFoot) on foot; V's car at \(RoundF(AbsF(vcar.GetCurrentSpeed()))) m/s, crew car phase \(drive.phase).");
 }
 
 // Somewhere near the ones left over for a car to stand: on the ground, room for a car, out of V's sight by the navmesh's
@@ -403,6 +433,13 @@ public func CBCrewDriveTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   CBCrewCarSweep(game, drive, des);
   let tick = sys.GetTickCount();
   let callOn = book.OutCount() > 0 && !book.leaving && CBMyCrewOn() && CBCrewOwnCarsOn();
+  if !callOn && book.OutCount() > 0 && !book.leaving && !CBCrewOwnCarsOn() && IsDefined(player.GetMountedVehicle()) && !drive.toldOff {
+    drive.toldOff = true;
+    CBLog.Info(n"Crew", "V drives off with the crew out and Your crew drive after you off: the ones with no seat in V's car walk.");
+  }
+  if !IsDefined(player.GetMountedVehicle()) {
+    drive.toldOff = false;
+  }
   if !callOn {
     if drive.phase != CBCrewCarNone() || EntityID.IsDefined(drive.car) || drive.made > 0 {
       CBCrewCarLetGo(sys, game, drive, book.OutCount() > 0 && !book.leaving);
@@ -428,6 +465,10 @@ public func CBCrewDriveTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     return;
   }
   let usable = IsDefined(car) && car.IsAttached() && !car.IsDestroyed();
+  // Once a drive, where everybody is, so a drive that went wrong says how in the log.
+  if IsDefined(vcar) && drive.vMounted == CBConfig.CrewCarWaitTicks() {
+    CBCrewDriveReport(sys, game, book, drive, vcar);
+  }
   if drive.phase == CBCrewCarComing() {
     if usable {
       if CBCrewCarBoard(sys, game, drive, car) > 0 {
