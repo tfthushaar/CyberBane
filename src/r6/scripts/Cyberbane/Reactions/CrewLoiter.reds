@@ -80,13 +80,24 @@ public func CBCrewLoiterTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> V
     }
     return;
   }
-  if !CBCrewLoitersOn() || now < lb.nextAt || book.OutCount() > 0 || player.IsInCombat() || !CBWorldStable(game)
+  // A war lost leaves the crew's corners empty a while (Reactions/GangWar.reds).
+  if !CBCrewLoitersOn() || CBCrewCornersEmpty(game) || now < lb.nextAt || book.OutCount() > 0 || player.IsInCombat() || !CBWorldStable(game)
      || sys.GetStoryHold() != CBStoryNone() || CBPlayerInScene(game) || IsDefined(player.GetMountedVehicle())
      || CBArrivalsHeldBase(sys, game) || !CBCrewHoldsHere(sys, game) || CBSpawnRoom(game) < 3 {
     return;
   }
-  // Up to two who are free, most loyal first.
-  let order = CBCrewReadyOrder(book, now, 0);
+  // Up to two who are free: whoever runs this district first (Reactions/CrewGang.reds), then the most loyal.
+  let ready = CBCrewReadyOrder(book, now, 0);
+  let order: array<ref<CBCrewMember>>;
+  let runner = CBRunnerOf(game, here);
+  if IsDefined(runner) && ArrayContains(ready, runner) {
+    ArrayPush(order, runner);
+  }
+  for r in ready {
+    if r != runner {
+      ArrayPush(order, r);
+    }
+  }
   let n = ArraySize(order);
   if n == 0 {
     return;

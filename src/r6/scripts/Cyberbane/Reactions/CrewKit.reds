@@ -99,6 +99,7 @@ public class CBCrewKitBook extends ScriptableSystem {
   public let laterWho: array<Int32>;
   public let laterLines: array<String>;
   public let laterGroup: array<Bool>;   // for the crew's group chat rather than their own thread
+  public let laterTopic: array<CName>;  // what it answers: a later answer on it from the same member replaces it
 
   public static func Get(game: GameInstance) -> ref<CBCrewKitBook> {
     let c = GameInstance.GetScriptableSystemsContainer(game);
@@ -120,6 +121,7 @@ public class CBCrewKitBook extends ScriptableSystem {
     ArrayClear(this.laterWho);
     ArrayClear(this.laterLines);
     ArrayClear(this.laterGroup);   // kept, it put the next lines in the wrong chat
+    ArrayClear(this.laterTopic);
   }
 
   public func Find(id: Int32) -> ref<CBCrewKit> {
@@ -995,7 +997,9 @@ public func CBCrewTrainCost(k: ref<CBCrewKit>) -> Int32 {
 
 public func CBCrewTrainHours(k: ref<CBCrewKit>) -> Float {
   let level = IsDefined(k) ? k.trained : 0;
-  return CBConfig.CrewTrainHoursBase() * Cast<Float>(level + 1);
+  let hours = CBConfig.CrewTrainHoursBase() * Cast<Float>(level + 1);
+  // A training room of the crew's own (Reactions/CrewGang.reds) gets them back sooner.
+  return CBCrewHas(GetGameInstance(), CBUpgradeTraining()) ? hours * CBConfig.UpgradeTrainingFactor() : hours;
 }
 
 // Away training or at war: not to be called.
@@ -1465,6 +1469,7 @@ public func CBCrewKitService(sys: ref<CyberbaneSystem>, game: GameInstance, book
   ArrayClear(kb.laterWho);
   ArrayClear(kb.laterLines);
   ArrayClear(kb.laterGroup);
+  ArrayClear(kb.laterTopic);
   // Every order still waiting, in the order asked: a spar, and anything the Hub could not carry out itself.
   let asks: array<ref<CBCrewKitAsk>>;
   for queued in kb.asks {
@@ -1935,6 +1940,7 @@ func CBCrewInstallChrome(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<
     return;
   }
   k.AddChrome(rec);
+  CBCrewChromeHealsMark(game, m.id);   // an arm lost is an arm replaced
   // What it really does for them, by the numbers (CBCrewChromeNumbers): "+18% armour, +10% fire resistance". Three
   // pieces put in at once are one text (CBCrewBatchText), and the game's sound for a finished build.
   let what = CBCrewChromeNumbers(e, 3);
@@ -1960,7 +1966,9 @@ func CBCrewSendTraining(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<C
   ts.RemoveItem(player, ItemID.FromTDBID(t"Items.money"), cost);
   let hours = CBCrewTrainHours(k);
   k.trainUntil = now + hours * CBConfig.SecondsPerHour();
-  CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-HeadingOutGiveMeHoursAnd", [s"\(RoundF(hours))"]));
+  let h = s"\(RoundF(hours))";
+  CBCrewText(sys, game, m, CBLineOf([CBTf(n"Cyberbane-CrewKit-HeadingOutGiveMeHoursAnd", [h]), CBTf(n"Cyberbane-CrewKit-Training2", [h]),
+                                     CBTf(n"Cyberbane-CrewKit-Training3", [h])]));
   CBLog.Info(n"Crew", s"One of the crew went to train (level \(k.trained + 1), \(cost)eb).");
 }
 
@@ -1981,7 +1989,8 @@ func CBCrewKitReturns(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBC
       CBCrewText(sys, game, m, CBTf(n"Cyberbane-CrewKit-BackNowBetterGearAndThey", [s"\(CBCrewRankWord(CBCrewRankOf(game, m)))"]));
       CBLog.Info(n"Crew", "One of the crew is back from training.");
     }
-    if IsDefined(k) && k.warUntil > 0.0 && now >= k.warUntil {
+    // A party from before wars lasted (the old eighteen-hour kind): settled the old way. Tonight's orders are the war's.
+    if IsDefined(k) && k.warUntil > 0.0 && now >= k.warUntil && !CBCrewWarOn(game, k.warOn) {
       if CBCrewWarPartyResolve(sys, game, kb, book, k.warOn, k.warUntil, now) {
         return;   // the roster changed under the walk
       }

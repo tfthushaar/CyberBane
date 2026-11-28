@@ -349,10 +349,21 @@ public func CBApiSetUpBody(sys: ref<CyberbaneSystem>, game: GameInstance, puppet
   if reg.SideOf(handle) {
     CBDisarmGodMode(game, puppet);
     CBCrewFriendlyToV(game, puppet);
+    if CBApiIsEscort(game, handle) {
+      CBApiSetUpEscort(game, puppet);   // a bodyguard follows V (API/Level5.reds)
+    }
     return;
   }
   // A neutral group stays as it stands until V picks a side (CBApiNeutralTick); one that already has is set that way.
   let taken = reg.TakenOf(handle);
+  // A post's people are the street's, standing where they were put: no fighting build of ours on them (API/Level5.reds).
+  if CBApiIsPost(game, handle) {
+    CBSetUpStreet(sys, game, puppet, taken == 2);
+    if taken == 1 {
+      CBCrewFriendlyToV(game, puppet);
+    }
+    return;
+  }
   CBSetUpStreet(sys, game, puppet, !reg.NeutralOf(handle) || taken == 2);
   if taken == 1 {
     CBCrewFriendlyToV(game, puppet);
@@ -464,9 +475,10 @@ public func CBApiRequestsTick(game: GameInstance) -> Void {
     CBApiPairsTick(sys, game);
   }
   CBApiVehiclesTick(game);
-  // Level 3: neutral groups, once V has picked a side.
+  // Level 3: neutral groups, once V has picked a side. Level 5: bodyguards, and when they go.
   if IsDefined(sys) {
     CBApiNeutralTick(sys, game);
+    CBApiEscortTick(sys, game);
   }
 }
 

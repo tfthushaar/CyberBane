@@ -19,8 +19,7 @@ public func CBPointIsSafeArea(game: GameInstance, at: Vector4) -> Bool {
   if CBAllowSafeZoneSpawns() {
     return false;
   }
-  let sam = GameInstance.GetSafeAreaManager(game);
-  return IsDefined(sam) && sam.IsPointInSafeArea(at);
+  return CBPointInSafeArea(game, at);
 }
 
 // Take V off this person's list. What the police do when they stand down, without any of the police:

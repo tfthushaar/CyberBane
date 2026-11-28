@@ -87,7 +87,9 @@ public final static func GiveReward(gameInstance: GameInstance, rewardID: TweakD
   }
   ts.GiveItem(player, money, bonus);
   if CBMessagesOn() {
-    CBContactMessage(gameInstance, CBTf(n"Cyberbane-GigBonus-ThrewAnExtraEbOnThat", [s"\(bonus)"]));
+    let extra = s"\(bonus)";
+    CBContactMessage(gameInstance, CBLineOf([CBTf(n"Cyberbane-GigBonus-ThrewAnExtraEbOnThat", [extra]), CBTf(n"Cyberbane-GigBonus-Extra2", [extra]),
+                                             CBTf(n"Cyberbane-GigBonus-Extra3", [extra]), CBTf(n"Cyberbane-GigBonus-Extra4", [extra])]));
   }
 }
 

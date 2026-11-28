@@ -448,6 +448,7 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   private cb func OnCBKeyInput(evt: ref<KeyInputEvent>) -> Void {
     CBCrewKeyInput(this.GetGameInstance(), evt);
+    CBSkipTimeKeyInput(this.GetGameInstance(), evt);
   }
 
   // Session start (spec §5.3): build runtime objects, register the entity callback
@@ -1043,6 +1044,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     // clinic in well under ten seconds, and the reaction systems read this.
     this.m_inSafeZone = CBPlayerInSafeZone(game);
     this.m_inSanctuary = CBComputeSanctuary(this, game);
+    CBSafeSpotTick(game);   // a safe place the engine's test does not know, kept clear from now on (Core/SafeSpots.reds)
     // Home ground and a night at home (Spawn/HomeGround.reds): read every tick, like the safe area, because the
     // arrivals gate reads it.
     let homeBook = CBHomeBook.Get(game);
@@ -1140,6 +1142,14 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBHuntTick(this, game);             // the people after you search, find you, lose you
     CBRivalHuntTick(this, game);        // confirms a queued rival actually arrived
     CBWhereaboutsTick(this, game);      // a Rival waiting where they were last seen, and its pin
+    CBSkipTimeTick(this, game);         // the hour V is waiting for, and a skip asked for (Core/SkipTime.reds)
+    if this.m_tickCount % 3 == 1 {
+      CBGangWarTick(this, game);        // the crew's wars: tonight's order and their move, at their hours (Reactions/GangWar.reds)
+    }
+    if this.m_tickCount % 2 == 0 {
+      CBWarRescueTick(this, game);      // one of the crew held by a gang, and V come for them
+    }
+    CBHoodTick(this, game);             // the neighbourhood V stands in (Model/Hoods.reds)
     CBNoteDriving(game);                // the car V is in, for the car the street knows
     CBWitnessTick(this, game);          // a witness on their way to a gang gets there, or does not
     CBWarNoteWestbrook(this, game);     // working Japantown, for the Claws
@@ -1151,6 +1161,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBAlliesTick(this, game);           // a borrowed crew, a ransom, a sergeant's parley
     CBMyCrewTick(this, game);           // V's own crew, out with V
     CBCrewDriveTick(this, game);        // and in a car of their own when V's is full (Reactions/CrewDrive.reds)
+    CBPlaceAreaTick(this, game);        // the travel point near V learns which part of the district it stands in
     CBCrewLifeTick(this, game);         // and their own lives: kit texts as one, asks, funerals (Reactions/CrewLife.reds)
     CBRivalTimelineTick(this, game);    // a Rival's calling card, and the ones who turn (Rivals/RivalTimeline.reds)
     CBChippinInTick(this, game);        // and one of them listening in on an apex fight (Reactions/ChippinIn.reds)
@@ -2066,7 +2077,7 @@ public class CyberbaneSystem extends ScriptableSystem {
   // this save or from a note another save of the playthrough left.
   public func RivalKeptByCrew(id: Int32) -> Bool {
     let crew = CBCrewBook.Get(this.GetGameInstance());
-    return IsDefined(crew) && crew.Keeps(id);
+    return (IsDefined(crew) && crew.Keeps(id)) || CBWarHoldsRival(this.GetGameInstance(), id);
   }
 
   // Take one Rival off the roster. True when they were on it.
@@ -2670,7 +2681,13 @@ public class CyberbaneSystem extends ScriptableSystem {
 
   // ---- The hunt ----
   public func GetHuntState() -> Int32 { return this.m_huntState; }
-  public func SetHuntState(v: Int32) -> Void { this.m_huntState = v; }
+  public func SetHuntState(v: Int32) -> Void {
+    // Over, however it ended: other mods hear it, as they heard it start (Spawn/Hunt.reds, CBHuntBegin).
+    if v == CBHuntNone() && this.m_huntState != CBHuntNone() {
+      CBEmit(n"Cyberbane/HuntEnded", this.m_huntFaction, 1.0);
+    }
+    this.m_huntState = v;
+  }
   public func GetHuntLkp() -> Vector4 { return this.m_huntLkp; }
   public func SetHuntLkp(v: Vector4) -> Void { this.m_huntLkp = v; }
   public func GetHuntLastSeenTick() -> Int32 { return this.m_huntLastSeenTick; }
@@ -3416,6 +3433,7 @@ public class CyberbaneSystem extends ScriptableSystem {
     CBAlliesDaily(this, game, elapsedDays);      // one of theirs: the offer and the week's duty
     CBCrewDaily(this, game);                     // V's crew: loyalty, the cut, a solo on offer
     CBCrewLifeDaily(this, game);                 // and now and then one of them asks V for something
+    CBCrewGangDaily(this, game);                 // squads, tribute, how big the crew is, the retired (Reactions/CrewGang.reds)
     CBCrewRivalsOffBoard(this, game);            // a Rival on the crew is no Rival on the board
     CBInformantsDaily(this, game, elapsedDays);  // an informant's gang may find out
     CBMorningBriefTick(this, game);              // a broker's text at dawn
@@ -3807,6 +3825,23 @@ public class CyberbaneSystem extends ScriptableSystem {
     let crewWars = CBCrewWarBook.Get(game);
     if IsDefined(crewWars) {
       crewWars.Clear();   // nor is at war with anybody
+    }
+    CBWarFrontsClear(game);
+    let squadBook = CBSquadBook.Get(game);
+    if IsDefined(squadBook) {
+      squadBook.Clear();  // nor has squads
+    }
+    let gangBook = CBCrewGangBook.Get(game);
+    if IsDefined(gangBook) {
+      gangBook.Clear();   // nor runs anything, nor owns a place
+    }
+    let hoodBook = CBHoodBook.Get(game);
+    if IsDefined(hoodBook) {
+      hoodBook.Clear();   // and knows no neighbourhood
+    }
+    let fightBook = CBWarFightBook.Get(game);
+    if IsDefined(fightBook) {
+      fightBook.Reset();
     }
     let bannerBook = CBCrewBannerBook.Get(game);
     if IsDefined(bannerBook) {

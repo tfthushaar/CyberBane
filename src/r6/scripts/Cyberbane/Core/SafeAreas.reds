@@ -432,6 +432,11 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4, opt onVsSide:
   //    lock, which the player asked to fight through (and can lift with the setting beside it).
   //    Anywhere else it is the story's, and it holds whatever the settings say.
   let inSafe = IsDefined(sysQ) && sysQ.IsInSafeZone();
+  // The story's own no-combat lock is never the zone's, and no setting opens it.
+  if CBPlayerNoCombatTag(game) {
+    CBNoteSpawnBlock(CBBlockCannotFight());
+    return true;
+  }
   if CBPlayerCannotFight(game) && !(optIn && inSafe) {
     CBNoteSpawnBlock(CBBlockCannotFight());
     return true;
@@ -475,11 +480,7 @@ public func CBSafeAreaBlocksSpawn(game: GameInstance, at: Vector4, opt onVsSide:
     CBNoteSpawnBlock(CBBlockProtectedZone());
     return true;
   }
-  let sam = GameInstance.GetSafeAreaManager(game);
-  if !IsDefined(sam) {
-    return false;   // cannot tell: do not silently stop every spawn in the game
-  }
-  if sam.IsPointInSafeArea(at) {
+  if CBPointInSafeArea(game, at) {
     CBNoteSpawnBlock(CBBlockSafeArea());
     return true;
   }
@@ -491,11 +492,7 @@ public func CBNpcInSafeInterior(npc: wref<ScriptedPuppet>) -> Bool {
   if !IsDefined(npc) {
     return false;
   }
-  let sam = GameInstance.GetSafeAreaManager(npc.GetGame());
-  if !IsDefined(sam) {
-    return false;
-  }
-  return sam.IsPointInSafeArea(npc.GetWorldPosition()) && IsEntityInInteriorArea(npc);
+  return CBPointInSafeArea(npc.GetGame(), npc.GetWorldPosition()) && IsEntityInInteriorArea(npc);
 }
 
 // Is V under a scripted no-combat restriction right now?
@@ -511,6 +508,7 @@ public func CBPlayerNoCombatTag(game: GameInstance) -> Bool {
 @wrapMethod(PlayerPuppet)
 private final func OnEnterSafeZone() -> Void {
   wrappedMethod();
+  this.cbZoneSafe = true;   // as the game set it, a zone made safe by the story included (Core/SafeSpots.reds)
   let rt = CyberbaneRuntime.Get();
   if !IsDefined(rt) || !rt.IsEnabled() || !rt.HasSettings() || !rt.GetSettings().allowSafeZoneCombat {
     return;
@@ -567,6 +565,11 @@ public func CBSafeZoneArmsTick(sys: ref<CyberbaneSystem>, game: GameInstance) ->
 
 // Is V in a safe area the game itself locks V's hands in: the place, not a NoCombat tag a scene has put on V.
 public func CBPlayerInGameSafeArea(game: GameInstance) -> Bool {
+  // The zone the game put V in, the story's own included: the point test missed the chapel in Pacifica, so the lock
+  // came back there with the hands-free setting on.
+  if CBPlayerZoneSafe(game) {
+    return true;
+  }
   let sam = GameInstance.GetSafeAreaManager(game);
   let player = GetPlayer(game);
   if IsDefined(sam) && IsDefined(player) {

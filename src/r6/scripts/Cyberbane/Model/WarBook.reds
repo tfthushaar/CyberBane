@@ -50,6 +50,9 @@ public class CBWarBook extends ScriptableSystem {
   public let fightAt: Vector4;
   public let fightTick: Int32;
   public let clashNextTick: Int32;
+  // Gangs whose people V passed lately, and when (session ticks): they are on these streets, whatever the turf data says.
+  public let seenGang: array<CName>;
+  public let seenTick: array<Int32>;
   public let lastClashA: CName;            // the last one, for the Hub's web of gangs ([H1])
   public let lastClashB: CName;
   public let lastClashAt: Float;
@@ -109,6 +112,8 @@ public class CBWarBook extends ScriptableSystem {
     this.fightAt = nowhere;
     this.fightTick = 0;
     this.clashNextTick = 0;
+    ArrayClear(this.seenGang);
+    ArrayClear(this.seenTick);
     this.lastClashA = n"";
     this.lastClashB = n"";
     this.lastClashAt = 0.0;
@@ -140,6 +145,32 @@ public class CBWarBook extends ScriptableSystem {
     this.greetTick = 0;
     this.phoneStalled = n"";
     this.phoneThreatDay = 0;
+  }
+
+  public func NoteSeen(gang: CName, tick: Int32) -> Void {
+    let i = 0;
+    while i < Min(ArraySize(this.seenGang), ArraySize(this.seenTick)) {
+      if Equals(this.seenGang[i], gang) {
+        this.seenTick[i] = tick;
+        return;
+      }
+      i += 1;
+    }
+    ArrayPush(this.seenGang, gang);
+    ArrayPush(this.seenTick, tick);
+  }
+
+  // Gangs seen within the last `ticks`.
+  public func SeenSince(tick: Int32) -> array<CName> {
+    let out: array<CName>;
+    let i = 0;
+    while i < Min(ArraySize(this.seenGang), ArraySize(this.seenTick)) {
+      if this.seenTick[i] >= tick {
+        ArrayPush(out, this.seenGang[i]);
+      }
+      i += 1;
+    }
+    return out;
   }
 
   public func OneOfTheirs() -> CName { return this.m_oneOfTheirs; }

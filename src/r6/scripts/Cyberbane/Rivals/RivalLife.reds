@@ -64,6 +64,9 @@ public func CBRivalStreetStatus(sys: ref<CyberbaneSystem>, game: GameInstance, r
   if r.state == EnumInt(ECBRivalState.Debtor) {
     return CBT(n"Cyberbane-RivalLife-OwesYouTheirLifeAndKnows");
   }
+  if r.state == EnumInt(ECBRivalState.Retired) && CBWarHoldsRival(game, r.id) {
+    return CBT(n"Cyberbane-HubWar-HeldByYourCrew");
+  }
   if r.state == EnumInt(ECBRivalState.Retired) {
     return CBT(n"Cyberbane-RivalLife-LeftNightCityNobodyExpectsThem");
   }

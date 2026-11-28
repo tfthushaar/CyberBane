@@ -176,7 +176,9 @@ public func CBCrewTurfWeight(sys: ref<CyberbaneSystem>, game: GameInstance, dist
     return 0.0;
   }
   let s = CBGangStrengthIn(sys, CBCrewTurfId(), district) * f;
-  return s * s * CBConfig.CrewTurfPush() * CBTurfWobble(game, dIdx, 97);
+  // Each neighbourhood the crew holds there pushes too (Model/Hoods.reds).
+  let hoods = 1.0 + CBConfig.HoodDistrictPush() * CBHoodsCrewShare(game, district);
+  return s * s * CBConfig.CrewTurfPush() * hoods * CBTurfWobble(game, dIdx, 97);
 }
 
 // Districts the crew holds right now.
@@ -245,12 +247,19 @@ public func CBCrewTurfTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   let jb = CBCrewJobBook.Get(game);
   if ArraySize(held) > 0 && IsDefined(jb) {
     let per = CBReward(RoundF(CBConfig.CrewTurfTaxPerDistrict() * (0.5 + CBCrewWeight(game) / 200.0)));
-    // Half through the crew, half kept by the shops for V to collect in person (CBCrewTaxCollectTick).
-    let inPerson = per / 2;
-    for dOwe in held {
-      CBCrewTaxOwe(game, dOwe, inPerson);
+    // The watch collects more of it in person (Reactions/Squads.reds).
+    if CBSquadStanding(game, CBSquadWatch(), 0) {
+      per = RoundF(Cast<Float>(per) * CBConfig.SquadWatchTaxMult());
     }
-    let total = (per - inPerson) * ArraySize(held);
+    // Half through the crew, half kept by the shops for V to collect in person (CBCrewTaxCollectTick), each district's
+    // by whoever runs it (Reactions/CrewGang.reds).
+    let total = 0;
+    for dOwe in held {
+      let here = RoundF(Cast<Float>(per) * CBRunnerTaxMult(game, dOwe));
+      let inPerson = here / 2;
+      CBCrewTaxOwe(game, dOwe, inPerson);
+      total += here - inPerson;
+    }
     jb.AddKitty(total);
     CBFileLog(sys, n"CrewTax", now, sys.GetCurrentDistrict(), n"", Cast<Float>(total));
     if CBMessagesOn() {

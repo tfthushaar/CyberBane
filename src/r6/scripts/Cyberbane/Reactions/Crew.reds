@@ -360,6 +360,9 @@ public class CBCrewBook extends ScriptableSystem {
     }
     CBCrewBannerLeaves(game, m.id);   // no longer recruiting
     CBCrewKitLeaves(game, m.id);      // their weapon back to V, their kit forgotten
+    CBSquadLeaderLeft(game, m.id, end);   // their squad holds under its second, or goes with a traitor
+    CBCrewGangMemberLeaves(game, m.id);   // the place they ran, and their marks
+    CBWarMemberLeaves(game, m.id);        // held by a gang no more: there is nobody to buy back
   }
 
   public func PastCount() -> Int32 {
@@ -651,15 +654,42 @@ public func CBCrewBoxName(sys: ref<CyberbaneSystem>, m: ref<CBCrewMember>) -> St
   if (m.rival > 0 && StrLen(given) == 0) || CBCrewRankOf(GetGameInstance(), m) < 3 {
     return CBCrewName(sys, m);
   }
-  return CBCrewFirst(sys, m) + " \"" + CBCrewNickname(m.seat, m.seed) + "\"";
+  return CBCrewRawFirst(sys, m) + " \"" + CBCrewNickname(m.seat, m.seed) + "\"";
 }
 
+// What they are called in a text and a list: their first name, or their whole name while somebody else on the roster
+// goes by the same first name, so a list never reads "Odette and Odette".
 public func CBCrewFirst(sys: ref<CyberbaneSystem>, m: ref<CBCrewMember>) -> String {
   if !IsDefined(m) {
     return CBT(n"Cyberbane-Telling-Somebody");
   }
+  let first = CBCrewRawFirst(sys, m);
+  if CBCrewFirstShared(sys, m, first) {
+    let given = CBCrewGivenNameOf(m.id);
+    return StrLen(given) > 0 ? given : CBCrewFullNameNicked(sys, m.kind, m.faction, m.rival, m.seed, false, m.seat);
+  }
+  return first;
+}
+
+func CBCrewRawFirst(sys: ref<CyberbaneSystem>, m: ref<CBCrewMember>) -> String {
   let given = CBCrewGivenNameOf(m.id);
   return StrLen(given) > 0 ? CBFirstWord(given) : CBCrewFirstName(sys, m.kind, m.faction, m.rival, m.seed);
+}
+
+func CBCrewFirstShared(sys: ref<CyberbaneSystem>, m: ref<CBCrewMember>, first: String) -> Bool {
+  let book = CBCrewBook.Get(GetGameInstance());
+  if !IsDefined(book) {
+    return false;
+  }
+  let i = 0;
+  while i < book.Count() {
+    let o = book.At(i);
+    i += 1;
+    if IsDefined(o) && o.id != m.id && Equals(CBCrewRawFirst(sys, o), first) {
+      return true;
+    }
+  }
+  return false;
 }
 
 public func CBCrewPastName(sys: ref<CyberbaneSystem>, p: ref<CBCrewPast>) -> String {
@@ -732,7 +762,10 @@ func CBCrewReadyOrder(book: ref<CBCrewBook>, now: Float, minLoyalty: Int32) -> a
 
 // The crew on the phone (Reactions/CrewNames.reds). One of them about themselves: their own thread, under the name V
 // knows them by.
-public func CBCrewText(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>, line: String, opt group: Bool, opt urgent: Bool) -> Void {
+// `topic`: what the line answers. While the Hub holds the texts back, a later line on the same topic from the same member
+// replaces the earlier one, so clicking through a member's work sends one text, not one for every click.
+public func CBCrewText(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>, line: String, opt group: Bool, opt urgent: Bool,
+                       opt topic: CName) -> Void {
   if StrLen(line) == 0 {
     return;
   }
@@ -749,9 +782,29 @@ public func CBCrewText(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBC
   // world says does, and goes on the next tick (CBCrewKitService).
   let kb = CBCrewKitBook.Get(game);
   if IsDefined(kb) && kb.deferTexts {
-    ArrayPush(kb.laterWho, IsDefined(m) ? m.id : 0);
+    let who = IsDefined(m) ? m.id : 0;
+    if IsNameValid(topic) {
+      let i = Min(Min(ArraySize(kb.laterWho), ArraySize(kb.laterLines)), Min(ArraySize(kb.laterGroup), ArraySize(kb.laterTopic))) - 1;
+      while i >= 0 {
+        if kb.laterWho[i] == who && Equals(kb.laterTopic[i], topic) {
+          ArrayErase(kb.laterWho, i);
+          ArrayErase(kb.laterLines, i);
+          ArrayErase(kb.laterGroup, i);
+          ArrayErase(kb.laterTopic, i);
+        }
+        i -= 1;
+      }
+    }
+    // Every list one longer, together, so they stay in step.
+    let n = Min(Min(ArraySize(kb.laterWho), ArraySize(kb.laterLines)), Min(ArraySize(kb.laterGroup), ArraySize(kb.laterTopic)));
+    ArrayResize(kb.laterWho, n);
+    ArrayResize(kb.laterLines, n);
+    ArrayResize(kb.laterGroup, n);
+    ArrayResize(kb.laterTopic, n);
+    ArrayPush(kb.laterWho, who);
     ArrayPush(kb.laterLines, line);
     ArrayPush(kb.laterGroup, group);
+    ArrayPush(kb.laterTopic, topic);
     return;
   }
   if IsDefined(m) && !group {
@@ -1284,6 +1337,11 @@ func CBCrewWhyNotReady(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBC
     return "";
   }
   let who = CBCrewFirst(sys, m);
+  let fb = CBWarFrontBook.Get(game);
+  let held = IsDefined(fb) ? fb.FindCaptive(m.id) : null;
+  if IsDefined(held) {
+    return CBTf(n"Cyberbane-HubWar-HeldBy", [who, CBFactionLabel(held.gang)]);
+  }
   if CBCrewHurt(m, now) {
     return CBTf(n"Cyberbane-Crew-SStillPatchedUpAboutH", [s"\(who)", s"\(CeilF((m.hurtUntil - now) / CBConfig.SecondsPerHour()))"]);
   }
@@ -1497,7 +1555,7 @@ func CBCrewOnTheWay(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrew
   let who = NotEquals(hunters, n"") ? CBFactionLabel(hunters) : CBT(n"Cyberbane-Crew-WhoeverItIs");
   if escort {
     return CBLineOf([CBTf(n"Cyberbane-Crew-ComingToWeLlWalkWith", [s"\(here)"]), CBT(n"Cyberbane-Crew-OnMyWayTellMeWhen"),
-                     CBT(n"Cyberbane-Crew-QuietDayFineByMeComing")]);
+                     CBT(n"Cyberbane-Crew-QuietDayFineByMeComing"), CBT(n"Cyberbane-Crew-OnMyWay2"), CBT(n"Cyberbane-Crew-QuietDay2")]);
   }
   if unasked {
     return CBLineOf([CBTf(n"Cyberbane-Crew-HeardWereWaitingForYouAlready", [s"\(who)"]), CBTf(n"Cyberbane-Crew-DonTCallDonTNeed", [s"\(here)"])]);
@@ -2018,8 +2076,9 @@ func CBCrewDiesOfIt(game: GameInstance, p: ref<ScriptedPuppet>) -> Bool {
   if !CBCrewCanDie() || !IsDefined(p) || p.IsDead() || !StatusEffectSystem.ObjectHasStatusEffectWithTag(p, n"FollowerDefeated") {
     return false;
   }
-  // Easy: the first fall of a call is a wound, the game's knock-down; the second is a death.
-  if Equals(CBCrewPace(), ECBCrewPace.Easy) && !p.cbCrewFellOnce {
+  // Easy: the first fall of a call is a wound, the game's knock-down; the second is a death. In a war fight the cutters
+  // get one of them back up once (Reactions/GangWarFight.reds).
+  if (Equals(CBCrewPace(), ECBCrewPace.Easy) || CBWarCuttersSaveOnce(game)) && !p.cbCrewFellOnce {
     p.cbCrewFellOnce = true;
     return false;
   }
@@ -2775,6 +2834,9 @@ public func CBPhoneRowSendHome() -> Int32 = 26
 public func CBPhoneAnswerCrewMember() -> Int32 = 7
 public func CBPhoneRowComeToMe() -> Int32 = 27
 public func CBPhoneRowHeadHome() -> Int32 = 28
+// Their ask, answered in their thread: yes (the day, the cut, the ripper) or not now.
+public func CBPhoneRowAskYes() -> Int32 = 29
+public func CBPhoneRowAskNo() -> Int32 = 30
 
 // A Debtor's thread, by the name it carries, while there is room on the crew.
 public func CBPhoneThreadDebtor(sys: ref<CyberbaneSystem>, store: ref<CBPhone>, thread: Int32) -> ref<CBRival> {
@@ -2836,6 +2898,11 @@ public func CBCrewPhoneRows(sys: ref<CyberbaneSystem>, game: GameInstance, kind:
   // Just them: come to V beside whoever is out, or go home while the rest stay. Offered whenever it can be asked; pressed
   // when it cannot, they text back why (CBCrewCall), as the crew's own button does.
   if kind == CBPhoneAnswerCrewMember() && member > 0 && IsDefined(book.Find(member)) {
+    let lb = CBCrewLifeBook.Get(game);
+    if IsDefined(lb) && lb.AskId() == member && CBAskByText(lb.AskKind()) {
+      ArrayPush(out, CBPhoneRowAskYes());
+      ArrayPush(out, CBPhoneRowAskNo());
+    }
     if book.IsOut(member) {
       if !book.leaving {
         ArrayPush(out, CBPhoneRowHeadHome());
@@ -2884,6 +2951,15 @@ public func CBCrewPhoneRowText(sys: ref<CyberbaneSystem>, game: GameInstance, ro
   if row == CBPhoneRowHire() { return IsDefined(book) ? CBTf(n"Cyberbane-Crew-DealEb", [s"\(book.offerPrice)"]) : CBT(n"Cyberbane-Crew-Deal"); }
   if row == CBPhoneRowHireHaggle() { return CBT(n"Cyberbane-Crew-TooMuch"); }
   if row == CBPhoneRowHirePass() { return CBT(n"Cyberbane-Crew-NotNow"); }
+  if row == CBPhoneRowAskYes() {
+    let lb = CBCrewLifeBook.Get(game);
+    let kind = IsDefined(lb) ? lb.AskKind() : 0;
+    let value = IsDefined(lb) ? lb.AskValue() : 0;
+    if kind == CBAskCut() { return CBTf(n"Cyberbane-GangWar-ReplyPayCut", [s"\(value)"]); }
+    if kind == CBAskRipper() { return CBTf(n"Cyberbane-GangWar-ReplyRipper", [s"\(value)"]); }
+    return CBT(n"Cyberbane-GangWar-ReplyDayOff");
+  }
+  if row == CBPhoneRowAskNo() { return CBT(n"Cyberbane-GangWar-ReplyNotNow"); }
   return "";
 }
 
@@ -2901,6 +2977,12 @@ public func CBCrewPhoneReply(sys: ref<CyberbaneSystem>, game: GameInstance, stor
   }
   if row == CBPhoneRowSendHome() {
     book.reqHome = true;
+    return;
+  }
+  // Their ask: answered now, only words and money.
+  if row == CBPhoneRowAskYes() || row == CBPhoneRowAskNo() {
+    let asker = CBCrewMemberOfThread(sys, book, store.ThreadName(thread));
+    CBCrewAnswerAsk(sys, game, asker, row == CBPhoneRowAskYes(), true);
     return;
   }
   // Just them, from their own thread: asked here, carried out on the next settled tick (CBCrewServiceHub).
@@ -2979,6 +3061,11 @@ public func CBCrewWordRestless() -> String {
 public func CBCrewStateWord(book: ref<CBCrewBook>, m: ref<CBCrewMember>, now: Float) -> String {
   if !IsDefined(m) {
     return "";
+  }
+  // Taken alive by a gang in a war (Reactions/GangWar.reds).
+  let fb = CBWarFrontBook.Get(GetGameInstance());
+  if IsDefined(fb) && IsDefined(fb.FindCaptive(m.id)) {
+    return CBT(n"Cyberbane-HubWar-HELD");
   }
   if book.IsOut(m.id) {
     return CBCrewWordWithYou();
@@ -3132,10 +3219,16 @@ func CBCrewServiceHub(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<C
       CBPhoneSendTinted(game, sender, hired, CBHudCyan());
     }
   }
+  // A veteran who leaves retires alive, a friendly face on the street; anybody newer is simply let go.
   if book.reqLetGo > 0 {
     let id = book.reqLetGo;
     book.reqLetGo = 0;
-    CBCrewLetGo(sys, game, id);
+    let leaving = book.Find(id);
+    if IsDefined(leaving) && CBCrewRankOf(game, leaving) >= CBConfig.CrewRetireMinRank() {
+      CBCrewRetire(sys, game, leaving);
+    } else {
+      CBCrewLetGo(sys, game, id);
+    }
   }
   if book.reqCall {
     book.reqCall = false;

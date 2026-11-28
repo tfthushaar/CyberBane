@@ -528,7 +528,7 @@ public func CBSpawnGroup(game: GameInstance, record: TweakDBID, appearance: CNam
   let room = CBSpawnRoom(game) - (Equals(squadTag, n"CB_Own") ? 0 : CBCrewRoomKept(game));
   let count = wanted < room ? wanted : room;
   if room <= 0 {
-    CBLog.Info(n"Spawn", s"No room: \(CBConfig.MaxLiveSpawns() - CBSpawnRoom(game)) of ours in the world, \(Equals(squadTag, n"CB_Own") ? 0 : CBCrewRoomKept(game)) places kept for V's crew; nobody else is sent until some are gone.");
+    CBLog.Info(n"Spawn", s"No room: \(CBMaxLiveSpawns(game) - CBSpawnRoom(game)) of ours in the world, \(Equals(squadTag, n"CB_Own") ? 0 : CBCrewRoomKept(game)) places kept for V's crew; nobody else is sent until some are gone.");
     return 0;
   }
   if !TDBID.IsValid(record) || count <= 0 || !CBRecordIsPerson(record) {
@@ -1546,7 +1546,8 @@ func CBChaseGiveUp(sys: ref<CyberbaneSystem>, game: GameInstance, des: ref<Dynam
   sys.SetActiveRivalId(0);
   sys.SetActiveSquadFaction(n"");
   if CBToastsOn() && !crewLost && !cold {
-    CBPhoneFromStreet(game, CBT(n"Cyberbane-Spawner-TheyLostYouDoNotGo"));
+    CBPhoneFromStreet(game, CBLineOf([CBT(n"Cyberbane-Spawner-TheyLostYouDoNotGo"), CBT(n"Cyberbane-Spawner-TheyLostYou2"),
+                                      CBT(n"Cyberbane-Spawner-TheyLostYou3")]));
   }
   CBLog.Info(n"Spawn", "Player outran the encounter; hunters gave up.");
 }

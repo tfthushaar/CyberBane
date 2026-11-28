@@ -107,7 +107,7 @@ public func CBHangoutTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void
       // who lost it less.
       let holderHere = CBTurfHolder(sys, game, sys.GetCurrentDistrict());
       let held = IsNameValid(holderHere) ? (Equals(holderHere, g) ? CBConfig.HeldDistrictHangoutMult() : CBConfig.LostDistrictHangoutMult()) : 1.0;
-      if RandF() < CBConfig.HangoutChance() * CBStreetLifeMood(game) * held {
+      if RandF() < CBConfig.HangoutChance() * CBStreetLifeMood(game) * held * CBGangStreetShare(game, g) {
         CBHangoutStart(sys, game, st, g, now);
         return;
       }
@@ -189,8 +189,7 @@ func CBHangoutPlaceKept(game: GameInstance, at: Vector4) -> Bool {
   if CBHomePointKept(game, at) {
     return true;
   }
-  let sam = GameInstance.GetSafeAreaManager(game);
-  return IsDefined(sam) && sam.IsPointInSafeArea(at);
+  return CBPointInSafeArea(game, at);
 }
 
 func CBHangoutEnd(game: GameInstance, st: ref<CBHangoutState>) -> Void {

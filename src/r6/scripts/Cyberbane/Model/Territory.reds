@@ -38,7 +38,9 @@ public func CBGangStrength(sys: ref<CyberbaneSystem>, faction: CName) -> Float {
     return 100.0;
   }
   let days = MaxF(0.0, now - p.at) / CBConfig.SecondsPerDay();
-  return ClampF(p.strength + days * CBConfig.GangRecoverPerDay(), CBConfig.GangStrengthFloor(), 100.0);
+  let s = ClampF(p.strength + days * CBConfig.GangRecoverPerDay(), CBConfig.GangStrengthFloor(), 100.0);
+  // Broken by V's crew: it stays broken for weeks (Reactions/GangWar.reds).
+  return CBGangBrokenByCrew(sys.GetGameInstance(), faction) ? MinF(s, CBConfig.GangBrokenStrength() - 1.0) : s;
 }
 
 // Which band it is in: 0 broken, 1 bleeding, 2 hurting, 3 strong. Code asks this; only the player reads the word (a
@@ -477,6 +479,10 @@ func CBTurfCounterattack(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
                          district: CName, now: Float) -> Void {
   let old = book.From(i);
   let holder = book.Holder(i);
+  // The crew's streets are tested by grudge and numbers, not only by whoever held them before (CBCrewCounterGang).
+  if CBIsCrewTurf(holder) {
+    old = CBCrewCounterGang(sys, game, district, old, now);
+  }
   if Equals(old, n"") || Equals(holder, n"") || Equals(old, holder) {
     return;
   }
@@ -484,8 +490,14 @@ func CBTurfCounterattack(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
   if (now - book.Since(i)) < gap || (book.PushAt(i) > 0.0 && (now - book.PushAt(i)) < gap) {
     return;
   }
-  if CBGangStrength(sys, old) < CBConfig.TurfPushMinStrength() || RandF() >= CBConfig.TurfPushChance() {
-    return;
+  if CBIsCrewTurf(holder) {
+    if RandF() >= CBConfig.TurfPushChance() * (CBCrewGrudgeOf(game, old, now) ? 2.0 : 1.0) {
+      return;
+    }
+  } else {
+    if CBGangStrength(sys, old) < CBConfig.TurfPushMinStrength() || RandF() >= CBConfig.TurfPushChance() {
+      return;
+    }
   }
   book.SetPushAt(i, now);
   // On the crew's corners: told ahead with a place and an hour, so V can be there; the ground is lost only if nobody
@@ -507,6 +519,42 @@ func CBTurfCounterattack(sys: ref<CyberbaneSystem>, game: GameInstance, book: re
       CBCrewText(sys, game, null, CBTf(n"Cyberbane-CrewTurf-HitOurCorners", [CBCapFirst(o), place]));
     }
   }
+}
+
+// Who comes back at the crew's corners (F3): a gang the crew beat that holds a grudge, or the one that lost these
+// streets, whichever has the people to do it; never one already at war with the crew, whose nights carry it instead.
+// n"" for nobody.
+func CBCrewCounterGang(sys: ref<CyberbaneSystem>, game: GameInstance, district: CName, lostIt: CName, now: Float) -> CName {
+  let wb = CBWarBook.Get(game);
+  let best = n"";
+  let bestScore = 0.0;
+  let fb = CBWarFrontBook.Get(game);
+  let content = sys.GetContent();
+  if !IsDefined(content) {
+    return n"";
+  }
+  for prof in content.GetFactions() {
+    if IsDefined(prof) && prof.isGang && CBFactionFieldsSquads(prof.id) && !CBCrewWarOn(game, prof.id) && !CBWarIsClient(game, prof.id) {
+      let grudge = IsDefined(fb) && fb.Grudge(prof.id, now);
+      let lost = Equals(prof.id, lostIt);
+      if grudge || lost {
+        let men = IsDefined(wb) ? wb.Men(prof.id) : 100.0;
+        if men >= CBConfig.CounterMinMen() {
+          let score = men * (grudge ? 1.5 : 1.0) * (lost ? 1.2 : 1.0) - Cast<Float>(CBCrewStandingWith(game, prof.id));
+          if score > bestScore {
+            bestScore = score;
+            best = prof.id;
+          }
+        }
+      }
+    }
+  }
+  return best;
+}
+
+func CBCrewGrudgeOf(game: GameInstance, gang: CName, now: Float) -> Bool {
+  let fb = CBWarFrontBook.Get(game);
+  return IsDefined(fb) && fb.Grudge(gang, now);
 }
 
 func CBTurfChangedHands(sys: ref<CyberbaneSystem>, game: GameInstance, district: CName,

@@ -397,7 +397,11 @@ public func CBPeaceQuote(sys: ref<CyberbaneSystem>, game: GameInstance, factionI
 }
 
 // What a broken gang says when it names its price: less a demand than asking to stop.
-public func CBPeaceBrokenLine(cost: Int32) -> String {
+public func CBPeaceBrokenLine(cost: Int32, opt gang: CName) -> String {
+  let own = CBGangPriceLine(gang, CBPriceBroken(), cost);
+  if StrLen(own) > 0 {
+    return own;
+  }
   switch RandRange(0, 3) {
     case 0: return CBTf(n"Cyberbane-Peace-ThereSHardlyAnyOfUs", [s"\(cost)"]);
     case 1: return CBTf(n"Cyberbane-Peace-YouMadeYourPointEbAnd", [s"\(cost)"]);
@@ -407,7 +411,11 @@ public func CBPeaceBrokenLine(cost: Int32) -> String {
 
 // The price after a threat that did not name it (UI/PhoneMessages.reds, CBPhoneDemandText): what V's answers under it
 // answer. V pays them, as the Hub's peace does ("Take Xeb" above read as them paying V).
-public func CBPeaceAskLine(cost: Int32) -> String {
+public func CBPeaceAskLine(cost: Int32, opt gang: CName) -> String {
+  let own = CBGangPriceLine(gang, CBPriceAsk(), cost);
+  if StrLen(own) > 0 {
+    return own;
+  }
   switch RandRange(0, 3) {
     case 0: return CBTf(n"Cyberbane-Peace-OrPayEbAndItStops", [s"\(cost)"]);
     case 1: return CBTf(n"Cyberbane-Peace-EbAndWeCallItOff", [s"\(cost)"]);
@@ -417,7 +425,11 @@ public func CBPeaceAskLine(cost: Int32) -> String {
 
 // A gang putting its price to V unprompted, for the once-a-session standing demand (Model/Reputation.reds,
 // CBVendettaWatch).
-public func CBPeaceDemandLine(cost: Int32, vendetta: Bool) -> String {
+public func CBPeaceDemandLine(cost: Int32, vendetta: Bool, opt gang: CName) -> String {
+  let own = CBGangPriceLine(gang, vendetta ? CBPriceSworn() : CBPriceDemand(), cost);
+  if StrLen(own) > 0 {
+    return own;
+  }
   if vendetta {
     switch RandRange(0, 3) {
       case 0: return CBTf(n"Cyberbane-Peace-YouAreStillWalkingAroundEb", [s"\(cost)"]);
@@ -448,7 +460,8 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
   let money = ItemID.FromTDBID(t"Items.money");
   if ts.GetItemQuantity(player, money) < cost {
     if CBToastsOn() {
-      CBPhoneDemandFromGang(game, factionId, CBTf(n"Cyberbane-Peace-EbAndWeForgetAboutYou", [s"\(cost)"]), true);
+      let short = CBGangPriceLine(factionId, CBPriceCantPay(), cost);
+      CBPhoneDemandFromGang(game, factionId, StrLen(short) > 0 ? short : CBTf(n"Cyberbane-Peace-EbAndWeForgetAboutYou", [s"\(cost)"]), true);
     }
     return false;
   }
@@ -472,7 +485,8 @@ public func CBBrokerPeace(sys: ref<CyberbaneSystem>, game: GameInstance, faction
 
   if CBToastsOn() {
     let what = Equals(posture, ECBPosture.Vendetta) ? CBT(n"Cyberbane-Peace-Vendetta") : CBT(n"Cyberbane-Peace-Hostility");
-    CBPhoneFromGangFinal(game, factionId, CBTf(n"Cyberbane-Peace-EbReceivedTheIsOverDo", [s"\(cost)", s"\(what)"]));
+    let paid = CBGangPriceLine(factionId, CBPricePaid(), cost);
+    CBPhoneFromGangFinal(game, factionId, StrLen(paid) > 0 ? paid : CBTf(n"Cyberbane-Peace-EbReceivedTheIsOverDo", [s"\(cost)", s"\(what)"]));
   }
   CBLog.Info(n"Economy", s"Peace brokered with \(NameToString(factionId)) for \(cost).");
   return true;

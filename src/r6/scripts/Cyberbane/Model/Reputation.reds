@@ -415,7 +415,8 @@ public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
         fs.vendettaSince = MaxF(now, 1.0);
         CBFileLog(sys, n"Vendetta", now, CBEventDistrict(sys, game), fs.id, 0.0);
         if CBToastsOn() && CBFactionFieldsSquads(fs.id) && !CBTwrOwnsHostility(fs.id) {
-          CBGangDemandLater(game, fs.id, CBGangBossSigned(sys, game, fs.id, CBT(n"Cyberbane-Reputation-YouAreDeadToUsEvery")));
+          CBGangDemandLater(game, fs.id, CBGangBossSigned(sys, game, fs.id, CBLineOf([CBT(n"Cyberbane-Reputation-YouAreDeadToUsEvery"),
+                                                                                    CBT(n"Cyberbane-Reputation-DeadToUs2")])));
           // That message already carries the pay-off answer, so this gang has had its say.
           sys.NotePeaceOffered(fs.id);
         }
@@ -432,7 +433,7 @@ public func CBVendettaWatch(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
          && sys.PeaceOfferDue(now) && !(IsDefined(offerPlayer) && offerPlayer.IsInCombat()) {
         let quote = CBPeaceQuote(sys, game, fs.id);
         if quote >= 0 && sys.NotePeaceOffered(fs.id) {
-          CBPhoneDemandFromGang(game, fs.id, CBGangBroken(sys, fs.id) ? CBPeaceBrokenLine(quote) : CBPeaceDemandLine(quote, sworn), true);
+          CBPhoneDemandFromGang(game, fs.id, CBGangBroken(sys, fs.id) ? CBPeaceBrokenLine(quote, fs.id) : CBPeaceDemandLine(quote, sworn, fs.id), true);
           sys.NotePeaceOfferAt(now);
           demanded = true;
           CBLog.Info(n"Model", s"\(NameToString(fs.id)) put its price to you: \(quote)eb.");

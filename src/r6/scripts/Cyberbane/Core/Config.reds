@@ -563,6 +563,18 @@ public abstract class CBConfig {
   public static func CrewHitSampleHits() -> Int32 = 8
   public static func CrewHitSampleSeconds() -> Float = 3.0
   public static func CrewHitGapSeconds() -> Float = 1.5
+  // A travel point learns which part of its district it stands in when V passes within this many metres, looked for
+  // every so many ticks (Spawn/PlaceAreas.reds).
+  public static func PlaceAreaLearnDistance() -> Float = 150.0
+  public static func PlaceAreaLearnTicks() -> Int32 = 10
+  // Add-ons' bodyguards and posts (API/Level5.reds): at most this many bodyguards at once; one leaves after this many
+  // ticks out of reach of V (this many metres), or this many quiet ticks after the fight it came for; a post holds at
+  // most this many people.
+  public static func ApiEscortMax() -> Int32 = 2
+  public static func ApiEscortLostDistance() -> Float = 150.0
+  public static func ApiEscortLostTicks() -> Int32 = 10
+  public static func ApiEscortQuietTicks() -> Int32 = 30
+  public static func ApiPostMaxPeople() -> Int32 = 6
   public static func CrewVShareCeiling() -> Float = 1.0
   // Training: the first costs this, each one after it more; away this many game hours, more each time; at most this many.
   public static func CrewTrainCostBase() -> Int32 = 2500
@@ -592,14 +604,17 @@ public abstract class CBConfig {
   public static func WarWeightPower() -> Float = 0.15
   // A gang's weight: a base, its strength on its home streets, every district it holds; ready for a crew it hates, caught
   // out by one it respects; and less for how afraid of V it is.
-  public static func GangWarBase() -> Float = 40.0
-  public static func GangWarPerStrength() -> Float = 1.2
-  public static func GangWarPerDistrict() -> Float = 6.0
+  public static func GangWarBase() -> Float = 60.0
+  public static func GangWarPerStrength() -> Float = 3.0
+  public static func GangWarPerDistrict() -> Float = 15.0
   public static func GangWarStandWeight() -> Float = 0.15
   public static func GangWarFearWeight() -> Float = 0.2
-  // How far the nights swing the ratio of the two, either way.
-  public static func WarSwingLow() -> Float = 0.8
-  public static func WarSwingHigh() -> Float = 1.25
+  // All of it, against the crew's side: a gang is dozens of people, and the crew's best party a handful of veterans. At 1
+  // a full party of Legends took a big gang's corners at six to one.
+  public static func GangWarScale() -> Float = 4.0
+  // How far a fight swings the ratio of the two, either way.
+  public static func WarSwingLow() -> Float = 0.6
+  public static func WarSwingHigh() -> Float = 1.4
   // What it does: the hold on their home streets by outcome, the spoils per member, the chance the weakest is hurt in a
   // plain win, deaths in a rout, the hidden stashes marked, a defector's price.
   public static func WarFootDecisive() -> Float = 0.45
@@ -805,13 +820,12 @@ public abstract class CBConfig {
   public static func CrewTaxOwedCap() -> Int32 = 6000
   public static func CrewTaxShopRange() -> Float = 8.0
   public static func CrewTaxFearBonus() -> Float = 0.75
-  // A counterattack on the crew's corners: told this many game hours ahead, open this long, their crew this many ticks
-  // behind V's arrival, and what holding or losing it does to the crew's hold there.
+  // A counterattack on the crew's corners: told this many game hours ahead, open this long, and what holding or losing it
+  // does to the crew's hold there.
   public static func CrewCounterAheadHours() -> Float = 3.0
   public static func CrewCounterWindowHours() -> Float = 3.0
-  public static func CrewCounterArriveTicks() -> Int32 = 25
-  public static func CrewCounterHeldFoot() -> Float = 12.0
-  public static func CrewCounterLostFoot() -> Float = 10.0
+  public static func CrewCounterHeldFoot() -> Float = 0.12
+  public static func CrewCounterLostFoot() -> Float = 0.10
   // A Rival's timeline (Rivals/RivalTimeline.reds): how much the book keeps, how much a Rival's line shows.
   public static func RivalTimelineCap() -> Int32 = 400
   public static func RivalTimelineShown() -> Int32 = 6
@@ -1845,8 +1859,16 @@ public abstract class CBConfig {
   // whether V can see them or not (CBRemainsInReach): the fight can move across a street and back.
   public static func RemainsFightDistance() -> Float = 150.0
   public static func RemainsCap() -> Int32 = 96
-  // The most of Cyberbane's people alive in the world at once (Spawn/Spawner.reds, CBSpawnGroup).
-  public static func MaxLiveSpawns() -> Int32 = 18
+  // The most of Cyberbane's people alive in the world at once (Spawn/Spawner.reds, CBSpawnGroup). The game's own police
+  // spawner holds itself to 35 entities in a chase and 50 outside one, cars included (prevention_system.tweak), so 30
+  // people stays inside what the game itself streams in; while the NCPD are after V the two would stack, so 18 then.
+  public static func MaxLiveSpawns() -> Int32 = 30
+  // Safe places the engine's test does not know (Core/SafeSpots.reds): a spot kept every so many metres V walks in one,
+  // nobody placed within this many metres of one, and this many kept.
+  public static func SafeSpotSpacing() -> Float = 15.0
+  public static func SafeSpotRadius() -> Float = 30.0
+  public static func SafeSpotsKept() -> Int32 = 96
+  public static func MaxLiveSpawnsPolice() -> Int32 = 18
   // Within this many metres of the tracked objective's map pins, V is on a job (Core/SafeAreas.reds).
   public static func QuestAreaRadius() -> Float = 80.0
   // Nobody is placed, and no NPC is pushed, within this many metres of a tracked objective's pin,
@@ -2460,4 +2482,225 @@ public abstract class CBConfig {
   // Kill timestamps kept per encounter. Only the massacre window is ever read back, so
   // this is comfortably more than the rule needs.
   public static func CapEncounterKillTicks() -> Int32 = 64
+  // Skipping to the hour (Core/SkipTime.reds): offered only for a wait at least this long (game seconds), and the skip
+  // lands this many game seconds before the hour, so V is there as it starts.
+  public static func SkipTimeMinWait() -> Float = 900.0
+  public static func SkipTimeLead() -> Float = 300.0
+  // A hurt member asks for a ripperdoc (Reactions/CrewLife.reds): with this many hours of their time out left, this
+  // often a day; its price, what it leaves of their time out (and never less than the hours below), and the loyalty.
+  public static func CrewRipperAskHours() -> Float = 10.0
+  public static func CrewRipperAskChance() -> Float = 0.7
+  public static func CrewRipperBase() -> Int32 = 300
+  public static func CrewRipperPerRank() -> Int32 = 150
+  public static func CrewRipperHealShare() -> Float = 0.25
+  public static func CrewRipperMinHours() -> Float = 2.0
+  public static func CrewRipperLoyalty() -> Int32 = 6
+  public static func CrewAskDeclinedLoyalty() -> Int32 = 3
+
+  // ---- The crew's wars (Reactions/GangWar.reds) ----
+  // A gang's weight (F1): its chest at full adds this, each living Rival this plus this a rank (all of them together at
+  // most the ceiling), each stronghold this, a truce partner this share of its own weight, and the city answers a crew
+  // that keeps winning with hired guns: this much for each war won in the last so many days. Tuned so a crew's best
+  // party meets a gang at full strength at about even odds, and a broken gang at ten to one.
+  public static func GangWarChestWeight() -> Float = 120.0
+  public static func GangWarPerRival() -> Float = 15.0
+  public static func GangWarPerRivalRank() -> Float = 15.0
+  public static func GangWarRivalCeiling() -> Float = 250.0
+  public static func GangWarPerStronghold() -> Float = 25.0
+  public static func GangWarFriendShare() -> Float = 0.3
+  public static func WarCityAnswerDays() -> Float = 14.0
+  public static func WarCityAnswerPerWin() -> Float = 40.0
+  // What an order meets of their weight; the front's pull back each day without the watch; a day's weariness.
+  public static func WarMeetCorners() -> Float = 0.5
+  public static func WarMeetStash() -> Float = 0.35
+  public static func WarMeetLieutenant() -> Float = 0.45
+  public static func WarFrontDrift() -> Float = 3.0
+  public static func WarWearyPerDay() -> Float = 3.0
+  // Going to war costs V's standing with them; their dead thin them on the turf map this much a head.
+  public static func WarDeclareStanding() -> Float = 20.0
+  public static func WarMenToStrength() -> Float = 0.8
+  // The war's pace, at any hour of the day: a led order waits for V at its place this long, a sent one goes in after
+  // this long, and the crew regroups this long after either; a hold lasts this long; with no order for this long the
+  // second sends one, at this share of the crew's weight.
+  public static func WarLeadHours() -> Float = 3.0
+  public static func WarSendHours() -> Float = 1.0
+  public static func WarRegroupHours() -> Float = 1.0
+  public static func WarHoldHours() -> Float = 4.0
+  public static func WarSecondIdleHours() -> Float = 4.0
+  public static func WarSecondRunsMult() -> Float = 0.9
+  // Their moves: the first this soon after the war starts, then one every few hours; told ahead, V has this long to get
+  // there, and this long when the crew hears of it only as it starts.
+  public static func WarFirstMoveHours() -> Float = 1.5
+  public static func WarMoveGapMinHours() -> Float = 3.0
+  public static func WarMoveGapMaxHours() -> Float = 6.0
+  public static func WarMoveToldHours() -> Float = 1.5
+  public static func WarMoveRushHours() -> Float = 0.5
+  // The war is fought where the gang has at least this share of a district the crew does not hold.
+  public static func WarTargetMinShare() -> Float = 0.05
+  // Scouted: stronger for this many days; blind: this often an ambush at this share; a scout without eyes caught this
+  // often; the eyes warn of their move this often.
+  public static func WarScoutedMult() -> Float = 1.15
+  public static func WarScoutDays() -> Float = 2.0
+  public static func WarAmbushChance() -> Float = 0.25
+  public static func WarAmbushMult() -> Float = 0.75
+  public static func WarScoutCaughtChance() -> Float = 0.15
+  public static func WarEyesWarnChance() -> Float = 0.6
+  // A loose tongue sells the order this often (by member under the restless line); they wait at this weight.
+  public static func WarSellChance() -> Float = 0.15
+  public static func WarSoldMult() -> Float = 1.3
+  // V there moves the front this many times as far.
+  public static func WarVThereMult() -> Float = 3.0
+  // The spoils: their corners, their stash (at most this much of their chest, the kitty's share of it), their boss.
+  public static func WarCornerSpoils() -> Float = 600.0
+  public static func WarStashTake() -> Float = 4000.0
+  public static func WarStashTakeDecisive() -> Float = 6000.0
+  public static func WarStashKittyShare() -> Float = 0.25
+  public static func WarBreakSpoils() -> Int32 = 5000
+  public static func WarBrokenHeads() -> Int32 = 6
+  public static func WarBrokenDays() -> Float = 21.0
+  // How much of a gang is out on the street after the crew beat it: broken, and with a grudge after losing a war.
+  public static func WarBrokenStreetShare() -> Float = 0.35
+  public static func WarBeatenStreetShare() -> Float = 0.65
+  // A gang goes to war on the crew this often a day, when it holds a grudge or this much bad blood and has this much of
+  // its manpower.
+  public static func WarTheyDeclareChance() -> Float = 0.08
+  public static func WarTheyDeclareHate() -> Int32 = 50
+  public static func WarTheyDeclareMen() -> Float = 70.0
+  // Losses: one of the crew taken alive this often on a bad night; somebody this loyal takes a hit meant for another
+  // this often; after a rout somebody near the betray line walks this often.
+  public static func WarTakenChance() -> Float = 0.3
+  public static func WarTakeHitLoyalty() -> Int32 = 85
+  public static func WarTakeHitChance() -> Float = 0.5
+  public static func WarWalkoutChance() -> Float = 0.3
+  // Their move: it meets this share of their weight against the crew's defence (a base, this much a point of the crew's
+  // weight, this a guard, this much more on a night the crew holds); a quiet night this often; ground held or lost on a
+  // corner; the kitty's share a raid takes; what leaning on a friend costs that friend's standing with V.
+  public static func WarMoveMeets() -> Float = 0.4
+  public static func WarDefenceBase() -> Float = 100.0
+  public static func WarDefencePerWeight() -> Float = 3.5
+  public static func WarDefencePerGuard() -> Float = 40.0
+  public static func WarHoldMult() -> Float = 1.5
+  public static func WarQuietMoveChance() -> Float = 0.2
+  public static func WarCornerHeldFoot() -> Float = 0.05
+  public static func WarCornerLostFoot() -> Float = 0.08
+  public static func WarRaidKittyShare() -> Float = 0.2
+  public static func WarLeanStanding() -> Float = 8.0
+  public static func WarCoalitionHate() -> Int32 = 30
+  // Friends in the war (W5): their share of their weight, the spoils they take, the favour, the fighters they send.
+  public static func WarAllyShare() -> Float = 0.35
+  public static func WarAllySpoilsShare() -> Float = 0.25
+  public static func WarAllyFavourCost() -> Float = 5.0
+  public static func WarAllyFighters() -> Int32 = 2
+  // Terms (W7): asked at this weariness or front, open this many days; tribute a week; a client at this front, warmer
+  // by this much, lending this many heads, breaking terms this often a day once rebuilt; the crew's price when it is
+  // losing; their boss stormed from this front.
+  public static func WarTermsWeary() -> Float = 70.0
+  public static func WarTermsFront() -> Float = 60.0
+  public static func WarTermsDays() -> Float = 2.0
+  public static func WarTributeBase() -> Int32 = 600
+  public static func WarTributePerStrength() -> Float = 10.0
+  public static func WarClientFront() -> Float = 50.0
+  public static func WarClientWarmth() -> Float = 30.0
+  public static func WarClientHeads() -> Int32 = 4
+  public static func WarClientBreakChance() -> Float = 0.05
+  public static func WarDemandBase() -> Int32 = 3000
+  public static func WarDemandPerWeary() -> Float = 60.0
+  public static func WarStormFront() -> Float = 90.0
+  // After a war: a grudge this long, esteem and a shop tax for a win, the corners empty this long after a loss; wars
+  // kept in History.
+  public static func WarGrudgeDays() -> Float = 14.0
+  public static func WarWonEsteem() -> Float = 15.0
+  public static func WarWonShopTax() -> Int32 = 400
+  public static func WarLostCornersDays() -> Float = 3.0
+  public static func WarPastKept() -> Int32 = 16
+  // Taken alive (W6): the price, how long before they are killed or talk, how often they talk.
+  public static func WarRansomBase() -> Int32 = 1500
+  public static func WarRansomPerRank() -> Int32 = 500
+  public static func WarCaptiveDays() -> Float = 3.0
+  public static func WarCaptiveTalkChance() -> Float = 0.4
+  // A fight V is in (Reactions/GangWarFight.reds): V within this of the place; gone past this is the fight lost; how long
+  // one wave has; how many of theirs in a wave, at their boss's, at a rescue; their best at their boss's; each wave after
+  // the first this share of the one before; a place picked for it at least this far from V.
+  public static func WarFightReach() -> Float = 150.0
+  public static func WarFightLeave() -> Float = 250.0
+  public static func WarFightHours() -> Float = 1.0
+  public static func WarFightSize() -> Int32 = 7
+  public static func WarStormSize() -> Int32 = 12
+  public static func WarRescueSize() -> Int32 = 5
+  public static func WarStormApex() -> Int32 = 3
+  public static func WarWaveShare() -> Float = 0.8
+  public static func WarPlaceMinAway() -> Float = 80.0
+  // The squads' own people in V's fight: two from a squad on the order's own work, one from any other, this many in all,
+  // leaving room for this many more of theirs.
+  public static func WarSquadFightersMax() -> Int32 = 6
+  public static func WarFightRoomKept() -> Int32 = 2
+  // Counterattacks from a grudge (F3): a gang needs this much of its manpower to come.
+  public static func CounterMinMen() -> Float = 40.0
+  // Clashes (F4): a gang seen by V within this many ticks is on these streets.
+  public static func ClashSeenTicks() -> Int32 = 300
+
+  // ---- Squads (Reactions/Squads.reds) ----
+  public static func SquadHeadsLieutenant() -> Int32 = 4
+  public static func SquadHeadsEnforcer() -> Int32 = 8
+  public static func SquadHeadsLegend() -> Int32 = 12
+  public static func SquadHeadsPerDistrictWeek() -> Float = 3.0
+  public static func SquadSkillStart() -> Float = 30.0
+  public static func SquadSkillPerDay() -> Float = 0.5
+  public static func SquadOffWork() -> Float = 0.45
+  public static func SquadWarPerStrength() -> Float = 6.0
+  public static func SquadPowerPerStrength() -> Float = 4.0
+  public static func SquadFullPlanMult() -> Float = 1.2
+  public static func SquadWagePerHead() -> Int32 = 40
+  public static func SquadLeaderlessDays() -> Float = 3.0
+  public static func SquadChangeMaxHeads() -> Int32 = 4
+  // Between wars: the guns' daily hold on the crew's streets, the knives' contracts and how much they thin the worst gang,
+  // the runners' takings a point of strength, the watch's esteem and street tax.
+  public static func SquadGuardFoot() -> Float = 0.01
+  public static func SquadContractPay() -> Float = 600.0
+  public static func SquadKnivesWeaken() -> Float = 3.0
+  public static func SquadRunnerIncome() -> Float = 30.0
+  public static func SquadWatchEsteem() -> Float = 1.0
+  public static func SquadWatchTaxMult() -> Float = 1.25
+  // The rest of the standing jobs: the knives catch a hunter this often, the guns add this to a job's chance, guns or the
+  // watch meet a corner or a raid at this much more, and the cutters keep somebody taken alive this many days longer.
+  public static func SquadStopHunterChance() -> Float = 0.35
+  public static func SquadJobBacking() -> Float = 0.08
+  public static func SquadMeetMult() -> Float = 1.35
+  public static func SquadCaptiveExtraDays() -> Float = 2.0
+
+  // ---- The crew as a gang (Reactions/CrewGang.reds) ----
+  // Whoever runs a district: what their rank adds when it is hit, the tax by temper, the hold lost when they are gone.
+  public static func RunnerDefencePerRank() -> Float = 8.0
+  public static func RunnerTaxSteady() -> Float = 1.2
+  public static func RunnerTaxGreedy() -> Float = 0.8
+  public static func RunnerLostFoot() -> Float = 0.08
+  public static func CrewPlaceReach() -> Float = 40.0
+  // What the kitty buys, and what each does.
+  public static func UpgradeTrainingPrice() -> Int32 = 4000
+  public static func UpgradeTrainingFactor() -> Float = 0.6
+  public static func UpgradeArmouryPrice() -> Int32 = 6000
+  public static func UpgradeArmouryTiers() -> Int32 = 1
+  public static func UpgradeCarPrice() -> Int32 = 5000
+  public static func UpgradeSafehousePrice() -> Int32 = 8000
+  public static func SafehouseHealFactor() -> Float = 0.7
+  // Tiers by the crew's power: a crew, a gang, a power in the city; a power's allied boss calls for help this often.
+  public static func CrewTierCrew() -> Float = 40.0
+  public static func CrewTierGang() -> Float = 110.0
+  public static func CrewTierPower() -> Float = 220.0
+  public static func TierBossCallChance() -> Float = 0.1
+  // Marks: how often a bad night leaves one, and what a leg and an arm cost in a war; a retired member's word.
+  public static func MarkChance() -> Float = 0.15
+  public static func MarkChanceBad() -> Float = 0.35
+  public static func MarkLegMult() -> Float = 0.92
+  public static func MarkArmMult() -> Float = 0.85
+  public static func RetiredTextChance() -> Float = 0.15
+  // A member of this rank or more who leaves retires alive rather than being let go.
+  public static func CrewRetireMinRank() -> Int32 = 3
+
+  // ---- Turf by neighbourhood (Model/Hoods.reds) ----
+  // The crew's hold at which a neighbourhood is theirs and below which it is lost; how much its neighbourhoods push the
+  // crew's claim on a district.
+  public static func HoodTakeLine() -> Float = 0.6
+  public static func HoodLoseLine() -> Float = 0.3
+  public static func HoodDistrictPush() -> Float = 0.6
 }

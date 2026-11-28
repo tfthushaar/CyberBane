@@ -22,6 +22,12 @@ public func CBAskGun() -> Int32 = 1
 public func CBAskRevenge() -> Int32 = 2
 public func CBAskDayOff() -> Int32 = 3
 public func CBAskCut() -> Int32 = 4
+public func CBAskRipper() -> Int32 = 5
+
+// The asks a text can answer: a day off, a cut, a ripper. The rest need V to do something (a gun handed over, a Rival dead).
+public func CBAskByText(kind: Int32) -> Bool {
+  return kind == CBAskDayOff() || kind == CBAskCut() || kind == CBAskRipper();
+}
 
 // A temperament, from the member's seed.
 public func CBTemperHothead() -> Int32 = 0
@@ -672,19 +678,20 @@ public func CBCrewWinLine(sys: ref<CyberbaneSystem>, game: GameInstance, book: r
   if !CBMessagesOn() || !IsDefined(speaker) {
     return;
   }
+  // In their own words, never a body count: the crew talks, it does not report.
   let t = CBCrewTemper(speaker);
-  let count = downed == 1 ? CBT(n"Cyberbane-CrewLife-OneOfTheirsDown") : (downed > 1 ? CBTf(n"Cyberbane-CrewLife-OfTheirsDown", [s"\(downed)"]) : "");
   let line = "";
   if t == CBTemperHothead() {
-    line = CBLineOf([CBT(n"Cyberbane-CrewLife-WinHot1"), CBT(n"Cyberbane-CrewLife-WinHot2")]);
+    line = CBLineOf([CBT(n"Cyberbane-CrewLife-WinHot1"), CBT(n"Cyberbane-CrewLife-WinHot2"), CBT(n"Cyberbane-CrewLife-WinHot3")]);
   } else {
     if t == CBTemperMoney() {
-      line = CBLineOf([CBT(n"Cyberbane-CrewLife-WinMoney1"), CBT(n"Cyberbane-CrewLife-WinMoney2")]);
+      line = CBLineOf([CBT(n"Cyberbane-CrewLife-WinMoney1"), CBT(n"Cyberbane-CrewLife-WinMoney2"), CBT(n"Cyberbane-CrewLife-WinMoney3")]);
     } else {
-      line = CBLineOf([CBT(n"Cyberbane-Crew-CleanStillWithYou"), CBT(n"Cyberbane-Crew-ThatSHandledLeadOn"), CBT(n"Cyberbane-CrewLife-WinCalm")]);
+      line = CBLineOf([CBT(n"Cyberbane-Crew-CleanStillWithYou"), CBT(n"Cyberbane-Crew-ThatSHandledLeadOn"), CBT(n"Cyberbane-CrewLife-WinCalm"),
+                       CBT(n"Cyberbane-CrewLife-WinCalm2")]);
     }
   }
-  CBCrewText(sys, game, speaker, StrLen(count) > 0 ? count + " " + line : line, true, true);
+  CBCrewText(sys, game, speaker, line, true, true);
 }
 
 // ---- Texts that come as one ----------------------------------------------------------------------------------------
@@ -772,8 +779,11 @@ public func CBCrewSecondId(game: GameInstance) -> Int32 {
 
 // ---- V in the crew's wars ------------------------------------------------------------------------------------------
 
-// Is the crew at war with this gang right now?
+// Is the crew at war with this gang right now: a war, or an old party still out?
 public func CBCrewAtWarWith(game: GameInstance, gang: CName) -> Bool {
+  if CBCrewWarOn(game, gang) {
+    return true;
+  }
   let wb = CBCrewWarBook.Get(game);
   if !IsDefined(wb) || !IsNameValid(gang) {
     return false;
@@ -812,8 +822,14 @@ public func CBCrewWarNoteVKill(sys: ref<CyberbaneSystem>, game: GameInstance, ga
     return;
   }
   let n = lb.AddWarHelp(gang);
-  if (n == 1 || n % 5 == 0) && CBMessagesOn() {
-    CBCrewText(sys, game, CBCrewSecond(game), n == 1 ? CBT(n"Cyberbane-CrewWar-VJoined") : CBTf(n"Cyberbane-CrewWar-VKills", [s"\(n)"]), true);
+  // "You're in this war with us now" once a war: V's count starts again with every order, so it was said every fight.
+  let fb = CBWarFrontBook.Get(game);
+  let joined = IsDefined(fb) && ArrayContains(fb.vJoinedSaid, gang);
+  if !joined && IsDefined(fb) {
+    ArrayPush(fb.vJoinedSaid, gang);
+  }
+  if ((!joined && n >= 1) || (joined && n % 5 == 0)) && CBMessagesOn() {
+    CBCrewText(sys, game, CBCrewSecond(game), !joined ? CBT(n"Cyberbane-CrewWar-VJoined") : CBTf(n"Cyberbane-CrewWar-VKills", [s"\(n)"]), true);
   }
 }
 
@@ -841,7 +857,25 @@ func CBCrewWarHereTick(sys: ref<CyberbaneSystem>, game: GameInstance, lb: ref<CB
 // One of the crew away at a war can still be called to V on that war's own streets.
 public func CBCrewWarHere(game: GameInstance, gang: CName) -> Bool {
   let sys = CyberbaneSystem.Get(game);
-  return IsDefined(sys) && IsNameValid(gang) && Equals(CBGangHomeDistrict(sys, game, gang), sys.GetCurrentDistrict());
+  if !IsDefined(sys) || !IsNameValid(gang) {
+    return false;
+  }
+  // V in a fight with them (Reactions/GangWarFight.reds), wherever it is.
+  let wf = CBWarFightBook.Get(game);
+  if IsDefined(wf) && wf.on && Equals(wf.gang, gang) {
+    return true;
+  }
+  // In the district the war is fought in, or near where the order goes in. Asked for every member away at a war, so it
+  // reads the war's own book, not the whole city's turf.
+  let f = CBGangWarFront(game, gang);
+  if !IsDefined(f) {
+    return false;
+  }
+  if Equals(f.place, sys.GetCurrentDistrict()) {
+    return true;
+  }
+  let player = GetPlayer(game);
+  return IsDefined(player) && CBWarSpotKnown(f.OrderPlace()) && CBWarDistTo(player, f.OrderPlace()) <= CBConfig.WarFightLeave();
 }
 
 // ---- The street tax, in person ------------------------------------------------------------------------------------
@@ -918,15 +952,21 @@ func CBCrewCounterTick(sys: ref<CyberbaneSystem>, game: GameInstance, lb: ref<CB
   let window = CBConfig.CrewCounterWindowHours() * CBConfig.SecondsPerHour();
   let d = lb.CaDistrict();
   let gang = lb.CaGang();
+  // Waiting for it on those streets: told when, and offered the skip.
+  if state == 1 && now < lb.CaAt() && Equals(sys.GetCurrentDistrict(), d) {
+    let player = GetPlayer(game);
+    if IsDefined(player) {
+      CBSkipTimeOffer(game, n"Counter", lb.CaAt(), CBTf(n"Cyberbane-GangWar-SkipCounter", [CBCapFirst(CBFactionLabel(gang))]),
+                      player.GetWorldPosition(), 0.0);
+    }
+  }
   if state == 1 && now >= lb.CaAt() {
-    // V is there: the crew comes, and so do they.
-    if Equals(sys.GetCurrentDistrict(), d) && CBWorldStable(game) && !CBArrivalsHeld(sys, game) {
+    // V is there: the crew comes, and so do they, placed as a war's fight is (Reactions/GangWarFight.reds) so the gang
+    // comes whatever V's own standing with them, and whether or not V has ever fought one of theirs.
+    if Equals(sys.GetCurrentDistrict(), d) && CBWorldStable(game) && !CBArrivalsHeld(sys, game) && CBCrewCounterStart(sys, game, gang) {
       lb.SetCaState(2);
       if StrLen(CBCrewCallBlocked(sys, game, true)) == 0 {
         CBCrewCall(sys, game, true);
-      }
-      if !IsNameValid(sys.GetPendingSquadFaction()) {
-        sys.SetPendingSquad(gang, CBConfig.CrewCounterArriveTicks());
       }
       if CBMessagesOn() {
         CBCrewText(sys, game, CBCrewSecond(game), CBTf(n"Cyberbane-CrewLife-CounterHere", [CBFactionLabel(gang)]), true, true);
@@ -939,19 +979,100 @@ func CBCrewCounterTick(sys: ref<CyberbaneSystem>, game: GameInstance, lb: ref<CB
     }
     return;
   }
-  // Under way: past the window with nobody beaten is a stand-off, and the ground holds.
-  if state == 2 && now > lb.CaAt() + window * 2.0 {
-    lb.SetCaState(3);
-    CBCrewTurfRaise(sys, game, d, CBConfig.CrewCounterHeldFoot() * 0.5);
+  // Under way: their side broken is the corners held; V gone or down, or the window out with them still up, a stand-off
+  // in which the ground holds.
+  if state == 2 {
+    let result = CBCrewCounterWatch(sys, game, gang);
+    if result == 1 {
+      CBCrewCounterBeaten(sys, game, gang);
+      return;
+    }
+    if result == 2 || now > lb.CaAt() + window * 2.0 {
+      CBCrewCounterStop(game);
+      lb.SetCaState(3);
+      CBCrewTurfRaise(sys, game, d, CBConfig.CrewCounterHeldFoot() * 0.5);
+    }
   }
 }
 
-// Nobody came to hold the corners: they take ground, and the crew says so.
+// Their people round V, through the street events' spawner. True when the fight is set.
+func CBCrewCounterStart(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName) -> Bool {
+  let life = CBStreetLifeFor(game);
+  let wf = CBWarFightBook.Get(game);
+  let player = GetPlayer(game);
+  if !IsDefined(life) || !IsDefined(wf) || !IsDefined(player) || wf.on {
+    return false;
+  }
+  let live = life.Events().Live();
+  if IsDefined(live) {
+    if live.placed || !CBEventKindIsOwn(live.kind) {
+      return false;
+    }
+    life.Events().End(game);
+  }
+  if !life.Events().StartWarFight(sys, game, gang, player.GetWorldPosition(), CBConfig.WarFightSize(), 0) {
+    return false;
+  }
+  wf.Reset();
+  wf.gang = gang;
+  wf.counter = true;
+  wf.on = true;
+  wf.wave = 1;
+  wf.waves = 1;
+  wf.at = player.GetWorldPosition();
+  // The fighters and the guards come to hold the crew's own corners (Reactions/GangWarFight.reds).
+  CBWarSquadsJoin(sys, game, wf, 0, gang, CBConfig.WarFightSize());
+  return true;
+}
+
+// 0 still on, 1 their side broken, 2 over without it (V gone or down, or the engine let it go).
+func CBCrewCounterWatch(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName) -> Int32 {
+  let life = CBStreetLifeFor(game);
+  let wf = CBWarFightBook.Get(game);
+  let player = GetPlayer(game);
+  let ev = IsDefined(life) ? life.Events().Live() : null;
+  if !IsDefined(wf) || !wf.counter || !IsDefined(ev) || !Equals(ev.kind, CBEvWarFight()) || !Equals(ev.a, gang) || !IsDefined(player) {
+    return 2;
+  }
+  let up: Int32;
+  let byV: Int32;
+  CBSideCount(game, ev, 0, up, byV);
+  if ev.placed && ArraySize(ev.ids) > 0 && up == 0 {
+    return 1;
+  }
+  if CBVDown(game) || CBWarDistTo(player, ev.at) > CBConfig.WarFightLeave() {
+    return 2;
+  }
+  return 0;
+}
+
+func CBCrewCounterStop(game: GameInstance) -> Void {
+  let wf = CBWarFightBook.Get(game);
+  let life = CBStreetLifeFor(game);
+  if IsDefined(wf) && wf.counter {
+    CBWarFightOver(CyberbaneSystem.Get(game), game, wf);
+    let ev = IsDefined(life) ? life.Events().Live() : null;
+    if IsDefined(ev) && Equals(ev.kind, CBEvWarFight()) {
+      life.Events().End(game);
+    }
+  }
+}
+
+// Nobody came to hold the corners: they take ground, and the crew says so. Guns set to meet counterattacks hold it half
+// the time without V (Reactions/Squads.reds).
 func CBCrewCounterLost(sys: ref<CyberbaneSystem>, game: GameInstance, lb: ref<CBCrewLifeBook>) -> Void {
+  if CBSquadStanding(game, CBSquadGuns(), 1) && RandF() < 0.5 {
+    lb.SetCaState(3);
+    if CBMessagesOn() {
+      CBCrewText(sys, game, CBCrewSecond(game), CBTf(n"Cyberbane-GangWar-GunsHeldCorners", [CBDistrictLabel(lb.CaDistrict())]), true);
+    }
+    return;
+  }
   lb.SetCaState(4);
   let d = lb.CaDistrict();
   let gang = lb.CaGang();
   CBCrewTurfRaise(sys, game, d, -CBConfig.CrewCounterLostFoot());
+  CBHoodsLoss(sys, game, d, CBConfig.CrewCounterLostFoot(), gang);
   let tb = CBTurfBook.Get(game);
   if IsDefined(tb) {
     tb.AddLocalLoss(d, CBCrewTurfId(), CBConfig.TurfPushDamage(), CBGameSeconds(game));
@@ -968,6 +1089,7 @@ public func CBCrewCounterBeaten(sys: ref<CyberbaneSystem>, game: GameInstance, f
   if !IsDefined(lb) || lb.CaState() != 2 || !Equals(lb.CaGang(), faction) {
     return;
   }
+  CBCrewCounterStop(game);
   lb.SetCaState(3);
   CBCrewTurfRaise(sys, game, lb.CaDistrict(), CBConfig.CrewCounterHeldFoot());
   if CBMessagesOn() {
@@ -991,6 +1113,7 @@ public func CBCrewAskWords(sys: ref<CyberbaneSystem>, game: GameInstance, lb: re
   }
   if kind == CBAskDayOff() { return CBT(n"Cyberbane-CrewLife-AskDayOffShort"); }
   if kind == CBAskCut() { return CBTf(n"Cyberbane-CrewLife-AskCutShort", [s"\(lb.AskValue())"]); }
+  if kind == CBAskRipper() { return CBTf(n"Cyberbane-GangWar-AskRipperShort", [s"\(lb.AskValue())"]); }
   return "";
 }
 
@@ -1002,7 +1125,21 @@ public func CBCrewLifeDaily(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     return;
   }
   let now = CBGameSeconds(game);
-  if lb.AskId() > 0 || now < lb.AskNextAt() || RandF() >= CBConfig.CrewAskChance() {
+  if lb.AskId() > 0 || now < lb.AskNextAt() {
+    return;
+  }
+  // Badly hurt: they ask to be sent to a ripperdoc, at V's cost, before anything else.
+  let r = 0;
+  while r < book.Count() {
+    let hurt = book.At(r);
+    r += 1;
+    if IsDefined(hurt) && hurt.hurtUntil - now >= CBConfig.CrewRipperAskHours() * CBConfig.SecondsPerHour() && !book.IsOut(hurt.id)
+       && RandF() < CBConfig.CrewRipperAskChance() {
+      CBCrewStartAsk(sys, game, lb, hurt, CBAskRipper(), now);
+      return;
+    }
+  }
+  if RandF() >= CBConfig.CrewAskChance() {
     return;
   }
   let pick = RandRange(0, book.Count());
@@ -1081,11 +1218,21 @@ func CBCrewStartAsk(sys: ref<CyberbaneSystem>, game: GameInstance, lb: ref<CBCre
     value = CBConfig.CrewAskCutBase() + CBConfig.CrewAskCutPerRank() * CBCrewRankOf(game, m);
     line = CBTf(n"Cyberbane-CrewLife-AskCut", [s"\(value)"]);
   }
+  if kind == CBAskRipper() {
+    value = CBReward(CBConfig.CrewRipperBase() + CBConfig.CrewRipperPerRank() * CBCrewRankOf(game, m));
+    line = CBLineOf([CBTf(n"Cyberbane-GangWar-AskRipper1", [s"\(value)"]), CBTf(n"Cyberbane-GangWar-AskRipper2", [s"\(value)"])]);
+  }
   lb.SetAsk(m.id, kind, now + CBConfig.CrewAskDays() * CBConfig.SecondsPerDay(), value);
   CBLog.Info(n"Crew", s"One of V's crew asked for something (kind \(kind)).");
-  if CBMessagesOn() {
-    CBCrewText(sys, game, m, line + " " + CBT(n"Cyberbane-CrewLife-AskWhere"));
+  if !CBMessagesOn() {
+    return;
   }
+  // Answered in their thread when the phone carries it; otherwise on the Hub, under their orders.
+  if CBAskByText(kind) && CBPhoneThreadsOn() {
+    CBPhonePost(game, CBCrewThreadName(sys, m), line, CBCrewColour(game), false, 4, n"", 0, 0);
+    return;
+  }
+  CBCrewText(sys, game, m, line + " " + CBT(n"Cyberbane-CrewLife-AskWhere"));
 }
 
 // It was done: a weapon handed over, the Rival dead, the day off given, the cut paid.
@@ -1129,30 +1276,91 @@ public func CBCrewLifeRivalDied(game: GameInstance, rivalId: Int32) -> Void {
   }
 }
 
-// A day off, given from the Hub: away for a day, and the ask (if it was theirs) answered.
-public func CBCrewGiveDayOff(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>) -> Void {
+// A day off, given from the Hub or their thread: away for a day, and the ask (if it was theirs) answered.
+public func CBCrewGiveDayOff(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>, opt byText: Bool) -> Void {
   let lb = CBCrewLifeBook.Get(game);
   if !IsDefined(lb) || !IsDefined(m) {
     return;
   }
   lb.SetRest(m.id, CBGameSeconds(game) + CBConfig.SecondsPerDay());
   CBCrewAskDone(sys, game, CBAskDayOff(), m.id, 0);
-  CBMenuNote(game, CBTf(n"Cyberbane-CrewLife-DayOffGiven", [CBCrewFirst(sys, m)]), 4.0);
+  if !byText {
+    CBMenuNote(game, CBTf(n"Cyberbane-CrewLife-DayOffGiven", [CBCrewFirst(sys, m)]), 4.0);
+  }
 }
 
-// The cut they asked for, paid from the Hub.
-public func CBCrewPayAsk(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>) -> Void {
+// Money V owes one of them for an ask, taken now. Short of it, they say so: on the Hub as an answer, by text in kind.
+func CBCrewAskTakeMoney(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>, owed: Int32, byText: Bool) -> Bool {
+  if CBTalkTakeMoney(game, GetPlayer(game), owed) {
+    return true;
+  }
+  if byText {
+    CBCrewText(sys, game, m, CBTf(n"Cyberbane-GangWar-AskShortOfMoney", [s"\(owed)"]));
+  } else {
+    CBMenuNote(game, CBTf(n"Cyberbane-Crew-YouDonTHaveEb", [s"\(owed)"]), 4.0);
+  }
+  return false;
+}
+
+// The cut they asked for, paid from the Hub or their thread.
+public func CBCrewPayAsk(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>, opt byText: Bool) -> Void {
   let lb = CBCrewLifeBook.Get(game);
   if !IsDefined(lb) || !IsDefined(m) || lb.AskId() != m.id || lb.AskKind() != CBAskCut() {
     return;
   }
-  let owed = lb.AskValue();
-  if !CBTalkTakeMoney(game, GetPlayer(game), owed) {
-    CBMenuNote(game, CBTf(n"Cyberbane-Crew-YouDonTHaveEb", [s"\(owed)"]), 4.0);
+  if !CBCrewAskTakeMoney(sys, game, m, lb.AskValue(), byText) {
     return;
   }
   CBCrewLoyalty(m, CBConfig.MyCrewFairCut(), CBCrewWhyPaid());
   CBCrewAskDone(sys, game, CBAskCut(), m.id, 0);
+}
+
+// A ripperdoc at V's cost: most of their time out is gone, and they remember who paid.
+public func CBCrewSendToRipper(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>, opt byText: Bool) -> Void {
+  let lb = CBCrewLifeBook.Get(game);
+  if !IsDefined(lb) || !IsDefined(m) || lb.AskId() != m.id || lb.AskKind() != CBAskRipper() {
+    return;
+  }
+  if !CBCrewAskTakeMoney(sys, game, m, lb.AskValue(), byText) {
+    return;
+  }
+  let now = CBGameSeconds(game);
+  if m.hurtUntil > now {
+    let left = (m.hurtUntil - now) * CBConfig.CrewRipperHealShare();
+    m.hurtUntil = now + MaxF(left, CBConfig.CrewRipperMinHours() * CBConfig.SecondsPerHour());
+  }
+  CBCrewLoyalty(m, CBConfig.CrewRipperLoyalty(), CBCrewWhyPaid());
+  CBCrewAskDone(sys, game, CBAskRipper(), m.id, 0);
+}
+
+// "Not now": the ask is over, and it costs a little less than leaving them hanging.
+public func CBCrewDeclineAsk(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>) -> Void {
+  let lb = CBCrewLifeBook.Get(game);
+  if !IsDefined(lb) || !IsDefined(m) || lb.AskId() != m.id {
+    return;
+  }
+  let kind = lb.AskKind();
+  lb.ClearAsk();
+  lb.SetAskNextAt(CBGameSeconds(game) + CBConfig.CrewAskGapDays() * CBConfig.SecondsPerDay());
+  CBCrewLoyalty(m, -CBConfig.CrewAskDeclinedLoyalty(), CBCrewWhyAsked());
+  CBCrewLifeNote(game, m.id, CBLifeAskIgnored(), n"", kind);
+  CBCrewText(sys, game, m, CBLineOf([CBT(n"Cyberbane-GangWar-AskDeclined1"), CBT(n"Cyberbane-GangWar-AskDeclined2")]));
+}
+
+// Their ask answered, yes or no, from their thread or the Hub.
+public func CBCrewAnswerAsk(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<CBCrewMember>, yes: Bool, byText: Bool) -> Void {
+  let lb = CBCrewLifeBook.Get(game);
+  if !IsDefined(lb) || !IsDefined(m) || lb.AskId() != m.id {
+    return;
+  }
+  if !yes {
+    CBCrewDeclineAsk(sys, game, m);
+    return;
+  }
+  let kind = lb.AskKind();
+  if kind == CBAskDayOff() { CBCrewGiveDayOff(sys, game, m, byText); }
+  if kind == CBAskCut() { CBCrewPayAsk(sys, game, m, byText); }
+  if kind == CBAskRipper() { CBCrewSendToRipper(sys, game, m, byText); }
 }
 
 public func CBCrewResting(game: GameInstance, id: Int32, now: Float) -> Bool {
@@ -1264,8 +1472,15 @@ public func CBCrewLifeTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
   CBCrewCounterTick(sys, game, lb);
   CBCrewFrontPinsTick(sys, game, lb);
   CBCrewLoiterTick(sys, game);
-  // An ask left too long: they notice.
+  // An ask left too long: they notice. A ripper asked for by somebody who has healed meanwhile is simply over.
   let now = CBGameSeconds(game);
+  if lb.AskId() > 0 && lb.AskKind() == CBAskRipper() {
+    let healed = book.Find(lb.AskId());
+    if !IsDefined(healed) || !CBCrewHurt(healed, now) {
+      lb.ClearAsk();
+      lb.SetAskNextAt(now + CBConfig.CrewAskGapDays() * CBConfig.SecondsPerDay());
+    }
+  }
   if lb.AskId() > 0 && now > lb.AskUntil() {
     let m = book.Find(lb.AskId());
     let kind = lb.AskKind();
@@ -1286,7 +1501,15 @@ public func CBCrewLifeTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Voi
 // Hurt, they heal faster with a bed at the crew's home: their time out is cut once, when they get back (CBCrewEndCall).
 public func CBCrewHomeHealFactor(game: GameInstance) -> Float {
   let lb = CBCrewLifeBook.Get(game);
-  return IsDefined(lb) && lb.HomeSet() ? CBConfig.CrewHomeHealFactor() : 1.0;
+  let f = IsDefined(lb) && lb.HomeSet() ? CBConfig.CrewHomeHealFactor() : 1.0;
+  // A safehouse on the crew's streets, and medics set to heal the crew (Reactions/CrewGang.reds, Reactions/Squads.reds).
+  if CBCrewHas(game, CBUpgradeSafehouse()) {
+    f *= CBConfig.SafehouseHealFactor();
+  }
+  if CBSquadStanding(game, CBSquadCutters(), 0) || (CBCrewAnyWar(game) && CBSquadKindOn(game, CBSquadCutters())) {
+    f *= 0.5;
+  }
+  return f;
 }
 
 // ---- The group chat answers itself ---------------------------------------------------------------------------------
@@ -1365,18 +1588,36 @@ func CBCrewFrontPinsTick(sys: ref<CyberbaneSystem>, game: GameInstance, lb: ref<
   let wantKey: array<CName>;
   let wantAt: array<Vector4>;
   let wantText: array<String>;
-  let wb = CBCrewWarBook.Get(game);
-  if IsDefined(wb) {
+  // Each war: the order where it happens, their move where the crew heard of it, and anybody of the crew V went to free.
+  let fb = CBWarFrontBook.Get(game);
+  if IsDefined(fb) {
     let i = 0;
-    while i < wb.Count() {
-      let gang = wb.Gang(i);
-      let at: Vector4;
-      if CBPlaceInDistrict(game, CBGangHomeDistrict(sys, game, gang), at) {
-        ArrayPush(wantKey, gang);
-        ArrayPush(wantAt, at);
-        ArrayPush(wantText, CBTf(n"Cyberbane-CrewLife-WarFrontPin", [CBCapFirst(CBFactionLabel(gang))]));
-      }
+    while i < fb.Count() {
+      let f = fb.At(i);
       i += 1;
+      if IsDefined(f) {
+        let label = CBCapFirst(CBFactionLabel(f.gang));
+        if CBWarOrderFights(f.order) && !f.orderDone && CBWarSpotKnown(f.OrderPlace()) {
+          ArrayPush(wantKey, StringToName(NameToString(f.gang) + "_o" + IntToString(RoundF(f.orderAt))));
+          ArrayPush(wantAt, f.OrderPlace());
+          ArrayPush(wantText, CBTf(n"Cyberbane-GangWar-OrderPin", [CBWarOrderWord(f.order), label, CBClockWord(f.orderAt)]));
+        }
+        if f.moveTold && !f.moveDone && f.move != CBWarMoveNone() && CBWarSpotKnown(f.MovePlace()) {
+          ArrayPush(wantKey, StringToName(NameToString(f.gang) + "_m" + IntToString(RoundF(f.moveAt))));
+          ArrayPush(wantAt, f.MovePlace());
+          ArrayPush(wantText, CBTf(n"Cyberbane-GangWar-MovePin", [label, CBClockWord(f.moveAt)]));
+        }
+      }
+    }
+    let c = 0;
+    while c < fb.CaptiveCount() {
+      let cap = fb.CaptiveAt(c);
+      c += 1;
+      if IsDefined(cap) && cap.rescue && CBWarSpotKnown(cap.Place()) {
+        ArrayPush(wantKey, StringToName("CB_Held_" + IntToString(cap.member)));
+        ArrayPush(wantAt, cap.Place());
+        ArrayPush(wantText, CBTf(n"Cyberbane-GangWar-HeldPin", [CBWarCaptiveName(sys, game, cap)]));
+      }
     }
   }
   if lb.CaState() == 1 || lb.CaState() == 2 {

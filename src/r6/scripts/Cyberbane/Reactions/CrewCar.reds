@@ -25,7 +25,7 @@ public static func MountVehicle(context: ScriptExecutionContext, record: wref<AI
   return CBBoardWithV(owner, vehicle, record.MountInstantly());
 }
 
-// One of V's own crew (never one who turned), or one of a friendly gang's people riding with V.
+// One of V's own crew (never one who turned), one of a friendly gang's people, or an add-on's bodyguard riding with V.
 public func CBRidesWithV(p: ref<ScriptedPuppet>) -> Bool {
   if !IsDefined(p) {
     return false;
@@ -35,7 +35,8 @@ public func CBRidesWithV(p: ref<ScriptedPuppet>) -> Bool {
     return false;
   }
   let id = p.GetEntityID();
-  return (des.IsTagged(id, n"CB_Own") && !des.IsTagged(id, n"CB_Turned")) || des.IsTagged(id, n"CB_Follower");
+  return (des.IsTagged(id, n"CB_Own") && !des.IsTagged(id, n"CB_Turned")) || des.IsTagged(id, n"CB_Follower")
+      || des.IsTagged(id, n"CB_Guardian");
 }
 
 // A car whose seats can be handed out by name. A bike, a wreck, a car V is driving by hack or one falling apart is left to
@@ -154,7 +155,7 @@ func CBSeatClaimed(game: GameInstance, vehicle: wref<VehicleObject>, seat: CName
   if !IsDefined(des) || !IsDefined(vehicle) {
     return false;
   }
-  let tags: array<CName> = [n"CB_Own", n"CB_Follower"];
+  let tags: array<CName> = [n"CB_Own", n"CB_Follower", n"CB_Guardian"];
   for tag in tags {
     let ids = des.GetTaggedIDs(tag);
     for id in ids {

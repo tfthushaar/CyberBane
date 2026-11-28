@@ -538,7 +538,7 @@ public func CBCrewSetWork(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<
   let gb = CBGuardBook.Get(game);
   if next == CBCrewWorkGuard() && IsDefined(gb) {
     gb.Add(m.id);
-    CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewHome-IllKeepAnEyeOnTheHouse"));
+    CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewHome-IllKeepAnEyeOnTheHouse"), false, false, n"Work");
   } else {
     CBGuardStandDown(game, m.id);
   }
@@ -546,19 +546,19 @@ public func CBCrewSetWork(sys: ref<CyberbaneSystem>, game: GameInstance, m: ref<
   if IsDefined(jb) {
     if next == CBCrewWorkRunner() {
       jb.AddRunner(m.id);
-      CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewJobs-IllRunTheMoney"));
+      CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewJobs-IllRunTheMoney"), false, false, n"Work");
     } else {
       jb.RemoveRunner(m.id);
     }
   }
   if next == 1 {
-    CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewBanner-ILlWorkTheStreetFor"));
+    CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewBanner-ILlWorkTheStreetFor"), false, false, n"Work");
   }
   if next == 2 {
-    CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewBanner-ILlAskAroundForPeople"));
+    CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewBanner-ILlAskAroundForPeople"), false, false, n"Work");
   }
   if next == 0 {
-    CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewBanner-DoneWorkingIMHereWhen"));
+    CBCrewText(sys, game, m, CBT(n"Cyberbane-CrewBanner-DoneWorkingIMHereWhen"), false, false, n"Work");
   }
   CBLog.Info(n"Crew", s"One of the crew was put to work: \(CBCrewWorkWord(next)).");
 }

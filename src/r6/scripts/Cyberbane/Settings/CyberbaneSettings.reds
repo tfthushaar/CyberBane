@@ -67,6 +67,7 @@ enum ECBMessageAmount {
 enum ECBMessageDelivery {
   Phone = 0,
   Cards = 1,
+  CardsCrewPhone = 4,
   Notices = 2,
   Off = 3,
 }
@@ -153,6 +154,7 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-MessageDelivery-Desc")
   @runtimeProperty("ModSettings.displayValues.Phone", "Cyberbane-Settings-Value-MessageDelivery-Phone")
   @runtimeProperty("ModSettings.displayValues.Cards", "Cyberbane-Settings-Value-MessageDelivery-Cards")
+  @runtimeProperty("ModSettings.displayValues.CardsCrewPhone", "Cyberbane-Settings-Value-MessageDelivery-CardsCrewPhone")
   @runtimeProperty("ModSettings.displayValues.Notices", "Cyberbane-Settings-Value-MessageDelivery-Notices")
   @runtimeProperty("ModSettings.displayValues.Off", "Cyberbane-Settings-Value-MessageDelivery-Off")
   public let messageDelivery: ECBMessageDelivery = ECBMessageDelivery.Phone;
@@ -568,6 +570,21 @@ public class CyberbaneSettings {
   @runtimeProperty("ModSettings.description", "Cyberbane-Settings-CrewCallKey-Desc")
   @runtimeProperty("ModSettings.dependency", "myCrew")
   public let crewCallKey: EInputKey = EInputKey.IK_None;   // unset: the player picks one
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")
+  @runtimeProperty("ModSettings.category.order", "5")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SecondRunsWars")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SecondRunsWars-Desc")
+  @runtimeProperty("ModSettings.dependency", "myCrew")
+  public let secondRunsWars: Bool = true;
+
+  @runtimeProperty("ModSettings.mod", "Cyberbane")
+  @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-General")
+  @runtimeProperty("ModSettings.category.order", "1")
+  @runtimeProperty("ModSettings.displayName", "Cyberbane-Settings-SkipTimeKey")
+  @runtimeProperty("ModSettings.description", "Cyberbane-Settings-SkipTimeKey-Desc")
+  public let skipTimeKey: EInputKey = EInputKey.IK_None;   // unset: the player picks one
 
   @runtimeProperty("ModSettings.mod", "Cyberbane")
   @runtimeProperty("ModSettings.category", "Cyberbane-Settings-Category-MyCrew")

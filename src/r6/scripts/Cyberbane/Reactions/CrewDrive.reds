@@ -106,7 +106,7 @@ public func CBCrewRidesWithV(sys: ref<CyberbaneSystem>, game: GameInstance, book
   }
   // Left standing a moment ago, with a car still to be asked for: the crew's own tick runs first, and the drive tick
   // asks for the car right after it (CBCrewDriveTick).
-  return onFoot && CBCrewOwnCarsOn() && !drive.gaveUp && drive.made < CBConfig.CrewCarMaxPerCall();
+  return onFoot && CBCrewOwnCarsOn() && !drive.gaveUp && drive.made < CBCrewCarMaxPerCall(game);
 }
 
 // The crew left standing while V drives: not in V's car and not walking to a seat in it. Once V's car is moving that is
@@ -466,7 +466,7 @@ public func CBCrewDriveTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   }
   let usable = IsDefined(car) && car.IsAttached() && !car.IsDestroyed();
   // Once a drive, where everybody is, so a drive that went wrong says how in the log.
-  if IsDefined(vcar) && drive.vMounted == CBConfig.CrewCarWaitTicks() {
+  if IsDefined(vcar) && drive.vMounted == CBCrewCarWaitTicks(game) {
     CBCrewDriveReport(sys, game, book, drive, vcar);
   }
   if drive.phase == CBCrewCarComing() {
@@ -563,7 +563,7 @@ public func CBCrewDriveTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
   if !IsDefined(vcar) {
     drive.gaveUp = false;   // a new drive, a new try
   }
-  if !IsDefined(vcar) || drive.vMounted < CBConfig.CrewCarWaitTicks() || drive.gaveUp {
+  if !IsDefined(vcar) || drive.vMounted < CBCrewCarWaitTicks(game) || drive.gaveUp {
     drive.leftSince = 0;
     return;
   }
@@ -586,7 +586,7 @@ public func CBCrewDriveTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
       return;
     }
   }
-  if drive.made < CBConfig.CrewCarMaxPerCall() && tick - drive.lastAsk >= CBConfig.CrewCarRetryTicks() {
+  if drive.made < CBCrewCarMaxPerCall(game) && tick - drive.lastAsk >= CBConfig.CrewCarRetryTicks() {
     drive.lastAsk = tick;
     if CBCrewCarRequest(sys, game, book, drive, left) {
       drive.leftSince = 0;
@@ -594,7 +594,7 @@ public func CBCrewDriveTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Vo
     }
   }
   // No car for them: they head home on their own rather than trail after V's car on foot.
-  if tick - drive.leftSince >= CBConfig.CrewCarGiveUpTicks() {
+  if tick - drive.leftSince >= CBCrewCarGiveUpTicks(game) {
     drive.leftSince = 0;
     drive.gaveUp = true;
     CBLog.Info(n"Crew", "No car could be had for the ones left standing; they head home.");

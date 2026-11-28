@@ -6,7 +6,7 @@ with names and grudges.
 
 **Download:** [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/35847)
 
-**Version 2.8.2.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
+**Version 2.8.5.** Works on Cyberpunk 2077 **2.5** and **2.31** with the same download.
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What it does
@@ -21,7 +21,7 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   and you are **The People's Merc**.
 - **Gangs pick a side.** Help a gang's enemies and they warm to you: better prices on their turf and
   warnings when their enemies come for you. Keep hurting them and they send a crew, then their apex
-  squad, by car or on foot. You can pay them off.
+  squad, by car or on foot. You can pay them off, and each gang haggles in its own voice.
 - **Rivals.** Enemies who escape you, or whom you beat and leave alive, come back later with a name,
   a rank, scars from how you hurt them, and their own people. Spare them, kill them, or let them climb.
 - **Turf wars.** A gang you keep hurting loses its streets to the gang at war with it. Small outfits like the Mox
@@ -29,10 +29,16 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 - **A name you earn.** Before the Heist you're a merc few people have heard of. Gangs and Rivals take longer to come
   for you, and no gang sends its apex squad until your Street Cred reaches 15. It grows into the full thing by Street
   Cred 20.
+- **Your crew goes to war.** A war on a gang lasts until one side takes terms or is broken. Give the crew an order and
+  lead it yourself: they wait for you at the place and the fight starts when you arrive, wave after wave, with your
+  squads' people at your side. The gang hits back every few hours; get there in time and that fight is yours too.
 - **Messages in your phone.** Gangs, Rivals and street contacts text you, and some threads let you
-  answer: pay a gang off, or haggle over where a Rival is hiding.
-- **The Hub.** A Cyberbane tab in the game menu shows your standing, every gang, who holds each
-  district, your Rivals, your crew, your titles and a history of what you did, as cards you can
+  answer: pay a gang off, or haggle over where a Rival is hiding. Prefer cards? Keep everything as cards and still get
+  your crew's asks (a day off, their cut, a ripperdoc) on the phone.
+- **Skip to it.** When something you came for happens at a set hour (a Rival home after dark, a street event), you are
+  told when the moment you get there, and can skip straight to it.
+- **The Hub.** A Cyberbane tab in the game menu shows your standing, every gang, the streets (who holds each district,
+  and where your name carries), your Rivals, your crew, your titles and a history of what you did, as cards you can
   read at a glance, and explains why the city treats you the way it does.
 
 ### New in 2.0
@@ -46,6 +52,31 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
   they name, bodyguards, and mercy as your choice.
 - **A living street.** Bagmen to rob, favours for friendly gangs, and sit-downs between gangs at war
   that you can crash (now under **Gang life** in Mod Settings).
+
+### New in 2.8
+
+- **Wars you fight (2.8.5).** Go to war on a gang from the Crew page's **War** view. The war has a front, and both sides
+  tire as it drags on. It runs at any hour: pick an order (hit their corners, raid a stash, go after a lieutenant, scout
+  them, or hold) and who goes, then **Lead it yourself** (the crew waits for you at the place, near you on the gang's
+  streets) or **Send them** (they go in within the hour; join them if you get there first). The gang hits back every
+  few hours: your corners, one of your crew out on a job, your home, a price on your second. Lookouts or a scout tell
+  you ahead; otherwise you hear as it starts. Be at either and it happens in front of you, in waves, with your crew and a
+  few of your squads' people at your side, and what they had on them is yours. The enemy brings what it really has: its
+  people, its money, its Rivals and its friends. Wars can be lost.
+- **Ending a war (2.8.5).** A beaten gang asks for terms: tribute, its streets, a lieutenant handed over, or the gang
+  working for you. Refuse and the last move is storming their boss with your crew. A winning gang demands terms of you.
+  Your people can be taken alive: pay, trade one of theirs you hold, or go and get them. Lieutenants you take can be sold
+  back or turned. Every war gets a name and a page in History, and the beaten remember.
+- **Squads (2.8.5).** From Lieutenant, a member gathers people of their own: up to four, twelve at Legend, growing from
+  the streets your crew holds. Each squad has one job: **fighters**, **lookouts**, **hitters**, **hustlers**, **guards**
+  or **medics**, and a new one takes a job the crew still lacks. In a war they work together and a few of them fight
+  beside you; between wars each has work of its own. They cost wages from the kitty, except hustlers.
+- **The crew as a gang (2.8.5).** Put a Lieutenant in charge of each district your crew holds, make a cleared gig place
+  your crew's own, and spend the kitty on a training room, an armoury, a second car or a safehouse. Your crew grows from
+  a few friends to a power in the city, and veterans can retire alive.
+- **Streets by neighbourhood (2.8.5).** A war takes the gang's neighbourhoods one at a time, and gangs clash where their
+  people really meet.
+- **Hunting while hunted (2.8.5).** A Rival at their place no longer stays away because somebody else is after you.
 
 ### New in 2.7
 
@@ -266,11 +297,20 @@ knockouts too. **Netrunner**: quickhacks. **Chromed**: fighting with a Sandevist
   Journal. With the game's radial menu, open Character and it is beside it. Can't find it? Turn on
   **Hub in the pause menu** (Mod Settings > Cyberbane > Messages and HUD) and it is under Escape instead.
   Click a gang to pay them off, click a Rival to read their file, buy where they are hiding, call them out or forget
-  them, and run your crew. The buttons on a page act on what you picked. On the Crew page, pick one of your crew: the
-  first button calls just them (or sends just them home), **Orders for** them kits them out, trains or spars with them,
-  renames them or sends them to work or to war, and **Call your crew** calls everybody who can come. **War, money,
-  name, the fallen** is the crew's own page: go to war, pay the cut, take the kitty, answer a challenge, name it, change
-  its colours and remember the fallen. **Show as a list** on a page turns its cards into a list.
+  them, and run your crew. The buttons on a page act on what you picked. **Streets** reads the map two ways: who holds
+  each district, and where your name carries. The Crew page has five views: **Roster** (pick one of your crew: the first
+  button calls just them, **Orders for** them kits them out, trains, renames or retires them, and **Call your crew**
+  calls everybody), **Member** (their numbers, slots and story), **War** (your wars, the crew's orders, terms and anybody
+  taken alive), **Squads**, and **Crew** (the cut, the kitty and what it buys, who runs your streets, your crew's place,
+  its name, colours, home and the fallen). **Show as a list** on a page turns its cards into a list.
+- **Skipping time:** when something you came for happens at a set hour and you are there early, a note says when. The
+  **Skip to** button on the Hub's first page jumps straight to it, or set a key for it (Mod Settings > Cyberbane >
+  General > **Skip time (key)**). It works only where the game itself lets you skip time.
+- **Your crew's wars:** on the **War** view, **Go to war** opens a war on a gang. **Give an order**, pick who goes, then
+  **Lead it yourself** or **Send them**. After each order the crew regroups for about an hour; with no order for a few
+  hours, your second sends one (**Your second runs the wars**, under **Your crew**). The place and its deadline are on
+  your map: get there and the fight starts, and your crew comes with you. Their moves show on the map too. **Terms or an
+  end** answers their terms, or calls the war off.
 - **Talking:** look at somebody up close with empty hands, press F (A on a controller), scroll to pick
   a line. Reach for a weapon and the conversation ends. With a weapon in your hand, the prompt shows
   **Holster to talk** instead, and a greyed prompt also says when somebody just spoke to you, is busy
@@ -296,8 +336,8 @@ knockouts too. **Netrunner**: quickhacks. **Chromed**: fighting with a Sandevist
   old gang and **Heard anything?**
 - **Jobs, the kitty and challenges:** on a member's **Orders**, **Send them on a job** lists the Rivals they can go
   after (from Veteran) and the gangs whose bag they can take (from Soldier), each with their chance. The kitty, and a
-  challenge waiting for an answer, are on the Crew page under **War, money, name, the fallen**; the kitty is taken when you
-  are on home ground. **Running the money** is a kind of work on the Work row. Goods from a robbed bag are sold by
+  challenge waiting for an answer, are on the Crew page's **Crew** view; the kitty is taken at home or at your crew's
+  place. **Running the money** is a kind of work on the Work row. Goods from a robbed bag are sold by
   talking to somebody of another gang.
 - **Finding a gang:** ask one of theirs **Where do your people hang out?**, or just go. A gang's home goes on the map
   the first time you are there, hidden while that gang is hostile to you.
@@ -305,10 +345,10 @@ knockouts too. **Netrunner**: quickhacks. **Chromed**: fighting with a Sandevist
   The next time you put that Rival down, the same talk offers **[Recruit] You owe me. Work for me.** A Rival you have
   spared twice may also text you, and you can ask them in the thread. Crouching over somebody down is for questioning
   their people; a Rival on the ground is talked to.
-- **Your crew's lives:** what a member asks of you (a day off, their cut) is answered from their **Orders**, as is
-  **Make them your second**. Give a weapon to answer a member who asked for a better one; put down the Rival who hurt
-  them for revenge. The Crew view (**War, money, name, the fallen**) can make your apartment the crew's home while you
-  stand in it. Shopkeepers in your crew's districts pay you the street tax when you walk up to them. **How hard your crew
+- **Your crew's lives:** what a member asks of you (a day off, their cut, a ripperdoc when they're badly hurt) is answered
+  from their **Orders**, or in their own phone thread. **Make them your second** is there too. Give a weapon to answer a
+  member who asked for a better one; put down the Rival who hurt them for revenge. The **Crew** view can make your
+  apartment the crew's home while you stand in it. Shopkeepers in your crew's districts pay you the street tax when you walk up to them. **How hard your crew
   has it** and **Their own weapon in their hands (experimental)** are under **Your crew** in Mod Settings.
 - **Sounds:** your crew's, the hunters' and the phone's sounds are under **Sounds** on the Messages and HUD page, beside
   **Voices for the moments**.
@@ -322,7 +362,9 @@ Quiet life), where messages go, the hunt line
 at the top of the screen, and map markers. The pages after it go deeper, one subject each, with
 **Advanced** at the bottom.
 
-- **Fewer interruptions:** set **Where messages go** to Off. Nothing about how the mod plays changes.
+- **Fewer interruptions:** set **Where messages go** to Off. Nothing about how the mod plays changes. **Cards, crew asks
+  by phone** keeps everything as cards except your crew asking for a day off, their cut or a ripperdoc, which comes to
+  your phone to answer there.
 - **Words gone before you can read them:** raise **How long words stay on screen**, first on the
   **Messages and HUD** page. It covers messages, phone pop-ups, what you overhear and every line of a
   conversation.
@@ -342,9 +384,9 @@ at the top of the screen, and map markers. The pages after it go deeper, one sub
   the metro or going home after a gang has sent people can make them lose you before they arrive.
 - **Gang homes and guards:** **Gang homes** under **Gang life** switches the gangs' places off. **Guards at home**,
   under **Your crew**, sets how many can watch the house (0 to 3, 0 for none).
-- **Your crew at war and on the street:** **Chippin' In** (the chance in each apex fight; 0 is off) and **Your crew takes
-  streets** are under **Your crew**. Wars themselves are on the Hub's Crew page, under **War, money, name, the
-  fallen**: **Go to war**, or **Send them to start a war** in one member's orders.
+- **Your crew at war and on the street:** **Chippin' In** (the chance in each apex fight; 0 is off), **Your crew takes
+  streets** and **Your second runs the wars** are under **Your crew**. Wars themselves are on the Hub's Crew page,
+  **War** view.
 - **Crew jobs, Rivals' chrome and strongholds:** **Crew jobs and the kitty** and **Challenges to your crew** are under
   **Your crew**, **Goods in stolen bags** under **Gang life**, and **Signature chrome** and **Strongholds** under
   **Rivals**. All are on by default.
@@ -401,6 +443,23 @@ on an older Cyberbane instead of breaking every script mod on the install.
   - Names and records: `FactionName`, `FactionLabel` (a registered faction's `nameKey` and `labelKey`), `RivalIds`,
     `RivalFaction`, `RivalRank`, `RivalName`, `RivalAlive`, `FileHistory` (a History line that moves no standing; keys
     carry a dash), `StartEventFrom` (an event announced by your own contact).
+- **API level 5 (`Cyberbane.Api5`, 2.8.3):**
+  - `WithdrawAsk(game, sender, token)` takes back your open question in that contact's thread: its answers neither show
+    nor cost anything.
+  - `SetFactionListed(game, id, listed)` keeps a faction you show somewhere else off the Gangs list; its standing and
+    History stay. For the session: call it on `OnSettled`.
+  - A bodyguard: `RequestEscort(game, record, untilFightEnds)` (a group handle), `EscortActive`, `ReleaseEscort`. One
+    person, friendly, following V with a seat of their own in V's car; they walk off and are removed out of sight when the
+    fight they came for is over (with `untilFightEnds`), when V gets far away, when the story or a safe place takes V, or
+    when V shoots them. At most two at a time.
+  - Posts: `RequestPost(game, faction, at, count, records)` (a group handle), `ReleasePost`. Up to six people placed
+    around the point the way a gang's hangout is, neutral to V until V hurts one of them, and talked to like anybody.
+  - Talk topics: `AddTalkTopic(game, faction, lineKey, token, listener)`, `RemoveTalkTopic`, and `CBTalkTopicListener`
+    with `TopicShown(game, faction, token, speaker)` and `OnTopic(...)`, which returns what they say back. A line of
+    yours in street talk with that faction's people (`n""` for anybody). Both are asked while the talk is on screen: words
+    only there. For the session.
+  - Also: `RegisterTitle` refuses an id it already has, `FindPlacesIn` finds places in the Badlands' smaller districts
+    once V has been near them, and `Cyberbane/HuntEnded` (the hunting faction, 1) comes when a hunt ends.
 - **API level 4 (`Cyberbane.Api4`, 2.8.2):** `JoinCrew(game, record, look, name, source, loyalty)` makes a character of
   yours one of V's crew (the member's id, 0 when they could not join; Cyberbane spawns its own body for them from then
   on, so send yours away), and `CrewJoinBlocked(game, record)` says why one cannot join now ("" when they can). CET

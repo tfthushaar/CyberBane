@@ -120,7 +120,10 @@ public func CBWarTick(sys: ref<CyberbaneSystem>, game: GameInstance, days: Float
       if IsDefined(fs) && CBFactionFieldsSquads(fs.id) && !CBIsCorpFaction(fs.id) {
         let streets = Cast<Float>(CBWarStreetsHeld(sys, game, fs.id));
         book.AddChest(fs.id, (CBConfig.WarIncomeBase() + CBConfig.WarIncomePerDistrict() * streets) * days);
-        book.AddMen(fs.id, CBConfig.WarMenPerDay() * days);
+        // Broken by V's crew, or starved of money in a war with it: their losses stay lost (Reactions/GangWar.reds).
+        if !CBGangCantRefill(game, fs.id) {
+          book.AddMen(fs.id, CBConfig.WarMenPerDay() * days);
+        }
       }
     }
   }

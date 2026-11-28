@@ -389,7 +389,8 @@ func CBRivalArrivalLine(r: ref<CBRival>) -> String {
   if r.escapes > 0 {
     return CBT(n"Cyberbane-RivalEncounter-YouLetMeWalkICame");
   }
-  return CBT(n"Cyberbane-RivalEncounter-FoundYouLookAround");
+  return CBLineOf([CBT(n"Cyberbane-RivalEncounter-FoundYouLookAround"), CBT(n"Cyberbane-RivalEncounter-Found2"),
+                   CBT(n"Cyberbane-RivalEncounter-Found3"), CBT(n"Cyberbane-RivalEncounter-Found4")]);
 }
 
 // What a Rival texts when V has given them the slip.

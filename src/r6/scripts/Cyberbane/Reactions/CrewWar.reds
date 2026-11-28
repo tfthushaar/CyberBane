@@ -1,8 +1,8 @@
-// Cyberbane - The crew at war
+// Cyberbane - The crew at war: who can go, what they weigh, and the spoils
 //
-// A war party. V picks the gang and who goes (the Hub's Crew page: Go to war, or Send them to start a war on one of them):
-// anybody of Soldier rank or more who is home, unhurt and loyal enough, led by somebody of Lieutenant rank or more, up to
-// six. Before they go the Hub weighs the two sides and says the odds.
+// Who of the crew can go on a war's order and what each weighs, the odds words, a war chest left on the gang's streets,
+// the district's hidden stashes, a loose tongue and a defector. The war itself is Reactions/GangWar.reds; the old
+// eighteen-hour parties a save may still have out are settled here when they come due.
 
 public func CBMemWarChest() -> Int32 = 6
 
@@ -141,6 +141,10 @@ public func CBCrewMemberWarPower(game: GameInstance, m: ref<CBCrewMember>) -> Fl
   let p = CBConfig.WarPowerBase() + CBConfig.WarPowerPerRank() * Cast<Float>(CBCrewRankOf(game, m));
   let kb = CBCrewKitBook.Get(game);
   let k = IsDefined(kb) ? kb.Find(m.id) : null;
+  // The crew's armoury puts a better gun in every hand (Reactions/CrewGang.reds).
+  if CBCrewHas(game, CBUpgradeArmoury()) {
+    p += CBConfig.WarPowerPerTier() * Cast<Float>(CBConfig.UpgradeArmouryTiers());
+  }
   if IsDefined(k) {
     p += CBConfig.WarPowerPerChrome() * Cast<Float>(k.ChromeCount());
     p += CBConfig.WarPowerPerTier() * Cast<Float>(k.hasWeapon ? k.weaponTier : 0);
@@ -149,7 +153,7 @@ public func CBCrewMemberWarPower(game: GameInstance, m: ref<CBCrewMember>) -> Fl
       p += CBConfig.WarPowerSharp();
     }
   }
-  return p * (0.7 + 0.3 * Cast<Float>(Clamp(m.loyalty, 0, 100)) / 100.0);
+  return p * (0.7 + 0.3 * Cast<Float>(Clamp(m.loyalty, 0, 100)) / 100.0) * CBCrewMarkMult(game, m.id);
 }
 
 public func CBCrewPartyWarPower(sys: ref<CyberbaneSystem>, game: GameInstance, party: array<Int32>, gang: CName) -> Float {
@@ -174,26 +178,12 @@ public func CBCrewPartyWarPower(sys: ref<CyberbaneSystem>, game: GameInstance, p
   return sum;
 }
 
+// What the gang has, whole (Reactions/GangWar.reds): its people, money, names, places and friends.
 public func CBGangWarPower(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName) -> Float {
-  let home = CBGangHomeDistrict(sys, game, gang);
-  let p = CBConfig.GangWarBase() + CBConfig.GangWarPerStrength() * CBGangStrengthIn(sys, gang, home);
-  let i = 0;
-  while i < CBDistrictCount() {
-    if Equals(CBTurfHolder(sys, game, CBDistrictAt(i)), gang) {
-      p += CBConfig.GangWarPerDistrict();
-    }
-    i += 1;
-  }
-  // Ready for a crew it hates, caught out by one it respects.
-  p *= 1.0 - CBConfig.GangWarStandWeight() * Cast<Float>(CBCrewStandingWith(game, gang)) / 100.0;
-  let score = IsDefined(sys) ? sys.GetScore() : null;
-  if IsDefined(score) {
-    p *= 1.0 - CBConfig.GangWarFearWeight() * ClampF(score.GetFactionFear(gang) / 100.0, 0.0, 1.0);
-  }
-  return MaxF(p, 20.0) * CBCrewPaceWarFactor();   // how hard the crew has it
+  return CBGangWarWeight(sys, game, gang);
 }
 
-// The chance a party of this weight against the gang's wins at all (a win or a decisive win): the nights swing the ratio
+// The chance a party of this weight against the gang's wins at all (a win or a decisive win): each fight swings the ratio
 // by a factor between WarSwingLow and WarSwingHigh, and a win is the swung ratio reaching one.
 public func CBWarWinChance(ratio: Float) -> Float {
   if ratio <= 0.0 {
@@ -256,46 +246,14 @@ func CBCrewNamesList(sys: ref<CyberbaneSystem>, book: ref<CBCrewBook>, ids: arra
 // The party goes. Only words and the crew's books: carried out from the Hub here and now, its texts sent once the game is
 // back (CBCrewKitBook.deferTexts). True when they went.
 public func CBCrewSendWarParty(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName, party: array<Int32>) -> Bool {
-  let book = CBCrewBook.Get(game);
-  let kb = CBCrewKitBook.Get(game);
-  let wb = CBCrewWarBook.Get(game);
-  if !IsDefined(sys) || !IsDefined(book) || !IsDefined(kb) || !IsDefined(wb) || Equals(gang, n"") {
+  if !IsDefined(sys) || Equals(gang, n"") {
     return false;
   }
-  let now = CBGameSeconds(game);
-  let going: array<Int32>;
-  for id in party {
-    let m = book.Find(id);
-    if CBCrewWarEligible(game, book, m, now) && !ArrayContains(going, id) && ArraySize(going) < CBConfig.CrewWarPartyMax() {
-      ArrayPush(going, id);
-    }
-  }
-  if ArraySize(going) == 0 || !CBCrewWarPartyLed(game, book, going) {
+  // A war on them first, if there is none; then the party is sent on an order: their corners.
+  if !CBCrewWarOn(game, gang) && !CBGangWarDeclare(sys, game, gang, false) {
     return false;
   }
-  let ratio = CBCrewPartyWarPower(sys, game, going, gang) / CBGangWarPower(sys, game, gang);
-  let end = now + CBConfig.CrewWarHours() * CBConfig.SecondsPerHour();
-  for id in going {
-    let k = kb.Kit(id);
-    k.warOn = gang;
-    k.warUntil = end;
-    if CBGuardPosted(game, id) {
-      CBGuardStandDown(game, id);   // off the house watch: they are going to war
-    }
-  }
-  wb.Start(gang, now, end, ratio);
-  let label = CBCapFirst(CBFactionLabel(gang));
-  // Held for the game, as every order's text is; and put back as it was, for a send from inside the Hub's own batch.
-  let wasDeferring = kb.deferTexts;
-  kb.deferTexts = true;
-  CBCrewText(sys, game, null, CBTf(n"Cyberbane-CrewWar-GoingToWar", [label, CBCrewNamesList(sys, book, going), s"\(RoundF(CBConfig.CrewWarHours()))"]));
-  for id in going {
-    CBCrewText(sys, game, book.Find(id), CBLineOf([CBTf(n"Cyberbane-CrewWar-CountMeIn", [label]), CBTf(n"Cyberbane-CrewWar-TheyWontKnow", [label]),
-                                                    CBT(n"Cyberbane-CrewWar-BeenWaitingForThis")]));
-  }
-  kb.deferTexts = wasDeferring;
-  CBLog.Info(n"Crew", s"A war party of \(ArraySize(going)) went to war on \(NameToString(gang)) (weights \(RoundF(ratio * 100.0))% of theirs).");
-  return true;
+  return CBGangWarGiveOrder(sys, game, gang, CBWarOrderCorners(), party, 0, false, false);
 }
 
 // ---- How it goes ----------------------------------------------------------------------------------------------------
@@ -368,7 +326,8 @@ public func CBCrewWarPartyResolve(sys: ref<CyberbaneSystem>, game: GameInstance,
   }
   let vHelp = CBCrewWarVHelp(game, gang, false);
   ours *= 1.0 + vHelp;
-  let theirs = CBGangWarPower(sys, game, gang);
+  // A party sent the old way, before the wars had fronts, is weighed on the scale it was sent on.
+  let theirs = CBGangWarPower(sys, game, gang) / CBConfig.GangWarScale();
   let ratio = ours / theirs;
   let score = ratio * RandRangeF(CBConfig.WarSwingLow(), CBConfig.WarSwingHigh());
   let outcome = CBWarOutcomeRouted();
@@ -411,7 +370,9 @@ func CBCrewWarApply(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
     let content = sys.GetContent();
     let enemy = IsDefined(content) ? CBTopEnemyOf(sys, content, gang) : n"";
     CBCrewStandingShift(game, enemy, CBConfig.CrewStandWarEnemy());   // the enemy of their enemy
-    CBCrewTurfRaise(sys, game, where, decisive ? CBConfig.WarFootDecisive() : CBConfig.WarFootWon());
+    if Equals(CBTurfHolder(sys, game, where), gang) {
+      CBCrewTurfRaise(sys, game, where, decisive ? CBConfig.WarFootDecisive() : CBConfig.WarFootWon());
+    }
     kb.NoteWarWon();
     for m in party {
       m.wins += decisive ? 3 : 2;
@@ -461,7 +422,9 @@ func CBCrewWarApply(sys: ref<CyberbaneSystem>, game: GameInstance, kb: ref<CBCre
       CBWeakenGang(sys, game, gang, CBConfig.CrewWarGangLoss() * 0.4, where);
       CBTalkSlight(sys, game, gang, CBConfig.CrewWarStanding() * 0.5);
       CBCrewStandingShift(game, gang, -CBConfig.CrewStandWarLost() / 2);
-      CBCrewTurfRaise(sys, game, where, CBConfig.WarFootStalemate());
+      if Equals(CBTurfHolder(sys, game, where), gang) {
+        CBCrewTurfRaise(sys, game, where, CBConfig.WarFootStalemate());
+      }
       for m in party {
         m.wins += 1;
         if RandF() < 0.5 {

@@ -168,7 +168,10 @@ public func CBAllyTipOff(sys: ref<CyberbaneSystem>, game: GameInstance, attacker
     let posture = score.GetPosture(ally);
     if (Equals(posture, ECBPosture.Allied) || Equals(posture, ECBPosture.Friendly))
        && CBFactionFieldsSquads(ally) {
-      CBPhoneSendUrgent(game, CBPhoneGangSender(ally), CBTf(n"Cyberbane-GangRivalries-HeadsUpJustSentPeopleYour", [s"\(label)"]), CBHudCyan());
+      let who = CBCapFirst(label);
+      CBPhoneSendUrgent(game, CBPhoneGangSender(ally), CBLineOf([CBTf(n"Cyberbane-GangRivalries-HeadsUpJustSentPeopleYour", [who]),
+                                                                 CBTf(n"Cyberbane-GangRivalries-HeadsUp2", [who]),
+                                                                 CBTf(n"Cyberbane-GangRivalries-HeadsUp3", [who])]), CBHudCyan());
       return true;   // one warning is enough
     }
   }

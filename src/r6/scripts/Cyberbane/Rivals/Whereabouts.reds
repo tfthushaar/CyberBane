@@ -30,8 +30,7 @@ func CBLairPointUsable(sys: ref<CyberbaneSystem>, game: GameInstance, at: Vector
   if IsDefined(pss) && pss.IsPointInPreventionFreeArea(at) {
     return false;
   }
-  let sam = GameInstance.GetSafeAreaManager(game);
-  if IsDefined(sam) && sam.IsPointInSafeArea(at) {
+  if CBPointInSafeArea(game, at) {
     return false;
   }
   // Nor V's own building (Spawn/HomeGround.reds).
@@ -514,13 +513,29 @@ public func CBLairMissBusy() -> Int32 = 2
 public func CBLairMissNoSpot() -> Int32 = 3
 public func CBLairMissDaytime() -> Int32 = 4   // they keep hours, and are out by day ([U10])
 
-// V is standing at the pin and nobody is there. Said once per Rival, after a fair wait, with the
-// reason, because an empty place with no word read as a coin toss ("is it chance-based?").
+// V is standing at the pin and nobody is there. Said once per Rival, with the reason, because an empty place with no word
+// read as a coin toss ("is it chance-based?"). Their hours are said the moment V arrives, with a skip to them; the rest
+// after a fair wait, since a moment's patience usually settles them.
 func CBLairHintTick(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<PlayerPuppet>, miss: Int32) -> Void {
   let lead = CBCurrentLead(sys, game);
   if miss == CBLairMissNone() || !IsDefined(lead)
      || Vector4.Distance(player.GetWorldPosition(), CBSightingPos(lead)) > CBConfig.LairHintDistance() {
     sys.SetLairMisses(0);
+    return;
+  }
+  if miss == CBLairMissDaytime() {
+    let r = CBSightingRival(sys, lead);
+    let back = CBNextHourAt(game, CBConfig.NightStartHour());
+    if IsDefined(r) {
+      CBSkipTimeOffer(game, n"Lair", back, CBTf(n"Cyberbane-GangWar-SkipRivalHome", [CBRivalDisplayName(sys.GetContent(), r)]),
+                      CBSightingPos(lead), CBConfig.LairHintDistance());
+    }
+    if sys.GetLairHinted() != lead.rivalId {
+      sys.SetLairHinted(lead.rivalId);
+      if !CBSkipTimeStands(game) {
+        CBSystemNote(game, CBTf(n"Cyberbane-GangWar-NobodyHomeUntil", [CBClockWord(back)]), 6.0);
+      }
+    }
     return;
   }
   let misses = sys.GetLairMisses() + 1;
@@ -567,13 +582,10 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
   if CBRivalKeepsHours(game, r) && !CBIsNight(game) {
     return CBLairMissDaytime();
   }
-  // Nobody else of ours out or coming, no live encounter, room under the ceiling, and the story
-  // not about to want the stage. The same gates an arrival has, plus "nothing else going on".
-  if sys.GetActiveRivalId() > 0 || CBHuntersOut(sys, game) || CBHuntPending(sys)
-     || CBStoryHoldNow(game) || !CBWorldStable(game) {
-    return CBLairMissBusy();
-  }
-  if CBSpawnRoom(game) <= 0 {
+  // The story not about to want the stage, a settled world and room under the ceiling. V being hunted, or another Rival
+  // out, does not hold them: going after one Rival while others come after V is the same night in Night City, and the
+  // hunters already wait until V is out of a fight (LairCalmTicks).
+  if CBStoryHoldNow(game) || !CBWorldStable(game) || CBSpawnRoom(game) <= 0 {
     return CBLairMissBusy();
   }
   let des = GameInstance.GetDynamicEntitySystem();
@@ -631,6 +643,7 @@ func CBLairTryPlace(sys: ref<CyberbaneSystem>, game: GameInstance, player: ref<P
         // Rival who is minding their own business as one who is out looking for V.
         r.state = EnumInt(ECBRivalState.Active);
         sys.SetLair(r.id);
+        CBSkipTimeWithdraw(game, n"Lair");
         let alarmBook = CBRivalBook.Get(game);
         if IsDefined(alarmBook) {
           alarmBook.ResetLairAlarm();   // nobody has seen V yet at this place
@@ -754,7 +767,13 @@ func CBLairPromote(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
   // whenever the last encounter was.
   r.state = EnumInt(ECBRivalState.Hunting);
   r.lastSeenAt = now;
-  sys.SetActiveRivalId(r.id);
+  // Another Rival already out after V: this one joins that encounter instead of taking it over, and carries it on
+  // when the other's ends (CBPackHandOffLead).
+  if sys.GetActiveRivalId() > 0 && sys.GetActiveRivalId() != r.id {
+    sys.AddPackRival(r.id);
+  } else {
+    sys.SetActiveRivalId(r.id);
+  }
   let cd = sys.GetCooldowns();
   if IsDefined(cd) {
     cd.lastRivalEncounterAt = now;
@@ -771,7 +790,8 @@ func CBLairPromote(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref<CBRival
   if IsDefined(svc) {
     svc.DropSighting(sys.GetPlaythroughId(), r.id);
   }
-  let line = CBT(n"Cyberbane-Whereabouts-SoSomebodySoldMeOutFine");
+  let line = CBLineOf([CBT(n"Cyberbane-Whereabouts-SoSomebodySoldMeOutFine"), CBT(n"Cyberbane-Whereabouts-SoldOut2"),
+                        CBT(n"Cyberbane-Whereabouts-SoldOut3")]);
   let bookW = CBIntelBook.Get(game);
   if IsDefined(bookW) && bookW.WordSent(r.id) {
     line = CBTf(n"Cyberbane-Whereabouts-YouCameGood", [CBRivalCatchphrase(r)]);

@@ -442,10 +442,17 @@ public class CyberbaneContent extends ScriptableService {
   }
 
   // ---- Titles (spec Appendix G) -------------------------------------------
+  // One title per id: content outlives a session, so a title registered again at each session's start is kept once.
   public func AddTitle(def: ref<CBTitleDef>) -> Void {
-    if IsDefined(def) {
-      ArrayPush(this.m_titles, def);
+    if !IsDefined(def) {
+      return;
     }
+    for t in this.m_titles {
+      if IsDefined(t) && Equals(t.id, def.id) {
+        return;
+      }
+    }
+    ArrayPush(this.m_titles, def);
   }
 
   public func GetTitle(id: CName) -> ref<CBTitleDef> {

@@ -286,7 +286,9 @@ func CBCrewTick(sys: ref<CyberbaneSystem>, game: GameInstance, war: ref<CBWarBoo
   if !CBRunWithCrewOn() {
     why = "-";
   }
-  if up == 0 {
+  // Nobody left standing, and nobody still on the way: a crew just asked for is all still spawning, and it went home on
+  // the tick it was sent.
+  if up == 0 && far {
     why = "-";
   }
   if shot {

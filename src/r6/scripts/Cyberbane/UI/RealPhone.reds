@@ -68,9 +68,11 @@ public func CBRealPhoneContacts(includeRead: Bool) -> array<ref<IScriptable>> {
   while i < store.ThreadCount() {
     let hash = CBPhoneThreadHash(i);
     // Whether V can answer is only asked when it decides anything: it prices a pay-off and a lead,
-    // and the row is filled with it again just below (CBRealPhoneFill).
-    let shown = store.ThreadSize(i) > 0 && (includeRead || store.ThreadUnread(i) > 0);
-    if !shown && store.ThreadSize(i) > 0 {
+    // and the row is filled with it again just below (CBRealPhoneFill). With everything else on cards, only the crew's
+    // asks are in the phone.
+    let carried = CBRealPhoneOn() || store.ThreadOnPhone(i);
+    let shown = carried && store.ThreadSize(i) > 0 && (includeRead || store.ThreadUnread(i) > 0);
+    if carried && !shown && store.ThreadSize(i) > 0 {
       let choices = CBRealPhoneChoices(hash);
       shown = ArraySize(choices) > 0;
     }
@@ -340,7 +342,8 @@ public func CBRealPhoneReply(hash: Int32, choice: Int32) -> Void {
     CBBrokerPeace(sys, game, faction);
   } else {
     store.Reply(game, thread, CBT(n"Cyberbane-RealPhone-NotPayingSendWhoeverYouWant"));
-    CBPhoneFromGangFinal(game, faction, CBT(n"Cyberbane-RealPhone-ThenWeWillBeSeeingYou"));
+    let no = CBGangPriceLine(faction, CBPriceRefused(), 0);
+    CBPhoneFromGangFinal(game, faction, StrLen(no) > 0 ? no : CBT(n"Cyberbane-RealPhone-ThenWeWillBeSeeingYou"));
   }
 }
 
@@ -551,7 +554,7 @@ public final static func GetSimpleContactDataArray(journal: ref<JournalManager>,
   let list = wrappedMethod(journal, includeUnknown, skipEmpty, includeWithNoUnread, activeDataSync);
   // Only the phone in V's hand, which passes no sync object. The hub menu's messenger has no
   // way to draw a thread that is not in the journal, so it never sees one.
-  if !IsDefined(activeDataSync) && CBRealPhoneOn() {
+  if !IsDefined(activeDataSync) && CBPhoneThreadsOn() {
     let ours = CBRealPhoneContacts(includeWithNoUnread);
     let i = 0;
     while i < ArraySize(ours) {

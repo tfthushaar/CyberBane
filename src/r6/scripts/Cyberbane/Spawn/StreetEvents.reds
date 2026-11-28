@@ -57,6 +57,9 @@ public func CBEventKindOn(kind: CName) -> Bool {
   if Equals(kind, CBEvAmbush()) {
     return CBLieInWaitOn();
   }
+  if Equals(kind, CBEvWarFight()) {
+    return CBMyCrewOn();
+  }
   return CBGatheringsOn();
 }
 
@@ -109,9 +112,11 @@ public class CBStreetEvent {
   public let apiHandle: Int32;
   // The gang that asked V to its sit-down (Model/GangBosses.reds), n"" for none.
   public let invitedBy: CName;
+  public let warApex: Int32;           // a war fight's best, placed first
 
   public func Tag() -> CName {
-    if Equals(this.kind, CBEvAmbush()) {
+    // Both come for V from the start: the ambush on a job's road, and a night's fight in the crew's war.
+    if Equals(this.kind, CBEvAmbush()) || Equals(this.kind, CBEvWarFight()) {
       return n"CB_Ambush";
     }
     return Equals(this.kind, CBEvSitDown()) ? n"CB_Meet" : n"CB_Event";
@@ -168,6 +173,26 @@ public class CBEventEngine {
     ev.from = now;
     ev.until = now + CBConfig.AmbushWaitSeconds();
     ev.size = size;
+    this.m_ev = ev;
+    return true;
+  }
+
+  // A night's fight in the crew's war (Reactions/GangWarFight.reds): placed now round the war's place, hostile from the
+  // start, its best first; it ends when the war says so, or when its window runs out.
+  public func StartWarFight(sys: ref<CyberbaneSystem>, game: GameInstance, gang: CName, at: Vector4, size: Int32, apex: Int32) -> Bool {
+    if IsDefined(this.m_ev) || !CBFactionFieldsSquads(gang) {
+      return false;
+    }
+    let now = CBGameSeconds(game);
+    let ev = new CBStreetEvent();
+    ev.kind = CBEvWarFight();
+    ev.a = gang;
+    ev.at = at;
+    ev.district = sys.GetCurrentDistrict();
+    ev.from = now;
+    ev.until = now + CBConfig.WarFightHours() * CBConfig.SecondsPerHour();
+    ev.size = size;
+    ev.warApex = apex;
     this.m_ev = ev;
     return true;
   }
@@ -418,12 +443,17 @@ public class CBEventEngine {
       ev.nearest = dist;
     }
     // Early: V at the place before its time is told when it starts, once, and that keeping out of sight works.
-    if !ev.placed && !ev.earlySaid && now < ev.from && dist <= CBConfig.MeetSpawnDistance() && !Equals(ev.kind, CBEvAmbush()) {
+    if !ev.placed && !ev.earlySaid && now < ev.from && dist <= CBConfig.MeetSpawnDistance() && !Equals(ev.kind, CBEvAmbush())
+       && !Equals(ev.kind, CBEvWarFight()) {
       ev.earlySaid = true;
       CBLog.Info(n"Street", s"V is at the \(NameToString(ev.kind)) place \(RoundF((ev.from - now) / 60.0)) game minutes early.");
-      if CBMessagesOn() {
+      CBSkipTimeOffer(game, n"Event", ev.from, CBEventCaption(ev), ev.at, CBConfig.MeetSpawnDistance());
+      if CBMessagesOn() && !CBSkipTimeStands(game) {
         CBSystemNote(game, CBTf(n"Cyberbane-StreetEvents-YouAreEarly", [CBClockWord(ev.from)]), 6.0);
       }
+    }
+    if ev.placed || now >= ev.from {
+      CBSkipTimeWithdraw(game, n"Event");
     }
     // Their time has come and V is on the way in, not yet looking: put them there.
     let storyBusy = sys.GetStoryHold() != CBStoryNone() || CBPlayerInScene(game) || CBAtTrackedJob(sys, game)
@@ -503,7 +533,7 @@ public class CBEventEngine {
         ev.started = true;
       }
     }
-    if ev.placed && !CBIsFightKind(ev.kind) && ev.vSide == 0 {
+    if ev.placed && !CBIsFightKind(ev.kind) && ev.vSide == 0 && !Equals(ev.kind, CBEvWarFight()) {
       let down = 0;
       for id in ev.ids {
         if CBTakenOutByVSide(game, GameInstance.FindEntityByID(game, id) as ScriptedPuppet) {
@@ -519,7 +549,7 @@ public class CBEventEngine {
     // V waiting at the place and its people not there yet: it runs late rather than ending. A window skipped past while
     // V waited (the game's time skip) is the same: the people still come, now. Twice at most.
     if now >= ev.until && CBEventKindOn(ev.kind) && !ev.placed && dist <= CBConfig.MeetSpawnDistance()
-       && ev.lateCount < CBConfig.EventLateMax() && !Equals(ev.kind, CBEvAmbush()) {
+       && ev.lateCount < CBConfig.EventLateMax() && !Equals(ev.kind, CBEvAmbush()) && !Equals(ev.kind, CBEvWarFight()) {
       ev.lateCount += 1;
       ev.until = now + (Equals(ev.kind, CBEvSitDown()) ? CBConfig.MeetWindowSeconds() : CBConfig.EventWindowSeconds());
       ev.nextTry = 0;
@@ -585,7 +615,8 @@ public class CBEventEngine {
     let gangB = sides == 2 ? ev.b : ev.a;
     let recA = CBGangTemplate(sys, gangA);
     let recB = CBGangTemplate(sys, gangB);
-    let perSide = Equals(ev.kind, CBEvAmbush()) ? Max(ev.size, 2) : CBEventPerSide(ev.kind);
+    let sized = Equals(ev.kind, CBEvAmbush()) || Equals(ev.kind, CBEvWarFight());
+    let perSide = sized ? Max(ev.size, 2) : CBEventPerSide(ev.kind);
     let full = lone > 0 ? lone + perSide : sides * perSide;
     // Gang business V was told of comes before a hangout: a street full of loiterers left no room, and the meeting
     // never came. The hangout goes out of V's sight, the way every sweep does, and the next try has the room.
@@ -600,7 +631,7 @@ public class CBEventEngine {
     if !TDBID.IsValid(recA) || !TDBID.IsValid(recB) || want < 2 {
       return false;
     }
-    let apexPerSide = CBEventApexPerSide(ev.kind);
+    let apexPerSide = Equals(ev.kind, CBEvWarFight()) ? ev.warApex : CBEventApexPerSide(ev.kind);
     let ppos = player.GetWorldPosition();
     let fwd = player.GetWorldForward();
     let tag = ev.Tag();
@@ -841,6 +872,7 @@ public class CBEventEngine {
     CBEventReleaseSide(game, ev);
     let tag = ev.Tag();
     this.m_ev = null;
+    CBSkipTimeWithdraw(game, n"Event");
     CBDeleteTaggedSafe(game, tag, true, true);
   }
 
@@ -912,7 +944,7 @@ func CBFastTravelPlaces(sys: ref<CyberbaneSystem>, game: GameInstance, district:
           dRec = TweakDBInterface.GetDistrictRecord(districtId);
         }
       }
-      let matches = IsDefined(dRec) && (narrow ? CBDistrictWithin(districtId, within)
+      let matches = IsDefined(dRec) && (narrow ? (CBDistrictWithin(districtId, within) || CBPointLearnedWithin(game, pointId, within))
                                                : Equals(CBMapGameDistrict(dRec.EnumName()), district));
       if matches {
         let pin = ms.GetMappin(pt.mappinID);
@@ -1099,6 +1131,7 @@ public func CBEventCaptionOf(kind: CName, gangA: CName, gangB: CName) -> String 
   if Equals(kind, CBEvExecution()) { return CBTf(n"Cyberbane-StreetEvents-AnExecution", [a]); }
   if Equals(kind, CBEvFrontLine()) { return CBTf(n"Cyberbane-StreetEvents-Against", [a, CBFactionLabel(gangB)]); }
   if Equals(kind, CBEvFugitive()) { return CBTf(n"Cyberbane-StreetEvents-AHunt", [a]); }
+  if Equals(kind, CBEvWarFight()) { return CBTf(n"Cyberbane-GangWar-FightCaption", [a]); }
   return CBTf(n"Cyberbane-StreetEvents-ARacket", [a]);
 }
 
@@ -1109,7 +1142,10 @@ public func CBEventWordLine(ev: ref<CBStreetEvent>) -> String {
   let where = CBEventWhere(ev);
   let past = StrLen(ev.placeName) > 0 ? CBTf(n"Cyberbane-StreetEvents-Past", [ev.placeName]) : CBT(n"Cyberbane-StreetEvents-PastHere");
   if Equals(ev.kind, CBEvSitDown()) {
-    return CBTf(n"Cyberbane-StreetEvents-AndAreSittingDownAroundCrash", [s"\(a)", s"\(CBFactionLabel(ev.b))", s"\(where)", s"\(when)", s"\(CBMeetReasonWords(ev))"]);
+    let why = CBMeetReasonWords(ev);
+    return CBLineOf([CBTf(n"Cyberbane-StreetEvents-AndAreSittingDownAroundCrash", [a, CBFactionLabel(ev.b), where, when, why]),
+                     CBTf(n"Cyberbane-StreetEvents-SitDownWord2", [a, CBFactionLabel(ev.b), where, when, why]),
+                     CBTf(n"Cyberbane-StreetEvents-SitDownWord3", [a, CBFactionLabel(ev.b), where, when, why])]);
   }
   if Equals(ev.kind, CBEvFuneral()) {
     // "The one you put down" only when V did: a funeral is also owed for one of theirs killed by somebody else, a Rival
@@ -1132,7 +1168,8 @@ public func CBEventWordLine(ev: ref<CBStreetEvent>) -> String {
   }
   if Equals(ev.kind, CBEvArmsDeal()) {
     return CBLineOf([CBTf(n"Cyberbane-StreetEvents-AreBuyingGunsFromAroundCrash", [s"\(a)", s"\(CBFactionLabel(ev.b))", s"\(where)", s"\(when)"]),
-                     CBTf(n"Cyberbane-StreetEvents-ArmsDealAndHeavyCratesLight", [s"\(where)", s"\(when)", s"\(a)", s"\(CBFactionLabel(ev.b))"])]);
+                     CBTf(n"Cyberbane-StreetEvents-ArmsDealAndHeavyCratesLight", [s"\(where)", s"\(when)", s"\(a)", s"\(CBFactionLabel(ev.b))"]),
+                     CBTf(n"Cyberbane-StreetEvents-ArmsDealWord3", [a, CBFactionLabel(ev.b), where, when])]);
   }
   if Equals(ev.kind, CBEvExecution()) {
     return CBLineOf([CBTf(n"Cyberbane-StreetEvents-CaughtOneOfAndThePoor", [s"\(a)", s"\(CBFactionLabel(ev.b))", s"\(where)", s"\(when)"]),
@@ -1140,14 +1177,16 @@ public func CBEventWordLine(ev: ref<CBStreetEvent>) -> String {
   }
   if Equals(ev.kind, CBEvFrontLine()) {
     return CBLineOf([CBTf(n"Cyberbane-StreetEvents-AndAreGoingToWarOn", [s"\(a)", s"\(CBFactionLabel(ev.b))", s"\(where)", s"\(when)"]),
-                     CBTf(n"Cyberbane-StreetEvents-StreetFightAgainstPickASide", [s"\(where)", s"\(when)", s"\(a)", s"\(CBFactionLabel(ev.b))"])]);
+                     CBTf(n"Cyberbane-StreetEvents-StreetFightAgainstPickASide", [s"\(where)", s"\(when)", s"\(a)", s"\(CBFactionLabel(ev.b))"]),
+                     CBTf(n"Cyberbane-StreetEvents-FrontLineWord3", [a, CBFactionLabel(ev.b), where, when])]);
   }
   if Equals(ev.kind, CBEvFugitive()) {
     return CBLineOf([CBTf(n"Cyberbane-StreetEvents-AreHuntingSomebodyOfWhoCrossed", [s"\(a)", s"\(CBFactionLabel(ev.b))", s"\(past)", s"\(when)"]),
                      CBTf(n"Cyberbane-StreetEvents-SomebodySRunningFromHelpThe", [s"\(a)", s"\(where)", s"\(when)"])]);
   }
   return CBLineOf([CBTf(n"Cyberbane-StreetEvents-WordIsRunARacketCollecting", [s"\(a)", s"\(where)", s"\(when)"]),
-                   CBTf(n"Cyberbane-StreetEvents-CollectTheirTakeAroundNobodyS", [s"\(a)", s"\(where)", s"\(when)"])]);
+                   CBTf(n"Cyberbane-StreetEvents-CollectTheirTakeAroundNobodyS", [s"\(a)", s"\(where)", s"\(when)"]),
+                   CBTf(n"Cyberbane-StreetEvents-RacketWord3", [a, where, when])]);
 }
 
 // A line for an overheard conversation while an event is coming and V is in its district ([32]).
@@ -1262,8 +1301,8 @@ public func CBEventCrashed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: re
 // The window closed without V: the gang had what it came for.
 public func CBEventMissed(sys: ref<CyberbaneSystem>, game: GameInstance, ev: ref<CBStreetEvent>) -> Void {
   let a = CBFactionLabel(ev.a);
-  if Equals(ev.kind, CBEvAmbush()) {
-    return;   // they gave up waiting; nobody tells V about an ambush that never sprang
+  if Equals(ev.kind, CBEvAmbush()) || Equals(ev.kind, CBEvWarFight()) {
+    return;   // an ambush that never sprang is nobody's news, and the war tells its own nights
   }
   if CBIsFightKind(ev.kind) || ev.vSide > 0 {
     if ev.placed {

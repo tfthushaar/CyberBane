@@ -94,6 +94,17 @@ public func CBRealPhoneOn() -> Bool {
   return Equals(CBMessageDelivery(), ECBMessageDelivery.Phone);
 }
 
+// Cards for everything, with the crew's asks (a day off, their cut, a ripper) still put through to the phone.
+public func CBCardsCrewPhoneOn() -> Bool {
+  let rt = CyberbaneRuntime.Get();
+  return IsDefined(rt) && rt.IsEnabled() && Equals(CBMessageDelivery(), ECBMessageDelivery.CardsCrewPhone);
+}
+
+// Does the phone carry any of Cyberbane's threads: all of them, or only the crew's asks.
+public func CBPhoneThreadsOn() -> Bool {
+  return CBRealPhoneOn() || CBCardsCrewPhoneOn();
+}
+
 // ---- The widget -----------------------------------------------------------
 
 public class CBPhoneRow {
@@ -163,6 +174,9 @@ public class CBPhone {
   private let m_thLastAt: array<Float>;
   // When V last answered each thread (game seconds), -1 when what it last said is still unanswered.
   private let m_thAnsweredAt: array<Float>;
+  // Threads the phone carries while everything else goes to cards (CBCardsCrewPhoneOn): a crew ask and its answers.
+  private let m_thPhone: array<Bool>;
+  private let m_pendPhone: array<Bool>;
 
   // Texts on their way to V. "The texts happen instantly, so it kinda defeats immersiveness": a Rival's answer landed
   // the second V's reply went, a gang's threat the second V killed one of theirs, two contacts at once.
@@ -171,7 +185,8 @@ public class CBPhone {
   private let m_postAccent: array<HDRColor>;
   private let m_postDue: array<Float>;
   private let m_postAnswer: array<Bool>;     // their answer to something V just said: it does not open the thread again
-  private let m_postThen: array<Int32>;      // 0 nothing, 1 asks nothing back, 2 a gang's price on V (peace), 3 a lead
+  private let m_postThen: array<Int32>;      // 0 nothing, 1 asks nothing back, 2 a gang's price on V (peace), 3 a lead,
+                                             // 4 a crew ask, which the phone carries even when the rest go to cards
   private let m_postFaction: array<CName>;   // the gang for 2, the tipster for 3
   private let m_postRival: array<Int32>;
   private let m_postPrice: array<Int32>;
@@ -432,12 +447,15 @@ public class CBPhone {
 
   // A message arrives. Safe from any hook: this only touches our own arrays. It is filed in
   // its sender's thread straight away and delivered on the next settled tick.
-  public func Send(game: GameInstance, sender: String, body: String, accent: HDRColor, opt isAnswer: Bool) -> Void {
+  public func Send(game: GameInstance, sender: String, body: String, accent: HDRColor, opt isAnswer: Bool, opt toPhone: Bool) -> Void {
     this.m_game = game;
     if StrLen(body) == 0 {
       return;
     }
     let thread = this.ThreadFor(sender);
+    if thread >= 0 && toPhone && thread < ArraySize(this.m_thPhone) {
+      this.m_thPhone[thread] = true;
+    }
     if thread >= 0 {
       // The same contact saying the same thing again, within the hour: already in the thread and
       // already unread. Filing it twice is how a long fight became a screen of identical lines.
@@ -461,12 +479,14 @@ public class CBPhone {
     ArrayPush(this.m_pendThread, thread);
     ArrayPush(this.m_pendBody, body);
     ArrayPush(this.m_pendAccent, accent);
+    ArrayPush(this.m_pendPhone, toPhone || (isAnswer && this.ThreadOnPhone(thread)));
     // A flood of messages in one tick (a reset, say) should not turn into a flood of
     // notifications. The thread keeps everything; only the newest few are announced.
     while ArraySize(this.m_pendBody) > CBConfig.PhonePendingCap() {
       ArrayErase(this.m_pendThread, 0);
       ArrayErase(this.m_pendBody, 0);
       ArrayErase(this.m_pendAccent, 0);
+      ArrayErase(this.m_pendPhone, 0);
     }
     CBLog.Info(n"UI", s"Message from \(sender): \(body)");
   }
@@ -570,7 +590,7 @@ public class CBPhone {
     ArrayErase(this.m_postFaction, pick);
     ArrayErase(this.m_postRival, pick);
     ArrayErase(this.m_postPrice, pick);
-    CBPhoneDeliverNow(game, sender, body, accent, answer);
+    CBPhoneDeliverNow(game, sender, body, accent, answer, then == 4);
     if then == 1 {
       this.Settle(game, sender);
     }
@@ -952,11 +972,17 @@ public class CBPhone {
     ArrayPush(this.m_thLastBody, "");
     ArrayPush(this.m_thLastAt, 0.0);
     ArrayPush(this.m_thAnsweredAt, -1.0);
+    ArrayPush(this.m_thPhone, false);
     return ArraySize(this.m_thName) - 1;
   }
 
   public func ThreadCount() -> Int32 {
     return ArraySize(this.m_thName);
+  }
+
+  // A thread the phone carries in the cards-and-crew mode.
+  public func ThreadOnPhone(i: Int32) -> Bool {
+    return CBCardsCrewPhoneOn() && i >= 0 && i < ArraySize(this.m_thPhone) && this.m_thPhone[i];
   }
 
   public func ThreadName(i: Int32) -> String {
@@ -1291,6 +1317,7 @@ public class CBPhone {
       ArrayClear(this.m_pendThread);
       ArrayClear(this.m_pendBody);
       ArrayClear(this.m_pendAccent);
+      ArrayClear(this.m_pendPhone);
       return;
     }
     // Nothing talks over a conversation. While one of the game's dialogues is on screen, or a scene is playing, the
@@ -1317,14 +1344,24 @@ public class CBPhone {
       return;
     }
     let phoneMode = CBRealPhoneOn();
-    let usePhone = phoneMode && IsDefined(this.m_phoneCtrl);
+    // Cards with the crew's asks on the phone: only those wait for a phone; the rest are cards.
+    let hybrid = CBCardsCrewPhoneOn();
+    let anyForPhone = phoneMode;
+    if hybrid {
+      for p in this.m_pendPhone {
+        if p {
+          anyForPhone = true;
+        }
+      }
+    }
+    let usePhone = anyForPhone && IsDefined(this.m_phoneCtrl);
     let sound = CBPhoneSoundOn();
     // Real seconds, for the two guards below. The simulation clock is the one the cards age on,
     // so the phone and the cards agree about what "a moment ago" means.
     let tsNow = GameInstance.GetTimeSystem(game);
     let nowReal = IsDefined(tsNow) ? EngineTime.ToFloat(tsNow.GetSimTime()) : 0.0;
     // Phone mode and no phone to hand them to yet: they wait for one.
-    if phoneMode && !usePhone {
+    if anyForPhone && !usePhone {
       if this.m_phoneWaitSince <= 0.0 || nowReal < this.m_phoneWaitSince {
         this.m_phoneWaitSince = MaxF(nowReal, 0.001);
       }
@@ -1336,6 +1373,7 @@ public class CBPhone {
       ArrayClear(this.m_pendThread);
       ArrayClear(this.m_pendBody);
       ArrayClear(this.m_pendAccent);
+      ArrayClear(this.m_pendPhone);
       return;
     }
     this.m_phoneWaitSince = 0.0;
@@ -1361,7 +1399,8 @@ public class CBPhone {
         this.m_lastNotifyBody = body;
         this.m_lastNotifyThread = thread;
       }
-      if usePhone && thread >= 0 {
+      let forPhone = phoneMode || (hybrid && k < ArraySize(this.m_pendPhone) && this.m_pendPhone[k]);
+      if usePhone && forPhone && thread >= 0 {
         let hash = CBPhoneThreadHash(thread);
         // One of ours is open in the phone right now: draw the new line straight into it,
         // and the player is reading it as it arrives.
@@ -1381,7 +1420,7 @@ public class CBPhone {
       } else {
         // Cards are Cards mode's. In Phone mode a message with no thread to open (more senders this
         // session than the phone keeps) is not turned into a card either.
-        if announce && !phoneMode {
+        if announce && !forPhone {
           this.ShowCard(game, sender, body, this.m_pendAccent[k], sound);
         }
       }
@@ -1390,6 +1429,7 @@ public class CBPhone {
     ArrayClear(this.m_pendThread);
     ArrayClear(this.m_pendBody);
     ArrayClear(this.m_pendAccent);
+    ArrayClear(this.m_pendPhone);
   }
 
   // Put a card on screen. The fallback surface, and the whole surface in Cards mode.
@@ -1450,6 +1490,7 @@ public class CBPhone {
     ArrayClear(this.m_thLastBody);
     ArrayClear(this.m_thLastAt);
     ArrayClear(this.m_thAnsweredAt);
+    ArrayClear(this.m_thPhone);
     ArrayClear(this.m_hsSender);
     ArrayClear(this.m_hsBody);
     ArrayClear(this.m_hsAccent);
@@ -1469,6 +1510,7 @@ public class CBPhone {
     ArrayClear(this.m_pendThread);
     ArrayClear(this.m_pendBody);
     ArrayClear(this.m_pendAccent);
+    ArrayClear(this.m_pendPhone);
     // What was last announced belonged to threads that are gone. Kept, the first text after a start
     // over could be taken for a repeat of it (the threads start again at 0) and never ring.
     this.m_lastNotifyAt = 0.0;
@@ -1710,7 +1752,7 @@ public func CBPhonePost(game: GameInstance, sender: String, body: String, accent
 
 // It lands: the phone, or the old centre-screen line for anybody who keeps it. The silence switches and the delivery mode
 // are asked now, when it arrives.
-public func CBPhoneDeliverNow(game: GameInstance, sender: String, body: String, accent: HDRColor, isAnswer: Bool) -> Void {
+public func CBPhoneDeliverNow(game: GameInstance, sender: String, body: String, accent: HDRColor, isAnswer: Bool, opt toPhone: Bool) -> Void {
   if !CBMessagesOn() {
     return;
   }
@@ -1722,7 +1764,7 @@ public func CBPhoneDeliverNow(game: GameInstance, sender: String, body: String, 
   if !IsDefined(sys) {
     return;
   }
-  sys.GetPhone().Send(game, sender, body, accent, isAnswer);
+  sys.GetPhone().Send(game, sender, body, accent, isAnswer, toPhone);
 }
 
 // A text that asks nothing back: filed and shown as any other, and the thread offers no answers under it. For somebody
@@ -1758,7 +1800,7 @@ public func CBPhoneDemandText(game: GameInstance, faction: CName, body: String, 
   if quote < 0 || sys.GetPhone().OfferOpenFor(CBPhoneGangSender(faction)) {
     return body;
   }
-  return body + " " + CBPeaceAskLine(quote);
+  return body + " " + CBPeaceAskLine(quote, faction);
 }
 
 // A gang on V's side: a tip-off, a welcome, a bounty paid. Same thread as the rest of what that

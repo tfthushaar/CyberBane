@@ -4,16 +4,161 @@
 // Crew view's own lines; a member's climb as a bar, a piece of chrome's change before it goes in. Words only: the page
 // (UI/Hud.reds) lays them out.
 
+// The Crew page's views, left to right: the roster, one member, the wars, the squads, the crew's own page.
+public func CBHudCrewViewCount() -> Int32 = 5
+
 public func CBHudCrewViewWord(i: Int32) -> String {
   if i == 0 { return CBT(n"Cyberbane-Hud-ViewRoster"); }
   if i == 1 { return CBT(n"Cyberbane-Hud-ViewMember"); }
+  if i == 2 { return CBT(n"Cyberbane-HubWar-ViewWar"); }
+  if i == 3 { return CBT(n"Cyberbane-HubWar-ViewSquads"); }
   return CBT(n"Cyberbane-Hud-ViewCrew");
 }
 
 public func CBHudCrewViewHelp(i: Int32) -> String {
   if i == 0 { return CBT(n"Cyberbane-Hud-HelpViewRoster"); }
   if i == 1 { return CBT(n"Cyberbane-Hud-HelpViewMember"); }
+  if i == 2 { return CBT(n"Cyberbane-HubWar-HelpViewWar"); }
+  if i == 3 { return CBT(n"Cyberbane-HubWar-HelpViewSquads"); }
   return CBT(n"Cyberbane-Hud-HelpViewCrew");
+}
+
+// The screen each view opens.
+public func CBHudCrewViewMode(i: Int32) -> Int32 {
+  if i == 0 { return 0; }
+  if i == 1 { return CBHudCrewMemberMode(); }
+  if i == 2 { return 20; }
+  if i == 3 { return 23; }
+  return 7;
+}
+
+// ---- The War view's words ----
+
+// Where a war stands when it is not just fighting: terms asked or demanded, to the end.
+public func CBHubWarStateWord(f: ref<CBWarFront>) -> String {
+  if !IsDefined(f) { return ""; }
+  if f.state == CBWarStateTheyAsk() { return CBT(n"Cyberbane-HubWar-StateAsk"); }
+  if f.state == CBWarStateTheyDemand() { return CBT(n"Cyberbane-HubWar-StateDemand"); }
+  if f.state == CBWarStateToTheEnd() { return CBT(n"Cyberbane-HubWar-StateToTheEnd"); }
+  return "";
+}
+
+// One war, in a few lines: how it stands, the crew's order, their move, the squads and what is missing, friends, losses.
+public func CBHubWarFile(sys: ref<CyberbaneSystem>, game: GameInstance, f: ref<CBWarFront>) -> String {
+  if !IsDefined(f) {
+    return "";
+  }
+  let label = CBCapFirst(CBFactionLabel(f.gang));
+  let now = CBGameSeconds(game);
+  let out = CBTf(n"Cyberbane-HubWar-FileHead", [CBCapFirst(CBWarName(f)), label, CBWarFrontWord(f.front), CBWarWearyWord(f.theirWeary), CBWarWearyWord(f.ourWeary)]);
+  // The crew's order: on, regrouping, or ready.
+  if f.order == CBWarOrderNone() {
+    if now < f.orderAt {
+      out += "\n" + CBTf(n"Cyberbane-HubWar-Regrouping", [CBClockWord(f.orderAt)]);
+    } else {
+      let second = CBCrewSecond(game);
+      let sendsAt = f.orderAt + CBConfig.WarSecondIdleHours() * CBConfig.SecondsPerHour();
+      out += "\n" + (IsDefined(second) && CBSecondRunsWars() ? CBTf(n"Cyberbane-HubWar-ReadySecond", [CBCrewFirst(sys, second), CBClockWord(sendsAt)])
+                                                              : CBT(n"Cyberbane-HubWar-Ready"));
+    }
+  } else {
+    if CBWarFightOnFor(game, f.gang, true) {
+      out += "\n" + CBTf(n"Cyberbane-HubWar-FightingNow", [CBWarOrderWord(f.order)]);
+    } else {
+      if CBWarOrderFights(f.order) {
+        let book = CBCrewBook.Get(game);
+        out += "\n" + CBTf(n"Cyberbane-HubWar-OrderOn", [CBWarOrderWord(f.order), CBWarWhere(sys, game, f), CBClockWord(f.orderAt),
+                                                         CBCrewWarPartyWords(sys, game, book, CBWarParty(game, f.gang))]);
+      } else {
+        out += "\n" + CBTf(n"Cyberbane-HubWar-OrderQuiet", [CBWarOrderWord(f.order), CBClockWord(f.orderAt)]);
+      }
+    }
+  }
+  // Their move: on its way, or the next one.
+  if f.move != CBWarMoveNone() && !f.moveDone {
+    if CBWarSpotKnown(f.MovePlace()) {
+      out += "\n" + CBTf(n"Cyberbane-HubWar-TheirMovePlaced", [CBHubWarMoveWord(f.move), CBWarMoveWhere(f), CBClockWord(f.moveAt)]);
+    } else {
+      out += "\n" + (f.moveTold ? CBTf(n"Cyberbane-HubWar-TheirMoveKnown", [CBHubWarMoveWord(f.move), CBClockWord(f.moveAt)]) : CBT(n"Cyberbane-HubWar-TheirMoveUnknown"));
+    }
+  } else {
+    out += "\n" + (now < f.scoutUntil ? CBTf(n"Cyberbane-HubWar-TheirNextAround", [CBClockWord(f.moveAt)]) : CBT(n"Cyberbane-HubWar-TheirMoveUnknown"));
+  }
+  if now < f.scoutUntil {
+    out += "\n" + CBTf(n"Cyberbane-HubWar-TheirWeight", [s"\(RoundF(CBGangWarWeight(sys, game, f.gang)))"]);
+  }
+  let plan = CBSquadsPlanLine(sys, game, f);
+  if StrLen(plan) > 0 {
+    out += "\n" + plan;
+  }
+  if IsNameValid(f.ally) {
+    out += "\n" + CBTf(n"Cyberbane-HubWar-AllyWithUs", [CBCapFirst(CBFactionLabel(f.ally))]);
+  }
+  if IsNameValid(f.theirAlly) {
+    out += "\n" + CBTf(n"Cyberbane-HubWar-AllyWithThem", [CBCapFirst(CBFactionLabel(f.theirAlly))]);
+  }
+  if f.ourLost > 0 || f.theirLost > 0 {
+    out += "\n" + CBTf(n"Cyberbane-HubWar-Losses", [s"\(f.ourLost)", s"\(f.theirLost)"]);
+  }
+  return out;
+}
+
+// The crew's last wars, newest first: their names and how each ended.
+public func CBHubWarPastLines(sys: ref<CyberbaneSystem>, game: GameInstance, fb: ref<CBWarFrontBook>) -> String {
+  let out = CBT(n"Cyberbane-HubWar-PastHeader");
+  let shown = 0;
+  let i = fb.PastCount() - 1;
+  while i >= 0 && shown < 3 {
+    let p = fb.PastAt(i);
+    i -= 1;
+    if IsDefined(p) {
+      let how = CBT(n"Cyberbane-HubWar-PastLost");
+      if p.how == CBWarEndTerms() { how = CBT(n"Cyberbane-HubWar-PastTerms"); }
+      if p.how == CBWarEndBroken() { how = CBT(n"Cyberbane-HubWar-PastBroken"); }
+      if p.how == CBWarEndCalledOff() { how = CBT(n"Cyberbane-HubWar-PastCalledOff"); }
+      out += "\n" + CBTf(n"Cyberbane-HubWar-PastLine", [CBCapFirst(CBWarPastName(p)), CBFactionLabel(p.gang), how, s"\(Max(1, p.nights))", s"\(p.ourLost)"]);
+      shown += 1;
+    }
+  }
+  return out;
+}
+
+// A line of History for the crew's wars; "" for any other entry.
+public func CBHubWarLogLine(e: ref<CBLogEntry>, gang: String) -> String {
+  let v = RoundF(e.value);
+  if Equals(e.kind, n"WarBegan") {
+    return v == 1 ? CBTf(n"Cyberbane-HubWar-LogBeganByThem", [gang]) : CBTf(n"Cyberbane-HubWar-LogBegan", [gang]);
+  }
+  if Equals(e.kind, n"WarNight") {
+    let order = v / 10;
+    let outcome = v % 10 - 1;
+    let how = outcome >= CBWarOutcomeWon() ? CBT(n"Cyberbane-HubWar-LogWon") : (outcome == CBWarOutcomeStalemate() ? CBT(n"Cyberbane-HubWar-LogEven") : CBT(n"Cyberbane-HubWar-LogLost"));
+    return CBTf(n"Cyberbane-HubWar-LogNight", [CBWarOrderWord(order), gang, how]);
+  }
+  if Equals(e.kind, n"WarMove") {
+    return CBTf(n"Cyberbane-HubWar-LogMove", [gang, CBHubWarMoveWord(v / 10), v % 10 == 1 ? CBT(n"Cyberbane-HubWar-LogHeld") : CBT(n"Cyberbane-HubWar-LogNotHeld")]);
+  }
+  if Equals(e.kind, n"WarEnded") {
+    if v == CBWarEndTerms() { return CBTf(n"Cyberbane-HubWar-LogEndTerms", [gang]); }
+    if v == CBWarEndBroken() { return CBTf(n"Cyberbane-HubWar-LogEndBroken", [gang]); }
+    if v == CBWarEndCalledOff() { return CBTf(n"Cyberbane-HubWar-LogEndCalledOff", [gang]); }
+    return CBTf(n"Cyberbane-HubWar-LogEndLost", [gang]);
+  }
+  if Equals(e.kind, n"WarTaken") { return CBTf(n"Cyberbane-HubWar-LogTaken", [gang]); }
+  if Equals(e.kind, n"WarTookRival") { return CBTf(n"Cyberbane-HubWar-LogTookRival", [gang]); }
+  if Equals(e.kind, n"WarAlly") { return CBTf(n"Cyberbane-HubWar-LogAlly", [gang]); }
+  if Equals(e.kind, n"HoodTaken") { return CBTf(n"Cyberbane-HubWar-LogHood", [gang]); }
+  if Equals(e.kind, n"CrewBought") { return CBTf(n"Cyberbane-HubWar-LogBought", [CBUpgradeWord(v)]); }
+  return "";
+}
+
+public func CBHubWarMoveWord(move: Int32) -> String {
+  if move == CBWarMoveCorner() { return CBT(n"Cyberbane-HubWar-MoveCorner"); }
+  if move == CBWarMoveAmbush() { return CBT(n"Cyberbane-HubWar-MoveAmbush"); }
+  if move == CBWarMoveRaid() { return CBT(n"Cyberbane-HubWar-MoveRaid"); }
+  if move == CBWarMovePrice() { return CBT(n"Cyberbane-HubWar-MovePrice"); }
+  if move == CBWarMoveLean() { return CBT(n"Cyberbane-HubWar-MoveLean"); }
+  return CBT(n"Cyberbane-HubWar-MoveCoalition");
 }
 
 // A multiplier as the game would show one: "x1.40".
@@ -257,6 +402,21 @@ public func CBCrewMemberFile(sys: ref<CyberbaneSystem>, game: GameInstance, book
   if CBCrewIsSecond(game, m.id) {
     out += CBT(n"Cyberbane-Hud-MemberSecond");
   }
+  // What they lead and run, and what the wars left on them.
+  let sb = CBSquadBook.Get(game);
+  let squad = IsDefined(sb) ? sb.Of(m.id) : null;
+  if IsDefined(squad) {
+    out += CBTf(n"Cyberbane-HubWar-MemberLeads", [CBSquadName(sys, game, squad), s"\(squad.heads)"]);
+  }
+  let gb = CBCrewGangBook.Get(game);
+  let runs = IsDefined(gb) ? gb.RunsWhere(m.id) : n"";
+  if IsNameValid(runs) {
+    out += CBTf(n"Cyberbane-HubWar-MemberRuns", [CBDistrictLabel(runs)]);
+  }
+  let marks = CBCrewMarksLine(game, m.id);
+  if StrLen(marks) > 0 {
+    out += CBTf(n"Cyberbane-HubWar-MemberMarks", [marks]);
+  }
   let lb = CBCrewLifeBook.Get(game);
   if IsDefined(lb) && lb.AskId() == m.id {
     let ask = CBCrewAskWords(sys, game, lb);
@@ -373,6 +533,38 @@ public func CBHudRightNow(sys: ref<CyberbaneSystem>, game: GameInstance) -> Stri
     let asker = IsDefined(book) && lb.AskId() > 0 ? book.Find(lb.AskId()) : null;
     if StrLen(ask) > 0 && IsDefined(asker) {
       ArrayPush(parts, CBTf(n"Cyberbane-Hud-NowAsk", [CBCrewFirst(sys, asker), ask]));
+    }
+  }
+  // The crew's wars: an order waiting on V with its deadline, a crew ready for one, their move when it is known, and
+  // anybody of the crew held.
+  let fb = CBWarFrontBook.Get(game);
+  if IsDefined(fb) {
+    let w = 0;
+    while w < fb.Count() {
+      let f = fb.At(w);
+      w += 1;
+      if IsDefined(f) {
+        if CBWarOrderFights(f.order) && !f.orderDone && f.orderAt > 0.0 {
+          ArrayPush(parts, CBTf(n"Cyberbane-HubWar-NowOrder", [CBWarOrderWord(f.order), CBFactionLabel(f.gang), CBClockWord(f.orderAt)]));
+        }
+        if f.order == CBWarOrderNone() && CBWarCanOrder(game, f) {
+          ArrayPush(parts, CBTf(n"Cyberbane-HubWar-NowNoOrder", [CBFactionLabel(f.gang)]));
+        }
+        if f.moveTold && !f.moveDone && f.move != CBWarMoveNone() && f.moveAt > 0.0 {
+          ArrayPush(parts, CBTf(n"Cyberbane-HubWar-NowMove", [CBCapFirst(CBFactionLabel(f.gang)), CBClockWord(f.moveAt)]));
+        }
+        if f.state == CBWarStateTheyAsk() || f.state == CBWarStateTheyDemand() {
+          ArrayPush(parts, CBTf(n"Cyberbane-HubWar-NowTerms", [CBCapFirst(CBFactionLabel(f.gang))]));
+        }
+      }
+    }
+    let c = 0;
+    while c < fb.CaptiveCount() {
+      let cap = fb.CaptiveAt(c);
+      c += 1;
+      if IsDefined(cap) {
+        ArrayPush(parts, CBTf(n"Cyberbane-HubWar-NowHeld", [CBWarCaptiveName(sys, game, cap), CBFactionLabel(cap.gang)]));
+      }
     }
   }
   let tl = CBRivalTimelineBook.Get(game);

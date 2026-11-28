@@ -494,9 +494,17 @@ public func CBBountyTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
     CBBountySend(sys, game, book, now);
     return;
   }
-  // The next of them, in their own time.
+  // The next of them, in their own time. Not while the street has barely heard of V (Before you're known, the gate an
+  // apex squad waits on too): a price put on a nobody, by a gang or by another mod, waits until V is somebody.
   if now < book.HunterNext() || sys.GetTickCount() % 5 != 0 || CBArrivalsHeld(sys, game) || CBHomeKeepsOut(sys) || sys.IsInSafeZone()
      || CBHuntersOut(sys, game) || CBHuntPending(sys) {
+    return;
+  }
+  if CBTooUnknownForApex(game) {
+    if !book.toldTooUnknown {
+      book.toldTooUnknown = true;
+      CBLog.Info(n"Spawn", "A price is on V, and no hunter takes it until V's Street Cred says V is worth it.");
+    }
     return;
   }
   CBLadderEnsure(book);
@@ -547,6 +555,13 @@ public func CBBountyTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void 
 }
 
 func CBBountySend(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBHuntBook>, now: Float) -> Void {
+  // The crew's knives may catch the hunter on the way (Reactions/Squads.reds): the next comes a day later.
+  if CBSquadKnivesStopHunter(sys, game) {
+    book.comingSlot = 0;
+    book.comingPair = 0;
+    book.SetHunterNext(now + CBConfig.SecondsPerDay());
+    return;
+  }
   let gang = CBBountyGang(sys, book.BountyBy());
   let slots: array<Int32>;
   ArrayPush(slots, book.comingSlot - 1);

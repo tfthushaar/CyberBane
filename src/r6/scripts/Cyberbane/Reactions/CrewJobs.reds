@@ -257,6 +257,10 @@ func CBCrewJobEdge(game: GameInstance, m: ref<CBCrewMember>, now: Float) -> Floa
       edge += 0.05;
     }
   }
+  // The guns set to back the crew's jobs (Reactions/Squads.reds).
+  if CBSquadStanding(game, CBSquadGuns(), 2) {
+    edge += CBConfig.SquadJobBacking();
+  }
   return edge;
 }
 

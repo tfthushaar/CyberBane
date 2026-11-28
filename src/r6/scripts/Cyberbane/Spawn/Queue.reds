@@ -95,7 +95,12 @@ public func CBCountLiveOrSpawningExcept(game: GameInstance, tag: CName, except: 
 
 // Room left under the ceiling on how many of ours may be in the world at once.
 public func CBSpawnRoom(game: GameInstance) -> Int32 {
-  return Max(0, CBConfig.MaxLiveSpawns() - CBCountLiveOrSpawning(game, n"Cyberbane"));
+  return Max(0, CBMaxLiveSpawns(game) - CBCountLiveOrSpawning(game, n"Cyberbane"));
+}
+
+// The ceiling on Cyberbane's people in the world right now: lower while the police are spawning theirs too.
+public func CBMaxLiveSpawns(game: GameInstance) -> Int32 {
+  return CBPoliceOnV(CyberbaneSystem.Get(game)) ? CBConfig.MaxLiveSpawnsPolice() : CBConfig.MaxLiveSpawns();
 }
 
 // What is taking up the room, in a line for the log: how many are still on their way into the world, and how many are
@@ -146,7 +151,7 @@ public func CBSpawnRoomNote(game: GameInstance) -> String {
     }
     k += 1;
   }
-  return CBTf(n"Cyberbane-Queue-OfTakenStillSpawningStanding", [s"\(spawning + standing)", s"\(CBConfig.MaxLiveSpawns())", s"\(spawning)", s"\(standing)", s"\(parts)"]);
+  return CBTf(n"Cyberbane-Queue-OfTakenStillSpawningStanding", [s"\(spawning + standing)", s"\(CBMaxLiveSpawns(game))", s"\(spawning)", s"\(standing)", s"\(parts)"]);
 }
 
 // ---- A hit squad is an apex squad and a crew ------------------------------------------
@@ -824,7 +829,7 @@ public func CBGangMaySend(sys: ref<CyberbaneSystem>, faction: CName) -> Bool {
     return false;
   }
   let posture = score.GetPosture(faction);
-  return Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta);
+  return Equals(posture, ECBPosture.Hostile) || Equals(posture, ECBPosture.Vendetta) || CBCrewWarOn(sys.GetGameInstance(), faction);
 }
 
 public func CBApexEligible(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>) -> Bool {
@@ -1284,7 +1289,7 @@ public func CBCrewSizeFor(sys: ref<CyberbaneSystem>, fs: ref<CBFactionState>, in
   // free when crews bring it.
   size += sys.WornPerk().crewDelta;
   // And V's own crew's places, kept free while they could be called (CBCrewRoomKept).
-  let ceiling = CBConfig.MaxLiveSpawns() - (CBCrewApexOn() ? CBConfig.ApexStrikeTeamSize() : 0) - CBCrewRoomKept(GetGameInstance());
+  let ceiling = CBMaxLiveSpawns(GetGameInstance()) - (CBCrewApexOn() ? CBConfig.ApexStrikeTeamSize() : 0) - CBCrewRoomKept(GetGameInstance());
   return Min(size, Max(2, ceiling));
 }
 

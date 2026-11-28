@@ -1605,6 +1605,9 @@ public class CBStreetTalk {
     if CBTalkActIsAlly(choice) {
       return CBAllyTalkAnswer(sys, game, player, t, choice);
     }
+    if CBApiTalkActIs(choice) {
+      return CBApiTalkAnswer(game, t, choice);
+    }
     if choice == CBTalkActLendOne() {
       return CBCrewLendAnswer(sys, game, t);   // Reactions/Crew.reds, [C4]
     }
@@ -3154,6 +3157,10 @@ public func CBTalkChoices(sys: ref<CyberbaneSystem>, game: GameInstance, t: ref<
   }
   for al in CBAllyTalkLines(sys, game, t) {
     ArrayPush(out, al);
+  }
+  // Add-ons' own lines with this person (API level 5, AddTalkTopic).
+  for xl in CBApiTalkLines(game, t) {
+    ArrayPush(out, xl);
   }
   // A funeral's mourners (Spawn/StreetEvents.reds).
   for el in CBEventTalkLines(game, t) {

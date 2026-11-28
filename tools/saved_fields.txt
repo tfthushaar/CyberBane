@@ -141,6 +141,11 @@ class CyberbaneSystem
   m_laneSentSquad: Int32
   m_laneSentApex: Int32
 
+class CBSafeSpotBook
+  m_x: array<Float>
+  m_y: array<Float>
+  m_z: array<Float>
+
 class CBFactionState
   id: CName
   standing: Float
@@ -260,6 +265,14 @@ class CBEsteemBook
   m_value: array<Float>
   m_harmAt: array<Float>
   m_lastHarm: Float
+
+class CBHoodBook
+  m_hood: array<TweakDBID>
+  m_parent: array<CName>
+  m_crew: array<Float>
+  m_holder: array<CName>
+  m_seen: array<CName>
+  m_seenAt: array<Float>
 
 class CBLedgerBook
   m_gang: array<CName>
@@ -395,6 +408,23 @@ class CBCrewBannerBook
   m_fallen: array<ref<CBCrewFallen>>
   m_recruiter: Int32
 
+class CBCrewGangBook
+  m_runDistrict: array<CName>
+  m_runMember: array<Int32>
+  m_placeSet: Bool
+  m_placeX: Float
+  m_placeY: Float
+  m_placeZ: Float
+  m_placeDistrict: CName
+  m_upgrades: Int32
+  m_safehouse: CName
+  m_markId: array<Int32>
+  m_markKind: array<Int32>
+  m_cornersEmptyUntil: Float
+  m_retiredTextAt: Float
+  m_reportDay: Int32
+  m_runnerLostAt: array<Float>
+
 class CBGuardBook
   m_members: array<Int32>
 
@@ -504,6 +534,109 @@ class CBCrewWarBook
   m_end: array<Float>
   m_phase: array<Int32>
   m_odds: array<Float>
+
+class CBWarFront
+  gang: CName
+  since: Float
+  place: CName
+  front: Float
+  ourWeary: Float
+  theirWeary: Float
+  nights: Int32
+  byThem: Bool
+  state: Int32
+  night: Int32
+  order: Int32
+  orderAt: Float
+  orderX: Float
+  orderY: Float
+  orderZ: Float
+  orderTarget: Int32
+  orderBySecond: Bool
+  orderDone: Bool
+  move: Int32
+  moveAt: Float
+  moveX: Float
+  moveY: Float
+  moveZ: Float
+  moveTarget: Int32
+  moveTold: Bool
+  moveDone: Bool
+  scoutUntil: Float
+  chestCut: Bool
+  ltGone: Bool
+  ourLost: Int32
+  theirLost: Int32
+  vNights: Int32
+  terms: Int32
+  termsUntil: Float
+  ally: CName
+  theirAlly: CName
+  carried: Int32
+  carriedScore: Int32
+  heldBehind: Bool
+  sold: Bool
+
+class CBWarPast
+  gang: CName
+  place: CName
+  since: Float
+  ended: Float
+  how: Int32
+  nights: Int32
+  ourLost: Int32
+  theirLost: Int32
+  carried: Int32
+
+class CBWarClient
+  gang: CName
+  since: Float
+  tribute: Int32
+  paidAt: Float
+  full: Bool
+
+class CBWarCaptive
+  member: Int32
+  gang: CName
+  since: Float
+  price: Int32
+  x: Float
+  y: Float
+  z: Float
+  rescue: Bool
+
+class CBWarFrontBook
+  m_fronts: array<ref<CBWarFront>>
+  m_past: array<ref<CBWarPast>>
+  m_clients: array<ref<CBWarClient>>
+  m_captives: array<ref<CBWarCaptive>>
+  m_prisonRival: array<Int32>
+  m_prisonGang: array<CName>
+  m_grudgeGang: array<CName>
+  m_grudgeUntil: array<Float>
+  m_winsAt: array<Float>
+  m_brokenGang: array<CName>
+  m_brokenUntil: array<Float>
+
+class CBSquad
+  leader: Int32
+  kind: Int32
+  heads: Int32
+  skill: Float
+  morale: Float
+  formedAt: Float
+  jobs: Int32
+  lost: Int32
+  wars: Int32
+  standing: Int32
+  noRecruit: Bool
+  leaderlessUntil: Float
+  unpaidWeeks: Int32
+  paidAt: Float
+  letters: array<Int32>
+
+class CBSquadBook
+  m_squads: array<ref<CBSquad>>
 
 class CBIntelBook
   m_flawKnown: array<Int32>
@@ -617,6 +750,10 @@ class CBPayoutBook
   m_kind: array<Int32>
   m_rival: array<Int32>
   m_due: array<Float>
+
+class CBPlaceAreaBook
+  m_point: array<TweakDBID>
+  m_area: array<TweakDBID>
 
 class CBGangLifeBook
   m_gang: CName

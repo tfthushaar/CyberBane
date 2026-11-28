@@ -974,7 +974,8 @@ public func CBRivalWarning(sys: ref<CyberbaneSystem>, game: GameInstance, r: ref
     return;
   }
   let where = CBHuntWhereLine(sys, game);
-  let line = CBTf(n"Cyberbane-Hunt-HeardYouAreInIAm", [s"\(where)"]);
+  let line = CBLineOf([CBTf(n"Cyberbane-Hunt-HeardYouAreInIAm", [where]), CBTf(n"Cyberbane-Hunt-HeardYouAreIn2", [where]),
+                        CBTf(n"Cyberbane-Hunt-HeardYouAreIn3", [CBCapFirst(where)])]);
   if r.killedV > 0 {
     line = CBTf(n"Cyberbane-Hunt-IPutYouDownOnceHeard", [s"\(where)"]);
   } else {

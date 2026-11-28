@@ -185,3 +185,141 @@ public func CBGangSurrenderLine(f: CName) -> String {
   if Equals(f, n"Scrappers") { return CBLineOf([CBT(n"Cyberbane-GangVoice-TakeItTakeTheHaulI"), CBT(n"Cyberbane-GangVoice-OkayNotWorthDyingOverJunk"), CBT(n"Cyberbane-GangVoice-IMDoneIMWalking")]); }
   return CBPick3(CBT(n"Cyberbane-GangVoice-OkayOkayIMDone"), CBT(n"Cyberbane-GangVoice-DonTShootIGiveUp"), CBT(n"Cyberbane-GangVoice-EnoughItSOverIM"));
 }
+
+// ---- Each gang's own words for its price (Economy/Peace.reds) --------------------------------------------------------
+
+public func CBPriceDemand() -> Int32 = 0
+public func CBPriceSworn() -> Int32 = 1
+public func CBPriceAsk() -> Int32 = 2
+public func CBPriceBroken() -> Int32 = 3
+public func CBPricePaid() -> Int32 = 4
+public func CBPriceRefused() -> Int32 = 5
+public func CBPriceCantPay() -> Int32 = 6
+
+// What a gang says about its price, in its own voice: demanding it, naming it after a threat, begging once it is
+// broken, taking it, being refused, and V coming up short. "" for anybody with no voice of its own (a corporation, the
+// NCPD), who keep the general words.
+public func CBGangPriceLine(f: CName, kind: Int32, cost: Int32) -> String {
+  let p = s"\(cost)";
+  if Equals(f, n"Valentinos") {
+    if kind == 0 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Valentinos-Demand1", [p]), CBTf(n"Cyberbane-GangPrice-Valentinos-Demand2", [p])]); }
+    if kind == 1 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Valentinos-Sworn1", [p]), CBTf(n"Cyberbane-GangPrice-Valentinos-Sworn2", [p])]); }
+    if kind == 2 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Valentinos-Ask1", [p]), CBTf(n"Cyberbane-GangPrice-Valentinos-Ask2", [p])]); }
+    if kind == 3 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Valentinos-Broken1", [p])]); }
+    if kind == 4 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Valentinos-Paid1", [p])]); }
+    if kind == 5 { return CBLineOf([CBT(n"Cyberbane-GangPrice-Valentinos-Refused1"), CBT(n"Cyberbane-GangPrice-Valentinos-Refused2")]); }
+    if kind == 6 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Valentinos-CantPay1", [p])]); }
+    return "";
+  }
+  if Equals(f, n"TygerClaws") {
+    if kind == 0 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-TygerClaws-Demand1", [p]), CBTf(n"Cyberbane-GangPrice-TygerClaws-Demand2", [p])]); }
+    if kind == 1 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-TygerClaws-Sworn1", [p]), CBTf(n"Cyberbane-GangPrice-TygerClaws-Sworn2", [p])]); }
+    if kind == 2 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-TygerClaws-Ask1", [p]), CBTf(n"Cyberbane-GangPrice-TygerClaws-Ask2", [p])]); }
+    if kind == 3 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-TygerClaws-Broken1", [p])]); }
+    if kind == 4 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-TygerClaws-Paid1", [p])]); }
+    if kind == 5 { return CBLineOf([CBT(n"Cyberbane-GangPrice-TygerClaws-Refused1"), CBT(n"Cyberbane-GangPrice-TygerClaws-Refused2")]); }
+    if kind == 6 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-TygerClaws-CantPay1", [p])]); }
+    return "";
+  }
+  if Equals(f, n"Maelstrom") {
+    if kind == 0 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Maelstrom-Demand1", [p]), CBTf(n"Cyberbane-GangPrice-Maelstrom-Demand2", [p])]); }
+    if kind == 1 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Maelstrom-Sworn1", [p]), CBTf(n"Cyberbane-GangPrice-Maelstrom-Sworn2", [p])]); }
+    if kind == 2 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Maelstrom-Ask1", [p]), CBTf(n"Cyberbane-GangPrice-Maelstrom-Ask2", [p])]); }
+    if kind == 3 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Maelstrom-Broken1", [p])]); }
+    if kind == 4 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Maelstrom-Paid1", [p])]); }
+    if kind == 5 { return CBLineOf([CBT(n"Cyberbane-GangPrice-Maelstrom-Refused1"), CBT(n"Cyberbane-GangPrice-Maelstrom-Refused2")]); }
+    if kind == 6 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Maelstrom-CantPay1", [p])]); }
+    return "";
+  }
+  if Equals(f, n"SixthStreet") {
+    if kind == 0 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-SixthStreet-Demand1", [p]), CBTf(n"Cyberbane-GangPrice-SixthStreet-Demand2", [p])]); }
+    if kind == 1 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-SixthStreet-Sworn1", [p]), CBTf(n"Cyberbane-GangPrice-SixthStreet-Sworn2", [p])]); }
+    if kind == 2 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-SixthStreet-Ask1", [p]), CBTf(n"Cyberbane-GangPrice-SixthStreet-Ask2", [p])]); }
+    if kind == 3 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-SixthStreet-Broken1", [p])]); }
+    if kind == 4 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-SixthStreet-Paid1", [p])]); }
+    if kind == 5 { return CBLineOf([CBT(n"Cyberbane-GangPrice-SixthStreet-Refused1"), CBT(n"Cyberbane-GangPrice-SixthStreet-Refused2")]); }
+    if kind == 6 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-SixthStreet-CantPay1", [p])]); }
+    return "";
+  }
+  if Equals(f, n"Animals") {
+    if kind == 0 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Animals-Demand1", [p]), CBTf(n"Cyberbane-GangPrice-Animals-Demand2", [p])]); }
+    if kind == 1 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Animals-Sworn1", [p]), CBTf(n"Cyberbane-GangPrice-Animals-Sworn2", [p])]); }
+    if kind == 2 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Animals-Ask1", [p]), CBTf(n"Cyberbane-GangPrice-Animals-Ask2", [p])]); }
+    if kind == 3 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Animals-Broken1", [p])]); }
+    if kind == 4 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Animals-Paid1", [p])]); }
+    if kind == 5 { return CBLineOf([CBT(n"Cyberbane-GangPrice-Animals-Refused1"), CBT(n"Cyberbane-GangPrice-Animals-Refused2")]); }
+    if kind == 6 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Animals-CantPay1", [p])]); }
+    return "";
+  }
+  if Equals(f, n"VoodooBoys") {
+    if kind == 0 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-VoodooBoys-Demand1", [p]), CBTf(n"Cyberbane-GangPrice-VoodooBoys-Demand2", [p])]); }
+    if kind == 1 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-VoodooBoys-Sworn1", [p]), CBTf(n"Cyberbane-GangPrice-VoodooBoys-Sworn2", [p])]); }
+    if kind == 2 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-VoodooBoys-Ask1", [p]), CBTf(n"Cyberbane-GangPrice-VoodooBoys-Ask2", [p])]); }
+    if kind == 3 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-VoodooBoys-Broken1", [p])]); }
+    if kind == 4 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-VoodooBoys-Paid1", [p])]); }
+    if kind == 5 { return CBLineOf([CBT(n"Cyberbane-GangPrice-VoodooBoys-Refused1"), CBT(n"Cyberbane-GangPrice-VoodooBoys-Refused2")]); }
+    if kind == 6 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-VoodooBoys-CantPay1", [p])]); }
+    return "";
+  }
+  if Equals(f, n"Mox") {
+    if kind == 0 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Mox-Demand1", [p]), CBTf(n"Cyberbane-GangPrice-Mox-Demand2", [p])]); }
+    if kind == 1 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Mox-Sworn1", [p]), CBTf(n"Cyberbane-GangPrice-Mox-Sworn2", [p])]); }
+    if kind == 2 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Mox-Ask1", [p]), CBTf(n"Cyberbane-GangPrice-Mox-Ask2", [p])]); }
+    if kind == 3 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Mox-Broken1", [p])]); }
+    if kind == 4 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Mox-Paid1", [p])]); }
+    if kind == 5 { return CBLineOf([CBT(n"Cyberbane-GangPrice-Mox-Refused1"), CBT(n"Cyberbane-GangPrice-Mox-Refused2")]); }
+    if kind == 6 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Mox-CantPay1", [p])]); }
+    return "";
+  }
+  if Equals(f, n"Scavengers") {
+    if kind == 0 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Scavengers-Demand1", [p]), CBTf(n"Cyberbane-GangPrice-Scavengers-Demand2", [p])]); }
+    if kind == 1 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Scavengers-Sworn1", [p]), CBTf(n"Cyberbane-GangPrice-Scavengers-Sworn2", [p])]); }
+    if kind == 2 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Scavengers-Ask1", [p]), CBTf(n"Cyberbane-GangPrice-Scavengers-Ask2", [p])]); }
+    if kind == 3 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Scavengers-Broken1", [p])]); }
+    if kind == 4 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Scavengers-Paid1", [p])]); }
+    if kind == 5 { return CBLineOf([CBT(n"Cyberbane-GangPrice-Scavengers-Refused1"), CBT(n"Cyberbane-GangPrice-Scavengers-Refused2")]); }
+    if kind == 6 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Scavengers-CantPay1", [p])]); }
+    return "";
+  }
+  if Equals(f, n"Wraiths") {
+    if kind == 0 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Wraiths-Demand1", [p]), CBTf(n"Cyberbane-GangPrice-Wraiths-Demand2", [p])]); }
+    if kind == 1 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Wraiths-Sworn1", [p]), CBTf(n"Cyberbane-GangPrice-Wraiths-Sworn2", [p])]); }
+    if kind == 2 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Wraiths-Ask1", [p]), CBTf(n"Cyberbane-GangPrice-Wraiths-Ask2", [p])]); }
+    if kind == 3 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Wraiths-Broken1", [p])]); }
+    if kind == 4 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Wraiths-Paid1", [p])]); }
+    if kind == 5 { return CBLineOf([CBT(n"Cyberbane-GangPrice-Wraiths-Refused1"), CBT(n"Cyberbane-GangPrice-Wraiths-Refused2")]); }
+    if kind == 6 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Wraiths-CantPay1", [p])]); }
+    return "";
+  }
+  if Equals(f, n"Aldecaldos") {
+    if kind == 0 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Aldecaldos-Demand1", [p]), CBTf(n"Cyberbane-GangPrice-Aldecaldos-Demand2", [p])]); }
+    if kind == 1 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Aldecaldos-Sworn1", [p]), CBTf(n"Cyberbane-GangPrice-Aldecaldos-Sworn2", [p])]); }
+    if kind == 2 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Aldecaldos-Ask1", [p]), CBTf(n"Cyberbane-GangPrice-Aldecaldos-Ask2", [p])]); }
+    if kind == 3 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Aldecaldos-Broken1", [p])]); }
+    if kind == 4 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Aldecaldos-Paid1", [p])]); }
+    if kind == 5 { return CBLineOf([CBT(n"Cyberbane-GangPrice-Aldecaldos-Refused1"), CBT(n"Cyberbane-GangPrice-Aldecaldos-Refused2")]); }
+    if kind == 6 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Aldecaldos-CantPay1", [p])]); }
+    return "";
+  }
+  if Equals(f, n"Barghest") {
+    if kind == 0 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Barghest-Demand1", [p]), CBTf(n"Cyberbane-GangPrice-Barghest-Demand2", [p])]); }
+    if kind == 1 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Barghest-Sworn1", [p]), CBTf(n"Cyberbane-GangPrice-Barghest-Sworn2", [p])]); }
+    if kind == 2 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Barghest-Ask1", [p]), CBTf(n"Cyberbane-GangPrice-Barghest-Ask2", [p])]); }
+    if kind == 3 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Barghest-Broken1", [p])]); }
+    if kind == 4 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Barghest-Paid1", [p])]); }
+    if kind == 5 { return CBLineOf([CBT(n"Cyberbane-GangPrice-Barghest-Refused1"), CBT(n"Cyberbane-GangPrice-Barghest-Refused2")]); }
+    if kind == 6 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Barghest-CantPay1", [p])]); }
+    return "";
+  }
+  if Equals(f, n"Scrappers") {
+    if kind == 0 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Scrappers-Demand1", [p]), CBTf(n"Cyberbane-GangPrice-Scrappers-Demand2", [p])]); }
+    if kind == 1 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Scrappers-Sworn1", [p]), CBTf(n"Cyberbane-GangPrice-Scrappers-Sworn2", [p])]); }
+    if kind == 2 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Scrappers-Ask1", [p]), CBTf(n"Cyberbane-GangPrice-Scrappers-Ask2", [p])]); }
+    if kind == 3 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Scrappers-Broken1", [p])]); }
+    if kind == 4 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Scrappers-Paid1", [p])]); }
+    if kind == 5 { return CBLineOf([CBT(n"Cyberbane-GangPrice-Scrappers-Refused1"), CBT(n"Cyberbane-GangPrice-Scrappers-Refused2")]); }
+    if kind == 6 { return CBLineOf([CBTf(n"Cyberbane-GangPrice-Scrappers-CantPay1", [p])]); }
+    return "";
+  }
+  return "";
+}

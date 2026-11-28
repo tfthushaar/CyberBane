@@ -6,6 +6,71 @@ The major changes in each version, newest first. Your progress always carries ov
 
 ## 2.8
 
+### 2.8.5 (27 November 2026)
+- **Wars you fight yourself, at any hour.** Going to war on a gang opens a war that lasts until one side takes terms
+  or is broken. It has a front, and both sides tire as it drags on. Give your crew an order whenever they are ready (hit
+  their corners, raid a stash, go after a lieutenant, scout them, or hold) and **lead it yourself**: they wait for you at
+  the place, near you on the gang's own streets, and the fight starts the moment you arrive. Or send them and join them
+  if you get there first. The gang hits back every few hours (your corners, your home, one of your crew out on a job, a
+  price on your second), and you hear of it ahead if your lookouts are on them, or as it starts, with minutes to get
+  there. Without an order for a while, your second sends one.
+- **Fights that feel like a war.** The gang comes in waves while you hold the place, their best with the last one, and
+  their boss's place takes three. Your crew answers the call, and a few of your squads' own people fight at your side.
+  Win and what they had on them is yours.
+- **Wars can be lost.** A gang now brings what it really has to a war: its people, its money, its Rivals, its
+  strongholds and its friends, and a crew that keeps winning draws hired guns. A crew of veterans no longer walks
+  through a big gang, so leading the fight matters. A win takes ground from the gang you fought, never from a third
+  one, and only gangs with streets of their own fight at your side.
+- **Ending it.** A beaten gang asks for terms: tribute, its streets, a lieutenant handed over, or the gang working for
+  you. Turn them down and the last move is storming their boss. A winning gang demands terms of you. Your people can be
+  taken alive (pay, trade, or go and get them), and lieutenants you take can be sold back or turned. Every war gets a
+  name and a page in History.
+- **Squads.** Your Lieutenants gather people of their own, growing from the streets your crew holds: one new squad a
+  day, each taking a job the crew still lacks before any doubles up. Every squad has one job (fighters, lookouts,
+  hitters, hustlers, guards or medics), works with the others in a war and has work of its own between wars. A squad
+  goes by its leader's name, in full when two of your people share a first name.
+- **The crew as a gang.** Put somebody in charge of each district your crew holds, make a cleared gig place the crew's
+  own, spend the kitty on a training room, an armoury, a second car or a safehouse, and watch the crew grow from a few
+  friends into a power in the city. Veterans who leave retire alive.
+- **Neighbourhoods and street clashes.** Wars take a gang's neighbourhoods one at a time, gangs clash in the street
+  where their people really meet, and the gangs you beat come back at your corners by grudge.
+- **Hunting while hunted.** A Rival at their place no longer stays away because somebody else is after you.
+- **Skip to it.** Get somewhere early (a Rival home after dark, a street event) and you are told when at once, with a
+  button on the Hub's first page to skip straight to it, or a key of your own.
+- **More of Cyberbane at once.** Up to 30 of Cyberbane's people can be in the world together, up from 18, still inside
+  what the game's own police bring in a chase. While the NCPD are after you it stays at 18.
+- **Every gang sounds like itself.** When a gang puts its price to you, takes your money or hears you say no, it says it
+  in its own voice: the Valentinos' familia, the Claws' cold business, Maelstrom's chrome, 6th Street's patrols and the
+  rest. Tips about what's happening on the street read like word passed on the sly, your crew talk instead of reading
+  out numbers, and the texts you see most have more than one way of being said.
+- **Fewer repeated texts.** Clicking through a crew member's work on the Hub sends one text for what you settled on, not
+  one for every click, two of your people with the same first name are never both just "Odette", and "you're in this
+  war with us now" is said once a war.
+- **Orders you can find.** An order given on the Hub gets its place the moment you're back in the game, with a pin and
+  your crew saying where. A lieutenant order had no place at all, so there was nowhere to go.
+- **No more fights in the Voodoo Boys' chapel.** Places the story itself makes safe, like the chapel in Pacifica, now
+  count as safe: once Cyberbane has seen you inside one, nobody is sent into it, and **Keep your hands free** works
+  there too.
+- **Cards, crew asks by phone.** A new choice under **Where messages go**: everything as cards, except your crew asking
+  for a day off, their cut or a ripperdoc, which comes to your phone to answer there. Badly hurt crew now ask you to pay
+  for a ripperdoc.
+- **A cleaner Hub.** The Turf and City pages are one Streets page; the Crew page has Roster, Member, War, Squads and Crew
+  views; long explanations are shorter, and buttons that only repeated a view are gone.
+- **Translators:** three new parts (`DefineGangWar`, `DefineGangWar2`, `DefineHubWar`), about forty Hub lines shortened,
+  and the page names `Cyberbane-Hud-TURF` and `Cyberbane-Hud-THECITY` replaced by `Cyberbane-HubWar-STREETS`. The six
+  squad names (`GangWar-SquadGuns` to `GangWar-SquadCutters`) are plain job names now, and a new squad's line is one
+  whole sentence a kind (`GangWar-SquadFormedGuns` and the rest). A new part, `DefineGangPrice`, holds each gang's own
+  words for its price (`GangPrice-<gang>-<kind>`), and many street, crew and war lines were reworded or gained
+  variants; lines that bent a gang's name into a possessive ("The Tyger Claws's") were rewritten as whole sentences.
+
+### 2.8.3 (27 November 2026)
+- **No bounty hunters for a nobody.** Nobody takes a price on your head until your Street Cred says you're worth it (15,
+  the same point gangs start sending their best), whoever put the price up. A new character no longer gets hunters in
+  the first hours.
+- **For mod authors:** API level 5 (`Cyberbane.Api5`): a bodyguard for V, people posted at a place, lines of an add-on's
+  own in street talk, a question taken back and factions kept off the Gangs list. `RegisterTitle` no longer adds a
+  title twice, places can be found in the Badlands' smaller districts, and other mods hear when a hunt ends. See README.
+
 ### 2.8.2 (27 November 2026)
 - **The street makes up its own mind.** Each district keeps its own opinion of you. Leave its people be, put down the
   gangers and cyberpsychos who prey on them and spare the beaten, and they stop backing away and start greeting you,

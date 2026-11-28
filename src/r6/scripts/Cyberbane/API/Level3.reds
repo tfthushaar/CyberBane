@@ -543,6 +543,10 @@ public func CBApiRemovePriceFactor(game: GameInstance, handle: Int32) -> Void {
 // Start over: whatever add-ons set for the old playthrough goes with it.
 public func CBApiLevel3Clear(game: GameInstance) -> Void {
   CBApiBountyForget(game);
+  let level5 = CBApiLevel5.Get(game);
+  if IsDefined(level5) {
+    level5.ForgetPeople();
+  }
   let layers = CBApiLayers.Get(game);
   if IsDefined(layers) {
     layers.Prune(1000000000000.0);

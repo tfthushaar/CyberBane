@@ -264,7 +264,8 @@ public abstract class CyberbaneAPI {
 
   // Where messages go: 0 the phone, 1 cards, 2 notices, 3 off (ECBMessageDelivery).
   public static func MessagesMode() -> Int32 {
-    return EnumInt(CBMessageDelivery());
+    let mode = CBMessageDelivery();
+    return Equals(mode, ECBMessageDelivery.CardsCrewPhone) ? EnumInt(ECBMessageDelivery.Cards) : EnumInt(mode);
   }
 
   // How much you hear: 0 everything, 1 less chatter, 2 rarely (ECBMessageAmount).
@@ -602,6 +603,52 @@ public abstract class CyberbaneAPI {
   // Cyberbane sends "Cyberbane/..." names.
   public static func Emit(game: GameInstance, name: CName, faction: CName, value: Int32) -> Void {
     CBApiEmit(game, name, faction, value);
+  }
+
+  // ---- Level 5 (API/Level5.reds) ------------------------------------------------------------------------------------
+  // Takes back your open question in that contact's thread: its answers neither show nor cost anything. False when no
+  // question with that token is waiting.
+  public static func WithdrawAsk(game: GameInstance, sender: CName, token: Int32) -> Bool {
+    return CBApiWithdrawAsk(game, sender, token);
+  }
+
+  // Keeps a faction you show somewhere else off the Gangs list (or puts it back). Its standing and History stay.
+  public static func SetFactionListed(game: GameInstance, id: CName, listed: Bool) -> Void {
+    CBApiSetFactionListed(game, id, listed);
+  }
+
+  // A bodyguard: one person of the record, following V on V's side; with untilFightEnds they leave once a fight has
+  // come and gone. The group's handle (GroupAlive and GroupBodies work on it), or 0.
+  public static func RequestEscort(game: GameInstance, record: TweakDBID, untilFightEnds: Bool) -> Int32 {
+    return CBApiRequestEscort(game, record, untilFightEnds);
+  }
+
+  public static func EscortActive(game: GameInstance, handle: Int32) -> Bool {
+    return CBApiEscortActive(game, handle);
+  }
+
+  public static func ReleaseEscort(game: GameInstance, handle: Int32) -> Bool {
+    return CBApiReleaseEscort(game, handle);
+  }
+
+  // People posted at a place, neutral to V until V hurts one of them, talked to like anybody on the street. The group's
+  // handle, or 0.
+  public static func RequestPost(game: GameInstance, faction: CName, at: Vector4, count: Int32, records: array<TweakDBID>) -> Int32 {
+    return CBApiRequestPost(game, faction, at, count, records);
+  }
+
+  public static func ReleasePost(game: GameInstance, handle: Int32) -> Void {
+    CBApiReleasePost(game, handle);
+  }
+
+  // A line of yours in street talk with that faction's people (n"" for anybody); the listener decides when it shows and
+  // what they say back. Asked again with the same faction, token and listener, the line is replaced.
+  public static func AddTalkTopic(game: GameInstance, faction: CName, lineKey: CName, token: Int32, listener: ref<CBTalkTopicListener>) -> Bool {
+    return CBApiAddTalkTopic(game, faction, lineKey, token, listener);
+  }
+
+  public static func RemoveTalkTopic(game: GameInstance, faction: CName, token: Int32, listener: ref<CBTalkTopicListener>) -> Bool {
+    return CBApiRemoveTalkTopic(game, faction, token, listener);
   }
 
   // ---- Level 4: somebody of yours into V's crew -------------------------------------------------------------------

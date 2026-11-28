@@ -137,8 +137,12 @@ public func CBWatchExtraTicks() -> Int32 {
 // The watcher saw them coming. Beside the gang's own warning and the ally's (CBCrewWarning, CBApexOnTheWay,
 // CBRivalWarning in Spawn/Hunt.reds).
 public func CBWatcherTipOff(sys: ref<CyberbaneSystem>, game: GameInstance, who: String) -> Bool {
-  if !CBToastsOn() || !CBWatchedHere(sys, game) {
+  if !CBToastsOn() {
     return false;
+  }
+  // Nobody paid here: the crew's eyes watch the streets it holds (Reactions/Squads.reds).
+  if !CBWatchedHere(sys, game) {
+    return CBSquadEyesTipOff(sys, game, who);
   }
   let book = CBStreetBook.Get(game);
   let name = StrLen(book.WatchName()) > 0 ? book.WatchName() : CBT(n"Cyberbane-Whispers-Lookout");

@@ -76,7 +76,8 @@ public func CBEventKindIsOwn(kind: CName) -> Bool {
   return StrBeginsWith(NameToString(kind), "Cyberbane") || Equals(kind, CBEvSitDown()) || Equals(kind, CBEvAmbush())
       || Equals(kind, CBEvFuneral()) || Equals(kind, CBEvCelebration()) || Equals(kind, CBEvInitiation())
       || Equals(kind, CBEvRecruitment()) || Equals(kind, CBEvArmsDeal()) || Equals(kind, CBEvExecution())
-      || Equals(kind, CBEvFrontLine()) || Equals(kind, CBEvRacket()) || Equals(kind, CBEvFugitive());   // every kind of
+      || Equals(kind, CBEvFrontLine()) || Equals(kind, CBEvRacket()) || Equals(kind, CBEvFugitive())
+      || Equals(kind, CBEvWarFight());   // every kind of
       // Spawn/StreetEvents.reds: Racket and Fugitive were missing, so an add-on could register over them
 }
 

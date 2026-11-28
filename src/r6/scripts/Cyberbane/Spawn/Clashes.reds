@@ -30,8 +30,15 @@ func CBClashPair(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBWarB
       return;
     }
   }
-  // Or two gangs at war, both on these streets.
+  // Or two gangs at war, both on these streets: by the turf data, or seen here lately (F4). Where two districts meet
+  // the next district's gang is out too, and V passing them is how that is known.
   let here = CBTurfGangsHere(sys);
+  let seen = book.SeenSince(sys.GetTickCount() - CBConfig.ClashSeenTicks());
+  for s in seen {
+    if !ArrayContains(here, s) {
+      ArrayPush(here, s);
+    }
+  }
   let content = sys.GetContent();
   for g in here {
     if Equals(book.clashA, n"") {
@@ -58,7 +65,15 @@ public func CBClashNote(sys: ref<CyberbaneSystem>, npc: wref<ScriptedPuppet>, fa
     return;
   }
   let book = CBWarBook.Get(sys.GetGameInstance());
-  if !IsDefined(book) || Equals(book.clashA, n"") || ArraySize(book.fightA) > 0 {
+  if !IsDefined(book) {
+    return;
+  }
+  // Seen here: the clash pairing and the neighbourhood both learn who is really on these streets.
+  if CBGangHoldsTurf(sys, faction) {
+    book.NoteSeen(faction, sys.GetTickCount());
+    CBHoodNoteSeen(sys, faction);
+  }
+  if Equals(book.clashA, n"") || ArraySize(book.fightA) > 0 {
     return;
   }
   let id = npc.GetEntityID();
@@ -102,7 +117,7 @@ public func CBClashTick(sys: ref<CyberbaneSystem>, game: GameInstance) -> Void {
   }
   if tick >= book.clashNextTick && !player.IsInCombat() {
     if Equals(book.clashA, n"") {
-      CBStreetWhyNot(game, "street clash", s"no two gangs at war on these streets (\(NameToString(sys.GetCurrentDistrict())))");
+      CBStreetWhyNot(game, "street clash", s"no two gangs at war on these streets (\(NameToString(sys.GetCurrentDistrict())): \(CBClashSharesWord(sys, game, book)))");
     } else {
       if ArraySize(book.candA) == 0 || ArraySize(book.candB) == 0 {
         CBStreetWhyNot(game, "street clash", s"not enough of \(NameToString(book.clashA)) and \(NameToString(book.clashB)) out near V");
@@ -273,6 +288,25 @@ func CBClashEnd(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBWarBo
                              CBTf(n"Cyberbane-Clashes-LostACoupleOnTheCorner", [s"\(CBCapFirst(l))", s"\(w)", s"\(here)"]),
                              CBTf(n"Cyberbane-Clashes-GangTroubleInCameOutOf", [s"\(here)", s"\(CBWhenTail(game))", s"\(w)"]),
                              CBTf(n"Cyberbane-Clashes-ThatWasAndWhoeverHoldsNext", [s"\(w)", s"\(l)", s"\(here)"])]));
+}
+
+// Each gang's share of the streets here and who was seen lately, for the log when no pair is found.
+func CBClashSharesWord(sys: ref<CyberbaneSystem>, game: GameInstance, book: ref<CBWarBook>) -> String {
+  let ids: array<CName>;
+  let shares: array<Float>;
+  CBTurfShares(sys, game, sys.GetCurrentDistrict(), ids, shares);
+  let out = "";
+  let k = 0;
+  while k < Min(ArraySize(ids), ArraySize(shares)) {
+    out += (StrLen(out) > 0 ? ", " : "") + NameToString(ids[k]) + " " + IntToString(RoundF(shares[k] * 100.0)) + "%";
+    k += 1;
+  }
+  let seen = book.SeenSince(sys.GetTickCount() - CBConfig.ClashSeenTicks());
+  let s = "";
+  for g in seen {
+    s += (StrLen(s) > 0 ? ", " : "") + NameToString(g);
+  }
+  return out + "; seen lately: " + (StrLen(s) > 0 ? s : "nobody");
 }
 
 // For the Hub's web of gangs: a clash between these two lately.

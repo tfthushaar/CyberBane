@@ -113,6 +113,10 @@ public func CBPlayerInSafeZone(game: GameInstance) -> Bool {
   if CBPlayerNoCombatTag(game) {
     return true;
   }
+  // The zone the game put V in, as it set it: a zone the story made safe is one the point test below does not know.
+  if CBPlayerZoneSafe(game) {
+    return true;
+  }
   let sam = GameInstance.GetSafeAreaManager(game);
   let player = GetPlayer(game);
   if IsDefined(sam) && IsDefined(player) {

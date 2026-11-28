@@ -490,6 +490,11 @@ public class CBStreetLife {
       return;
     }
     let holder = CBTurfHolder(sys, game, sys.GetCurrentDistrict());
+    // A gang V's crew beat keeps its money off the street for a while (Reactions/GangWar.reds).
+    if RandF() >= CBGangStreetShare(game, holder) {
+      CBStreetWhyNot(game, "bagman", s"\(NameToString(holder)) are keeping their heads down after the crew beat them");
+      return;
+    }
     let bagRecord = CBGangTemplate(sys, holder);   // a gang V has never fought has bagmen too
     if Equals(holder, n"") || !CBFactionFieldsSquads(holder) || !TDBID.IsValid(bagRecord) {
       CBStreetWhyNot(game, "bagman", s"no gang that fields people holds \(NameToString(sys.GetCurrentDistrict()))");
